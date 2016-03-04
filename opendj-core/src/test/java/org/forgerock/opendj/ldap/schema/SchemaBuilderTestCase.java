@@ -21,7 +21,7 @@
  * CDDL HEADER END
  *
  *
- *      Portions Copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2012-2016 ForgeRock AS.
  */
 package org.forgerock.opendj.ldap.schema;
 
@@ -35,6 +35,7 @@ import static org.forgerock.opendj.ldap.spi.LdapPromises.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.Connection;
@@ -2166,4 +2167,23 @@ public class SchemaBuilderTestCase extends AbstractSchemaTestCase {
                 .isEqualTo(ByteString.valueOfUtf8("test"));
     }
 
+    @Test
+    public void attributeTypesUseNewlyBuiltSyntaxes() throws Exception {
+        final Schema coreSchema = Schema.getCoreSchema();
+        final Schema schema = new SchemaBuilder(coreSchema)
+                .addAttributeType("( 1.2.3.4.5.7 NAME 'associateoid'  "
+                                          + "EQUALITY 2.5.13.2 ORDERING 2.5.13.3 SUBSTR 2.5.13.4 "
+                                          + "SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE userApplications "
+                                          + "X-APPROX '1.3.6.1.4.1.26027.1.4.1' )", false)
+                .toSchema();
+
+        Syntax dnSyntax = schema.getAttributeType("distinguishedName").getSyntax();
+        assertThat(dnSyntax).isSameAs(schema.getSyntax("1.3.6.1.4.1.1466.115.121.1.12"));
+
+        LocalizableMessageBuilder invalidReason = new LocalizableMessageBuilder();
+        boolean isValid = dnSyntax.valueIsAcceptable(ByteString.valueOfUtf8("associateoid=test"), invalidReason);
+        assertThat(isValid)
+                .as("Value should have been valid, but it is not: " + invalidReason.toString())
+                .isTrue();
+    }
 }
