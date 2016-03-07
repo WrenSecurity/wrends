@@ -35,7 +35,7 @@
 
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-sdk-bom</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
