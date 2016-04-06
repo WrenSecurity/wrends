@@ -22,7 +22,7 @@
  *
  *
  *      Copyright 2009 Sun Microsystems, Inc.
- *      Portions copyright 2014-2015 ForgeRock AS
+ *      Portions copyright 2014-2016 ForgeRock AS
  */
 package org.forgerock.opendj.ldap.schema;
 
@@ -43,7 +43,6 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.opendj.ldap.ByteSequence;
 import org.forgerock.opendj.ldap.ByteString;
-import org.forgerock.util.Reject;
 
 /**
  * This class provides an enumeration-based mechanism where a new syntax and its
@@ -56,7 +55,6 @@ final class EnumSyntaxImpl extends AbstractSyntaxImpl {
     private final List<String> entries;
 
     EnumSyntaxImpl(final String oid, final List<String> entries) {
-        Reject.ifNull(oid, entries);
         this.oid = oid;
         final List<String> entryStrings = new ArrayList<>(entries.size());
 
