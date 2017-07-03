@@ -23,6 +23,7 @@
  *
  *      Copyright 2009-2010 Sun Microsystems, Inc.
  *      Portions Copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldap;
@@ -684,8 +685,8 @@ public final class LDAPConnectionFactory extends CommonLDAPOptions implements Co
      *     <li> UNLOCKED(0) - the synchronizer may be acquired shared or exclusively
      *     <li> LOCKED_EXCLUSIVELY(-1) - the synchronizer is held exclusively and cannot be acquired shared or
      *          exclusively. An exclusive lock is held while a heart beat is in progress
-     *     <li> LOCKED_SHARED(>0) - the synchronizer is held shared and cannot be acquired exclusively. N shared locks
-     *          are held while N Bind or StartTLS operations are in progress.
+     *     <li> LOCKED_SHARED({@code >0}) - the synchronizer is held shared and cannot be acquired exclusively.
+                N shared locks are held while N Bind or StartTLS operations are in progress.
      * </ul>
      */
     private static final class Sync extends AbstractQueuedSynchronizer {

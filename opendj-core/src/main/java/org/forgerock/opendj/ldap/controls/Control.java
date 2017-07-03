@@ -22,6 +22,7 @@
  *
  *
  *      Copyright 2010 Sun Microsystems, Inc.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap.controls;
 
@@ -39,14 +40,16 @@ import org.forgerock.opendj.ldap.ByteString;
  * OIDs, and then check for a match:
  *
  * <pre>
+ * {@code
  * Connection connection = ...;
- * Collection&lt;String&gt; supported =
+ * Collection<String> supported =
  *     RootDSE.readRootDSE(connection).getSupportedControls();
  *
  * Control control = ...;
  * String OID = control.getOID();
  * if (supported != null && !supported.isEmpty() && supported.contains(OID)) {
  *     // The control is supported. Use it here...
+ * }
  * }
  * </pre>
  *

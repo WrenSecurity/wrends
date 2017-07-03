@@ -81,11 +81,10 @@ import org.forgerock.util.Utils;
  *               Current year if there is no existing copyright line.
  *               If the copyright section already exists, the year will be updated as follow:
  *               <ul>
- *                  <li>OLD_YEAR => OLD_YEAR-CURRENT_YEAR</li>
- *                  <li>VERY_OLD_YEAR-OLD_YEAR => VERY_OLD_YEAR-CURRENT_YEAR</li>
- *              </ul></li>
+ *                  <li>{@code OLD_YEAR => OLD_YEAR-CURRENT_YEAR}</li>
+ *                  <li>{@code VERY_OLD_YEAR-OLD_YEAR => VERY_OLD_YEAR-CURRENT_YEAR}</li>
+ *               </ul></li>
  * </ul>
- * </p>
  * <p>
  * If no Wren Security copyrighted line is detected, the plugin will add according to the following
  * format
@@ -96,7 +95,7 @@ import org.forgerock.util.Utils;
  *              [COMMMENT_CHAR]* //This line references 0..N commented empty lines.
  *              ([COMMMENT_CHAR][oldCopyrightToken])*
  *              [indent][newPortionsCopyrightLabel] [YEAR] [forgerockCopyrightLabel]
- *              </pre></li><br>
+ *              </pre><br></li>
  *      <li> If there is no old copyright lines:
  *              <pre>
  *              [COMMMENT_CHAR][lineBeforeCopyrightRegExp]

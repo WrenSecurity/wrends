@@ -23,6 +23,7 @@
  *
  *      Copyright 2010 Sun Microsystems, Inc.
  *      Portions Copyright 2012-2014 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap.controls;
 
@@ -48,6 +49,7 @@ import org.forgerock.util.Reject;
  * draft-behera-ldap-password-policy.
  *
  * <pre>
+ * {@code
  * Connection connection = ...;
  * String DN = ...;
  * char[] password = ...;
@@ -79,6 +81,7 @@ import org.forgerock.util.Reject;
  *     }
  * } catch (DecodeException e) {
  *     // Failed to decode the response control.
+ * }
  * }
  * </pre>
  *

@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2009 Sun Microsystems, Inc.
- *      Portions copyright 2011-2015 ForgeRock AS
+ *      Portions Copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -309,15 +310,19 @@ public final class ByteStringBuilder implements ByteSequence {
      * Higher bits will be truncated. This method performs the equivalent of:
      *
      * <pre>
+     * {@code
      * int i = ...;
      * int i8bits = i & 0xFF;
      * // only use "i8bits"
+     * }
      * </pre>
      * OR
      * <pre>
+     * {@code
      * int i = ...;
      * byte b = (byte) i;
      * // only use "b"
+     * }
      * </pre>
      *
      * @param b
@@ -652,15 +657,19 @@ public final class ByteStringBuilder implements ByteSequence {
      * Higher bits will be truncated. This method performs the equivalent of:
      *
      * <pre>
+     * {@code
      * int i = ...;
      * int i16bits = i & 0xFFFF;
      * // only use "i16bits"
+     * }
      * </pre>
      * OR
      * <pre>
+     * {@code
      * int i = ...;
      * short s = (short) i;
      * // only use "s"
+     * }
      * </pre>
      *
      * @param i

@@ -23,6 +23,7 @@
  *
  *      Copyright 2010 Sun Microsystems, Inc.
  *      Portions copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -54,13 +55,15 @@ import org.forgerock.util.Reject;
  * attribute as the sort key:
  *
  * <pre>
+ * {@code
  * Connection connection = ...;
  * SearchRequest request = ...;
  *
- * Comparator&lt;Entry> comparator = SortKey.comparator("cn");
- * Set&lt;SearchResultEntry>; results = new TreeSet&lt;SearchResultEntry>(comparator);
+ * Comparator<Entry> comparator = SortKey.comparator("cn");
+ * Set<SearchResultEntry> results = new TreeSet<SearchResultEntry>(comparator);
  *
  * connection.search(request, results);
+ * }
  * </pre>
  *
  * A sort key includes an attribute description and a boolean value that

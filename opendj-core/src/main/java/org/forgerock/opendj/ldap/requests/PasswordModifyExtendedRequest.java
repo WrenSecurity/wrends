@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2010 Sun Microsystems, Inc.
- *      Portions copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldap.requests;
@@ -46,7 +47,8 @@ import org.forgerock.opendj.ldap.responses.PasswordModifyExtendedResult;
  * well as for generating a new password if none was provided.
  *
  * <pre>
- * String userIdentity = ...; // For example, u:&lt;uid> or dn:&lt;DN>
+ * {@code
+ * String userIdentity = ...; // For example, u:<uid> or dn:<DN>
  * char[] oldPassword = ...;
  * char[] newPassword = ...;
  * Connection connection = ...;
@@ -62,6 +64,7 @@ import org.forgerock.opendj.ldap.responses.PasswordModifyExtendedResult;
  *     // Changed password
  * } else {
  *     // Use result to diagnose error.
+ * }
  * }
  * </pre>
  *

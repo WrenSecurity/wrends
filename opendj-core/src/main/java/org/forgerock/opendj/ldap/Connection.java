@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2009-2010 Sun Microsystems, Inc.
- *      Portions Copyright 2011-2014 ForgeRock AS
+ *      Portions Copyright 2011-2014 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldap;
@@ -55,13 +56,13 @@ import org.forgerock.opendj.ldif.ConnectionEntryReader;
  * A connection with a Directory Server over which read and update operations
  * may be performed. See RFC 4511 for the LDAPv3 protocol specification and more
  * information about the types of operations defined in LDAP.
- * <p>
+ *
  * <h3>Operation processing</h3>
  * <p>
  * Operations may be performed synchronously or asynchronously depending on the
  * method chosen. Asynchronous methods can be identified by their {@code Async}
  * suffix.
- * <p>
+ *
  * <h4>Performing operations synchronously</h4>
  * <p>
  * Synchronous methods block until a response is received from the Directory
@@ -74,7 +75,7 @@ import org.forgerock.opendj.ldif.ConnectionEntryReader;
  * another thread. This will cause the calling thread unblock and throw a
  * {@link CancelledResultException} whose cause is the underlying
  * {@link InterruptedException}.
- * <p>
+ *
  * <h4>Performing operations asynchronously</h4>
  * <p>
  * Asynchronous methods, identified by their {@code Async} suffix, are
@@ -125,7 +126,7 @@ import org.forgerock.opendj.ldif.ConnectionEntryReader;
  * SearchResponseHandler handle = ...;
  * connection.search(request, handler);
  * </pre>
- * <p>
+ *
  * <h3>Closing connections</h3>
  * <p>
  * Applications must ensure that a connection is closed by calling
@@ -137,7 +138,7 @@ import org.forgerock.opendj.ldif.ConnectionEntryReader;
  * connection. In this case all requests subsequent to the failure will fail
  * with an appropriate {@link LdapException} when their result is
  * retrieved.
- * <p>
+ *
  * <h3>Event notification</h3>
  * <p>
  * Applications can choose to be notified when a connection is closed by the

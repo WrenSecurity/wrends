@@ -20,7 +20,8 @@
  *
  * CDDL HEADER END
  *
- *      Copyright 2013 ForgeRock AS
+ *      Copyright 2013 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap.controls;
 
@@ -30,9 +31,10 @@ import org.forgerock.opendj.ldap.ByteString;
  * The persistent search request control for Active Directory as defined by
  * Microsoft. This control allows a client to receive notification of changes
  * that occur in an Active Directory server.
- * <br/>
+ * <br>
  *
  * <pre>
+ * {@code
  * Connection connection = ...;
  *
  * SearchRequest request =
@@ -64,7 +66,7 @@ import org.forgerock.opendj.ldap.ByteString;
  *         reader.readReference(); //read and ignore reference
  *     }
  * }
- *
+ * }
  * </pre>
  *
  * @see <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/aa772153(v=vs.85).aspx">

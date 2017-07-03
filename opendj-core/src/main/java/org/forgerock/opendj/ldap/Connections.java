@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2009-2010 Sun Microsystems, Inc.
- *      Portions Copyright 2011-2015 ForgeRock AS
+ *      Portions Copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldap;
@@ -369,16 +370,16 @@ public final class Connections {
      * connection factories. A round robin load balancing algorithm distributes connection requests across a list of
      * connection factories one at a time. When the end of the list is reached, the algorithm starts again from the
      * beginning.
-     * <p/>
+     * <p>
      * This algorithm is typically used for load-balancing <i>within</i> data centers, where load must be distributed
      * equally across multiple data sources. This algorithm contrasts with the {@link FailoverLoadBalancingAlgorithm}
      * which is used for load-balancing <i>between</i> data centers.
-     * <p/>
+     * <p>
      * If a problem occurs that temporarily prevents connections from being obtained for one of the connection
      * factories, then this algorithm automatically "fails over" to the next operational connection factory in the list.
      * If none of the connection factories are operational then a {@code ConnectionException} is returned to the
      * client.
-     * <p/>
+     * <p>
      * The implementation periodically attempts to connect to failed connection factories in order to determine if they
      * have become available again.
      *
@@ -399,21 +400,21 @@ public final class Connections {
      * Creates a new "fail-over" load-balance which will load-balance connections across the provided set of connection
      * factories. A fail-over load balancing algorithm provides fault tolerance across multiple underlying connection
      * factories.
-     * <p/>
+     * <p>
      * This algorithm is typically used for load-balancing <i>between</i> data centers, where there is preference to
      * always forward connection requests to the <i>closest available</i> data center. This algorithm contrasts with the
      * {@link RoundRobinLoadBalancingAlgorithm} which is used for load-balancing <i>within</i> a data center.
-     * <p/>
+     * <p>
      * This algorithm selects connection factories based on the order in which they were provided during construction.
      * More specifically, an attempt to obtain a connection factory will always return the <i>first operational</i>
      * connection factory in the list. Applications should, therefore, organize the connection factories such that the
      * <i>preferred</i> (usually the closest) connection factories appear before those which are less preferred.
-     * <p/>
+     * <p>
      * If a problem occurs that temporarily prevents connections from being obtained for one of the connection
      * factories, then this algorithm automatically "fails over" to the next operational connection factory in the list.
      * If none of the connection factories are operational then a {@code ConnectionException} is returned to the
      * client.
-     * <p/>
+     * <p>
      * The implementation periodically attempts to connect to failed connection factories in order to determine if they
      * have become available again.
      *

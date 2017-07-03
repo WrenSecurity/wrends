@@ -21,6 +21,7 @@
  * CDDL HEADER END
  *
  *      Copyright 2014-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldap;
@@ -94,12 +95,6 @@ abstract class CommonLDAPOptions {
      * <p>
      * The default setting is {@code -1} (disabled) and may be configured using
      * the {@code org.forgerock.opendj.io.linger} property.
-     *
-     * @param linger
-     *            The value of the {@link java.net.SocketOptions#SO_LINGER
-     *            SO_LINGER} socket option for new connections, or -1 if linger
-     *            should be disabled.
-     * @return A reference to this set of options.
      */
     public static final Option<Integer> SO_LINGER_IN_SECONDS = Option.withDefault(
         getIntProperty("org.forgerock.opendj.io.linger", -1));

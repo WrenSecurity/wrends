@@ -23,6 +23,7 @@
  *
  *      Copyright 2009-2010 Sun Microsystems, Inc.
  *      Portions copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldap;
@@ -91,11 +92,13 @@ public final class RDN implements Iterable<AVA>, Comparable<RDN> {
      * construct a range whose contents is a sub-tree of entries:
      *
      * <pre>
+     * {@code
      * SortedMap<DN, Entry> entries = ...;
      * DN baseDN = ...;
      *
      * // Returns a map containing the baseDN and all of its subordinates.
      * SortedMap<DN,Entry> subtree = entries.subMap(baseDN, baseDN.child(RDN.maxValue));
+     * }
      * </pre>
      *
      * @return A constant containing a special RDN which is greater than any
