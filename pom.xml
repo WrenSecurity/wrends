@@ -22,6 +22,7 @@
   ! CDDL HEADER END
   !
   !      Copyright 2015 ForgeRock AS.
+  !      Portions Copyright 2017 Wren Security.
   !
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -39,73 +40,31 @@
 
     <packaging>pom</packaging>
 
-    <name>OpenDJ SDK BOM</name>
-    <description>OpenDJ BOM.
-        Provides a list of OpenDJ dependencies
+    <name>WrenDS SDK BOM</name>
+    <description>WrenDS BOM.
+        Provides a list of WrenDS dependencies
         which are known to be compatible with each other.
     </description>
-    <inceptionYear>2011</inceptionYear>
-    <url>http://opendj.forgerock.org</url>
+    <inceptionYear>2017</inceptionYear>
+    <url>http://wrensecurity.org</url>
 
     <issueManagement>
-        <system>Jira</system>
-        <url>https://bugster.forgerock.org/jira/browse/OPENDJSDK</url>
+        <system>GitHub Issues</system>
+        <url>https://github.com/WrenSecurity/wrends/issues</url>
     </issueManagement>
 
-    <mailingLists>
-        <mailingList>
-            <name>OpenDJ Users Mailing List</name>
-            <archive>http://lists.forgerock.org/pipermail/opendj/</archive>
-            <subscribe>https://lists.forgerock.org/mailman/listinfo/opendj/</subscribe>
-            <unsubscribe>https://lists.forgerock.org/mailman/listinfo/opendj/</unsubscribe>
-            <post>opendj@forgerock.org</post>
-        </mailingList>
-
-        <mailingList>
-            <name>OpenDJ Developers Mailing List</name>
-            <archive>http://lists.forgerock.org/pipermail/opendj-dev/</archive>
-            <subscribe>https://lists.forgerock.org/mailman/listinfo/opendj-dev/</subscribe>
-            <unsubscribe>https://lists.forgerock.org/mailman/listinfo/opendj-dev/</unsubscribe>
-            <post>opendj-dev@forgerock.org</post>
-        </mailingList>
-    </mailingLists>
-
     <scm>
-        <url>https://stash.forgerock.org/projects/OPENDJ/repos/opendj-sdk/browse</url>
-        <connection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj-sdk.git</connection>
-        <developerConnection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj-sdk.git</developerConnection>
-        <tag>3.0.0</tag>
+        <url>https://github.com/WrenSecurity/wrends</url>
+        <connection>scm:git:git://github.com/WrenSecurity/wrends.git</connection>
+        <developerConnection>scm:git:git@github.com:WrenSecurity/wrends.git</developerConnection>
     </scm>
-
-    <ciManagement>
-        <system>jenkins</system>
-        <url>https://ci.forgerock.org/view/OpenDJ/job/OpenDJ%20-%20SDK%20-%20postcommit</url>
-        <notifiers>
-            <notifier>
-                <type>mail</type>
-                <sendOnError>true</sendOnError>
-                <sendOnFailure>true</sendOnFailure>
-                <sendOnSuccess>false</sendOnSuccess>
-                <sendOnWarning>false</sendOnWarning>
-                <address>opendj-dev@forgerock.org</address>
-            </notifier>
-        </notifiers>
-    </ciManagement>
-
-    <distributionManagement>
-        <site>
-            <id>forgerock.org</id>
-            <name>OpenDJ Community</name>
-            <url>${site.distribution.url}</url>
-        </site>
-    </distributionManagement>
 
     <licenses>
         <license>
             <name>CDDL-1.0</name>
             <url>http://www.opensource.org/licenses/CDDL-1.0</url>
             <comments>Common Development and Distribution License (CDDL) 1.0.
-                This license applies to OpenDJ source code as indicated in the
+                This license applies to WrenDS source code as indicated in the
                 source files.
             </comments>
             <distribution>repo</distribution>
@@ -114,18 +73,28 @@
 
     <repositories>
         <repository>
-            <id>forgerock-staging-repository</id>
-            <name>ForgeRock Release Repository</name>
-            <url>http://maven.forgerock.org/repo/releases</url>
+            <id>bintray-wrensecurity-releases</id>
+            <name>Wren Security Release Repository</name>
+            <url>http://dl.bintray.com/wrensecurity/releases</url>
+
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
+
+            <releases>
+                <enabled>true</enabled>
+            </releases>
         </repository>
 
         <repository>
-            <id>forgerock-snapshots-repository</id>
-            <name>ForgeRock Snapshot Repository</name>
-            <url>http://maven.forgerock.org/repo/snapshots</url>
+            <id>bintray-wrensecurity-snapshots</id>
+            <name>Wren Security Snapshot Repository</name>
+            <url>http://dl.bintray.com/wrensecurity/snapshots</url>
+
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -148,17 +117,13 @@
     </modules>
 
     <properties>
-        <site.distribution.url>
-            scp://community.internal.forgerock.com/var/www/vhosts/opendj.forgerock.org/httpdocs
-        </site.distribution.url>
-
         <opendj.sdk.version>3.0.0</opendj.sdk.version>
         <i18n-framework.version>1.4.2</i18n-framework.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- ForgeRock BOM -->
+            <!-- Wren Security BOM -->
             <dependency>
                 <groupId>org.forgerock.commons</groupId>
                 <artifactId>forgerock-bom</artifactId>
@@ -181,7 +146,7 @@
             </dependency>
 
 
-            <!-- OpenDJ SDK -->
+            <!-- WrenDS SDK -->
             <dependency>
                 <groupId>org.forgerock.opendj</groupId>
                 <artifactId>opendj-core</artifactId>

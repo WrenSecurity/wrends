@@ -22,6 +22,7 @@
  ! CDDL HEADER END
  !
  !      Copyright 2011-2016 ForgeRock AS.
+ !      Portions Copyright 2017 Wren Security.
  !    
  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -35,8 +36,8 @@
     </parent>
 
     <artifactId>opendj-ldap-toolkit</artifactId>
-    <name>OpenDJ SDK Toolkit</name>
-    <description>This module includes LDAP command line tools based on the OpenDJ LDAP SDK.</description>
+    <name>WrenDS SDK Toolkit</name>
+    <description>This module includes LDAP command line tools based on the WrenDS LDAP SDK.</description>
 
     <packaging>jar</packaging>
 
