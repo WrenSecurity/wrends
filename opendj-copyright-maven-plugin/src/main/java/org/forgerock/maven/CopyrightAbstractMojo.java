@@ -22,6 +22,7 @@
  *
  *
  *      Copyright 2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.maven;
 
@@ -80,7 +81,7 @@ public abstract class CopyrightAbstractMojo extends AbstractMojo {
      * Copyright owner.
      * This string token must be present on the same line with 'copyright' keyword and the current year.
      */
-    @Parameter(required = true, defaultValue = "ForgeRock AS")
+    @Parameter(required = true, defaultValue = "Wren Security")
     private String copyrightOwnerToken;
 
     /** The path to the root of the scm local workspace to check. */

@@ -20,7 +20,8 @@
  *
  * CDDL HEADER END
  *
- *      Copyright 2015 ForgeRock AS
+ *      Copyright 2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.maven;
 
@@ -66,12 +67,12 @@ import org.forgerock.util.Utils;
  *  <li>lineBeforeCopyrightRegExp: Parameter regExp case insensitive
  *               Used by the plugin to start it's inspection for the copyright line.
  *               Next non blank commented lines after this lines must be
- *               old copyright owner lines or/and old ForgeRock copyright lines.</li>
+ *               old copyright owner lines or/and old Wren Security copyright lines.</li>
  *
  *  <li>oldCopyrightToken: Detected by plugin ('copyright' keyword case insensitive)
  *               If one line contains this token, the plugin will use
  *               the newPortionsCopyrightLabel instead of the newCopyrightLabel
- *               if there is no ForgeRock copyrighted line.</li>
+ *               if there is no Wren Security copyrighted line.</li>
  *
  *  <li>forgerockCopyrightRegExp: Parameter regExp case insensitive
  *               The regular expression which identifies a copyrighted line as a ForgeRock one.</li>
@@ -86,7 +87,8 @@ import org.forgerock.util.Utils;
  * </ul>
  * </p>
  * <p>
- * If no ForgeRock copyrighted line is detected, the plugin will add according to the following format
+ * If no Wren Security copyrighted line is detected, the plugin will add according to the following
+ * format
  * <ul>
  *      <li> If there is one or more old copyright lines:
  *              <pre>
@@ -339,7 +341,7 @@ public class UpdateCopyrightMojo extends CopyrightAbstractMojo {
     private String lineBeforeCopyrightRegExp;
 
     /** The regular expression which identifies a copyrighted line. */
-    @Parameter(required = true, defaultValue = "ForgeRock\\s+AS")
+    @Parameter(required = true, defaultValue = "Wren\\s+Security")
     private String forgerockCopyrightRegExp;
 
     /** Line to add if there is no existing copyright. */
@@ -350,8 +352,8 @@ public class UpdateCopyrightMojo extends CopyrightAbstractMojo {
     @Parameter(required = true, defaultValue = "Portions Copyright")
     private String newPortionsCopyrightLabel;
 
-    /** ForgeRock copyright label to print if a new (portions) copyright line is needed. */
-    @Parameter(required = true, defaultValue = "ForgeRock AS.")
+    /** Wren Security copyright label to print if a new (portions) copyright line is needed. */
+    @Parameter(required = true, defaultValue = "Wren Security.")
     private String forgeRockCopyrightLabel;
 
     /** A dry run will not change source code. It creates new files with '.tmp' extension. */

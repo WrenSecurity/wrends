@@ -22,6 +22,7 @@
  *
  *
  *      Copyright 2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.maven;
 
@@ -83,13 +84,13 @@ public class UpdateCopyrightTestCase extends ForgeRockTestCase {
                 // New portion copyright string, New copyright start string, Copyright end regexp,
                 // New copyright end String
             { TEST_FOLDERS[0], "Portions\\s+Copyright\\s+\\[year\\]\\s+\\[name\\s+of\\s+copyright\\s+owner\\]",
-                1, 1, "Portions copyright", "Copyright", "ForgeRock\\s+AS", "ForgeRock AS." },
+                1, 1, "Portions copyright", "Copyright", "Wren\\s+Security", "Wren Security." },
             { TEST_FOLDERS[1], "CDDL\\s+HEADER\\s+END", 1, 6, "Portions Copyright", "Copyright",
-                "ForgeRock\\s+AS\\.", "ForgeRock AS." },
+                "Wren\\s+Security\\.", "Wren Security." },
             { TEST_FOLDERS[2],
                 "DO\\s+NOT\\s+ALTER\\s+OR\\s+REMOVE\\s+COPYRIGHT\\s+NOTICES\\s+OR\\s+THIS\\s+HEADER.", 1, 1,
-                "Portions Copyrighted", "Copyright (c)", "ForgeRock\\s+AS\\.",
-                "ForgeRock AS. All rights reserved." }
+                "Portions Copyrighted", "Copyright (c)", "Wren\\s+Security\\.",
+                "Wren Security. All rights reserved." }
         };
     }
 

@@ -1,7 +1,7 @@
 /*
  * DO NOT  ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2011-2014 ForgeRock AS. All rights reserved.
+ * Copyright (c) 2011-2014 Wren Security. All rights reserved.
  *
  * The contents of this file are subject to the terms
  * of the Common Development and Distribution License
@@ -22,5 +22,5 @@
  * "Portions Copyrighted [year] [name of copyright owner]"
  */
  
-MUST BE REMOVED: Copyright (c) 2011-2014 ForgeRock AS. All rights reserved.
-EXPECTED OUTPUT: Copyright (c) 2011-YEAR ForgeRock AS. All rights reserved.
+MUST BE REMOVED: Copyright (c) 2011-2014 Wren Security. All rights reserved.
+EXPECTED OUTPUT: Copyright (c) 2011-YEAR Wren Security. All rights reserved.
