@@ -130,6 +130,20 @@
     </pluginRepositories>
     <!-- /may be temporary -->
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>bintray-wrensecurity-releases</id>
+            <name>Wren Security Snapshot Repository</name>
+            <url>${forgerockDistMgmtSnapshotsUrl}/wrends/;publish=1</url>
+        </snapshotRepository>
+
+        <repository>
+            <id>bintray-wrensecurity-snapshots</id>
+            <name>Wren Security Release Repository</name>
+            <url>${forgerockDistMgmtReleasesUrl}/wrends/;publish=1</url>
+        </repository>
+    </distributionManagement>
+
     <modules>
         <module>opendj-sdk-parent</module>
     </modules>
