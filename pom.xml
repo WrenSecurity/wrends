@@ -112,13 +112,31 @@
         </repository>
     </repositories>
 
+    <!-- may be temporary: probably belongs in parent POM -->
+    <pluginRepositories>
+        <pluginRepository>
+            <id>bintray-wrensecurity-snapshots</id>
+            <name>Wren Security Plugin Snapshot Repository</name>
+            <url>http://dl.bintray.com/wrensecurity/snapshots</url>
+
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </pluginRepository>
+    </pluginRepositories>
+    <!-- /may be temporary -->
+
     <modules>
         <module>opendj-sdk-parent</module>
     </modules>
 
     <properties>
         <opendj.sdk.version>3.0.0</opendj.sdk.version>
-        <i18n-framework.version>1.4.2</i18n-framework.version>
+        <i18n-framework.version>1.4.3-SNAPSHOT</i18n-framework.version>
     </properties>
 
     <dependencyManagement>
