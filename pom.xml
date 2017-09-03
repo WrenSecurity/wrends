@@ -54,9 +54,9 @@
     </issueManagement>
 
     <scm>
-        <url>https://github.com/WrenSecurity/wrends</url>
-        <connection>scm:git:git://github.com/WrenSecurity/wrends.git</connection>
-        <developerConnection>scm:git:git@github.com:WrenSecurity/wrends.git</developerConnection>
+        <url>https://github.com/WrenSecurity/wrends-sdk</url>
+        <connection>scm:git:git://github.com/WrenSecurity/wrends-sdk.git</connection>
+        <developerConnection>scm:git:git@github.com:WrenSecurity/wrends-sdk.git</developerConnection>
     </scm>
 
     <licenses>
