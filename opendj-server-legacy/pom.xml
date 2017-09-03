@@ -29,7 +29,6 @@
   <description>
     This module provides the Wren:DS LDAP Directory Server.
   </description>
-  <inceptionYear>2010</inceptionYear>
 
   <repositories>
     <repository>
@@ -1008,7 +1007,7 @@
         </executions>
       </plugin>
 
-      <!-- Unpack files from OpenDJ standard archive -->
+      <!-- Unpack files from Wren:DS standard archive -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>

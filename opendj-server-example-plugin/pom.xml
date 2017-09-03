@@ -25,7 +25,7 @@
   <artifactId>opendj-server-example-plugin</artifactId>
   <name>Wren:DS Server Example Plugin</name>
   <description>
-    An example Wren:DS Server plugin illustrating how custom components may be developed for Wren:DS.
+    An example Wren:DS Server plugin illustrating how custom components may be developed.
   </description>
   <packaging>jar</packaging>
   <dependencies>
