@@ -22,6 +22,7 @@
   ! CDDL HEADER END
   !
   !      Copyright 2015 ForgeRock AS.
+  !      Portions Copyright 2017 Wren Security.
   !
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -34,8 +35,8 @@
     </parent>
 
     <artifactId>opendj-dsml-servlet</artifactId>
-    <name>OpenDJ DSML Gateway</name>
-    <description>OpenDJ DSML Gateway</description>
+    <name>WrenDS DSML Gateway</name>
+    <description>WrenDS DSML Gateway</description>
     <packaging>war</packaging>
 
     <properties>
@@ -60,7 +61,7 @@
             <artifactId>i18n-slf4j</artifactId>
         </dependency>
 
-        <!-- OpenDJ SDK dependencies -->
+        <!-- WrenDS SDK dependencies -->
         <dependency>
             <groupId>org.forgerock.opendj</groupId>
             <artifactId>opendj-cli</artifactId>
@@ -71,7 +72,7 @@
             <artifactId>opendj-core</artifactId>
         </dependency>
 
-        <!-- OpenDJ Server dependencies -->
+        <!-- WrenDS Server dependencies -->
         <dependency>
             <groupId>org.forgerock.opendj</groupId>
             <artifactId>opendj-config</artifactId>

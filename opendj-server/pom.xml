@@ -22,6 +22,7 @@
   ! CDDL HEADER END
   !
   !      Copyright 2013-2015 ForgeRock AS
+  !      Portions Copyright 2017 Wren Security.
   !
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -32,9 +33,9 @@
     <version>3.0.0</version>
   </parent>
   <artifactId>opendj-server</artifactId>
-  <name>OpenDJ Server</name>
+  <name>WrenDS Server</name>
   <description>
-    OpenDJ LDAP embedded directory server.
+    WrenDS LDAP embedded directory server.
   </description>
   <packaging>jar</packaging>
   <properties>
