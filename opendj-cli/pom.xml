@@ -35,7 +35,7 @@
         <relativePath>../opendj-sdk-parent/pom.xml</relativePath>
     </parent>
     <artifactId>opendj-cli</artifactId>
-    <name>WrenDS CLI API</name>
+    <name>Wren:DS CLI API</name>
     <description>This module includes CLI API for implementing CLI applications.</description>
 
     <packaging>bundle</packaging>

@@ -27,7 +27,7 @@
     </parent>
 
     <artifactId>opendj-rest2ldap</artifactId>
-    <name>WrenDS Commons REST Adapter</name>
+    <name>Wren:DS Commons REST Adapter</name>
     <description>This module includes APIs for accessing LDAP repositories using commons REST.</description>
 
     <packaging>bundle</packaging>

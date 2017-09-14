@@ -39,7 +39,7 @@
 
     <packaging>pom</packaging>
 
-    <name>WrenDS SDK Parent</name>
+    <name>Wren:DS SDK Parent</name>
     <description>
         This group module provides a complete LDAP SDK for developing LDAP Directory client and server applications.
     </description>
@@ -64,7 +64,7 @@
         <!-- OSGi bundles properties -->
         <opendj.osgi.import.additional />
         <!--
-         | Use provide:=true to disallow mixing WrenDS and ForgeRock resource versions.
+         | Use provide:=true to disallow mixing Wren:DS and ForgeRock resource versions.
          | it change the version policy from == + to == =+  [2.0,3) [2.0,2.1)
         -->
         <opendj.osgi.import>
@@ -85,7 +85,7 @@
                 <scope>test</scope>
             </dependency>
 
-            <!-- WrenDS SDK -->
+            <!-- Wren:DS SDK -->
             <dependency>
                 <groupId>org.forgerock.opendj</groupId>
                 <artifactId>opendj-core</artifactId>
@@ -289,7 +289,7 @@
                     <artifactId>forgerock-doc-maven-plugin</artifactId>
                     <version>${forgerock-doc-plugin.version}</version>
                     <configuration>
-                        <projectName>WrenDS</projectName>
+                        <projectName>Wren:DS</projectName>
                         <projectVersion>${project.version}</projectVersion>
                         <releaseVersion>${project.version}</releaseVersion>
                         <googleAnalyticsId>UA-23412190-8</googleAnalyticsId>

@@ -36,8 +36,8 @@
     </parent>
 
     <artifactId>opendj-ldap-sdk-examples</artifactId>
-    <name>WrenDS SDK Examples</name>
-    <description>Examples illustrating usage of the WrenDS LDAP SDK</description>
+    <name>Wren:DS SDK Examples</name>
+    <description>Examples illustrating usage of the Wren:DS LDAP SDK</description>
 
     <dependencies>
         <dependency>

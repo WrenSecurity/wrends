@@ -36,7 +36,7 @@
     </parent>
 
     <artifactId>opendj-core</artifactId>
-    <name>WrenDS Core APIs</name>
+    <name>Wren:DS Core APIs</name>
     <description>
         This module provides the core APIs required for implementing LDAP Directory
         client and server applications. Unlike the SDK this module does not
@@ -245,7 +245,7 @@
             <id>forgerock-release</id>
 
             <properties>
-                <javadocTitle>WrenDS LDAP SDK ${project.version} API</javadocTitle>
+                <javadocTitle>Wren:DS LDAP SDK ${project.version} API</javadocTitle>
                 <timestamp>${maven.build.timestamp}</timestamp>
                 <maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
             </properties>

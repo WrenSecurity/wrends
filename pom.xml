@@ -40,9 +40,9 @@
 
     <packaging>pom</packaging>
 
-    <name>WrenDS SDK BOM</name>
-    <description>WrenDS BOM.
-        Provides a list of WrenDS dependencies
+    <name>Wren:DS SDK BOM</name>
+    <description>Wren:DS BOM.
+        Provides a list of Wren:DS dependencies
         which are known to be compatible with each other.
     </description>
     <inceptionYear>2017</inceptionYear>
@@ -50,13 +50,13 @@
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/WrenSecurity/wrends/issues</url>
+        <url>https://github.com/WrenSecurity/WrenDS/issues</url>
     </issueManagement>
 
     <scm>
-        <url>https://github.com/WrenSecurity/wrends-sdk</url>
-        <connection>scm:git:git://github.com/WrenSecurity/wrends-sdk.git</connection>
-        <developerConnection>scm:git:git@github.com:WrenSecurity/wrends-sdk.git</developerConnection>
+        <url>https://github.com/WrenSecurity/WrenDS-SDK</url>
+        <connection>scm:git:git://github.com/WrenSecurity/WrenDS-SDK.git</connection>
+        <developerConnection>scm:git:git@github.com:WrenSecurity/WrenDS-SDK.git</developerConnection>
     </scm>
 
     <licenses>
@@ -64,7 +64,7 @@
             <name>CDDL-1.0</name>
             <url>http://www.opensource.org/licenses/CDDL-1.0</url>
             <comments>Common Development and Distribution License (CDDL) 1.0.
-                This license applies to WrenDS source code as indicated in the
+                This license applies to Wren:DS source code as indicated in the
                 source files.
             </comments>
             <distribution>repo</distribution>
@@ -149,7 +149,7 @@
             </dependency>
 
 
-            <!-- WrenDS SDK -->
+            <!-- Wren:DS SDK -->
             <dependency>
                 <groupId>org.forgerock.opendj</groupId>
                 <artifactId>opendj-core</artifactId>

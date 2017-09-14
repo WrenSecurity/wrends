@@ -36,7 +36,7 @@
     </parent>
 
     <artifactId>opendj-copyright-maven-plugin</artifactId>
-    <name>WrenDS Copyright Check Maven Plugin</name>
+    <name>Wren:DS Copyright Check Maven Plugin</name>
     <description>Checks Wren Security source file copyrights.</description>
 
     <packaging>maven-plugin</packaging>

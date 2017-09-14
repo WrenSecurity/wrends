@@ -36,8 +36,8 @@
     </parent>
 
     <artifactId>opendj-grizzly</artifactId>
-    <name>WrenDS Grizzly Transport Provider</name>
-    <description>This module includes a Grizzly based network transport provider for WrenDS.</description>
+    <name>Wren:DS Grizzly Transport Provider</name>
+    <description>This module includes a Grizzly based network transport provider for Wren:DS.</description>
 
     <packaging>bundle</packaging>
 

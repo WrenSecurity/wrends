@@ -38,7 +38,7 @@
     <artifactId>opendj-doc-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
-    <name>WrenDS Doc Helper Maven Plugin</name>
+    <name>Wren:DS Doc Helper Maven Plugin</name>
     <description>Helps to build generated documentation sources.</description>
 
     <properties>
