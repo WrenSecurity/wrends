@@ -33,7 +33,7 @@
     <version>3.0.0</version>
   </parent>
   <artifactId>opendj-config</artifactId>
-  <name>WrenDS Configuration API</name>
+  <name>Wren:DS Configuration API</name>
   <description>
     This module includes Configuration APIs for implementing LDAP Directory
     client and server applications.

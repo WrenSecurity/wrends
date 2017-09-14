@@ -33,9 +33,9 @@
     <version>3.0.0</version>
   </parent>
   <artifactId>opendj-server</artifactId>
-  <name>WrenDS Server</name>
+  <name>Wren:DS Server</name>
   <description>
-    WrenDS LDAP embedded directory server.
+    Wren:DS LDAP embedded directory server.
   </description>
   <packaging>jar</packaging>
   <properties>

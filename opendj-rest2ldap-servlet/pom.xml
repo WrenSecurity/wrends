@@ -25,9 +25,9 @@
   </parent>
 
   <artifactId>opendj-rest2ldap-servlet</artifactId>
-  <name>WrenDS Commons REST LDAP Gateway</name>
+  <name>Wren:DS Commons REST LDAP Gateway</name>
   <description>
-    Provides integration between the WrenDS Commons REST Adapter and Servlet APIs.
+    Provides integration between the Wren:DS Commons REST Adapter and Servlet APIs.
   </description>
   <packaging>war</packaging>
 

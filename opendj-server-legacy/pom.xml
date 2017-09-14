@@ -35,9 +35,9 @@
   </parent>
   <artifactId>opendj-server-legacy</artifactId>
   <packaging>jar</packaging>
-  <name>WrenDS</name>
+  <name>Wren:DS</name>
   <description>
-    This module provides the WrenDS server.
+    This module provides the Wren:DS server.
   </description>
   <inceptionYear>2010</inceptionYear>
 
@@ -715,7 +715,7 @@
             </configuration>
           </execution>
 
-          <!-- Create WrenDS manifest -->
+          <!-- Create Wren:DS manifest -->
           <execution>
             <id>opendj-manifest</id>
             <goals>
@@ -833,7 +833,7 @@
             </configuration>
           </execution>
 
-          <!-- Package WrenDS SL4J Logger Adapter jar -->
+          <!-- Package Wren:DS SL4J Logger Adapter jar -->
           <execution>
             <id>build-opendj-slf4j-adapter-jar</id>
             <phase>prepare-package</phase>

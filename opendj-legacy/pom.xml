@@ -24,9 +24,9 @@
     <version>3.0.0</version>
   </parent>
   <artifactId>opendj-legacy</artifactId>
-  <name>WrenDS Legacy</name>
+  <name>Wren:DS Legacy</name>
   <description>
-    This module contains WrenDS legacy code that needs to be kept for compatibility reasons
+    This module contains Wren:DS legacy code that needs to be kept for compatibility reasons
     but will never be used again. DO NOT USE THIS CODE AT ALL, it could be removed any time.
     All code must be marked as deprecated with a link to the bug tracker.
   </description>

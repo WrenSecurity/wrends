@@ -34,9 +34,9 @@
   </parent>
 
   <artifactId>opendj-maven-plugin</artifactId>
-  <name>WrenDS Maven Plugin</name>
+  <name>Wren:DS Maven Plugin</name>
   <description>
-    Set of build tools for WrenDS project.
+    Set of build tools for Wren:DS project.
   </description>
   <packaging>maven-plugin</packaging>
 

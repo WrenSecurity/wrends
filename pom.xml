@@ -40,9 +40,9 @@
 
     <packaging>pom</packaging>
 
-    <name>WrenDS Directory Services Project</name>
+    <name>Wren:DS Directory Services Project</name>
     <description>
-        WrenDS is an LDAPv3 compliant directory service, developed for the Java
+        Wren:DS is an LDAPv3 compliant directory service, developed for the Java
         platform, providing a high performance, highly available, secure store
         for the identities managed by enterprises.
     </description>
@@ -51,13 +51,13 @@
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/WrenSecurity/wrends/issues</url>
+        <url>https://github.com/WrenSecurity/WrenDS/issues</url>
     </issueManagement>
 
     <scm>
-        <url>https://github.com/WrenSecurity/wrends</url>
-        <connection>scm:git:git://github.com/WrenSecurity/wrends.git</connection>
-        <developerConnection>scm:git:git@github.com:WrenSecurity/wrends.git</developerConnection>
+        <url>https://github.com/WrenSecurity/WrenDS</url>
+        <connection>scm:git:git://github.com/WrenSecurity/WrenDS.git</connection>
+        <developerConnection>scm:git:git@github.com:WrenSecurity/WrenDS.git</developerConnection>
     </scm>
 
     <repositories>
@@ -144,7 +144,7 @@
     </modules>
 
     <properties>
-        <product.name>WrenDS</product.name>
+        <product.name>Wren:DS</product.name>
         <opendj.core.test.jar.version>3.0.0</opendj.core.test.jar.version>
     </properties>
 

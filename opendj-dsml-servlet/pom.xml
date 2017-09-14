@@ -35,8 +35,8 @@
     </parent>
 
     <artifactId>opendj-dsml-servlet</artifactId>
-    <name>WrenDS DSML Gateway</name>
-    <description>WrenDS DSML Gateway</description>
+    <name>Wren:DS DSML Gateway</name>
+    <description>Wren:DS DSML Gateway</description>
     <packaging>war</packaging>
 
     <properties>
@@ -61,7 +61,7 @@
             <artifactId>i18n-slf4j</artifactId>
         </dependency>
 
-        <!-- WrenDS SDK dependencies -->
+        <!-- Wren:DS SDK dependencies -->
         <dependency>
             <groupId>org.forgerock.opendj</groupId>
             <artifactId>opendj-cli</artifactId>
@@ -72,7 +72,7 @@
             <artifactId>opendj-core</artifactId>
         </dependency>
 
-        <!-- WrenDS Server dependencies -->
+        <!-- Wren:DS Server dependencies -->
         <dependency>
             <groupId>org.forgerock.opendj</groupId>
             <artifactId>opendj-config</artifactId>

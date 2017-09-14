@@ -33,9 +33,9 @@
     <version>3.0.0</version>
   </parent>
   <artifactId>opendj-server-example-plugin</artifactId>
-  <name>WrenDS Server Example Plugin</name>
+  <name>Wren:DS Server Example Plugin</name>
   <description>
-    An example WrenDS Server plugin illustrating how custom components may be developed for WrenDS.
+    An example Wren:DS Server plugin illustrating how custom components may be developed for Wren:DS.
   </description>
   <packaging>jar</packaging>
   <dependencies>
