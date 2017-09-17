@@ -21,4 +21,4 @@
  * "Portions Copyrighted [year] [name of copyright owner]"
  */
  
-EXPECTED OUTPUT: Copyright (c) YEAR ForgeRock AS. All rights reserved.
+EXPECTED OUTPUT: Copyright (c) YEAR Wren Security. All rights reserved.

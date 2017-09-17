@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2010 Sun Microsystems, Inc.
- *      Portions copyright 2013-2015 ForgeRock AS
+ *      Portions copyright 2013-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap.controls;
 
@@ -44,6 +45,7 @@ import org.forgerock.util.Reject;
  * expiration.
  *
  * <pre>
+ * {@code
  * Connection connection = ...;
  * String DN = ...;
  * char[] password = ...;
@@ -58,6 +60,7 @@ import org.forgerock.util.Reject;
  *     }
  * } catch (DecodeException de) {
  *     // Failed to decode the response control.
+ * }
  * }
  * </pre>
  *

@@ -22,6 +22,7 @@
   ! CDDL HEADER END
   !
   !      Copyright 2014-2015 ForgeRock AS.
+  !      Portions Copyright 2017 Wren Security.
   !    
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -34,7 +35,7 @@
         <relativePath>../opendj-sdk-parent/pom.xml</relativePath>
     </parent>
     <artifactId>opendj-cli</artifactId>
-    <name>OpenDJ CLI API</name>
+    <name>Wren:DS CLI API</name>
     <description>This module includes CLI API for implementing CLI applications.</description>
 
     <packaging>bundle</packaging>

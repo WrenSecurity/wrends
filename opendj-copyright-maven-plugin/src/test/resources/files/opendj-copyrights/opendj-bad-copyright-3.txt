@@ -22,4 +22,4 @@
  *
  */
  
-EXPECTED OUTPUT: Copyright YEAR ForgeRock AS.
+EXPECTED OUTPUT: Copyright YEAR Wren Security.

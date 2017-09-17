@@ -22,6 +22,7 @@
  *
  *
  *      Copyright 2009 Sun Microsystems, Inc.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldap.requests;
@@ -47,14 +48,16 @@ import org.forgerock.opendj.ldap.responses.ExtendedResultDecoder;
  * extension OIDs, and then check for a match. For example:
  *
  * <pre>
+ * {@code
  * Connection connection = ...;
- * Collection&lt;String&gt; supported =
+ * Collection<String> supported =
  *     RootDSE.readRootDSE(connection).getSupportedExtendedOperations();
  *
  * ExtendedRequest extension = ...;
  * String OID = extension.getOID();
  * if (supported != null && !supported.isEmpty() && supported.contains(OID)) {
  *     // The extension is supported. Use it here...
+ * }
  * }
  * </pre>
  *

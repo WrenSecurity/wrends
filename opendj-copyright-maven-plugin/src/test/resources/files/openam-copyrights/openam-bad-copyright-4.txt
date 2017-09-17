@@ -14,4 +14,4 @@
  * Copyright 2010 Old Copyright Owner Inc.
  */
  
- EXPECTED OUTPUT: Portions copyright YEAR ForgeRock AS.
+ EXPECTED OUTPUT: Portions copyright YEAR Wren Security.

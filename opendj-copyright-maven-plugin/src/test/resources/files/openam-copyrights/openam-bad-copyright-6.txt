@@ -13,8 +13,8 @@
  *
  * Copyright 2008-2010 Very Old copyright owner Inc.
  * Portions copyright 2011-2012 Old copyright owner Inc.
- * Portions copyright 2013-2014 ForgeRock AS.
+ * Portions copyright 2013-2014 Wren Security.
  */
  
-MUST BE REMOVED: Portions copyright 2013-2014 ForgeRock AS.
-EXPECTED OUTPUT: Portions copyright 2013-YEAR ForgeRock AS.
+MUST BE REMOVED: Portions copyright 2013-2014 Wren Security.
+EXPECTED OUTPUT: Portions copyright 2013-YEAR Wren Security.

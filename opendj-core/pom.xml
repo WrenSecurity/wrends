@@ -22,6 +22,7 @@
   ! CDDL HEADER END
   !
   !      Copyright 2011-2015 ForgeRock AS
+  !      Portions Copyright 2017 Wren Security.
   !    
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -35,7 +36,7 @@
     </parent>
 
     <artifactId>opendj-core</artifactId>
-    <name>OpenDJ Core APIs</name>
+    <name>Wren:DS Core APIs</name>
     <description>
         This module provides the core APIs required for implementing LDAP Directory
         client and server applications. Unlike the SDK this module does not
@@ -244,7 +245,7 @@
             <id>forgerock-release</id>
 
             <properties>
-                <javadocTitle>OpenDJ LDAP SDK ${project.version} API</javadocTitle>
+                <javadocTitle>Wren:DS LDAP SDK ${project.version} API</javadocTitle>
                 <timestamp>${maven.build.timestamp}</timestamp>
                 <maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
             </properties>
@@ -253,15 +254,6 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>javadoc-jar</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                         <configuration>
                             <includeDependencySources>true</includeDependencySources>
                             <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
@@ -276,7 +268,7 @@
                                 </group>
 
                                 <group>
-                                    <title>ForgeRock Common Packages</title>
+                                    <title>Wren Security Common Packages</title>
                                     <packages>*</packages>
                                 </group>
                             </groups>
@@ -285,7 +277,7 @@
                             <windowtitle>${javadocTitle}</windowtitle>
                             <header>${javadocTitle}</header>
                             <footer>${javadocTitle}</footer>
-                            <bottom>Copyright 2011-${maven.build.timestamp} ForgeRock AS.</bottom>
+                            <bottom>Copyright 2011-2016 ForgeRock AS. Copyright 2017-${maven.build.timestamp} Wren Security.</bottom>
                             <links>
                                 <link>http://docs.oracle.com/javase/7/docs/api/</link>
                                 <link>http://www.slf4j.org/apidocs/</link>

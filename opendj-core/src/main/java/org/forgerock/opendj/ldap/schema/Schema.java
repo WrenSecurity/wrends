@@ -22,8 +22,9 @@
  *
  *
  *      Copyright 2009-2010 Sun Microsystems, Inc.
- *      Portions Copyright 2011-2015 ForgeRock AS
- *      Portions Copyright 2014 Manuel Gaupp
+ *      Portions Copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2014 Manuel Gaupp.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap.schema;
 
@@ -1016,7 +1017,7 @@ public final class Schema {
      * <p>
      * This implementation first reads the {@code subschemaSubentry} attribute
      * of the entry in order to identify the schema and then invokes
-     * {@link #readSchemaAsync(Connection, DN, ResultHandler)} to read the
+     * {@link #readSchemaAsync(Connection, DN)} to read the
      * schema.
      *
      * @param connection

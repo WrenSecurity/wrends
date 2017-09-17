@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2009-2010 Sun Microsystems, Inc.
- *      Portions copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -952,7 +953,7 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
      *   <li>lazily: the normalized value is computed only the first time it is needed.</li>
      * </ul>
      *
-     * @Deprecated This class will eventually be replaced by a compact implementation of a DN.
+     * @deprecated This class will eventually be replaced by a compact implementation of a DN.
      */
     public static final class CompactDn implements Comparable<CompactDn> {
 

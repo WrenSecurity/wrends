@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2009 Sun Microsystems, Inc.
- *      Portions copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -309,10 +310,10 @@ public final class ByteSequenceReader {
     /**
      * Relative read method for reading a compacted long value.
      * Compaction allows to reduce number of bytes needed to hold long types
-     * depending on its value (i.e: if value < 128, value will be encoded using one byte only).
-     * Reads the next bytes at this reader's current position, composing them into a long value
-     * according to big-endian byte order, and then increments the position by the size of the
-     * encoded long.
+     * depending on its value (i.e: if {@code value < 128}, value will be encoded using one byte
+     * only). Reads the next bytes at this reader's current position, composing them into a long
+     * value according to big-endian byte order, and then increments the position by the size of
+     * the encoded long.
      * Note that the maximum value of a compact long is 2^56.
      *
      * @return The long value at this reader's current position.
@@ -331,10 +332,10 @@ public final class ByteSequenceReader {
     /**
      * Relative read method for reading a compacted int value.
      * Compaction allows to reduce number of bytes needed to hold int types
-     * depending on its value (i.e: if value < 128, value will be encoded using one byte only).
-     * Reads the next bytes at this reader's current position, composing them into an int value
-     * according to big-endian byte order, and then increments the position by the size of the
-     * encoded int.
+     * depending on its value (i.e: if {@code value < 128}, value will be encoded using one byte
+     * only). Reads the next bytes at this reader's current position, composing them into an int
+     * value according to big-endian byte order, and then increments the position by the size of
+     * the encoded int.
      *
      * @return The int value at this reader's current position.
      * @throws IndexOutOfBoundsException

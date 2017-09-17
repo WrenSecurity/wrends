@@ -22,7 +22,8 @@
  *
  *
  *      Copyright 2010 Sun Microsystems, Inc.
- *      Portions copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2012-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap.controls;
 
@@ -59,6 +60,7 @@ import org.forgerock.util.Reject;
  * The following example demonstrates how to work with a server-side sort.
  *
  * <pre>
+ * {@code
  * Connection connection = ...;
  *
  * SearchRequest request = Requests.newSearchRequest(
@@ -74,6 +76,7 @@ import org.forgerock.util.Reject;
  *     // Entries are sorted.
  * } else {
  *     // Entries not sorted.
+ * }
  * }
  * </pre>
  *

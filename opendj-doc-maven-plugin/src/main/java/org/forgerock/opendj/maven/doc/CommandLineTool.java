@@ -22,13 +22,14 @@
  *
  *
  *      Copyright 2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.maven.doc;
 
 import java.util.List;
 
 /**
- * Represents a command-line tool as used in the configuration for {@see GenerateRefEntriesMojo}.
+ * Represents a command-line tool as used in the configuration for {@link GenerateRefEntriesMojo}.
  * <br>
  * Command-line tools are associated with a script name, the Java class of the tool,
  * and a list of relative paths to hand-written files for trailing sections.

@@ -22,6 +22,7 @@
  *
  *
  *      Copyright 2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 package org.forgerock.opendj.ldap.spi;
 
@@ -126,7 +127,7 @@ public interface LDAPConnectionImpl extends Closeable {
 
     /**
      * Releases any resources associated with this connection.
-     * <p/>
+     * <p>
      * Calling {@code close} on a connection that is already closed has no effect.
      * @see org.forgerock.opendj.ldap.Connection#close()
      */
@@ -135,7 +136,7 @@ public interface LDAPConnectionImpl extends Closeable {
 
     /**
      * Releases any resources associated with this connection.
-     * <p/>
+     * <p>
      * Calling {@code close} on a connection that is already closed has no effect.
      *
      * @param request

@@ -20,7 +20,8 @@
  *
  * CDDL HEADER END
  *
- *      Copyright 2011-2015 ForgeRock AS
+ *      Copyright 2011-2015 ForgeRock AS.
+ *      Portions Copyright 2017 Wren Security.
  */
 
 package org.forgerock.opendj.ldif;
@@ -295,6 +296,7 @@ public final class LDIF {
      * <p>
      * Sample usage:
      * <pre>
+     * {@code
      * List<Entry> smiths = TestCaseUtils.makeEntries(
      *   "dn: cn=John Smith,dc=example,dc=com",
      *   "objectclass: inetorgperson",
@@ -307,6 +309,7 @@ public final class LDIF {
      *   "cn: Jane Smith",
      *   "sn: Smith",
      *   "givenname: Jane");
+     * }
      * </pre>
      * @param ldifLines
      *          LDIF lines that contains entries definition.

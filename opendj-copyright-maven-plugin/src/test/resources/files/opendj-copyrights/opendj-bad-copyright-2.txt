@@ -20,8 +20,8 @@
  *
  * CDDL HEADER END
  *
- *      Copyright 2013 ForgeRock AS.
+ *      Copyright 2013 Wren Security.
  */
  
-MUST BE REMOVED: Copyright 2013 ForgeRock AS.
-EXPECTED OUTPUT: Copyright 2013-YEAR ForgeRock AS.
+MUST BE REMOVED: Copyright 2013 Wren Security.
+EXPECTED OUTPUT: Copyright 2013-YEAR Wren Security.
