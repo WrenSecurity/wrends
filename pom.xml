@@ -120,8 +120,6 @@
     <properties>
         <opendj.sdk.version>3.0.0</opendj.sdk.version>
         <i18n-framework.version>1.4.3</i18n-framework.version>
-        <!-- FIXME: Needed for POM-less org.sonatype.sisu:sisu-guice:jar:no_aop:3.1.0 -->
-        <pgpVerifyPluginVersion>1.2.0-SNAPSHOT</pgpVerifyPluginVersion>
     </properties>
 
     <dependencyManagement>
