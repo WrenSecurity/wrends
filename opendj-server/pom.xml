@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2013-2016 ForgeRock AS.
+  Portions Copyright 2017-2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -22,9 +23,9 @@
     <version>4.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>opendj-server</artifactId>
-  <name>OpenDJ Server NG</name>
+  <name>Wren:DS Server NG</name>
   <description>
-    OpenDJ LDAP embedded directory server.
+    Wren:DS LDAP embedded directory server.
   </description>
   <packaging>jar</packaging>
   <properties>

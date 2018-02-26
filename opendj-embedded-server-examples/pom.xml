@@ -24,8 +24,8 @@
     </parent>
 
     <artifactId>opendj-embedded-server-examples</artifactId>
-    <name>OpenDJ embedded server examples</name>
-    <description>Examples illustrating usage of the OpenDJ embedded server API</description>
+    <name>Wren:DS Embedded Server Examples</name>
+    <description>Examples illustrating usage of the Wren:DS embedded server API</description>
 
     <dependencies>
         <dependency>
@@ -35,14 +35,6 @@
         </dependency>
 
     </dependencies>
-
-    <distributionManagement>
-        <site>
-            <id>forgerock.org</id>
-            <name>OpenDJ Community</name>
-            <url>scp://forgerock.org/var/www/vhosts/opendj.forgerock.org/httpdocs/opendj-embedded-server-examples</url>
-        </site>
-    </distributionManagement>
 
     <build>
         <plugins>

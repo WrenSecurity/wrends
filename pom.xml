@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
+  Portions Copyright 2017-2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -28,22 +29,18 @@
 
     <packaging>pom</packaging>
 
-    <name>OpenDJ Directory Services Project</name>
+    <name>Wren:DS Directory Services Project</name>
     <description>
-        OpenDJ is a new LDAPv3 compliant directory service, developed for the Java
-        platform, providing a high performance, highly available and secure store
+        Wren:DS is an LDAPv3 compliant directory service, developed for the Java
+        platform, providing a high performance, highly available, secure store
         for the identities managed by enterprises.
     </description>
 
     <properties>
-        <product.name>OpenDJ</product.name>
-        <product.name.lowercase>opendj</product.name.lowercase>
+        <product.name>Wren:DS</product.name>
+        <product.name.lowercase>wrends</product.name.lowercase>
         <product.locales>ca_ES,es,de,fr,ja,ko,pl,zh_CN,zh_TW</product.locales>
         <localized.jars.classifier>i18n</localized.jars.classifier>
-
-        <site.distribution.url>
-            scp://community.internal.forgerock.com/var/www/vhosts/opendj.forgerock.org/httpdocs
-        </site.distribution.url>
 
         <forgerock-build-tools.version>1.0.2</forgerock-build-tools.version>
         <forgerock-doc-plugin.version>3.2.2-SNAPSHOT</forgerock-doc-plugin.version>
@@ -54,7 +51,7 @@
         <!-- OSGi bundles properties -->
         <opendj.osgi.import.additional />
         <!--
-         | Use provide:=true to disallow mixing OpenDJ and ForgeRock resource versions.
+         | Use provide:=true to disallow mixing Wren:DS and ForgeRock resource versions.
          | it change the version policy from == + to == =+  [2.0,3) [2.0,2.1)
         -->
         <opendj.osgi.import>
@@ -69,24 +66,16 @@
         <checkstyleVersion>5.5</checkstyleVersion>
     </properties>
 
-    <inceptionYear>2011</inceptionYear>
-    <url>http://opendj.forgerock.org</url>
+    <inceptionYear>2017</inceptionYear>
+    <url>http://wrensecurity.org/</url>
 
     <mailingLists>
         <mailingList>
-            <name>OpenDJ Users Mailing List</name>
-            <archive>http://lists.forgerock.org/pipermail/opendj/</archive>
-            <subscribe>https://lists.forgerock.org/mailman/listinfo/opendj/</subscribe>
-            <unsubscribe>https://lists.forgerock.org/mailman/listinfo/opendj/</unsubscribe>
-            <post>opendj@forgerock.org</post>
-        </mailingList>
-
-        <mailingList>
-            <name>OpenDJ Developers Mailing List</name>
-            <archive>http://lists.forgerock.org/pipermail/opendj-dev/</archive>
-            <subscribe>https://lists.forgerock.org/mailman/listinfo/opendj-dev/</subscribe>
-            <unsubscribe>https://lists.forgerock.org/mailman/listinfo/opendj-dev/</unsubscribe>
-            <post>opendj-dev@forgerock.org</post>
+            <name>Wren Security Mailing List</name>
+            <archive>https://groups.google.com/forum/#!forum/wren-security</archive>
+            <subscribe>https://groups.google.com/forum/#!forum/wren-security</subscribe>
+            <unsubscribe>https://groups.google.com/forum/#!forum/wren-security</unsubscribe>
+            <post>wren-security@googlegroups.com</post>
         </mailingList>
     </mailingLists>
 
@@ -95,7 +84,7 @@
             <name>CDDL-1.0</name>
             <url>http://www.opensource.org/licenses/CDDL-1.0</url>
             <comments>Common Development and Distribution License (CDDL) 1.0.
-                This license applies to OpenDJ source code as indicated in the
+                This license applies to Wren:DS source code as indicated in the
                 source files.
             </comments>
             <distribution>repo</distribution>
@@ -103,39 +92,28 @@
     </licenses>
 
     <issueManagement>
-        <system>Jira</system>
-        <url>https://bugster.forgerock.org/jira/browse/OPENDJ</url>
+        <system>GitHub Issues</system>
+        <url>https://github.com/WrenSecurity/WrenDS/issues</url>
     </issueManagement>
 
     <scm>
-        <url>https://stash.forgerock.org/projects/OPENDJ/repos/opendj/browse</url>
-        <connection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj.git</connection>
-        <developerConnection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj.git</developerConnection>
-        <tag>HEAD</tag>
+        <url>https://github.com/WrenSecurity/WrenDS</url>
+        <connection>scm:git:git://github.com/WrenSecurity/WrenDS.git</connection>
+        <developerConnection>scm:git:git@github.com:WrenSecurity/WrenDS.git</developerConnection>
     </scm>
 
-    <distributionManagement>
-        <site>
-            <id>forgerock.org</id>
-            <name>OpenDJ Community</name>
-            <url>${site.distribution.url}</url>
-        </site>
-    </distributionManagement>
-
-    <ciManagement>
-        <system>jenkins</system>
-        <url>https://ci.forgerock.org/view/OpenDJ/job/OpenDJ%20-%20postcommit</url>
-        <notifiers>
-            <notifier>
-                <type>mail</type>
-                <sendOnError>true</sendOnError>
-                <sendOnFailure>true</sendOnFailure>
-                <sendOnSuccess>false</sendOnSuccess>
-                <sendOnWarning>false</sendOnWarning>
-                <address>opendj-dev@forgerock.org</address>
-            </notifier>
-        </notifiers>
-    </ciManagement>
+    <repositories>
+        <repository>
+            <id>jvnet-nexus-snapshots</id>
+            <url>https://maven.java.net/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>
@@ -154,7 +132,7 @@
                 <scope>test</scope>
             </dependency>
 
-            <!-- OpenDJ SDK -->
+            <!-- Wren:DS SDK -->
             <dependency>
                 <groupId>org.forgerock.opendj</groupId>
                 <artifactId>opendj-core</artifactId>
@@ -415,10 +393,9 @@
                     <artifactId>forgerock-doc-maven-plugin</artifactId>
                     <version>${forgerock-doc-plugin.version}</version>
                     <configuration>
-                        <projectName>OpenDJ</projectName>
+                        <projectName>Wren:DS</projectName>
                         <projectVersion>${project.version}</projectVersion>
                         <releaseVersion>${project.version}</releaseVersion>
-                        <googleAnalyticsId>UA-23412190-8</googleAnalyticsId>
                     </configuration>
                 </plugin>
 

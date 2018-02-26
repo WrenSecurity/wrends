@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -24,9 +25,9 @@
     </parent>
 
     <artifactId>opendj-packages</artifactId>
-    <name>OpenDJ Packages</name>
+    <name>Wren:DS Packages</name>
     <description>
-        This module contains sub-modules which generates OEM OpenDJ version, deb and rpm OpenDJ packages.
+        This module contains sub-modules which generates OEM Wren:DS version, deb and rpm Wren:DS packages.
     </description>
 
     <packaging>pom</packaging>
@@ -87,7 +88,7 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Unpack files from OpenDJ standard archive -->
+                <!-- Unpack files from Wren:DS standard archive -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>

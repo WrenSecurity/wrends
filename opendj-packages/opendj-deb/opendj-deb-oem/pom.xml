@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -24,17 +25,17 @@
     </parent>
 
     <artifactId>opendj-deb-oem</artifactId>
-    <name>OpenDJ Debian OEM Package</name>
+    <name>Wren:DS Debian OEM Package</name>
 
     <description>
-        This module generates an OpenDJ OEM edition debian package.
+        This module generates an Wren:DS OEM edition debian package.
     </description>
 
     <properties>
         <sysv.file.location>${project.parent.parent.basedir}/resources/sysv/opendj</sysv.file.location>
         <deb.product.name>${product.name}-OEM</deb.product.name>
         <deb.product.name.lowercase>${product.name.lowercase}-oem</deb.product.name.lowercase>
-        <deb.product.summary>This OpenDJ package does not include the Berkeley JE Backend and can be redistributed without any additional license</deb.product.summary>
+        <deb.product.summary>This Wren:DS package does not include the Berkeley JE Backend and can be redistributed without any additional license</deb.product.summary>
 
         <!-- We need to hardcode this path because maven ant plugin does not resolve ${project.parent.basedir} -->
         <deb.resources.path>../resources</deb.resources.path>

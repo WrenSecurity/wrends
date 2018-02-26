@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -42,10 +43,10 @@
     </profiles>
 
     <artifactId>opendj-deb</artifactId>
-    <name>OpenDJ Debian Packages Parent</name>
+    <name>Wren:DS Debian Packages Parent</name>
 
     <description>
-        This module contains configuration and generic plugin calls to generate Debian OpenDJ packages.
+        This module contains configuration and generic plugin calls to generate Debian Wren:DS packages.
     </description>
 
     <properties>
@@ -164,7 +165,7 @@
                                 <deb>${project.build.directory}/${deb.product.name.lowercase}_${project.version}-${deb.release}_all.deb</deb>
                                 <controlDir>${project.build.directory}/deb/control</controlDir>
                                 <dataSet>
-                                    <!-- OpenDJ service file -->
+                                    <!-- Wren:DS service file -->
                                     <data>
                                         <src>${sysv.file.location}</src>
                                         <type>file</type>
@@ -195,7 +196,7 @@
                                         </mapper>
                                     </data>
 
-                                    <!-- OpenDJ archive documentation files -->
+                                    <!-- Wren:DS archive documentation files -->
                                     <data>
                                         <src>${project.build.directory}/${product.name.lowercase}</src>
                                         <type>directory</type>
@@ -208,7 +209,7 @@
                                         </mapper>
                                     </data>
 
-                                    <!-- OpenDJ man pages -->
+                                    <!-- Wren:DS man pages -->
                                     <data>
                                         <src>${manpage.dir}</src>
                                         <type>directory</type>
@@ -218,7 +219,7 @@
                                         </mapper>
                                     </data>
 
-                                    <!-- OpenDJ archive files without specific permission -->
+                                    <!-- Wren:DS archive files without specific permission -->
                                     <data>
                                         <src>${project.build.directory}/${product.name.lowercase}</src>
                                         <type>directory</type>
@@ -244,7 +245,7 @@
                                         </mapper>
                                     </data>
 
-                                    <!-- OpenDJ archive files with specific permission -->
+                                    <!-- Wren:DS archive files with specific permission -->
                                     <data>
                                         <src>${project.build.directory}/${product.name.lowercase}</src>
                                         <type>directory</type>
@@ -263,7 +264,7 @@
                                         </mapper>
                                     </data>
 
-                                    <!-- OpenDJ archive template folder -->
+                                    <!-- Wren:DS archive template folder -->
                                     <data>
                                         <src>${project.build.directory}/${product.name.lowercase}</src>
                                         <type>directory</type>
