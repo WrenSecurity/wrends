@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -24,8 +25,8 @@
     </parent>
 
     <artifactId>opendj-ldap-sdk-examples</artifactId>
-    <name>OpenDJ SDK Examples</name>
-    <description>Examples illustrating usage of the OpenDJ LDAP SDK</description>
+    <name>Wren:DS SDK Examples</name>
+    <description>Examples illustrating usage of the Wren:DS LDAP SDK</description>
 
     <dependencies>
         <dependency>
@@ -43,14 +44,6 @@
             <artifactId>slf4j-jdk14</artifactId>
         </dependency>
     </dependencies>
-
-    <distributionManagement>
-        <site>
-            <id>forgerock.org</id>
-            <name>OpenDJ Community</name>
-            <url>scp://forgerock.org/var/www/vhosts/opendj.forgerock.org/httpdocs/opendj-ldap-sdk-examples</url>
-        </site>
-    </distributionManagement>
 
     <build>
         <plugins>
