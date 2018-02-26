@@ -17,6 +17,7 @@
 package org.opends.guitools.controlpanel.datamodel;
 
 import static org.opends.admin.ads.util.ConnectionUtils.*;
+import static org.opends.admin.ads.util.PreferredConnection.Type.*;
 import static org.opends.guitools.controlpanel.util.Utilities.*;
 import static org.opends.server.tools.ConfigureWindowsService.*;
 import static com.forgerock.opendj.cli.Utils.*;
@@ -79,7 +80,7 @@ public class ControlPanelInfo
   private static boolean mustDeregisterConfig;
   private static ControlPanelInfo instance;
 
-  private Set<Task> tasks = new HashSet<>();
+  private final Set<Task> tasks = new HashSet<>();
   private ConnectionWrapper connWrapper;
   private InitialLdapContext userDataCtx;
   private final LDAPConnectionPool connectionPool = new LDAPConnectionPool();
@@ -175,7 +176,7 @@ public class ControlPanelInfo
    * Unregisters a task.
    * @param task the task to be unregistered.
    */
-  public void unregisterTask(Task task)
+  private void unregisterTask(Task task)
   {
     tasks.remove(task);
   }
@@ -300,7 +301,7 @@ public class ControlPanelInfo
       InitialLdapContext ctx = connWrapper.getLdapContext();
       lastWorkingBindDN = ConnectionUtils.getBindDN(ctx);
       lastWorkingBindPwd = ConnectionUtils.getBindPassword(ctx);
-      lastRemoteHostName = ConnectionUtils.getHostName(ctx);
+      lastRemoteHostName = connWrapper.getHostPort().getHost();
       lastRemoteAdministrationURL = ConnectionUtils.getLdapUrl(ctx);
     }
   }
@@ -384,7 +385,7 @@ public class ControlPanelInfo
    * the index listeners that an index has been modified.
    * @param modifiedIndex the modified index.
    */
-  public void indexModified(AbstractIndexDescriptor modifiedIndex)
+  private void indexModified(AbstractIndexDescriptor modifiedIndex)
   {
     IndexModifiedEvent ev = new IndexModifiedEvent(modifiedIndex);
     for (IndexModifiedListener listener : indexListeners)
@@ -463,20 +464,16 @@ public class ControlPanelInfo
         // Try with previous credentials.
         try
         {
-          InitialLdapContext context = null;
           if (isLocal)
           {
-            context = Utilities.getAdminDirContext(this, lastWorkingBindDN, lastWorkingBindPwd);
+            connWrapper = Utilities.getAdminDirContext(this, lastWorkingBindDN, lastWorkingBindPwd);
           }
           else if (lastRemoteAdministrationURL != null)
           {
-            context = createLdapsContext(lastRemoteAdministrationURL,
-                lastWorkingBindDN,
-                lastWorkingBindPwd,
-                getConnectTimeout(), null,
-                getTrustManager(), null);
+            connWrapper = new ConnectionWrapper(
+                lastRemoteAdministrationURL, LDAPS, lastWorkingBindDN, lastWorkingBindPwd,
+                getConnectTimeout(), getTrustManager());
           }
-          connWrapper = new ConnectionWrapper(context, getConnectTimeout(), getTrustManager());
         }
         catch (ConfigReadException | NamingException cre)
         {
@@ -1193,7 +1190,7 @@ public class ControlPanelInfo
 
     if (getConnection() != null)
     {
-      adminPort2 = ConnectionUtils.getPort(getConnection().getLdapContext());
+      adminPort2 = getConnection().getHostPort().getPort();
     }
     return adminPort1 == adminPort2;
   }

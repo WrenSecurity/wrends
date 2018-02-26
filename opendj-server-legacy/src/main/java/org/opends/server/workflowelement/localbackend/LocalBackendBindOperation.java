@@ -473,8 +473,7 @@ public class LocalBackendBindOperation
 
         if (policy.getLockoutFailureCount() > 0)
         {
-          generateAccountStatusNotificationForLockedBindAccount(userEntry,
-              pwPolicyState);
+          updateFailureCount(userEntry, pwPolicyState);
         }
       }
     }
@@ -684,8 +683,7 @@ public class LocalBackendBindOperation
         if (saslHandler.isPasswordBased(saslMechanism)
             && pwPolicyState.getAuthenticationPolicy().getLockoutFailureCount() > 0)
         {
-          generateAccountStatusNotificationForLockedBindAccount(
-              saslAuthUserEntry, pwPolicyState);
+          updateFailureCount(saslAuthUserEntry, pwPolicyState);
         }
       }
     }
@@ -693,9 +691,13 @@ public class LocalBackendBindOperation
     return true;
   }
 
-  private void generateAccountStatusNotificationForLockedBindAccount(
-      Entry userEntry, PasswordPolicyState pwPolicyState)
+  private void updateFailureCount(Entry userEntry, PasswordPolicyState pwPolicyState)
   {
+    if (pwPolicyState.lockedDueToFailures())
+    {
+      // Account is already locked, nothing to do
+      return;
+    }
     pwPolicyState.updateAuthFailureTimes();
     if (pwPolicyState.lockedDueToFailures())
     {
@@ -1007,7 +1009,7 @@ public class LocalBackendBindOperation
       Arg1<Object> nonUniqueAttributeMessage,
       Arg2<Object, Object> cannotProcessAttributeMessage)
   {
-    AttributeType attrType = DirectoryServer.getAttributeType(attributeTypeName);
+    AttributeType attrType = DirectoryServer.getSchema().getAttributeType(attributeTypeName);
     List<Attribute> attrList = userEntry.getAttribute(attrType);
     if (attrList.size() == 1)
     {

@@ -24,8 +24,6 @@ import org.forgerock.opendj.ldap.DN;
 /** Handles the disk representation of LDAP data. */
 public class DnKeyFormat
 {
-  /** The format version used by this class to encode and decode a ByteString. */
-  static final byte FORMAT_VERSION = 0x01;
 
   // The following fields have been copied from the DN class in the SDK
   /** RDN separator for normalized byte string of a DN. */
@@ -120,23 +118,25 @@ public class DnKeyFormat
    */
   static boolean isChild(ByteSequence parent, ByteSequence child)
   {
-    if (!child.startsWith(parent))
+    if (child.length() <= parent.length()
+        || child.byteAt(parent.length()) != NORMALIZED_RDN_SEPARATOR
+        || !child.startsWith(parent))
     {
       return false;
     }
     // Immediate children should only have one RDN separator past the parent length
-    int nbSeparator = 0;
+    boolean childSeparatorDetected = false;
     for (int i = parent.length() ; i < child.length(); i++)
     {
       if (child.byteAt(i) == NORMALIZED_RDN_SEPARATOR)
       {
-        nbSeparator++;
-        if (nbSeparator > 1)
+        if (childSeparatorDetected)
         {
           return false;
         }
+        childSeparatorDetected = true;
       }
     }
-    return nbSeparator == 1;
+    return childSeparatorDetected;
   }
 }

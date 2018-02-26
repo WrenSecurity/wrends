@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2008 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.server.tasks;
 
@@ -25,7 +25,7 @@ import org.opends.server.TestCaseUtils;
 import org.opends.server.backends.task.TaskState;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.Entry;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -188,7 +188,7 @@ public class TestBackupAndRestore extends TasksTestCase
     final int restoreBeginCountStart = restoreBeginCount.get();
     final int restoreEndCountStart = restoreEndCount.get();
 
-    ObjectClass backupClass = DirectoryServer.getObjectClass("ds-task-backup", true);
+    ObjectClass backupClass = DirectoryServer.getSchema().getObjectClass("ds-task-backup");
 
     testTask(taskEntry, expectedState, 30);
     if (expectedState == TaskState.COMPLETED_SUCCESSFULLY ||

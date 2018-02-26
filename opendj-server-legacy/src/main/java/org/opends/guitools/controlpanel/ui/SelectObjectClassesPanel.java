@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2010 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.ui;
 
@@ -28,19 +28,18 @@ import java.util.Set;
 
 import javax.swing.JEditorPane;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.ui.components.AddRemovePanel;
 import org.opends.guitools.controlpanel.ui.renderer.
  SchemaElementComboBoxCellRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.i18n.LocalizableMessage;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 
 /**
  * This is a class where the user can choose from a list of available object
  * classes one or more object classes.
- *
  */
 public class SelectObjectClassesPanel extends StatusGenericPanel
 {
@@ -50,9 +49,7 @@ public class SelectObjectClassesPanel extends StatusGenericPanel
   private Schema schema;
   private boolean isCanceled = true;
 
-  /**
-   * Default constructor of this panel.
-   */
+  /** Default constructor of this panel. */
   public SelectObjectClassesPanel()
   {
     createLayout();
@@ -82,7 +79,7 @@ public class SelectObjectClassesPanel extends StatusGenericPanel
 
     Comparator<ObjectClass> comparator = new Comparator<ObjectClass>()
     {
-      /** {@inheritDoc} */
+      @Override
       public int compare(ObjectClass oc1, ObjectClass oc2)
       {
         return oc1.getNameOrOID().toLowerCase().compareTo(
@@ -101,19 +98,19 @@ public class SelectObjectClassesPanel extends StatusGenericPanel
     add(addRemove, gbc);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getPreferredFocusComponent()
   {
     return addRemove;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_SUPERIOR_OBJECTCLASSES_TITLE.get();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void okClicked()
   {
     isCanceled = true;
@@ -140,7 +137,7 @@ public class SelectObjectClassesPanel extends StatusGenericPanel
     return isCanceled;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void toBeDisplayed(boolean visible)
   {
     if (visible)
@@ -149,7 +146,7 @@ public class SelectObjectClassesPanel extends StatusGenericPanel
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
   }
@@ -222,9 +219,8 @@ public class SelectObjectClassesPanel extends StatusGenericPanel
   private void updateWithSchema(Schema schema)
   {
     ArrayList<ObjectClass> allOcs = new ArrayList<>();
-    for (String key : schema.getObjectClasses().keySet())
+    for (ObjectClass oc : schema.getObjectClasses())
     {
-      ObjectClass oc = schema.getObjectClass(key);
       if (!toExclude.contains(oc))
       {
         allOcs.add(oc);

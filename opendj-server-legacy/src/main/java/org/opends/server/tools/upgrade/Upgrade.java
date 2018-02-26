@@ -38,11 +38,13 @@ import static javax.security.auth.callback.ConfirmationCallback.*;
 import static javax.security.auth.callback.TextOutputCallback.WARNING;
 
 import static org.opends.messages.ToolMessages.*;
+import static org.opends.server.schema.SchemaConstants.*;
 import static org.opends.server.tools.upgrade.FormattedNotificationCallback.*;
 import static org.opends.server.tools.upgrade.LicenseFile.*;
 import static org.opends.server.tools.upgrade.UpgradeTasks.*;
 import static org.opends.server.tools.upgrade.UpgradeUtils.batDirectory;
 import static org.opends.server.tools.upgrade.UpgradeUtils.binDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.instanceContainsJeBackends;
 import static org.opends.server.tools.upgrade.UpgradeUtils.libDirectory;
 import static org.opends.server.util.StaticUtils.*;
 
@@ -62,6 +64,9 @@ public final class Upgrade
   static final int EXIT_CODE_SUCCESS = 0;
   /** The error exit code value. */
   static final int EXIT_CODE_ERROR = 1;
+
+  private static final String LOCAL_DB_BACKEND_OBJECT_CLASS = "ds-cfg-local-db-backend";
+  private static final String JE_BACKEND_OBJECT_CLASS = "ds-cfg-je-backend";
 
   /** If the upgrade contains some post upgrade tasks to do. */
   private static boolean hasPostUpgradeTask;
@@ -467,64 +472,9 @@ public final class Upgrade
           }
         },
         deleteFile(new File(libDirectory, "je.jar")),
-        requireConfirmation(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_1_SUMMARY.get(), NO,
-                renameLocalDBBackendDirectories(),
-                // Convert JE backends to PDB backends.
-                modifyConfigEntry(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_2_SUMMARY.get(),
-                        "(objectclass=ds-cfg-local-db-backend)",
-                        "delete: objectclass",
-                        "objectclass: ds-cfg-local-db-backend",
-                        "-",
-                        "add: objectclass",
-                        "objectclass: ds-cfg-pluggable-backend",
-                        "objectclass: ds-cfg-pdb-backend",
-                        "-",
-                        "replace: ds-cfg-java-class",
-                        "ds-cfg-java-class: org.opends.server.backends.pdb.PDBBackend",
-                        "-",
-                        "delete: ds-cfg-preload-time-limit",
-                        "-",
-                        "delete: ds-cfg-import-thread-count",
-                        "-",
-                        "delete: ds-cfg-import-queue-size",
-                        "-",
-                        "delete: ds-cfg-db-txn-write-no-sync",
-                        "-",
-                        "delete: ds-cfg-db-run-cleaner",
-                        "-",
-                        "delete: ds-cfg-db-cleaner-min-utilization",
-                        "-",
-                        "delete: ds-cfg-db-evictor-lru-only",
-                        "-",
-                        "delete: ds-cfg-db-evictor-core-threads",
-                        "-",
-                        "delete: ds-cfg-db-evictor-max-threads",
-                        "-",
-                        "delete: ds-cfg-db-evictor-keep-alive",
-                        "-",
-                        "delete: ds-cfg-db-evictor-nodes-per-scan",
-                        "-",
-                        "delete: ds-cfg-db-log-file-max",
-                        "-",
-                        "delete: ds-cfg-db-log-filecache-size",
-                        "-",
-                        "delete: ds-cfg-db-logging-file-handler-on",
-                        "-",
-                        "delete: ds-cfg-db-logging-level",
-                        "-",
-                        "delete: ds-cfg-db-checkpointer-bytes-interval",
-                        "-",
-                        "delete: ds-cfg-db-checkpointer-wakeup-interval",
-                        "-",
-                        "delete: ds-cfg-db-num-lock-tables",
-                        "-",
-                        "delete: ds-cfg-db-num-cleaner-threads",
-                        "-",
-                        "delete: ds-cfg-je-property",
-                        "-",
-                        "delete: ds-cfg-subordinate-indexes-enabled",
-                        "-"
-                ),
+        requireConfirmation(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_1_SUMMARY.get("3.0.0"), NO,
+                renameLocalDBBackendDirectories(LOCAL_DB_BACKEND_OBJECT_CLASS),
+                convertJEBackendsToPDBBackends(LOCAL_DB_BACKEND_OBJECT_CLASS),
                 // Convert JE backend indexes to PDB backend indexes.
                 modifyConfigEntry(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_3_SUMMARY.get(),
                         "(objectclass=ds-cfg-local-db-index)",
@@ -570,7 +520,7 @@ public final class Upgrade
         clearReplicationDbDirectory());
 
     /** See OPENDJ-2435 */
-    register("4.0.0",
+    register("3.5.0",
         addConfigEntry(INFO_UPGRADE_TASK_BCRYPT_SCHEME_SUMMARY.get(),
             "dn: cn=Bcrypt,cn=Password Storage Schemes,cn=config",
             "changetype: add",
@@ -582,7 +532,7 @@ public final class Upgrade
             "ds-cfg-enabled: true"));
 
     /** See OPENDJ-2683 */
-    register("4.0.0",
+    register("3.5.0",
         deleteConfigEntry(INFO_UPGRADE_TASK_REMOVE_MATCHING_RULES.get(),
         "cn=Auth Password Exact Equality Matching Rule,cn=Matching Rules,cn=config",
         "cn=Bit String Equality Matching Rule,cn=Matching Rules,cn=config",
@@ -629,25 +579,268 @@ public final class Upgrade
         "cn=Word Equality Matching Rule,cn=Matching Rules,cn=config"));
 
     /** see OPENDJ-2730 */
-    register("4.0.0", removeOldJarFiles());
+    register("3.5.0", removeOldJarFiles());
 
-    register("4.0.0",
+    register("3.5.0",
         rebuildIndexesNamed(INFO_UPGRADE_REBUILD_INDEXES_DISTINGUISHED_NAME.get(),
-            "distinguishedName", "member", "owner", "roleOccupant", "seeAlso"));
+            "." + EMR_DN_NAME, "." + EMR_OID_NAME, "." + EMR_UNIQUE_MEMBER_NAME, "." + EMR_CERTIFICATE_EXACT_NAME));
 
-    register("4.0.0",
+    register("3.5.0",
         deleteConfigEntry(INFO_UPGRADE_TASK_CONFIGURATION_BACKEND_NOT_CONFIGURABLE.get(),
             "dn: ds-cfg-backend-id=config,cn=Backends,cn=config"));
 
-    /**
-     * All upgrades will refresh the server configuration schema and generate a new upgrade folder.
-     */
+    register("3.5.0",
+        restoreCsvDelimiterAttributeTypeInConcatenatedSchemaFile());
+
+    register("3.5.0",
+        requireConfirmation(INFO_UPGRADE_TASK_CONFIRM_DISABLING_HTTP_CONNECTION_HANDLER.get(), YES,
+            modifyConfigEntry(INFO_UPGRADE_TASK_DISABLING_HTTP_CONNECTION_HANDLER.get(),
+                    "(objectclass=ds-cfg-http-connection-handler)",
+                    "replace: ds-cfg-enabled",
+                    "ds-cfg-enabled: false",
+                    "-",
+                    "delete: ds-cfg-authentication-required",
+                    "-",
+                    "delete: ds-cfg-config-file",
+                    "-"
+            )
+        ),
+        addConfigEntry(INFO_UPGRADE_TASK_ADDING_DEFAULT_HTTP_ENDPOINTS_AND_AUTH.get(),
+                "dn: cn=HTTP Endpoints,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-branch",
+                "cn: HTTP Endpoints"
+        ),
+        addConfigEntry(
+                "dn: ds-cfg-base-path=/api,cn=HTTP Endpoints,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-endpoint",
+                "objectClass: ds-cfg-rest2ldap-endpoint",
+                "ds-cfg-enabled: true",
+                "ds-cfg-java-class: org.opends.server.protocols.http.rest2ldap.Rest2LdapEndpoint",
+                "ds-cfg-base-path: /api",
+                "ds-cfg-config-directory: config/rest2ldap/endpoints/api",
+                "ds-cfg-http-authorization-mechanism: cn=HTTP Basic,cn=HTTP Authorization Mechanisms,cn=config"
+        ),
+        addConfigEntry(
+                "dn: ds-cfg-base-path=/admin,cn=HTTP Endpoints,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-endpoint",
+                "objectClass: ds-cfg-admin-endpoint",
+                "ds-cfg-enabled: true",
+                "ds-cfg-base-path: /admin",
+                "ds-cfg-java-class: org.opends.server.protocols.http.rest2ldap.AdminEndpoint",
+                "ds-cfg-http-authorization-mechanism: cn=HTTP Basic,cn=HTTP Authorization Mechanisms,cn=config"
+        ),
+        addConfigEntry(
+                "dn: cn=HTTP Authorization Mechanisms,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-branch",
+                "cn: HTTP Authorizations"
+        ),
+        addConfigEntry(
+                "dn: cn=HTTP Anonymous,cn=HTTP Authorization Mechanisms,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-authorization-mechanism",
+                "objectClass: ds-cfg-http-anonymous-authorization-mechanism",
+                "cn: HTTP Anonymous",
+                "ds-cfg-enabled: true",
+                "ds-cfg-java-class: org.opends.server.protocols.http.authz.HttpAnonymousAuthorizationMechanism"
+        ),
+        addConfigEntry(
+                "dn: cn=HTTP Basic,cn=HTTP Authorization Mechanisms,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-authorization-mechanism",
+                "objectClass: ds-cfg-http-basic-authorization-mechanism",
+                "cn: HTTP Basic",
+                "ds-cfg-java-class: org.opends.server.protocols.http.authz.HttpBasicAuthorizationMechanism",
+                "ds-cfg-enabled: true",
+                "ds-cfg-http-basic-alt-authentication-enabled: true",
+                "ds-cfg-http-basic-alt-username-header: X-OpenIDM-Username",
+                "ds-cfg-http-basic-alt-password-header: X-OpenIDM-Password",
+                "ds-cfg-identity-mapper: cn=Exact Match,cn=Identity Mappers,cn=config"
+        ),
+        addConfigEntry(
+                "dn: cn=HTTP OAuth2 CTS,cn=HTTP Authorization Mechanisms,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-cts-authorization-mechanism",
+                "cn: HTTP OAuth2 CTS",
+                "ds-cfg-java-class: org.opends.server.protocols.http.authz.HttpOAuth2CtsAuthorizationMechanism",
+                "ds-cfg-enabled: false",
+                "ds-cfg-cts-base-dn: ou=famrecords,ou=openam-session,ou=tokens,dc=example,dc=com",
+                "ds-cfg-oauth2-authzid-json-pointer: userName/0",
+                "ds-cfg-identity-mapper: cn=Exact Match,cn=Identity Mappers,cn=config",
+                "ds-cfg-oauth2-required-scope: read",
+                "ds-cfg-oauth2-required-scope: write",
+                "ds-cfg-oauth2-required-scope: uid",
+                "ds-cfg-oauth2-access-token-cache-enabled: false",
+                "ds-cfg-oauth2-access-token-cache-expiration: 300s"
+        ),
+        addConfigEntry(
+                "dn: cn=HTTP OAuth2 OpenAM,cn=HTTP Authorization Mechanisms,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-openam-authorization-mechanism",
+                "cn: HTTP OAuth2 OpenAM",
+                "ds-cfg-java-class: org.opends.server.protocols.http.authz.HttpOAuth2OpenAmAuthorizationMechanism",
+                "ds-cfg-enabled: false",
+                "ds-cfg-openam-token-info-url: http://openam.example.com:8080/openam/oauth2/tokeninfo",
+                "ds-cfg-oauth2-authzid-json-pointer: uid",
+                "ds-cfg-identity-mapper: cn=Exact Match,cn=Identity Mappers,cn=config",
+                "ds-cfg-oauth2-required-scope: read",
+                "ds-cfg-oauth2-required-scope: write",
+                "ds-cfg-oauth2-required-scope: uid",
+                "ds-cfg-oauth2-access-token-cache-enabled: false",
+                "ds-cfg-oauth2-access-token-cache-expiration: 300s"
+        ),
+        addConfigEntry(
+                "dn: cn=HTTP OAuth2 Token Introspection (RFC7662),cn=HTTP Authorization Mechanisms,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-token-introspection-authorization-mechanism",
+                "cn: HTTP OAuth2 Token Introspection (RFC7662)",
+                "ds-cfg-java-class: "
+                        + "org.opends.server.protocols.http.authz.HttpOAuth2TokenIntrospectionAuthorizationMechanism",
+                "ds-cfg-enabled: false",
+                "ds-cfg-oauth2-token-introspection-url: "
+                        + "http://openam.example.com:8080/openam/oauth2/myrealm/introspect",
+                "ds-cfg-oauth2-token-introspection-client-id: directoryserver",
+                "ds-cfg-oauth2-token-introspection-client-secret: secret",
+                "ds-cfg-oauth2-authzid-json-pointer: sub",
+                "ds-cfg-identity-mapper: cn=Exact Match,cn=Identity Mappers,cn=config",
+                "ds-cfg-oauth2-required-scope: read",
+                "ds-cfg-oauth2-required-scope: write",
+                "ds-cfg-oauth2-required-scope: uid",
+                "ds-cfg-oauth2-access-token-cache-enabled: false",
+                "ds-cfg-oauth2-access-token-cache-expiration: 300s"
+        ),
+        addConfigEntry(
+                "dn: cn=HTTP OAuth2 File,cn=HTTP Authorization Mechanisms,cn=config",
+                "objectClass: top",
+                "objectClass: ds-cfg-http-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-authorization-mechanism",
+                "objectClass: ds-cfg-http-oauth2-file-authorization-mechanism",
+                "cn: HTTP OAuth2 File",
+                "ds-cfg-java-class: org.opends.server.protocols.http.authz.HttpOAuth2FileAuthorizationMechanism",
+                "ds-cfg-enabled: false",
+                "ds-cfg-oauth2-access-token-directory: oauth2-demo/",
+                "ds-cfg-oauth2-authzid-json-pointer: uid",
+                "ds-cfg-identity-mapper: cn=Exact Match,cn=Identity Mappers,cn=config",
+                "ds-cfg-oauth2-required-scope: read",
+                "ds-cfg-oauth2-required-scope: write",
+                "ds-cfg-oauth2-required-scope: uid",
+                "ds-cfg-oauth2-access-token-cache-enabled: false",
+                "ds-cfg-oauth2-access-token-cache-expiration: 300s"
+        ),
+        /* Recursively copies.*/
+        addConfigFile("rest2ldap")
+    );
+
+    /** All upgrades will refresh the server configuration schema and generate a new upgrade folder. */
     registerLast(
+        performOEMMigrationIfNeeded(),
         copySchemaFile("02-config.ldif"),
         updateConfigUpgradeFolder(),
         postUpgradeRebuildIndexes());
 
     // @formatter:on
+  }
+
+  /** If the upgraded version is OEM, migrates local-db backends to PDB, see OPENDJ-3002 **/
+  private static UpgradeTask performOEMMigrationIfNeeded() {
+    return conditionalUpgradeTasks(
+        isOemVersionAndNewerThan3dot0(),
+        deleteFile(new File(libDirectory, "je.jar")),
+        deleteFile(new File(libDirectory, "opendj-je-backend.jar")),
+        conditionalUpgradeTasks(
+            new UpgradeCondition() {
+                @Override
+                public boolean shouldPerformUpgradeTasks(final UpgradeContext context) throws ClientException {
+                    return instanceContainsJeBackends();
+                }
+            },
+            requireConfirmation(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_1_SUMMARY.get("3.5.0"), NO,
+                    renameLocalDBBackendDirectories(JE_BACKEND_OBJECT_CLASS),
+                    convertJEBackendsToPDBBackends(JE_BACKEND_OBJECT_CLASS))
+        )
+    );
+  }
+
+  private static UpgradeCondition isOemVersionAndNewerThan3dot0() {
+    return new UpgradeCondition() {
+        @Override
+        public boolean shouldPerformUpgradeTasks(UpgradeContext context) throws ClientException {
+            return isOEMVersion()
+                && context.getFromVersion().isNewerThan(BuildVersion.valueOf("3.0.0"));
+        }
+
+        @Override
+        public String toString() {
+            return "is OEM version and from version >= 3.0.0";
+        }
+    };
+  }
+
+  private static UpgradeTask convertJEBackendsToPDBBackends(final String objectClass) {
+    return modifyConfigEntry(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_2_SUMMARY.get(),
+        "(objectclass=" + objectClass + ")",
+        "delete: objectclass",
+        "objectclass: " + objectClass,
+        "-",
+        "add: objectclass",
+        "objectclass: ds-cfg-pluggable-backend",
+        "objectclass: ds-cfg-pdb-backend",
+        "-",
+        "replace: ds-cfg-java-class",
+        "ds-cfg-java-class: org.opends.server.backends.pdb.PDBBackend",
+        "-",
+        "delete: ds-cfg-preload-time-limit",
+        "-",
+        "delete: ds-cfg-import-thread-count",
+        "-",
+        "delete: ds-cfg-import-queue-size",
+        "-",
+        "delete: ds-cfg-db-txn-write-no-sync",
+        "-",
+        "delete: ds-cfg-db-run-cleaner",
+        "-",
+        "delete: ds-cfg-db-cleaner-min-utilization",
+        "-",
+        "delete: ds-cfg-db-evictor-lru-only",
+        "-",
+        "delete: ds-cfg-db-evictor-core-threads",
+        "-",
+        "delete: ds-cfg-db-evictor-max-threads",
+        "-",
+        "delete: ds-cfg-db-evictor-keep-alive",
+        "-",
+        "delete: ds-cfg-db-evictor-nodes-per-scan",
+        "-",
+        "delete: ds-cfg-db-log-file-max",
+        "-",
+        "delete: ds-cfg-db-log-filecache-size",
+        "-",
+        "delete: ds-cfg-db-logging-file-handler-on",
+        "-",
+        "delete: ds-cfg-db-logging-level",
+        "-",
+        "delete: ds-cfg-db-checkpointer-bytes-interval",
+        "-",
+        "delete: ds-cfg-db-checkpointer-wakeup-interval",
+        "-",
+        "delete: ds-cfg-db-num-lock-tables",
+        "-",
+        "delete: ds-cfg-db-num-cleaner-threads",
+        "-",
+        "delete: ds-cfg-je-property",
+        "-",
+        "delete: ds-cfg-subordinate-indexes-enabled",
+        "-"
+    );
   }
 
   /**
@@ -730,7 +923,14 @@ public final class Upgrade
       context.notify(INFO_UPGRADE_PERFORMING_TASKS.get(), TITLE_CALLBACK);
       for (final UpgradeTask task : tasks)
       {
-        task.perform(context);
+        try
+        {
+          task.perform(context);
+        }
+        catch (ClientException e)
+        {
+          handleClientException(context, e);
+        }
       }
 
       if (UpgradeTasks.countErrors == 0)

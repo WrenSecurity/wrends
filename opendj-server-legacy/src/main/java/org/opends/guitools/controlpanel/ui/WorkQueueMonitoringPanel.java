@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2009 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.ui;
 
@@ -26,27 +26,23 @@ import java.util.List;
 import javax.swing.Box;
 import javax.swing.JLabel;
 
-import org.opends.guitools.controlpanel.datamodel.CustomSearchResult;
 import org.opends.guitools.controlpanel.datamodel.BasicMonitoringAttributes;
-import org.opends.guitools.controlpanel.datamodel.MonitoringAttributes;
+import org.opends.guitools.controlpanel.datamodel.CustomSearchResult;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
 import org.opends.guitools.controlpanel.util.Utilities;
+import org.opends.server.util.CollectionUtils;
 
-/**
- * The panel displaying the work queue monitor panel.
- */
-public class WorkQueueMonitoringPanel extends GeneralMonitoringPanel
+/** The panel displaying the work queue monitor panel. */
+ class WorkQueueMonitoringPanel extends GeneralMonitoringPanel
 {
   private static final long serialVersionUID = 9031734563700069830L;
-  static List<MonitoringAttributes> attributes = new ArrayList<>();
-  {
-    attributes.add(BasicMonitoringAttributes.AVERAGE_REQUEST_BACKLOG);
-    attributes.add(BasicMonitoringAttributes.MAX_REQUEST_BACKLOG);
-    attributes.add(BasicMonitoringAttributes.CURRENT_REQUEST_BACKLOG);
-    attributes.add(BasicMonitoringAttributes.REQUESTS_SUBMITTED);
-    attributes.add(BasicMonitoringAttributes.REQUESTS_REJECTED);
-  }
-  private ArrayList<JLabel> monitoringLabels = new ArrayList<>();
+  private static final List<BasicMonitoringAttributes> attributes = CollectionUtils.newArrayList(
+      BasicMonitoringAttributes.AVERAGE_REQUEST_BACKLOG,
+      BasicMonitoringAttributes.MAX_REQUEST_BACKLOG,
+      BasicMonitoringAttributes.CURRENT_REQUEST_BACKLOG,
+      BasicMonitoringAttributes.REQUESTS_SUBMITTED,
+      BasicMonitoringAttributes.REQUESTS_REJECTED);
+  private final List<JLabel> monitoringLabels = new ArrayList<>();
   {
     for (int i=0; i<attributes.size(); i++)
     {
@@ -54,24 +50,20 @@ public class WorkQueueMonitoringPanel extends GeneralMonitoringPanel
     }
   }
 
-  /**
-   * Default constructor.
-   */
+  /** Default constructor. */
   public WorkQueueMonitoringPanel()
   {
     super();
     createLayout();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getPreferredFocusComponent()
   {
     return monitoringLabels.get(0);
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   */
+  /** Creates the layout of the panel (but the contents are not populated here). */
   private void createLayout()
   {
     GridBagConstraints gbc = new GridBagConstraints();
@@ -117,10 +109,8 @@ public class WorkQueueMonitoringPanel extends GeneralMonitoringPanel
     setBorder(PANEL_BORDER);
   }
 
-  /**
-   * Updates the contents of the panel.
-   *
-   */
+  /** Updates the contents of the panel. */
+  @Override
   public void updateContents()
   {
     ServerDescriptor server = null;

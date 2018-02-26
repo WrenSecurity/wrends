@@ -24,7 +24,6 @@ import static org.opends.server.util.StaticUtils.*;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,16 +85,13 @@ public class ImportTask extends Task
     argDisplayMap.put(ATTR_IMPORT_CLEAR_BACKEND, INFO_IMPORT_ARG_CLEAR_BACKEND.get());
   }
 
-
   private boolean isCompressed;
   private boolean isEncrypted;
   private boolean overwrite;
   private boolean skipSchemaValidation;
   private boolean clearBackend;
-  private boolean skipDNValidation;
   private String tmpDirectory;
   private int threadCount;
-  private int offHeapSize;
   private String backendID;
   private String rejectFile;
   private String skipFile;
@@ -135,30 +131,27 @@ public class ImportTask extends Task
       }
     }
 
-
     Entry taskEntry = getTaskEntry();
 
-    AttributeType typeLdifFile = getAttributeType(ATTR_IMPORT_LDIF_FILE);
-    AttributeType typeTemplateFile = getAttributeType(ATTR_IMPORT_TEMPLATE_FILE);
-    AttributeType typeBackendID = getAttributeType(ATTR_IMPORT_BACKEND_ID);
-    AttributeType typeIncludeBranch = getAttributeType(ATTR_IMPORT_INCLUDE_BRANCH);
-    AttributeType typeExcludeBranch = getAttributeType(ATTR_IMPORT_EXCLUDE_BRANCH);
-    AttributeType typeIncludeAttribute = getAttributeType(ATTR_IMPORT_INCLUDE_ATTRIBUTE);
-    AttributeType typeExcludeAttribute = getAttributeType(ATTR_IMPORT_EXCLUDE_ATTRIBUTE);
-    AttributeType typeIncludeFilter = getAttributeType(ATTR_IMPORT_INCLUDE_FILTER);
-    AttributeType typeExcludeFilter = getAttributeType(ATTR_IMPORT_EXCLUDE_FILTER);
-    AttributeType typeRejectFile = getAttributeType(ATTR_IMPORT_REJECT_FILE);
-    AttributeType typeSkipFile = getAttributeType(ATTR_IMPORT_SKIP_FILE);
-    AttributeType typeOverwrite = getAttributeType(ATTR_IMPORT_OVERWRITE);
-    AttributeType typeSkipSchemaValidation = getAttributeType(ATTR_IMPORT_SKIP_SCHEMA_VALIDATION);
-    AttributeType typeIsCompressed = getAttributeType(ATTR_IMPORT_IS_COMPRESSED);
-    AttributeType typeIsEncrypted = getAttributeType(ATTR_IMPORT_IS_ENCRYPTED);
-    AttributeType typeClearBackend = getAttributeType(ATTR_IMPORT_CLEAR_BACKEND);
-    AttributeType typeRandomSeed = getAttributeType(ATTR_IMPORT_RANDOM_SEED);
-    AttributeType typeThreadCount = getAttributeType(ATTR_IMPORT_THREAD_COUNT);
-    AttributeType typeOffHeapSize = getAttributeType(ATTR_IMPORT_OFFHEAP_SIZE);
-    AttributeType typeTmpDirectory = getAttributeType(ATTR_IMPORT_TMP_DIRECTORY);
-    AttributeType typeDNCheckPhase2 = getAttributeType(ATTR_IMPORT_SKIP_DN_VALIDATION);
+    AttributeType typeLdifFile = getSchema().getAttributeType(ATTR_IMPORT_LDIF_FILE);
+    AttributeType typeTemplateFile = getSchema().getAttributeType(ATTR_IMPORT_TEMPLATE_FILE);
+    AttributeType typeBackendID = getSchema().getAttributeType(ATTR_IMPORT_BACKEND_ID);
+    AttributeType typeIncludeBranch = getSchema().getAttributeType(ATTR_IMPORT_INCLUDE_BRANCH);
+    AttributeType typeExcludeBranch = getSchema().getAttributeType(ATTR_IMPORT_EXCLUDE_BRANCH);
+    AttributeType typeIncludeAttribute = getSchema().getAttributeType(ATTR_IMPORT_INCLUDE_ATTRIBUTE);
+    AttributeType typeExcludeAttribute = getSchema().getAttributeType(ATTR_IMPORT_EXCLUDE_ATTRIBUTE);
+    AttributeType typeIncludeFilter = getSchema().getAttributeType(ATTR_IMPORT_INCLUDE_FILTER);
+    AttributeType typeExcludeFilter = getSchema().getAttributeType(ATTR_IMPORT_EXCLUDE_FILTER);
+    AttributeType typeRejectFile = getSchema().getAttributeType(ATTR_IMPORT_REJECT_FILE);
+    AttributeType typeSkipFile = getSchema().getAttributeType(ATTR_IMPORT_SKIP_FILE);
+    AttributeType typeOverwrite = getSchema().getAttributeType(ATTR_IMPORT_OVERWRITE);
+    AttributeType typeSkipSchemaValidation = getSchema().getAttributeType(ATTR_IMPORT_SKIP_SCHEMA_VALIDATION);
+    AttributeType typeIsCompressed = getSchema().getAttributeType(ATTR_IMPORT_IS_COMPRESSED);
+    AttributeType typeIsEncrypted = getSchema().getAttributeType(ATTR_IMPORT_IS_ENCRYPTED);
+    AttributeType typeClearBackend = getSchema().getAttributeType(ATTR_IMPORT_CLEAR_BACKEND);
+    AttributeType typeRandomSeed = getSchema().getAttributeType(ATTR_IMPORT_RANDOM_SEED);
+    AttributeType typeThreadCount = getSchema().getAttributeType(ATTR_IMPORT_THREAD_COUNT);
+    AttributeType typeTmpDirectory = getSchema().getAttributeType(ATTR_IMPORT_TMP_DIRECTORY);
 
     ArrayList<String> ldifFilestmp = asListOfStrings(taskEntry, typeLdifFile);
     ldifFiles = new ArrayList<>(ldifFilestmp.size());
@@ -194,7 +187,6 @@ public class ImportTask extends Task
       }
     }
 
-    skipDNValidation = asBoolean(taskEntry, typeDNCheckPhase2);
     tmpDirectory = asString(taskEntry, typeTmpDirectory);
     backendID = asString(taskEntry, typeBackendID);
     includeBranchStrings = asListOfStrings(taskEntry, typeIncludeBranch);
@@ -212,7 +204,6 @@ public class ImportTask extends Task
     clearBackend = asBoolean(taskEntry, typeClearBackend);
     randomSeed = asInt(taskEntry, typeRandomSeed);
     threadCount = asInt(taskEntry, typeThreadCount);
-    offHeapSize = asInt(taskEntry, typeOffHeapSize);
 
     // Make sure that either the "includeBranchStrings" argument or the
     // "backendID" argument was provided.
@@ -333,8 +324,7 @@ public class ImportTask extends Task
     }
 
     // Make sure the selected backend will handle all the include branches
-    defaultIncludeBranches = new ArrayList<>(backend.getBaseDNs().length);
-    Collections.addAll(defaultIncludeBranches, backend.getBaseDNs());
+    defaultIncludeBranches = new ArrayList<>(backend.getBaseDNs());
 
     for(DN includeBranch : includeBranches)
     {
@@ -425,7 +415,6 @@ public class ImportTask extends Task
       }
     }
 
-
     // Get the backend into which the LDIF should be imported.
     Backend<?> backend = null;
     HashSet<DN> defaultIncludeBranches;
@@ -486,8 +475,7 @@ public class ImportTask extends Task
     }
 
     // Find backends with subordinate base DNs that should be excluded from the import.
-    defaultIncludeBranches = new HashSet<>(backend.getBaseDNs().length);
-    Collections.addAll(defaultIncludeBranches, backend.getBaseDNs());
+    defaultIncludeBranches = new HashSet<>(backend.getBaseDNs());
 
     if (backend.getSubordinateBackends() != null)
     {
@@ -590,10 +578,8 @@ public class ImportTask extends Task
     importConfig.setIncludeBranches(includeBranches);
     importConfig.setIncludeFilters(includeFilters);
     importConfig.setValidateSchema(!skipSchemaValidation);
-    importConfig.setSkipDNValidation(skipDNValidation);
     importConfig.setTmpDirectory(tmpDirectory);
     importConfig.setThreadCount(threadCount);
-    importConfig.setOffHeapSize(offHeapSize);
 
     // FIXME -- Should this be conditional?
     importConfig.setInvokeImportPlugins(true);
@@ -629,10 +615,6 @@ public class ImportTask extends Task
       }
     }
 
-    // Get the set of base DNs for the backend as an array.
-    DN[] baseDNs = new DN[defaultIncludeBranches.size()];
-    defaultIncludeBranches.toArray(baseDNs);
-
     // Notify the task listeners that an import is going to start
     // this must be done before disabling the backend to allow
     // listeners to get access to the backend configuration
@@ -651,7 +633,6 @@ public class ImportTask extends Task
       logger.error(e.getMessageObject());
       return TaskState.STOPPED_BY_ERROR;
     }
-
 
     try
     {
@@ -674,7 +655,6 @@ public class ImportTask extends Task
         return TaskState.STOPPED_BY_ERROR;
       }
 
-
       // Launch the import.
       try
       {
@@ -685,16 +665,7 @@ public class ImportTask extends Task
         logger.traceException(de);
 
         DirectoryServer.notifyImportEnded(backend, importConfig, false);
-        LocalizableMessage msg;
-        if (de.getResultCode() == ResultCode.CONSTRAINT_VIOLATION)
-        {
-          msg = ERR_LDIFIMPORT_ERROR_CONSTRAINT_VIOLATION.get();
-        }
-        else
-        {
-          msg = de.getMessageObject();
-        }
-        logger.error(ERR_LDIFIMPORT_ERROR_DURING_IMPORT.get(msg));
+        logger.error(ERR_LDIFIMPORT_ERROR_DURING_IMPORT.get(de.getMessageObject()));
         return TaskState.STOPPED_BY_ERROR;
       }
       catch (Exception e)
@@ -725,7 +696,6 @@ public class ImportTask extends Task
           logger.warn(WARN_LDIFIMPORT_CANNOT_UNLOCK_BACKEND, backend.getBackendID(), getExceptionMessage(e));
           return TaskState.COMPLETED_WITH_ERRORS;
         }
-
       }
     }
     finally
@@ -749,7 +719,6 @@ public class ImportTask extends Task
       DirectoryServer.notifyImportEnded(backend, importConfig, true);
     }
 
-
     // Clean up after the import by closing the import config.
     importConfig.close();
     return getFinalTaskState();
@@ -760,7 +729,7 @@ public class ImportTask extends Task
     final HashSet<AttributeType> attrTypes = new HashSet<>(attrNames.size());
     for (String attrName : attrNames)
     {
-      attrTypes.add(DirectoryServer.getAttributeType(attrName));
+      attrTypes.add(DirectoryServer.getSchema().getAttributeType(attrName));
     }
     return attrTypes;
   }

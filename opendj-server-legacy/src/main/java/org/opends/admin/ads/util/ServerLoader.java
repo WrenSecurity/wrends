@@ -24,7 +24,6 @@ import javax.naming.AuthenticationException;
 import javax.naming.NamingException;
 import javax.naming.NoPermissionException;
 import javax.naming.TimeLimitExceededException;
-import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapName;
 
 import org.forgerock.i18n.LocalizableMessage;
@@ -38,8 +37,6 @@ import org.opends.admin.ads.TopologyCacheFilter;
 
 import com.forgerock.opendj.cli.Utils;
 
-import static org.opends.server.util.StaticUtils.*;
-
 /**
  * Class used to load the configuration of a server.  Basically the code
  * uses some provided properties and authentication information to connect
@@ -48,18 +45,18 @@ import static org.opends.server.util.StaticUtils.*;
  */
 public class ServerLoader extends Thread
 {
-  private Map<ServerProperty,Object> serverProperties;
+  private final Map<ServerProperty, Object> serverProperties;
   private boolean isOver;
   private boolean isInterrupted;
   private String lastLdapUrl;
   private TopologyCacheException lastException;
   private ServerDescriptor serverDescriptor;
-  private ApplicationTrustManager trustManager;
-  private int timeout;
-  private String dn;
-  private String pwd;
+  private final ApplicationTrustManager trustManager;
+  private final int timeout;
+  private final String dn;
+  private final String pwd;
   private final LinkedHashSet<PreferredConnection> preferredLDAPURLs;
-  private TopologyCacheFilter filter;
+  private final TopologyCacheFilter filter;
 
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
@@ -119,14 +116,13 @@ public class ServerLoader extends Thread
     return lastException;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void interrupt()
   {
     if (!isOver)
     {
       isInterrupted = true;
-      String ldapUrl = getLastLdapUrl();
+      String ldapUrl = lastLdapUrl;
       if (ldapUrl == null)
       {
         LinkedHashSet<PreferredConnection> urls = getLDAPURLsByPreference();
@@ -144,77 +140,67 @@ public class ServerLoader extends Thread
     super.interrupt();
   }
 
-  /**
-   * The method where we try to generate the ServerDescriptor object.
-   */
+  /** The method where we try to generate the ServerDescriptor object. */
   @Override
   public void run()
   {
     lastException = null;
-    InitialLdapContext ctx = null;
-    try
+    boolean connCreated = false;
+    try (ConnectionWrapper conn = createConnectionWrapper())
     {
-      ctx = createContext();
-      serverDescriptor = ServerDescriptor.createStandalone(ctx, filter);
+      connCreated = true;
+      serverDescriptor = ServerDescriptor.createStandalone(conn.getLdapContext(), filter);
       serverDescriptor.setAdsProperties(serverProperties);
       serverDescriptor.updateAdsPropertiesWithServerProperties();
     }
     catch (NoPermissionException e)
     {
-      logger.warn(LocalizableMessage.raw(
-          "Permissions error reading server: " + getLastLdapUrl(), e));
+      logger.warn(LocalizableMessage.raw("Permissions error reading server: " + lastLdapUrl, e));
       Type type = isAdministratorDn()
           ? TopologyCacheException.Type.NO_PERMISSIONS
           : TopologyCacheException.Type.NOT_GLOBAL_ADMINISTRATOR;
-      lastException = new TopologyCacheException(type, e, trustManager, getLastLdapUrl());
+      lastException = new TopologyCacheException(type, e, trustManager, lastLdapUrl);
     }
     catch (AuthenticationException e)
     {
-      logger.warn(LocalizableMessage.raw(
-          "Authentication exception: " + getLastLdapUrl(), e));
+      logger.warn(LocalizableMessage.raw("Authentication exception: " + lastLdapUrl, e));
       Type type = isAdministratorDn()
           ? TopologyCacheException.Type.GENERIC_READING_SERVER
           : TopologyCacheException.Type.NOT_GLOBAL_ADMINISTRATOR;
-      lastException = new TopologyCacheException(type, e, trustManager, getLastLdapUrl());
+      lastException = new TopologyCacheException(type, e, trustManager, lastLdapUrl);
     }
     catch (NamingException e)
     {
-      logger.warn(LocalizableMessage.raw(
-          "NamingException error reading server: " + getLastLdapUrl(), e));
-      Type type = ctx != null
+      logger.warn(LocalizableMessage.raw("NamingException error reading server: " + lastLdapUrl, e));
+      Type type = connCreated
           ? TopologyCacheException.Type.GENERIC_READING_SERVER
           : TopologyCacheException.Type.GENERIC_CREATING_CONNECTION;
-      lastException = new TopologyCacheException(type, e, trustManager, getLastLdapUrl());
+      lastException = new TopologyCacheException(type, e, trustManager, lastLdapUrl);
     }
     catch (Throwable t)
     {
       if (!isInterrupted)
       {
-        logger.warn(LocalizableMessage.raw(
-            "Generic error reading server: "+getLastLdapUrl(), t));
-        logger.warn(LocalizableMessage.raw("server Properties: "+serverProperties));
-        lastException =
-            new TopologyCacheException(TopologyCacheException.Type.BUG, t);
+        logger.warn(LocalizableMessage.raw("Generic error reading server: " + lastLdapUrl, t));
+        logger.warn(LocalizableMessage.raw("server Properties: " + serverProperties));
+        lastException = new TopologyCacheException(TopologyCacheException.Type.BUG, t);
       }
     }
     finally
     {
       isOver = true;
-      close(ctx);
     }
   }
 
   /**
-   * Create an InitialLdapContext based in the provide server properties and
-   * authentication data provided in the constructor.
-   * @return an InitialLdapContext based in the provide server properties and
-   * authentication data provided in the constructor.
-   * @throws NamingException if an error occurred while creating the
-   * InitialLdapContext.
+   * Returns a Connection Wrapper.
+   *
+   * @return the connection wrapper
+   * @throws NamingException
+   *           If an error occurs.
    */
-  public InitialLdapContext createContext() throws NamingException
+  public ConnectionWrapper createConnectionWrapper() throws NamingException
   {
-    InitialLdapContext ctx = null;
     if (trustManager != null)
     {
       trustManager.resetLastRefusedItems();
@@ -226,51 +212,16 @@ public class ServerLoader extends Thread
     /* Try to connect to the server in a certain order of preference.  If an
      * URL fails, we will try with the others.
      */
-    LinkedHashSet<PreferredConnection> conns = getLDAPURLsByPreference();
-
-    for (PreferredConnection connection : conns)
+    for (PreferredConnection connection : getLDAPURLsByPreference())
     {
-      if (ctx == null)
+      lastLdapUrl = connection.getLDAPURL();
+      ConnectionWrapper conn = new ConnectionWrapper(lastLdapUrl, connection.getType(), dn, pwd, timeout, trustManager);
+      if (conn.getLdapContext() != null)
       {
-        lastLdapUrl = connection.getLDAPURL();
-        switch (connection.getType())
-        {
-        case LDAPS:
-          ctx = ConnectionUtils.createLdapsContext(lastLdapUrl, dn, pwd,
-              timeout, null, trustManager, null);
-          break;
-        case START_TLS:
-          ctx = ConnectionUtils.createStartTLSContext(lastLdapUrl, dn, pwd,
-              timeout, null, trustManager, null, null);
-          break;
-        default:
-          ctx = ConnectionUtils.createLdapContext(lastLdapUrl, dn, pwd,
-              timeout, null);
-        }
+        return conn;
       }
     }
-    return ctx;
-  }
-
-  /**
-   * Returns a Connection Wrapper.
-   *
-   * @return the connection wrapper
-   * @throws NamingException
-   *            If an error occurs.
-   */
-  public ConnectionWrapper createConnectionWrapper() throws NamingException
-  {
-    return new ConnectionWrapper(createContext(), timeout, trustManager);
-  }
-
-  /**
-   * Returns the last LDAP URL to which we tried to connect.
-   * @return the last LDAP URL to which we tried to connect.
-   */
-  private String getLastLdapUrl()
-  {
-    return lastLdapUrl;
+    return null;
   }
 
   /**

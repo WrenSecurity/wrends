@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.admin.ads;
 
@@ -27,7 +27,7 @@ import java.util.Set;
  */
 public class TopologyCacheFilter
 {
-  private Set<String> baseDNs = new HashSet<>();
+  private final Set<String> baseDNs = new HashSet<>();
   private boolean searchMonitoringInformation = true;
   private boolean searchBaseDNInformation = true;
 
@@ -36,7 +36,7 @@ public class TopologyCacheFilter
    * @return <CODE>true</CODE> if we must search base DN information and
    * <CODE>false</CODE> otherwise.
    */
-  public boolean searchBaseDNInformation()
+  boolean searchBaseDNInformation()
   {
     return searchBaseDNInformation;
   }
@@ -58,7 +58,7 @@ public class TopologyCacheFilter
    * @return <CODE>true</CODE> if we must search monitoring information and
    * <CODE>false</CODE> otherwise.
    */
-  public boolean searchMonitoringInformation()
+  boolean searchMonitoringInformation()
   {
     return searchMonitoringInformation;
   }
@@ -86,15 +86,6 @@ public class TopologyCacheFilter
   }
 
   /**
-   * Removes a base DN fom the list of baseDNs to search.
-   * @param dn the DN of the base DN to be removed.
-   */
-  public void removeBaseDNToSearch(String dn)
-  {
-    baseDNs.remove(dn);
-  }
-
-  /**
    * Returns the list of base DNs that will be searched for.  If the list is
    * empty we will search for all the base DNs.
    * @return the list of base DNs we will search for.
@@ -109,7 +100,7 @@ public class TopologyCacheFilter
    * @return <CODE>true</CODE> if the filter specifies to search for all the
    * base DNs and <CODE>false</CODE> otherwise.
    */
-  public boolean searchAllBaseDNs()
+  boolean searchAllBaseDNs()
   {
     return baseDNs.isEmpty();
   }

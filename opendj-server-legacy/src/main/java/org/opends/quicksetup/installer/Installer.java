@@ -16,24 +16,29 @@
  */
 package org.opends.quicksetup.installer;
 
+import static com.forgerock.opendj.cli.ArgumentConstants.*;
+import static com.forgerock.opendj.cli.Utils.*;
+import static com.forgerock.opendj.util.OperatingSystem.*;
+
 import static org.forgerock.util.Utils.*;
 import static org.opends.admin.ads.ServerDescriptor.*;
 import static org.opends.admin.ads.ServerDescriptor.ServerProperty.*;
 import static org.opends.admin.ads.util.ConnectionUtils.*;
+import static org.opends.admin.ads.util.PreferredConnection.Type.*;
 import static org.opends.messages.QuickSetupMessages.*;
 import static org.opends.quicksetup.Step.*;
 import static org.opends.quicksetup.installer.DataReplicationOptions.Type.*;
 import static org.opends.quicksetup.installer.InstallProgressStep.*;
 import static org.opends.quicksetup.util.Utils.*;
-import static com.forgerock.opendj.cli.ArgumentConstants.*;
-import static com.forgerock.opendj.cli.Utils.*;
 
 import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URI;
+import java.security.KeyStoreException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +81,6 @@ import org.opends.admin.ads.TopologyCache;
 import org.opends.admin.ads.TopologyCacheException;
 import org.opends.admin.ads.TopologyCacheFilter;
 import org.opends.admin.ads.util.ApplicationTrustManager;
-import org.opends.admin.ads.util.ConnectionUtils;
 import org.opends.admin.ads.util.ConnectionWrapper;
 import org.opends.admin.ads.util.PreferredConnection;
 import org.opends.quicksetup.ApplicationException;
@@ -86,7 +90,6 @@ import org.opends.quicksetup.Installation;
 import org.opends.quicksetup.JavaArguments;
 import org.opends.quicksetup.LicenseFile;
 import org.opends.quicksetup.ProgressStep;
-import org.opends.quicksetup.QuickSetupLog;
 import org.opends.quicksetup.ReturnCode;
 import org.opends.quicksetup.SecurityOptions;
 import org.opends.quicksetup.Step;
@@ -118,6 +121,7 @@ import org.opends.quicksetup.ui.QuickSetupStepPanel;
 import org.opends.quicksetup.ui.UIFactory;
 import org.opends.quicksetup.util.FileManager;
 import org.opends.quicksetup.util.IncompatibleVersionException;
+import org.opends.quicksetup.util.ServerController;
 import org.opends.quicksetup.util.Utils;
 import org.opends.server.tools.BackendTypeHelper;
 import org.opends.server.tools.BackendTypeHelper.BackendTypeUIAdapter;
@@ -125,9 +129,9 @@ import org.opends.server.types.HostPort;
 import org.opends.server.util.CertificateManager;
 import org.opends.server.util.CollectionUtils;
 import org.opends.server.util.DynamicConstants;
+import org.opends.server.util.Platform.KeyType;
 import org.opends.server.util.SetupUtils;
 import org.opends.server.util.StaticUtils;
-import org.opends.server.util.Platform.KeyType;
 
 import com.forgerock.opendj.util.OperatingSystem;
 
@@ -146,7 +150,7 @@ import com.forgerock.opendj.util.OperatingSystem;
  * Note that we can use freely the class org.opends.server.util.SetupUtils as
  * it is included in quicksetup.jar.
  */
-public abstract class Installer extends GuiApplication
+public class Installer extends GuiApplication
 {
   /** The minimum integer value that can be used for a port. */
   public static final int MIN_PORT_VALUE = 1;
@@ -179,28 +183,23 @@ public abstract class Installer extends GuiApplication
   private TopologyCache lastLoadedCache;
 
   /** Indicates that we've detected that there is something installed. */
-  boolean forceToDisplaySetup;
+  private boolean forceToDisplaySetup;
 
   /** When true indicates that the user has canceled this operation. */
-  protected boolean canceled;
-
+  private boolean canceled;
   private boolean javaVersionCheckFailed;
 
   /** Map containing information about what has been configured remotely. */
   private final Map<ServerDescriptor, ConfiguredReplication> hmConfiguredRemoteReplication = new HashMap<>();
 
   /** Set of progress steps that have been completed. */
-  protected Set<InstallProgressStep> completedProgress = new HashSet<>();
-
-  private final List<WizardStep> lstSteps = new ArrayList<>();
-
-  private final Set<WizardStep> SUBSTEPS = new HashSet<>();
-  {
-    SUBSTEPS.add(Step.CREATE_GLOBAL_ADMINISTRATOR);
-    SUBSTEPS.add(Step.SUFFIXES_OPTIONS);
-    SUBSTEPS.add(Step.NEW_SUFFIX_OPTIONS);
-    SUBSTEPS.add(Step.REMOTE_REPLICATION_PORTS);
-  }
+  private final Set<InstallProgressStep> completedProgress = new HashSet<>();
+  private final List<WizardStep> listSteps = new ArrayList<>();
+  private final Set<WizardStep> SUBSTEPS = CollectionUtils.<WizardStep> newHashSet(
+      Step.CREATE_GLOBAL_ADMINISTRATOR,
+      Step.SUFFIXES_OPTIONS,
+      Step.NEW_SUFFIX_OPTIONS,
+      Step.REMOTE_REPLICATION_PORTS);
 
   private final Map<WizardStep, WizardStep> hmPreviousSteps = new HashMap<>();
 
@@ -212,9 +211,10 @@ public abstract class Installer extends GuiApplication
   private String lastImportProgress;
 
   /** Aliases of self-signed certificates. */
-  protected static final String SELF_SIGNED_CERT_ALIASES[] = new String[] {
+  private static final String[] SELF_SIGNED_CERT_ALIASES = {
     SecurityOptions.SELF_SIGNED_CERT_ALIAS,
-    SecurityOptions.SELF_SIGNED_EC_CERT_ALIAS };
+    SecurityOptions.SELF_SIGNED_EC_CERT_ALIAS
+  };
 
   /**
    * The threshold in minutes used to know whether we must display a warning
@@ -223,21 +223,401 @@ public abstract class Installer extends GuiApplication
    */
   public static final int THRESHOLD_CLOCK_DIFFERENCE_WARNING = 5;
 
+  /** This map contains the ratio associated with each step. */
+  private final Map<ProgressStep, Integer> hmRatio = new HashMap<>();
+  /** This map contains the summary associated with each step. */
+  private final Map<ProgressStep, LocalizableMessage> hmSummary = new HashMap<>();
+
+  private ApplicationException applicationException;
+
+  /** Actually performs the install in this thread. The thread is blocked. */
+  @Override
+  public void run()
+  {
+    applicationException = null;
+    PrintStream origErr = System.err;
+    PrintStream origOut = System.out;
+    try
+    {
+      initMaps();
+      System.setErr(getApplicationErrorStream());
+      System.setOut(getApplicationOutputStream());
+      checkAbort();
+
+      setCurrentProgressStep(InstallProgressStep.CONFIGURING_SERVER);
+      configureServer();
+      checkAbort();
+
+      LicenseFile.createFileLicenseApproved(getInstallationPath());
+      checkAbort();
+
+      createData();
+      checkAbort();
+
+      if (isWindows() && getUserData().getEnableWindowsService())
+      {
+        showStepStarted(InstallProgressStep.ENABLING_WINDOWS_SERVICE);
+        enableWindowsService();
+        checkAbort();
+      }
+
+      if (mustStart())
+      {
+        startServer();
+      }
+
+      if (mustCreateAds())
+      {
+        showStepStarted(InstallProgressStep.CONFIGURING_ADS);
+        updateADS();
+        checkAbort();
+      }
+
+      if (mustConfigureReplication())
+      {
+        showStepStarted(InstallProgressStep.CONFIGURING_REPLICATION);
+        createReplicatedBackendsIfRequired();
+        configureReplication();
+        checkAbort();
+      }
+
+      if (mustInitializeSuffixes())
+      {
+        showStepStarted(InstallProgressStep.INITIALIZE_REPLICATED_SUFFIXES);
+        initializeSuffixes();
+        checkAbort();
+      }
+
+      if (mustStop())
+      {
+        showStepStarted(InstallProgressStep.STOPPING_SERVER);
+        stopServer(new ServerController(this));
+      }
+
+      checkAbort();
+      updateSummaryWithServerState(hmSummary, true);
+      setCurrentProgressStep(InstallProgressStep.FINISHED_SUCCESSFULLY);
+      notifyListeners(null);
+      tempLogFile.deleteLogFileAfterSuccess();
+    }
+    catch (final ApplicationException ex)
+    {
+      logger.error(LocalizableMessage.raw("Caught exception: "+ex, ex));
+      if (ReturnCode.CANCELED.equals(ex.getType())) {
+        uninstall();
+        setCurrentProgressStep(InstallProgressStep.FINISHED_CANCELED);
+        notifyListeners(null);
+      } else {
+        handleInstallationError(ex);
+      }
+      applicationException = ex;
+    }
+    catch (final Throwable t)
+    {
+      final ApplicationException ex =
+          new ApplicationException(ReturnCode.BUG, getThrowableMsg(INFO_BUG_MSG.get(), t), t);
+      handleInstallationError(ex);
+      applicationException = ex;
+    }
+    finally
+    {
+      System.setErr(origErr);
+      System.setOut(origOut);
+    }
+  }
+
+  private void showStepStarted(final InstallProgressStep step)
+  {
+    if (isVerbose())
+    {
+      notifyListeners(getTaskSeparator());
+    }
+    setCurrentProgressStep(step);
+  }
+
+  private void startServer() throws ApplicationException
+  {
+    final boolean verbose = isStartVerbose();
+    if (verbose)
+    {
+      notifyListeners(getTaskSeparator());
+    }
+    setCurrentProgressStep(InstallProgressStep.STARTING_SERVER);
+    final PointAdder pointAdder = new PointAdder();
+    if (!verbose)
+    {
+      notifyListeners(getFormattedProgress(INFO_PROGRESS_STARTING_NON_VERBOSE.get()));
+      pointAdder.start();
+    }
+    try
+    {
+      new ServerController(this).startServer(!verbose);
+    }
+    finally
+    {
+      if (!verbose)
+      {
+        pointAdder.stop();
+      }
+    }
+    notifyListeners(verbose ? getLineBreak() : getFormattedDoneWithLineBreak());
+    checkAbort();
+  }
+
+  private void handleInstallationError(final ApplicationException exception)
+  {
+    stopServerIfNeeded();
+    notifyListeners(getLineBreak());
+    updateSummaryWithServerState(hmSummary, true);
+    setCurrentProgressStep(InstallProgressStep.FINISHED_WITH_ERROR);
+    notifyListeners(getFormattedError(exception, true));
+    logger.error(LocalizableMessage.raw("Error installing.", exception));
+    notifyListeners(getLineBreak());
+    notifyListenersOfExistingLogFile();
+  }
+
+  private void stopServerIfNeeded()
+  {
+    final Installation installation = getInstallation();
+    if (installation.getStatus().isServerRunning())
+    {
+      try
+      {
+        stopServer(new ServerController(installation));
+      }
+      catch (final ApplicationException t)
+      {
+        logger.info(LocalizableMessage.raw("error stopping server", t));
+      }
+    }
+  }
+
+  private void stopServer(final ServerController serverController) throws ApplicationException
+  {
+    if (isVerbose())
+    {
+      serverController.stopServer(false);
+    }
+    else
+    {
+      notifyListeners(getFormattedWithPoints(INFO_PROGRESS_STOPPING_NON_VERBOSE.get()));
+      serverController.stopServer(true);
+      notifyListeners(getFormattedDoneWithLineBreak());
+    }
+  }
+
+  @Override
+  public Integer getRatio(ProgressStep status)
+  {
+    return hmRatio.get(status);
+  }
+
+  @Override
+  public LocalizableMessage getSummary(ProgressStep status)
+  {
+    return hmSummary.get(status);
+  }
+
+  /**
+   * Returns the exception from the run() method, if any.
+   * @return the ApplicationException raised during the run() method, if any.
+   *         null otherwise.
+   */
+  public ApplicationException getApplicationException()
+  {
+    return applicationException;
+  }
+
+  private void uninstall() {
+    notifyListeners(getTaskSeparator());
+    if (!isVerbose())
+    {
+      notifyListeners(getFormattedWithPoints(INFO_PROGRESS_CANCELING.get()));
+    }
+    else
+    {
+      notifyListeners(
+          getFormattedProgressWithLineBreak(INFO_SUMMARY_CANCELING.get()));
+    }
+    Installation installation = getInstallation();
+    FileManager fm = new FileManager(this);
+
+    stopServerIfNeeded();
+    uninstallServices();
+    revertToBaseConfiguration(installation, fm);
+    cleanupSSLIfNeeded(installation, fm);
+
+    // Remove the databases
+    try {
+      fm.deleteChildren(installation.getDatabasesDirectory());
+    } catch (ApplicationException e) {
+      logger.info(LocalizableMessage.raw("Error deleting databases", e));
+    }
+
+    if (!isVerbose())
+    {
+      notifyListeners(getFormattedDoneWithLineBreak());
+    }
+  }
+
+  private void revertToBaseConfiguration(final Installation installation, final FileManager fm)
+  {
+    try
+    {
+      File newConfig = fm.copy(installation.getBaseConfigurationFile(),
+          installation.getConfigurationDirectory(), true);
+      fm.rename(newConfig, installation.getCurrentConfigurationFile());
+    }
+    catch (ApplicationException ae)
+    {
+      logger.info(LocalizableMessage.raw("failed to restore base configuration", ae));
+    }
+  }
+
+  private void cleanupSSLIfNeeded(final Installation installation, final FileManager fm)
+  {
+    final SecurityOptions sec = getUserData().getSecurityOptions();
+    if (sec.getEnableSSL() || sec.getEnableStartTLS())
+    {
+      if (SecurityOptions.CertificateType.SELF_SIGNED_CERTIFICATE.equals(sec.getCertificateType()))
+      {
+        final CertificateManager cm = new CertificateManager(
+            getSelfSignedKeystorePath(), CertificateManager.KEY_STORE_TYPE_JKS, getSelfSignedCertificatePwd());
+        try
+        {
+          for (final String alias : SELF_SIGNED_CERT_ALIASES)
+          {
+            if (cm.aliasInUse(alias))
+            {
+              cm.removeCertificate(alias);
+            }
+          }
+        }
+        catch (KeyStoreException e)
+        {
+          logger.info(LocalizableMessage.raw("Error deleting self signed certification", e));
+        }
+      }
+
+      final File configDir = installation.getConfigurationDirectory();
+      removeFileIfExists(fm, configDir, "keystore");
+      removeFileIfExists(fm, configDir, "keystore.pin");
+      removeFileIfExists(fm, configDir, "truststore");
+    }
+  }
+
+  private void removeFileIfExists(final FileManager fileManager, final File configDir, final String fileName)
+  {
+    final File file = new File(configDir, fileName);
+    if (file.exists())
+    {
+      try
+      {
+        fileManager.delete(file);
+      }
+      catch (ApplicationException e)
+      {
+        logger.info(LocalizableMessage.raw("Failed to delete " + fileName, e));
+      }
+    }
+  }
+
+  private void initMaps()
+  {
+    initSummaryMap(hmSummary, true);
+
+    final List<InstallProgressStep> steps = new ArrayList<>();
+    steps.add(InstallProgressStep.CONFIGURING_SERVER);
+    if (createNotReplicatedSuffix())
+    {
+      switch (getUserData().getNewSuffixOptions().getType())
+      {
+      case CREATE_BASE_ENTRY:
+        steps.add(InstallProgressStep.CREATING_BASE_ENTRY);
+        break;
+      case IMPORT_FROM_LDIF_FILE:
+        steps.add(InstallProgressStep.IMPORTING_LDIF);
+        break;
+      case IMPORT_AUTOMATICALLY_GENERATED_DATA:
+        steps.add(InstallProgressStep.IMPORTING_AUTOMATICALLY_GENERATED);
+        break;
+      }
+    }
+
+    if (isWindows() && getUserData().getEnableWindowsService())
+    {
+      steps.add(InstallProgressStep.ENABLING_WINDOWS_SERVICE);
+    }
+
+    if (mustStart())
+    {
+      steps.add(InstallProgressStep.STARTING_SERVER);
+    }
+
+    if (mustCreateAds())
+    {
+      steps.add(InstallProgressStep.CONFIGURING_ADS);
+    }
+
+    if (mustConfigureReplication())
+    {
+      steps.add(InstallProgressStep.CONFIGURING_REPLICATION);
+    }
+
+    if (mustInitializeSuffixes())
+    {
+      steps.add(InstallProgressStep.INITIALIZE_REPLICATED_SUFFIXES);
+    }
+
+    if (mustStop())
+    {
+      steps.add(InstallProgressStep.STOPPING_SERVER);
+    }
+
+    int totalTime = 0;
+    for (final InstallProgressStep step : steps) {
+      totalTime += step.getRelativeDuration();
+    }
+
+    int cumulatedTime = 0;
+    for (InstallProgressStep s : steps)
+    {
+      Integer statusTime = s.getRelativeDuration();
+      hmRatio.put(s, (100 * cumulatedTime) / totalTime);
+      cumulatedTime += statusTime;
+    }
+    hmRatio.put(InstallProgressStep.FINISHED_SUCCESSFULLY, 100);
+    hmRatio.put(InstallProgressStep.FINISHED_WITH_ERROR, 100);
+    hmRatio.put(InstallProgressStep.FINISHED_CANCELED, 100);
+  }
+
+  @Override
+  public String getInstallationPath()
+  {
+    return Utils.getInstallPathFromClasspath();
+  }
+
+  @Override
+  public String getInstancePath()
+  {
+    String installPath =  Utils.getInstallPathFromClasspath();
+    return Utils.getInstancePathFromInstallPath(installPath);
+  }
+
+  private void notifyListenersOfExistingLogFile()
+  {
+    if (tempLogFile.isEnabled())
+    {
+      final String tempLogFilePath = tempLogFile.getPath();
+      notifyListeners(getFormattedProgress(INFO_GENERAL_PROVIDE_LOG_IN_ERROR.get(tempLogFilePath)));
+      notifyListeners(getLineBreak());
+    }
+  }
+
   /** Creates a default instance. */
   public Installer()
   {
-    addStepsInOrder(lstSteps, LicenseFile.exists());
-    try
-    {
-      if (!QuickSetupLog.isInitialized())
-      {
-        QuickSetupLog.initLogFileHandler(File.createTempFile(Constants.LOG_FILE_PREFIX, Constants.LOG_FILE_SUFFIX));
-      }
-    }
-    catch (IOException e)
-    {
-      System.err.println("Failed to initialize log");
-    }
+    addStepsInOrder(listSteps, LicenseFile.exists());
   }
 
   @Override
@@ -480,16 +860,10 @@ public abstract class Installer extends GuiApplication
       final QuickSetupDialog fDlg = dlg;
       errPanel.addButtonActionListener(new ButtonActionListener()
       {
-        /**
-         * ButtonActionListener implementation. It assumes that we are called in
-         * the event thread.
-         *
-         * @param ev
-         *          the ButtonEvent we receive.
-         */
         @Override
         public void buttonActionPerformed(ButtonEvent ev)
         {
+          // assumes that we are called in the event thread.
           // Simulate a close button event
           fDlg.notifyButtonEvent(ButtonName.QUIT);
         }
@@ -502,7 +876,7 @@ public abstract class Installer extends GuiApplication
   @Override
   public Set<? extends WizardStep> getWizardSteps()
   {
-    return Collections.unmodifiableSet(new HashSet<WizardStep>(lstSteps));
+    return Collections.unmodifiableSet(new HashSet<WizardStep>(listSteps));
   }
 
   @Override
@@ -701,10 +1075,10 @@ public abstract class Installer extends GuiApplication
     }
     else
     {
-      int i = lstSteps.indexOf(step);
-      if (i != -1 && i + 1 < lstSteps.size())
+      int i = listSteps.indexOf(step);
+      if (i != -1 && i + 1 < listSteps.size())
       {
-        return lstSteps.get(i + 1);
+        return listSteps.get(i + 1);
       }
     }
     return null;
@@ -714,7 +1088,7 @@ public abstract class Installer extends GuiApplication
   public LinkedHashSet<WizardStep> getOrderedSteps()
   {
     LinkedHashSet<WizardStep> orderedSteps = new LinkedHashSet<>();
-    addStepsInOrder(orderedSteps, lstSteps.contains(LICENSE));
+    addStepsInOrder(orderedSteps, listSteps.contains(LICENSE));
     return orderedSteps;
   }
 
@@ -745,10 +1119,10 @@ public abstract class Installer extends GuiApplication
 
     if (prev == null)
     {
-      int i = lstSteps.indexOf(step);
+      int i = listSteps.indexOf(step);
       if (i != -1 && i > 0)
       {
-        prev = lstSteps.get(i - 1);
+        prev = listSteps.get(i - 1);
       }
     }
     return prev;
@@ -764,7 +1138,7 @@ public abstract class Installer extends GuiApplication
    * Uninstalls installed services. This is to be used when the user has elected
    * to cancel an installation.
    */
-  protected void uninstallServices()
+  private void uninstallServices()
   {
     if (completedProgress.contains(InstallProgressStep.ENABLING_WINDOWS_SERVICE))
     {
@@ -813,7 +1187,7 @@ public abstract class Installer extends GuiApplication
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  protected void configureServer() throws ApplicationException
+  private void configureServer() throws ApplicationException
   {
     notifyListeners(getFormattedWithPoints(INFO_PROGRESS_CONFIGURING.get()));
     copyTemplateInstance();
@@ -1406,7 +1780,6 @@ public abstract class Installer extends GuiApplication
    */
   private void unconfigureRemote()
   {
-    ConnectionWrapper connectionWrapper = null;
     if (registeredNewServerOnRemote || createdAdministrator || createdRemoteAds)
     {
       // Try to connect
@@ -1416,10 +1789,8 @@ public abstract class Installer extends GuiApplication
       {
         notifyListeners(getFormattedWithPoints(INFO_PROGRESS_UNCONFIGURING_ADS_ON_REMOTE.get(auth.getHostPort())));
       }
-      try
+      try (ConnectionWrapper connectionWrapper = createConnection(auth))
       {
-        connectionWrapper = createConnection(auth);
-
         ADSContext adsContext = new ADSContext(connectionWrapper);
         if (createdRemoteAds)
         {
@@ -1458,28 +1829,18 @@ public abstract class Installer extends GuiApplication
       {
         notifyListeners(getFormattedError(t, true));
       }
-      finally
-      {
-        StaticUtils.close(connectionWrapper);
-      }
     }
     InstallerHelper helper = new InstallerHelper();
     for (ServerDescriptor server : hmConfiguredRemoteReplication.keySet())
     {
       notifyListeners(getFormattedWithPoints(INFO_PROGRESS_UNCONFIGURING_REPLICATION_REMOTE.get(getHostPort(server))));
-      try
+      try (ConnectionWrapper connectionWrapper = getRemoteConnection(server))
       {
-        connectionWrapper = getRemoteConnection(server, getTrustManager(), getPreferredConnections());
-        helper.unconfigureReplication(connectionWrapper, hmConfiguredRemoteReplication.get(server),
-            ConnectionUtils.getHostPort(connectionWrapper.getLdapContext()));
+        helper.unconfigureReplication(connectionWrapper, hmConfiguredRemoteReplication.get(server));
       }
       catch (ApplicationException ae)
       {
         notifyListeners(getFormattedError(ae, true));
-      }
-      finally
-      {
-        StaticUtils.close(connectionWrapper);
       }
       notifyListeners(getFormattedDoneWithLineBreak());
     }
@@ -1495,7 +1856,7 @@ public abstract class Installer extends GuiApplication
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  protected void createReplicatedBackendsIfRequired() throws ApplicationException
+  private void createReplicatedBackendsIfRequired() throws ApplicationException
   {
     if (FIRST_IN_TOPOLOGY == getUserData().getReplicationOptions().getType())
     {
@@ -1575,15 +1936,12 @@ public abstract class Installer extends GuiApplication
   private void createReplicatedBackends(final Map<String, Set<String>> hmBackendSuffix,
       final Map<String, BackendTypeUIAdapter> backendTypes) throws ApplicationException
   {
-    ConnectionWrapper connection = null;
-    try
+    try (ConnectionWrapper connection = createLocalConnection())
     {
-      connection = createLocalConnection();
       final InstallerHelper helper = new InstallerHelper();
       for (String backendName : hmBackendSuffix.keySet())
       {
         helper.createBackend(connection, backendName, hmBackendSuffix.get(backendName),
-            ConnectionUtils.getHostPort(connection.getLdapContext()),
             backendTypes.get(backendName).getBackend());
       }
     }
@@ -1591,10 +1949,6 @@ public abstract class Installer extends GuiApplication
     {
       LocalizableMessage failedMsg = getThrowableMsg(INFO_ERROR_CONNECTING_TO_LOCAL.get(), ne);
       throw new ApplicationException(ReturnCode.CONFIGURATION_ERROR, failedMsg, ne);
-    }
-    finally
-    {
-      StaticUtils.close(connection);
     }
   }
 
@@ -1606,7 +1960,7 @@ public abstract class Installer extends GuiApplication
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  protected void configureReplication() throws ApplicationException
+  private void configureReplication() throws ApplicationException
   {
     notifyListeners(getFormattedWithPoints(INFO_PROGRESS_CONFIGURING_REPLICATION.get()));
 
@@ -1695,30 +2049,24 @@ public abstract class Installer extends GuiApplication
     replicationServers.put(ADSContext.getAdministrationSuffixDN(), adsServers);
     replicationServers.put(Constants.SCHEMA_DN, new HashSet<String>(adsServers));
 
-    ConnectionWrapper connWrapper = null;
     long localTime = -1;
     long localTimeMeasureTime = -1;
     HostPort localServerDisplay = null;
-    try
+    try (ConnectionWrapper conn = createLocalConnection())
     {
-      connWrapper = createLocalConnection();
-      helper.configureReplication(connWrapper, replicationServers,
+      helper.configureReplication(conn, replicationServers,
           getUserData().getReplicationOptions().getReplicationPort(),
           getUserData().getReplicationOptions().useSecureReplication(),
-          getUserData().getHostPort(),
-          knownReplicationServerIds, knownServerIds);
+          knownReplicationServerIds,
+          knownServerIds);
       localTimeMeasureTime = System.currentTimeMillis();
-      localTime = Utils.getServerClock(connWrapper.getLdapContext());
-      localServerDisplay = ConnectionUtils.getHostPort(connWrapper.getLdapContext());
+      localTime = Utils.getServerClock(conn.getLdapContext());
+      localServerDisplay = conn.getHostPort();
     }
     catch (NamingException ne)
     {
       LocalizableMessage failedMsg = getThrowableMsg(INFO_ERROR_CONNECTING_TO_LOCAL.get(), ne);
       throw new ApplicationException(ReturnCode.CONFIGURATION_ERROR, failedMsg, ne);
-    }
-    finally
-    {
-      StaticUtils.close(connWrapper);
     }
     notifyListeners(getFormattedDoneWithLineBreak());
     checkAbort();
@@ -1799,25 +2147,25 @@ public abstract class Installer extends GuiApplication
           }
         }
 
-        connWrapper = getRemoteConnection(server, getTrustManager(), getPreferredConnections());
-        InitialLdapContext ctx = connWrapper.getLdapContext();
-        ConfiguredReplication repl =
-            helper.configureReplication(connWrapper, remoteReplicationServers, replicationPort, enableSecureReplication,
-                ConnectionUtils.getHostPort(ctx), knownReplicationServerIds, knownServerIds);
-        long remoteTimeMeasureTime = System.currentTimeMillis();
-        long remoteTime = Utils.getServerClock(ctx);
-        if (localTime != -1
-            && remoteTime != -1
-            && Math.abs(localTime - remoteTime - localTimeMeasureTime + remoteTimeMeasureTime) >
-               THRESHOLD_CLOCK_DIFFERENCE_WARNING * 60 * 1000)
+        try (ConnectionWrapper conn = getRemoteConnection(server))
         {
-          notifyListeners(getFormattedWarning(INFO_WARNING_SERVERS_CLOCK_DIFFERENCE.get(localServerDisplay,
-              ConnectionUtils.getHostPort(ctx), THRESHOLD_CLOCK_DIFFERENCE_WARNING)));
+          ConfiguredReplication repl = helper.configureReplication(
+              conn, remoteReplicationServers, replicationPort, enableSecureReplication,
+              knownReplicationServerIds, knownServerIds);
+          long remoteTimeMeasureTime = System.currentTimeMillis();
+          long remoteTime = Utils.getServerClock(conn.getLdapContext());
+          if (localTime != -1
+              && remoteTime != -1
+              && Math.abs(localTime - remoteTime - localTimeMeasureTime + remoteTimeMeasureTime) >
+          THRESHOLD_CLOCK_DIFFERENCE_WARNING * 60 * 1000)
+          {
+            notifyListeners(getFormattedWarning(INFO_WARNING_SERVERS_CLOCK_DIFFERENCE.get(
+                localServerDisplay, conn.getHostPort(), THRESHOLD_CLOCK_DIFFERENCE_WARNING)));
+          }
+
+          hmConfiguredRemoteReplication.put(server, repl);
         }
 
-        hmConfiguredRemoteReplication.put(server, repl);
-
-        StaticUtils.close(connWrapper);
         notifyListeners(getFormattedDoneWithLineBreak());
         checkAbort();
       }
@@ -1830,7 +2178,7 @@ public abstract class Installer extends GuiApplication
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  protected void enableWindowsService() throws ApplicationException
+  private void enableWindowsService() throws ApplicationException
   {
     notifyListeners(getFormattedWithPoints(INFO_PROGRESS_ENABLING_WINDOWS_SERVICE.get()));
     InstallerHelper helper = new InstallerHelper();
@@ -1847,7 +2195,7 @@ public abstract class Installer extends GuiApplication
    * @param isCli
    *          a boolean to indicate if the install is using CLI or GUI
    */
-  protected void initSummaryMap(Map<ProgressStep, LocalizableMessage> hmSummary, boolean isCli)
+  private void initSummaryMap(Map<ProgressStep, LocalizableMessage> hmSummary, boolean isCli)
   {
     put(hmSummary, NOT_STARTED, INFO_SUMMARY_INSTALL_NOT_STARTED);
     put(hmSummary, CONFIGURING_SERVER, INFO_SUMMARY_CONFIGURING);
@@ -1897,7 +2245,7 @@ public abstract class Installer extends GuiApplication
    * @param isCli
    *          a boolean to indicate if the install is using CLI or GUI
    */
-  protected void updateSummaryWithServerState(Map<ProgressStep, LocalizableMessage> hmSummary, Boolean isCli)
+  private void updateSummaryWithServerState(Map<ProgressStep, LocalizableMessage> hmSummary, Boolean isCli)
   {
     Installation installation = getInstallation();
     String cmd = getPath(installation.getControlPanelCommandFile());
@@ -1953,19 +2301,13 @@ public abstract class Installer extends GuiApplication
    */
   private void writeHostName()
   {
-    BufferedWriter writer = null;
-    try
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(getHostNameFile(), false)))
     {
-      writer = new BufferedWriter(new FileWriter(getHostNameFile(), false));
       writer.append(getUserData().getHostName());
     }
     catch (IOException ioe)
     {
       logger.warn(LocalizableMessage.raw("Error writing host name file: " + ioe, ioe));
-    }
-    finally
-    {
-      StaticUtils.close(writer);
     }
   }
 
@@ -2053,7 +2395,7 @@ public abstract class Installer extends GuiApplication
    * @param currentProgressStep
    *          the current progress step of the installation process.
    */
-  protected void setCurrentProgressStep(InstallProgressStep currentProgressStep)
+  private void setCurrentProgressStep(InstallProgressStep currentProgressStep)
   {
     if (currentProgressStep != null)
     {
@@ -2069,7 +2411,7 @@ public abstract class Installer extends GuiApplication
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  protected void createData() throws ApplicationException
+  private void createData() throws ApplicationException
   {
     if (createNotReplicatedSuffix()
         && NewSuffixOptions.Type.LEAVE_DATABASE_EMPTY != getUserData().getNewSuffixOptions().getType())
@@ -2104,7 +2446,7 @@ public abstract class Installer extends GuiApplication
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  protected void initializeSuffixes() throws ApplicationException
+  private void initializeSuffixes() throws ApplicationException
   {
     ConnectionWrapper conn = null;
     try
@@ -2123,10 +2465,8 @@ public abstract class Installer extends GuiApplication
     /* Initialize local ADS and schema contents using any replica. */
     {
       ServerDescriptor server = suffixes.iterator().next().getReplicas().iterator().next().getServer();
-      ConnectionWrapper remoteConn = null;
-      try
+      try (ConnectionWrapper remoteConn = getRemoteConnection(server))
       {
-        remoteConn = getRemoteConnection(server, getTrustManager(), getPreferredConnections());
         TopologyCacheFilter filter = new TopologyCacheFilter();
         filter.setSearchMonitoringInformation(false);
         filter.addBaseDNToSearch(ADSContext.getAdministrationSuffixDN());
@@ -2157,10 +2497,6 @@ public abstract class Installer extends GuiApplication
           msg = INFO_CANNOT_CONNECT_TO_REMOTE_GENERIC.get(getHostPort(server), ne.toString(true));
         }
         throw new ApplicationException(ReturnCode.CONFIGURATION_ERROR, msg, ne);
-      }
-      finally
-      {
-        StaticUtils.close(remoteConn);
       }
     }
 
@@ -2199,10 +2535,8 @@ public abstract class Installer extends GuiApplication
         if (replicationId == -1)
         {
           // This occurs if the remote server had not replication configured.
-          ConnectionWrapper remoteConn = null;
-          try
+          try (ConnectionWrapper remoteConn = getRemoteConnection(server))
           {
-            remoteConn = getRemoteConnection(server, getTrustManager(), getPreferredConnections());
             TopologyCacheFilter filter = new TopologyCacheFilter();
             filter.setSearchMonitoringInformation(false);
             filter.addBaseDNToSearch(dn);
@@ -2227,10 +2561,6 @@ public abstract class Installer extends GuiApplication
               msg = INFO_CANNOT_CONNECT_TO_REMOTE_GENERIC.get(getHostPort(server), ne.toString(true));
             }
             throw new ApplicationException(ReturnCode.CONFIGURATION_ERROR, msg, ne);
-          }
-          finally
-          {
-            StaticUtils.close(remoteConn);
           }
         }
         if (replicationId == -1)
@@ -2288,7 +2618,7 @@ public abstract class Installer extends GuiApplication
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  protected void updateADS() throws ApplicationException
+  private void updateADS() throws ApplicationException
   {
     DataReplicationOptions repl = getUserData().getReplicationOptions();
     boolean isRemoteServer = repl.getType() == DataReplicationOptions.Type.IN_EXISTING_TOPOLOGY;
@@ -2341,12 +2671,6 @@ public abstract class Installer extends GuiApplication
         notifyListeners(getFormattedWithPoints(INFO_PROGRESS_CREATING_ADS.get()));
       }
       localConn = createLocalConnection();
-      //      if (isRemoteServer)
-      //      {
-      //        /* Create an empty ADS suffix on the local server. */
-      //        ADSContext localAdsContext = new ADSContext(localCtx);
-      //        localAdsContext.createAdministrationSuffix(null);
-      //      }
       if (!isRemoteServer)
       {
         /* Configure local server to have an ADS */
@@ -2445,28 +2769,25 @@ public abstract class Installer extends GuiApplication
     String dn = auth.getDn();
     String pwd = auth.getPwd();
 
-    InitialLdapContext context;
     if (auth.useSecureConnection())
     {
       ApplicationTrustManager trustManager = getTrustManager();
       trustManager.setHost(auth.getHostPort().getHost());
-      context = createLdapsContext(ldapUrl, dn, pwd, getConnectTimeout(), null, trustManager, null);
+      return new ConnectionWrapper(ldapUrl, LDAPS, dn, pwd, getConnectTimeout(), getTrustManager());
     }
     else
     {
-      context = createLdapContext(ldapUrl, dn, pwd, getConnectTimeout(), null);
+      return new ConnectionWrapper(ldapUrl, LDAP, dn, pwd, getConnectTimeout(), getTrustManager());
     }
-    return new ConnectionWrapper(context, getConnectTimeout(), getTrustManager());
   }
 
   /**
    * Tells whether we must create a suffix that we are not going to replicate
    * with other servers or not.
    *
-   * @return <CODE>true</CODE> if we must create a new suffix and
-   *         <CODE>false</CODE> otherwise.
+   * @return {@code true} if we must create a new suffix and {@code false} otherwise.
    */
-  protected boolean createNotReplicatedSuffix()
+  private boolean createNotReplicatedSuffix()
   {
     DataReplicationOptions repl = getUserData().getReplicationOptions();
 
@@ -2478,51 +2799,44 @@ public abstract class Installer extends GuiApplication
   }
 
   /**
-   * Returns <CODE>true</CODE> if we must configure replication and
-   * <CODE>false</CODE> otherwise.
+   * Returns whether we must configure replication.
    *
-   * @return <CODE>true</CODE> if we must configure replication and
-   *         <CODE>false</CODE> otherwise.
+   * @return {@code true} if we must configure replication and {@code false} otherwise.
    */
-  protected boolean mustConfigureReplication()
+  private boolean mustConfigureReplication()
   {
     return getUserData().getReplicationOptions().getType() != DataReplicationOptions.Type.STANDALONE;
   }
 
   /**
-   * Returns <CODE>true</CODE> if we must create the ADS and <CODE>false</CODE>
-   * otherwise.
+   * Returns whether we must create the ADS.
    *
-   * @return <CODE>true</CODE> if we must create the ADS and <CODE>false</CODE>
-   *         otherwise.
+   * @return {@code true} if we must create the ADS and {@code false} otherwise.
    */
-  protected boolean mustCreateAds()
+  private boolean mustCreateAds()
   {
     return getUserData().getReplicationOptions().getType() != DataReplicationOptions.Type.STANDALONE;
   }
 
   /**
-   * Returns <CODE>true</CODE> if we must start the server and
-   * <CODE>false</CODE> otherwise.
+   * Returns whether we must start the server.
    *
-   * @return <CODE>true</CODE> if we must start the server and
-   *         <CODE>false</CODE> otherwise.
+   * @return {@code true} if we must start the server and {@code false} otherwise.
    */
-  protected boolean mustStart()
+  private boolean mustStart()
   {
     return getUserData().getStartServer() || mustCreateAds();
   }
 
   /**
-   * Returns <CODE>true</CODE> if the start server must be launched in verbose
-   * mode and <CODE>false</CODE> otherwise. The verbose flag is not enough
-   * because in the case where many entries have been imported, the startup
-   * phase can take long.
+   * Returns whether the start server must be launched in verbose mode.
+   * <p>
+   * The verbose flag is not enough because in the case where many entries have been imported,
+   * the startup phase can take long.
    *
-   * @return <CODE>true</CODE> if the start server must be launched in verbose
-   *         mode and <CODE>false</CODE> otherwise.
+   * @return {@code true} if the start server must be launched in verbose mode and {@code false} otherwise.
    */
-  protected boolean isStartVerbose()
+  private boolean isStartVerbose()
   {
     if (isVerbose())
     {
@@ -2557,27 +2871,24 @@ public abstract class Installer extends GuiApplication
   }
 
   /**
-   * Returns <CODE>true</CODE> if we must stop the server and <CODE>false</CODE>
-   * otherwise. The server might be stopped if the user asked not to start it at
-   * the end of the installation and it was started temporarily to update its
-   * configuration.
+   * Returns whether we must stop the server.
+   * <p>
+   * The server might be stopped if the user asked not to start it at the end
+   * of the installation and it was started temporarily to update its configuration.
    *
-   * @return <CODE>true</CODE> if we must stop the server and <CODE>false</CODE>
-   *         otherwise.
+   * @return {@code true} if we must stop the server and {@code false} otherwise.
    */
-  protected boolean mustStop()
+  private boolean mustStop()
   {
     return !getUserData().getStartServer() && mustCreateAds();
   }
 
   /**
-   * Returns <CODE>true</CODE> if we must initialize suffixes and
-   * <CODE>false</CODE> otherwise.
+   * Returns whether we must initialize suffixes.
    *
-   * @return <CODE>true</CODE> if we must initialize suffixes and
-   *         <CODE>false</CODE> otherwise.
+   * @return {@code true} if we must initialize suffixes and {@code false} otherwise.
    */
-  protected boolean mustInitializeSuffixes()
+  private boolean mustInitializeSuffixes()
   {
     return getUserData().getReplicationOptions().getType() == DataReplicationOptions.Type.IN_EXISTING_TOPOLOGY;
   }
@@ -2681,7 +2992,6 @@ public abstract class Installer extends GuiApplication
   private void updateUserDataForServerSettingsPanel(QuickSetup qs) throws UserDataException
   {
     List<LocalizableMessage> errorMsgs = new ArrayList<>();
-    LocalizableMessage confirmationMsg = null;
 
     // Check the host is not empty.
     // TODO: check that the host name is valid...
@@ -2866,10 +3176,6 @@ public abstract class Installer extends GuiApplication
     if (!errorMsgs.isEmpty())
     {
       throw new UserDataException(Step.SERVER_SETTINGS, getMessageFromCollection(errorMsgs, "\n"));
-    }
-    if (confirmationMsg != null)
-    {
-      throw new UserDataConfirmationException(Step.SERVER_SETTINGS, confirmationMsg);
     }
   }
 
@@ -3087,35 +3393,13 @@ public abstract class Installer extends GuiApplication
       throws UserDataException
   {
     host = getHostNameForLdapUrl(host);
-    String ldapUrl = "ldaps://" + host + ":" + port;
-    InitialLdapContext ctx = null;
-    ConnectionWrapper conn = null;
+    HostPort hostPort = new HostPort(host, port);
 
     ApplicationTrustManager trustManager = getTrustManager();
     trustManager.setHost(host);
     trustManager.resetLastRefusedItems();
-    try
+    try (ConnectionWrapper conn = newConnectionWrapper(dn, pwd, effectiveDn, hostPort, trustManager))
     {
-      effectiveDn[0] = dn;
-      try
-      {
-        ctx = createLdapsContext(ldapUrl, dn, pwd, getConnectTimeout(), null, trustManager, null);
-      }
-      catch (Throwable t)
-      {
-        if (!isCertificateException(t))
-        {
-          // Try using a global administrator
-          dn = ADSContext.getAdministratorDN(dn);
-          effectiveDn[0] = dn;
-          ctx = createLdapsContext(ldapUrl, dn, pwd, getConnectTimeout(), null, trustManager, null);
-        }
-        else
-        {
-          throw t;
-        }
-      }
-      conn = new ConnectionWrapper(ctx, getConnectTimeout(), trustManager);
       ADSContext adsContext = new ADSContext(conn);
       if (adsContext.hasAdminData())
       {
@@ -3190,7 +3474,7 @@ public abstract class Installer extends GuiApplication
       }
       else
       {
-        updateUserDataWithSuffixesInServer(ctx);
+        updateUserDataWithSuffixesInServer(conn.getLdapContext());
       }
     }
     catch (UserDataException ude)
@@ -3223,14 +3507,11 @@ public abstract class Installer extends GuiApplication
           throw new UserDataCertificateException(Step.REPLICATION_OPTIONS, INFO_CERTIFICATE_EXCEPTION.get(host, port),
               t, host, port, trustManager.getLastRefusedChain(), trustManager.getLastRefusedAuthType(), excType);
         }
-        else
-        {
-          qs.displayFieldInvalid(FieldName.REMOTE_SERVER_HOST, true);
-          qs.displayFieldInvalid(FieldName.REMOTE_SERVER_PORT, true);
-          qs.displayFieldInvalid(FieldName.REMOTE_SERVER_DN, true);
-          qs.displayFieldInvalid(FieldName.REMOTE_SERVER_PWD, true);
-          errorMsgs.add(INFO_CANNOT_CONNECT_TO_REMOTE_GENERIC.get(host + ":" + port, t));
-        }
+        qs.displayFieldInvalid(FieldName.REMOTE_SERVER_HOST, true);
+        qs.displayFieldInvalid(FieldName.REMOTE_SERVER_PORT, true);
+        qs.displayFieldInvalid(FieldName.REMOTE_SERVER_DN, true);
+        qs.displayFieldInvalid(FieldName.REMOTE_SERVER_PWD, true);
+        errorMsgs.add(INFO_CANNOT_CONNECT_TO_REMOTE_GENERIC.get(host + ":" + port, t));
       }
       else if (t instanceof NamingException)
       {
@@ -3252,10 +3533,26 @@ public abstract class Installer extends GuiApplication
         throw new UserDataException(Step.REPLICATION_OPTIONS, getThrowableMsg(INFO_BUG_MSG.get(), t));
       }
     }
-    finally
+  }
+
+  private ConnectionWrapper newConnectionWrapper(String dn, String pwd, String[] effectiveDn, HostPort hostPort,
+      ApplicationTrustManager trustManager) throws Throwable
+  {
+    try
     {
-      StaticUtils.close(ctx);
-      StaticUtils.close(conn);
+      effectiveDn[0] = dn;
+      return new ConnectionWrapper(hostPort, LDAPS, dn, pwd, getConnectTimeout(), trustManager);
+    }
+    catch (Throwable t)
+    {
+      if (isCertificateException(t))
+      {
+        throw t;
+      }
+      // Try using a global administrator
+      dn = ADSContext.getAdministratorDN(dn);
+      effectiveDn[0] = dn;
+      return new ConnectionWrapper(hostPort, LDAPS, dn, pwd, getConnectTimeout(), trustManager);
     }
   }
 
@@ -3588,10 +3885,7 @@ public abstract class Installer extends GuiApplication
     return validBaseDn;
   }
 
-  /**
-   * Update the userData object according to the content of the runtime options
-   * panel.
-   */
+  /** Update the userData object according to the content of the runtime options panel. */
   private void updateUserDataForRuntimeOptionsPanel(QuickSetup qs)
   {
     getUserData().setJavaArguments(UserData.SERVER_SCRIPT_NAME,
@@ -3626,11 +3920,8 @@ public abstract class Installer extends GuiApplication
       type = SuffixesToReplicateOptions.Type.NEW_SUFFIX_IN_TOPOLOGY;
     }
     lastLoadedCache = new TopologyCache(adsContext, trustManager, getConnectTimeout());
-    LinkedHashSet<PreferredConnection> cnx = new LinkedHashSet<>();
-    cnx.add(PreferredConnection.getPreferredConnection(adsContext.getDirContext()));
-    // We cannot use getPreferredConnections since the user data has not been
-    // updated yet.
-    lastLoadedCache.setPreferredConnections(cnx);
+    // We cannot use getPreferredConnections since the user data has not been updated yet.
+    lastLoadedCache.setPreferredConnections(PreferredConnection.getPreferredConnections(adsContext.getConnection()));
     lastLoadedCache.reloadTopology();
     Set<SuffixDescriptor> suffixes = lastLoadedCache.getSuffixes();
     Set<SuffixDescriptor> moreSuffixes = null;
@@ -3697,7 +3988,7 @@ public abstract class Installer extends GuiApplication
    * @return the keystore path to be used for generating a self-signed
    *         certificate.
    */
-  protected String getSelfSignedKeystorePath()
+  private String getSelfSignedKeystorePath()
   {
     return getPath2("keystore");
   }
@@ -3770,7 +4061,7 @@ public abstract class Installer extends GuiApplication
    *
    * @return the self-signed certificate password used for this session.
    */
-  protected String getSelfSignedCertificatePwd()
+  private String getSelfSignedCertificatePwd()
   {
     if (selfSignedCertPw == null)
     {
@@ -3803,12 +4094,11 @@ public abstract class Installer extends GuiApplication
 
   private ConnectionWrapper createLocalConnection() throws NamingException
   {
-    String ldapUrl =
-        "ldaps://" + getHostNameForLdapUrl(getUserData().getHostName()) + ":" + getUserData().getAdminConnectorPort();
-    String dn = getUserData().getDirectoryManagerDn();
-    String pwd = getUserData().getDirectoryManagerPwd();
-    InitialLdapContext context = createLdapsContext(ldapUrl, dn, pwd, getConnectTimeout(), null, null, null);
-    return new ConnectionWrapper(context, getConnectTimeout(), null);
+    UserData uData = getUserData();
+    HostPort hostPort = new HostPort(uData.getHostName(), uData.getAdminConnectorPort());
+    String dn = uData.getDirectoryManagerDn();
+    String pwd = uData.getDirectoryManagerPwd();
+    return new ConnectionWrapper(hostPort, LDAPS, dn, pwd, getConnectTimeout(), null);
   }
 
   /**
@@ -3817,17 +4107,11 @@ public abstract class Installer extends GuiApplication
    *
    * @param server
    *          the object describing the server.
-   * @param trustManager
-   *          the trust manager to be used to establish the connection.
-   * @param cnx
-   *          the list of preferred LDAP URLs to be used to connect to the
-   *          server.
    * @return the InitialLdapContext to the remote server.
    * @throws ApplicationException
    *           if something goes wrong.
    */
-  private ConnectionWrapper getRemoteConnection(ServerDescriptor server, ApplicationTrustManager trustManager,
-      Set<PreferredConnection> cnx) throws ApplicationException
+  private ConnectionWrapper getRemoteConnection(ServerDescriptor server) throws ApplicationException
   {
     Map<ADSContext.ServerProperty, Object> adsProperties;
     AuthenticationData auth = getUserData().getReplicationOptions().getAuthenticationData();
@@ -3855,7 +4139,7 @@ public abstract class Installer extends GuiApplication
       }
       server.setAdsProperties(adsProperties);
     }
-    return getRemoteConnection(server, auth.getDn(), auth.getPwd(), trustManager, getConnectTimeout(), cnx);
+    return getRemoteConnection(server, auth.getDn(), auth.getPwd(), getConnectTimeout(), getPreferredConnections());
   }
 
   /**
@@ -4312,7 +4596,7 @@ public abstract class Installer extends GuiApplication
    *          the ServerDescriptor.
    * @return the host port string representation of the provided server.
    */
-  protected HostPort getHostPort(ServerDescriptor server)
+  private HostPort getHostPort(ServerDescriptor server)
   {
     HostPort hostPort = null;
 
@@ -4352,7 +4636,7 @@ public abstract class Installer extends GuiApplication
    * @return the timeout to be used to connect in milliseconds. Returns
    *         {@code 0} if there is no timeout.
    */
-  protected int getConnectTimeout()
+  private int getConnectTimeout()
   {
     return getUserData().getConnectTimeout();
   }
@@ -4371,17 +4655,15 @@ public abstract class Installer extends GuiApplication
 }
 
 /** Class used to be able to cancel long operations. */
-abstract class InvokeThread extends Thread implements Runnable
+abstract class InvokeThread extends Thread
 {
   protected boolean isOver;
   protected ApplicationException ae;
 
   /**
-   * Returns <CODE>true</CODE> if the thread is over and <CODE>false</CODE>
-   * otherwise.
+   * Returns whether the thread is over.
    *
-   * @return <CODE>true</CODE> if the thread is over and <CODE>false</CODE>
-   *         otherwise.
+   * @return {@code true} if the thread is over and {@code false} otherwise.
    */
   public boolean isOver()
   {
@@ -4398,7 +4680,6 @@ abstract class InvokeThread extends Thread implements Runnable
     return ae;
   }
 
-  /** Runnable implementation. */
   @Override
   public abstract void run();
 

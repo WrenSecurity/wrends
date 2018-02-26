@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.controlpanel.ui.components;
@@ -28,6 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -71,13 +72,13 @@ public class AddRemovePanel<T> extends JPanel
    * Mask used as display option.  If the provided display options contain
    * this mask, the panel will display the remove all button.
    */
-  public static final int DISPLAY_REMOVE_ALL = 0x001;
+  private static final int DISPLAY_REMOVE_ALL = 0x001;
 
   /**
    * Mask used as display option.  If the provided display options contain
    * this mask, the panel will display the add all button.
    */
-  public static final int DISPLAY_ADD_ALL = 0x010;
+  private static final int DISPLAY_ADD_ALL = 0x010;
 
 
   /**
@@ -98,7 +99,7 @@ public class AddRemovePanel<T> extends JPanel
    * @param displayOptions the display options.
    * @param theClass the class of the objects in the panel.
    */
-  public AddRemovePanel(int displayOptions, Class<T> theClass)
+  private AddRemovePanel(int displayOptions, Class<T> theClass)
   {
     super(new GridBagLayout());
     setOpaque(false);
@@ -124,19 +125,19 @@ public class AddRemovePanel<T> extends JPanel
 
     ListDataListener listDataListener = new ListDataListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void intervalRemoved(ListDataEvent ev)
       {
         updateButtonEnabling();
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void intervalAdded(ListDataEvent ev)
       {
         updateButtonEnabling();
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void contentsChanged(ListDataEvent ev)
       {
         updateButtonEnabling();
@@ -144,7 +145,7 @@ public class AddRemovePanel<T> extends JPanel
     };
     MouseAdapter doubleClickListener = new MouseAdapter()
     {
-      /** {@inheritDoc} */
+      @Override
       public void mouseClicked(MouseEvent e) {
         if (isEnabled() && e.getClickCount() == 2)
         {
@@ -209,7 +210,7 @@ public class AddRemovePanel<T> extends JPanel
     add.setOpaque(false);
     add.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         addClicked();
@@ -225,15 +226,13 @@ public class AddRemovePanel<T> extends JPanel
       addAll.setOpaque(false);
       addAll.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           selectedListModel.addAll(availableListModel.getData());
           availableListModel.clear();
-          selectedListModel.fireContentsChanged(selectedListModel, 0,
-              selectedListModel.getSize());
-          availableListModel.fireContentsChanged(availableListModel, 0,
-              availableListModel.getSize());
+          fireContentsChanged(selectedListModel);
+          fireContentsChanged(availableListModel);
         }
       });
       gbc.gridy ++;
@@ -245,7 +244,7 @@ public class AddRemovePanel<T> extends JPanel
     remove.setOpaque(false);
     remove.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         removeClicked();
@@ -262,15 +261,13 @@ public class AddRemovePanel<T> extends JPanel
       removeAll.setOpaque(false);
       removeAll.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           availableListModel.addAll(selectedListModel.getData());
           selectedListModel.clear();
-          selectedListModel.fireContentsChanged(selectedListModel, 0,
-              selectedListModel.getSize());
-          availableListModel.fireContentsChanged(availableListModel, 0,
-              availableListModel.getSize());
+          fireContentsChanged(selectedListModel);
+          fireContentsChanged(availableListModel);
         }
       });
       gbc.gridy ++;
@@ -298,6 +295,7 @@ public class AddRemovePanel<T> extends JPanel
         ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     ListSelectionListener listener = new ListSelectionListener()
     {
+      @Override
       public void valueChanged(ListSelectionEvent ev)
       {
         updateButtonEnabling();
@@ -326,6 +324,7 @@ public class AddRemovePanel<T> extends JPanel
    * Enables the state of the components in the panel.
    * @param enable whether to enable the components in the panel or not.
    */
+  @Override
   public void setEnabled(boolean enable)
   {
     super.setEnabled(enable);
@@ -415,33 +414,32 @@ public class AddRemovePanel<T> extends JPanel
 
   private void addClicked()
   {
-    @SuppressWarnings("deprecation")
-    Object[] selectedObjects = availableList.getSelectedValues();
-    for (int i=0; i<selectedObjects.length; i++)
+    List<?> selectedObjects = availableList.getSelectedValuesList();
+    for (Object selectedObject : selectedObjects)
     {
-      T value = AddRemovePanel.this.theClass.cast(selectedObjects[i]);
+      T value = AddRemovePanel.this.theClass.cast(selectedObject);
       selectedListModel.add(value);
       availableListModel.remove(value);
     }
-    selectedListModel.fireContentsChanged(selectedListModel, 0,
-        selectedListModel.getSize());
-    availableListModel.fireContentsChanged(availableListModel, 0,
-        availableListModel.getSize());
+    fireContentsChanged(selectedListModel);
+    fireContentsChanged(availableListModel);
   }
 
   private void removeClicked()
   {
-    @SuppressWarnings("deprecation")
-    Object[] selectedObjects = selectedList.getSelectedValues();
-    for (int i=0; i<selectedObjects.length; i++)
+    List<?> selectedObjects = selectedList.getSelectedValuesList();
+    for (Object selectedObject : selectedObjects)
     {
-      T value = AddRemovePanel.this.theClass.cast(selectedObjects[i]);
+      T value = AddRemovePanel.this.theClass.cast(selectedObject);
       availableListModel.add(value);
       selectedListModel.remove(value);
     }
-    selectedListModel.fireContentsChanged(selectedListModel, 0,
-        selectedListModel.getSize());
-    availableListModel.fireContentsChanged(availableListModel, 0,
-        availableListModel.getSize());
+    fireContentsChanged(selectedListModel);
+    fireContentsChanged(availableListModel);
+  }
+
+  private void fireContentsChanged(SortableListModel<T> listModel)
+  {
+    listModel.fireContentsChanged(listModel, 0, listModel.getSize());
   }
 }

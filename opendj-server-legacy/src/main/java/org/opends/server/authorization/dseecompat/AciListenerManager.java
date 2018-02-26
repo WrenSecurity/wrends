@@ -16,11 +16,15 @@
  */
 package org.opends.server.authorization.dseecompat;
 
+import static org.opends.messages.AccessControlMessages.*;
+import static org.opends.server.protocols.internal.InternalClientConnection.*;
+import static org.opends.server.protocols.internal.Requests.*;
+import static org.opends.server.util.ServerConstants.*;
+
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
@@ -53,11 +57,6 @@ import org.opends.server.types.operation.PostSynchronizationDeleteOperation;
 import org.opends.server.types.operation.PostSynchronizationModifyDNOperation;
 import org.opends.server.types.operation.PostSynchronizationModifyOperation;
 import org.opends.server.workflowelement.localbackend.LocalBackendSearchOperation;
-
-import static org.opends.messages.AccessControlMessages.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.opends.server.util.ServerConstants.*;
 
 /**
  * The AciListenerManager updates an ACI list after each modification
@@ -262,26 +261,27 @@ public class AciListenerManager implements
   }
 
   /** The configuration DN. */
-  private DN configurationDN;
+  private final DN configurationDN;
 
   /** True if the server is in lockdown mode. */
   private boolean inLockDownMode;
 
   /** The AciList caches the ACIs. */
-  private AciList aciList;
+  private final AciList aciList;
 
   /** Search filter used in context search for "aci" attribute types. */
-  private static SearchFilter aciFilter;
-  static
+  private final static SearchFilter aciFilter = buildAciFilter();
+  private static SearchFilter buildAciFilter()
   {
     // Set up the filter used to search private and public contexts.
     try
     {
-      aciFilter = SearchFilter.createFilterFromString("(aci=*)");
+      return SearchFilter.createFilterFromString("(aci=*)");
     }
     catch (DirectoryException ex)
     {
       // TODO should never happen, error message?
+      return null;
     }
   }
 
@@ -309,11 +309,9 @@ public class AciListenerManager implements
     this.plugin = new AciChangeListenerPlugin();
 
     // Process ACI from already registered backends.
-    Map<String, Backend> backendMap = DirectoryServer.getBackends();
-    if (backendMap != null) {
-      for (Backend backend : backendMap.values()) {
-        performBackendPreInitializationProcessing(backend);
-      }
+    for (Backend<?> backend : DirectoryServer.getBackends())
+    {
+      performBackendPreInitializationProcessing(backend);
     }
 
     DirectoryServer.registerInternalPlugin(plugin);
@@ -333,9 +331,10 @@ public class AciListenerManager implements
   }
 
   /**
-   * {@inheritDoc} In this case, the server will search the backend to
-   * find all aci attribute type values that it may contain and add them
-   * to the ACI list.
+   * {@inheritDoc}
+   * <p>
+   * In this case, the server will search the backend to find all aci attribute type values
+   * that it may contain and add them to the ACI list.
    */
   @Override
   public void performBackendPreInitializationProcessing(Backend<?> backend)
@@ -343,7 +342,7 @@ public class AciListenerManager implements
     // Check to make sure that the backend has a presence index defined
     // for the ACI attribute. If it does not, then log a warning message
     // because this processing could be very expensive.
-    AttributeType aciType = DirectoryServer.getAttributeType("aci");
+    AttributeType aciType = DirectoryServer.getSchema().getAttributeType("aci");
     if (backend.getEntryCount() > 0
         && !backend.isIndexed(aciType, IndexType.PRESENCE))
     {
@@ -474,7 +473,7 @@ public class AciListenerManager implements
    * @param failedACIMsgs
    *          List of exception messages from failed ACI decodes.
    */
-  public void logMsgsSetLockDownMode(LinkedList<LocalizableMessage> failedACIMsgs)
+  private void logMsgsSetLockDownMode(LinkedList<LocalizableMessage> failedACIMsgs)
   {
     for (LocalizableMessage msg : failedACIMsgs)
     {

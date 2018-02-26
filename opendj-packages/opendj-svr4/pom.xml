@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-packages</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>3.5.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-svr4</artifactId>
@@ -32,8 +32,13 @@
         This module contains configuration and generic plugin call to build OpenDJ SVR4 packages.
     </description>
 
-    <modules>
-        <module>opendj-svr4-standard</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>packages</id>
+            <modules>
+                <module>opendj-svr4-standard</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

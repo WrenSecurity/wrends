@@ -19,17 +19,17 @@ package org.opends.server.monitors;
 import static org.opends.server.util.ServerConstants.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.server.config.server.MonitorProviderCfg;
 import org.opends.server.api.Backend;
 import org.opends.server.api.MonitorData;
 import org.opends.server.api.MonitorProvider;
-import org.forgerock.opendj.ldap.DN;
-import org.opends.server.types.DirectoryConfig;
-import org.opends.server.types.ObjectClass;
+import org.opends.server.core.DirectoryServer;
 
 /**
  * This class implements a monitor provider that will report generic information
@@ -80,17 +80,17 @@ public class BackendMonitor
   @Override
   public ObjectClass getMonitorObjectClass()
   {
-    return DirectoryConfig.getObjectClass(OC_MONITOR_BACKEND, true);
+    return DirectoryServer.getSchema().getObjectClass(OC_MONITOR_BACKEND);
   }
 
   @Override
   public MonitorData getMonitorData()
   {
-    DN[] baseDNs = backend.getBaseDNs();
+    Set<DN> baseDNs = backend.getBaseDNs();
 
     MonitorData attrs = new MonitorData(6);
     attrs.add(ATTR_MONITOR_BACKEND_ID, backend.getBackendID());
-    attrs.add(ATTR_MONITOR_BACKEND_BASE_DN, Arrays.asList(baseDNs));
+    attrs.add(ATTR_MONITOR_BACKEND_BASE_DN, baseDNs);
     attrs.add(ATTR_MONITOR_BACKEND_IS_PRIVATE, backend.isPrivateBackend());
     attrs.add(ATTR_MONITOR_BACKEND_ENTRY_COUNT, backend.getEntryCount());
     attrs.add(ATTR_MONITOR_BASE_DN_ENTRY_COUNT, getBackendEntryCounts(baseDNs));
@@ -98,10 +98,17 @@ public class BackendMonitor
     return attrs;
   }
 
-  private Collection<String> getBackendEntryCounts(DN[] baseDNs)
+  private Collection<String> getBackendEntryCounts(Set<DN> baseDNs)
   {
     Collection<String> results = new ArrayList<>();
-    if (baseDNs.length != 1)
+    if (baseDNs.size() == 1)
+    {
+      // This is done to avoid recalculating the number of entries
+      // using the numSubordinates method in the case where the
+      // backend has a single base DN.
+      results.add(backend.getEntryCount() + " " + baseDNs.iterator().next());
+    }
+    else
     {
       for (DN dn : baseDNs)
       {
@@ -116,13 +123,6 @@ public class BackendMonitor
         }
         results.add(entryCount + " " + dn);
       }
-    }
-    else
-    {
-      // This is done to avoid recalculating the number of entries
-      // using the numSubordinates method in the case where the
-      // backend has a single base DN.
-      results.add(backend.getEntryCount() + " " + baseDNs[0]);
     }
     return results;
   }

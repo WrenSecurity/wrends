@@ -158,16 +158,16 @@ class StatsThread extends Thread {
         @Override
         MultiColumnPrinter createPrinter() {
             final List<MultiColumnPrinter.Column> columns = new ArrayList<>();
-            columns.add(column(TIME_NOW, "time", 3));
-            columns.add(column(RECENT_THROUGHPUT, "recent throughput", 1));
-            columns.add(column(AVERAGE_THROUGHPUT, "average throughput", 1));
-            columns.add(column(RECENT_RESPONSE_TIME_MS, "recent response time", 3));
-            columns.add(column(AVERAGE_RESPONSE_TIME_MS, "average response time", 3));
+            columns.add(column(TIME_NOW, "Time (seconds)", 3));
+            columns.add(column(RECENT_THROUGHPUT, "Recent throughput (ops/second)", 1));
+            columns.add(column(AVERAGE_THROUGHPUT, "Average throughput (ops/second)", 1));
+            columns.add(column(RECENT_RESPONSE_TIME_MS, "Recent response time (milliseconds)", 3));
+            columns.add(column(AVERAGE_RESPONSE_TIME_MS, "Average response time (milliseconds)", 3));
             for (double percentile : percentiles) {
                 columns.add(column(
-                        PERCENTILES + percentile, percentile + "% response time", 2));
+                        PERCENTILES + percentile, percentile + "% response time (milliseconds)", 2));
             }
-            columns.add(column(ERROR_PER_SECOND, "errors/second", 1));
+            columns.add(column(ERROR_PER_SECOND, "Errors/second", 1));
             columns.addAll(registerAdditionalColumns());
 
 
@@ -390,9 +390,12 @@ class StatsThread extends Thread {
     }
 
     void addResponseTime(final long responseTimeNs) {
-        if (!warmingUp) {
-            waitDurationNsCount.inc(responseTimeNs);
+        // The computed response time might be negative if the difference between the two
+        // System.nanoTime() calls (Just before sending the request and right after receiving the response)
+        // is incoherent. See OPENDJ-2968 for more details.
+        if (!warmingUp && responseTimeNs >= 0) {
             responseTimes.update(responseTimeNs);
+            waitDurationNsCount.inc(responseTimeNs);
         }
     }
 

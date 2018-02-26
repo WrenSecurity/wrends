@@ -18,6 +18,7 @@ package org.opends.guitools.controlpanel.ui;
 
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.server.util.CollectionUtils.*;
+import static org.opends.server.util.SchemaUtils.*;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -49,7 +50,10 @@ import javax.swing.event.ChangeListener;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.ldap.schema.ObjectClassType;
+import org.forgerock.opendj.ldap.schema.SchemaBuilder;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.event.ConfigurationElementCreatedListener;
@@ -63,7 +67,6 @@ import org.opends.guitools.controlpanel.ui.components.SuperiorObjectClassesEdito
 import org.opends.guitools.controlpanel.ui.renderer.SchemaElementComboBoxCellRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.server.config.ConfigConstants;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 import org.opends.server.util.ServerConstants;
 import org.opends.server.util.StaticUtils;
@@ -322,8 +325,7 @@ public class NewObjectClassPanel extends StatusGenericPanel
       oid.setText("");
       description.setText("");
       aliases.setText("");
-      superiors.setSelectedSuperiors(
-          Collections.singleton(schema.getObjectClass("top")));
+      superiors.setSelectedSuperiors(Collections.singleton(CoreSchema.getTopObjectClass()));
       attributes.getAvailableListModel().addAll(
           attributes.getSelectedListModel1().getData());
       attributes.getAvailableListModel().addAll(
@@ -464,8 +466,8 @@ public class NewObjectClassPanel extends StatusGenericPanel
         inheritedRequiredAttributes.clear();
         for (ObjectClass oc : superiors.getSelectedSuperiors())
         {
-          inheritedRequiredAttributes.addAll(oc.getRequiredAttributeChain());
-          inheritedOptionalAttributes.addAll(oc.getOptionalAttributeChain());
+          inheritedRequiredAttributes.addAll(oc.getRequiredAttributes());
+          inheritedOptionalAttributes.addAll(oc.getOptionalAttributes());
         }
         for (AttributeType attr : inheritedRequiredAttributes)
         {
@@ -678,15 +680,18 @@ public class NewObjectClassPanel extends StatusGenericPanel
 
   private ObjectClass getObjectClass()
   {
-    return new ObjectClass("", getText(name), getAllNames(),
-        getOID(),
-        getDescription(),
-        getObjectClassSuperiors(),
-        getRequiredAttributes(),
-        getOptionalAttributes(),
-        getObjectClassType(),
-        obsolete.isSelected(),
-        getExtraProperties());
+    return new SchemaBuilder(schema.getSchemaNG()).buildObjectClass(getOID())
+        .names(getAllNames())
+        .description(getDescription())
+        .superiorObjectClasses(getNameOrOIDsForOCs(getObjectClassSuperiors()))
+        .requiredAttributes(getNameOrOIDsForATs(getRequiredAttributes()))
+        .optionalAttributes(getNameOrOIDsForATs(getOptionalAttributes()))
+        .type(getObjectClassType())
+        .obsolete(obsolete.isSelected())
+        .extraProperties(getExtraProperties())
+        .addToSchema()
+        .toSchema()
+        .getObjectClass(getOID());
   }
 
   private ObjectClassType getObjectClassType()

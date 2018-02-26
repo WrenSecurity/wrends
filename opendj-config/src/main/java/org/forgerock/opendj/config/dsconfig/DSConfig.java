@@ -52,6 +52,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageDescriptor.Arg1;
@@ -230,7 +233,7 @@ public final class DSConfig extends ConsoleApplication {
             return rd.getChildDefinition();
         }
 
-        private boolean isHidden(RelationDefinition defn) {
+        private boolean isHidden(RelationDefinition<?, ?> defn) {
             return defn == null || defn.hasOption(RelationOption.HIDDEN);
         }
 
@@ -784,6 +787,7 @@ public final class DSConfig extends ConsoleApplication {
      * @return Zero to indicate that the program completed successfully, or non-zero to indicate that an error occurred.
      */
     public static int main(String[] args, OutputStream outStream, OutputStream errStream) {
+        disableLogging();
         final DSConfig app = new DSConfig(outStream, errStream);
         app.sessionStartTime = System.currentTimeMillis();
 
@@ -800,17 +804,26 @@ public final class DSConfig extends ConsoleApplication {
         return app.run(args);
     }
 
+    /**
+     * Prevent configuration framework to log on the console.
+     * @see OPENDJ-3140 for more details.
+     */
+    private static void disableLogging() {
+        LogManager.getLogManager().reset();
+        Logger.getLogger("").setLevel(Level.OFF);
+    }
+
     /** The factory which the application should use to retrieve its management context. */
     private LDAPManagementContextFactory factory;
 
-    /** Flag indicating whether or not the global arguments have already been initialized. */
+    /** Flag indicating whether the global arguments have already been initialized. */
     private boolean globalArgumentsInitialized;
 
     /** The sub-command handler factory. */
     private SubCommandHandlerFactory handlerFactory;
     /** Mapping of sub-commands to their implementations. */
     private final Map<SubCommand, SubCommandHandler> handlers = new HashMap<>();
-    /** Indicates whether or not a sub-command was provided. */
+    /** Indicates whether a sub-command was provided. */
     private boolean hasSubCommand = true;
 
     /** The command-line argument parser. */
@@ -1199,7 +1212,7 @@ public final class DSConfig extends ConsoleApplication {
 
         try {
             // Force retrieval of management context.
-            factory.getManagementContext(app);
+            factory.getManagementContext();
         } catch (ArgumentException e) {
             parser.displayMessageAndUsageReference(getErrStream(), e.getMessageObject());
             return ReturnCode.ERROR_USER_DATA.get();

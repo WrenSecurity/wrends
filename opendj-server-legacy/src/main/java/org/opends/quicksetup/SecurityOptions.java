@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.quicksetup;
 
@@ -21,10 +21,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * Class used to describe the Security Options specified by the user.
- *
- */
+/** Class used to describe the Security Options specified by the user. */
 public class SecurityOptions
 {
   private boolean enableSSL;
@@ -37,41 +34,27 @@ public class SecurityOptions
   /** Alias of a self-signed certificate using elliptic curve. */
   public static final String SELF_SIGNED_EC_CERT_ALIAS = SELF_SIGNED_CERT_ALIAS + "-ec";
 
-  /**
-   * The different type of security options that we can have.
-   */
+  /** The different type of security options that we can have. */
   public enum CertificateType
   {
-    /**
-     * No certificate to be used (and so no SSL and no Start TLS).
-     */
+    /** No certificate to be used (and so no SSL and no Start TLS). */
     NO_CERTIFICATE,
-    /**
-     * Use a newly created Self Signed Certificate.
-     */
+    /** Use a newly created Self Signed Certificate. */
     SELF_SIGNED_CERTIFICATE,
-    /**
-     * Use an existing JKS key store.
-     */
+    /** Use an existing JKS key store. */
     JKS,
-    /**
-     * Use an existing JCEKS key store.
-     */
+    /** Use an existing JCEKS key store. */
     JCEKS,
-    /**
-     * Use an existing PKCS#11 key store.
-     */
+    /** Use an existing PKCS#11 key store. */
     PKCS11,
-    /**
-     * Use an existing PKCS#12 key store.
-     */
+    /** Use an existing PKCS#12 key store. */
     PKCS12
   }
 
   private CertificateType certificateType;
   private String keyStorePath;
   private String keyStorePassword;
-  private Set<String> aliasesToUse = new TreeSet<>();
+  private final Set<String> aliasesToUse = new TreeSet<>();
 
   private SecurityOptions()
   {
@@ -128,7 +111,7 @@ public class SecurityOptions
    * @return a new instance of a SecurityOptions using a self-signed
    *         certificate.
    */
-  public static SecurityOptions createSelfSignedCertificateOptions(boolean enableSSL, boolean enableStartTLS,
+  private static SecurityOptions createSelfSignedCertificateOptions(boolean enableSSL, boolean enableStartTLS,
       int sslPort, Collection<String> aliasesToUse)
   {
       return createOptionsForCertificatType(
@@ -421,7 +404,7 @@ public class SecurityOptions
    * Sets the certificates aliases name.
    * @param aliasesToUse the certificates aliases name.
    */
-  void setAliasToUse(Collection<String> aliasesToUse)
+  private void setAliasToUse(Collection<String> aliasesToUse)
   {
     this.aliasesToUse.clear();
     this.aliasesToUse.addAll(aliasesToUse);

@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,6 +43,8 @@ import java.util.SortedSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -51,6 +54,7 @@ import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -62,6 +66,7 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
@@ -69,10 +74,11 @@ import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.forgerock.opendj.server.config.server.CryptoManagerCfg;
 import org.forgerock.util.Reject;
 import org.opends.admin.ads.ADSContext;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
-import org.forgerock.opendj.server.config.server.CryptoManagerCfg;
 import org.opends.server.api.Backend;
 import org.opends.server.backends.TrustStoreBackend;
 import org.opends.server.core.AddOperation;
@@ -101,12 +107,13 @@ import org.opends.server.types.Entry;
 import org.opends.server.types.IdentifiedException;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.SearchResultEntry;
 import org.opends.server.util.Base64;
 import org.opends.server.util.SelectableCertificateKeyManager;
 import org.opends.server.util.ServerConstants;
 import org.opends.server.util.StaticUtils;
+
+import net.jcip.annotations.GuardedBy;
 
 import static org.opends.messages.CoreMessages.*;
 import static org.opends.server.config.ConfigConstants.*;
@@ -136,8 +143,7 @@ import static org.opends.server.util.StaticUtils.*;
  @see org.opends.server.crypto.CryptoManagerSync
  @see org.opends.server.crypto.GetSymmetricKeyExtendedOperation
  */
-public class CryptoManagerImpl
-        implements ConfigurationChangeListener<CryptoManagerCfg>, CryptoManager
+public class CryptoManagerImpl implements ConfigurationChangeListener<CryptoManagerCfg>, CryptoManager
 {
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
@@ -184,18 +190,44 @@ public class CryptoManagerImpl
    */
   private static final int CIPHERTEXT_PROLOGUE_VERSION = 1 ;
 
+  private final Lock cipherKeyEntryLock = new ReentrantLock();
   /**
    * The map from encryption key ID to CipherKeyEntry (cache). The cache is
-   * accessed by methods that request, publish, and import keys.
+   * accessed by methods that request by ID, publish, and import keys.
+   * It contains all keys, even compromised, to be able to access old data.
    */
+  @GuardedBy("cipherKeyEntryLock")
   private final Map<KeyEntryID, CipherKeyEntry> cipherKeyEntryCache = new ConcurrentHashMap<>();
+  /**
+   * Keys imported or generated to use for encryption, mapped by transformation/key length.
+   * Only one cipher key per transformation/key length (used as a key for the map, for example
+   * "AES/CBC/PKCS5Padding/128") is recorded, the last in temporal order to be imported or
+   * generated.
+   * Cipher keys belonging to this map also belong in the cache Map, they are used as keys for
+   * encrypting new data.
+   *
+   */
+  @GuardedBy("cipherKeyEntryLock")
+  private final Map<String, CipherKeyEntry> mostRecentCipherKeys = new ConcurrentHashMap<>();
 
+  private final Lock macKeyEntryLock = new ReentrantLock();
   /**
    * The map from encryption key ID to MacKeyEntry (cache). The cache is
-   * accessed by methods that request, publish, and import keys.
+   * accessed by methods that request by ID, publish, and import keys.
+   * It contains all keys, even compromised, to be able to access old data.
    */
+  @GuardedBy("macKeyEntryLock")
   private final Map<KeyEntryID, MacKeyEntry> macKeyEntryCache = new ConcurrentHashMap<>();
-
+  /**
+   * Keys imported or generated for MAC operations, mapped by algorithm/key length.
+   * Only one MAC key per algorithm/key length (used as a key for the map, for example
+   * "HmacSHA1/128") is recorded, the last in temporal order to be imported or
+   * generated.
+   * MAC keys belonging to this map also belong in the cache Map, they are
+   * used for computing new MAC digests.
+   */
+  @GuardedBy("macKeyEntryLock")
+  private final Map<String, MacKeyEntry> mostRecentMacKeys = new ConcurrentHashMap<>();
 
   /** The preferred key wrapping transformation. */
   private String preferredKeyWrappingTransformation;
@@ -257,18 +289,19 @@ public class CryptoManagerImpl
     this.serverContext = serverContext;
     if (!schemaInitDone) {
       // Initialize various schema references.
-      attrKeyID = DirectoryServer.getAttributeType(ATTR_CRYPTO_KEY_ID);
-      attrPublicKeyCertificate = DirectoryServer.getAttributeType(ATTR_CRYPTO_PUBLIC_KEY_CERTIFICATE);
-      attrTransformation = DirectoryServer.getAttributeType(ATTR_CRYPTO_CIPHER_TRANSFORMATION_NAME);
-      attrMacAlgorithm = DirectoryServer.getAttributeType(ATTR_CRYPTO_MAC_ALGORITHM_NAME);
-      attrSymmetricKey = DirectoryServer.getAttributeType(ATTR_CRYPTO_SYMMETRIC_KEY);
-      attrInitVectorLength = DirectoryServer.getAttributeType(ATTR_CRYPTO_INIT_VECTOR_LENGTH_BITS);
-      attrKeyLength = DirectoryServer.getAttributeType(ATTR_CRYPTO_KEY_LENGTH_BITS);
-      attrCompromisedTime = DirectoryServer.getAttributeType(ATTR_CRYPTO_KEY_COMPROMISED_TIME);
-      ocCertRequest = DirectoryServer.getObjectClass("ds-cfg-self-signed-cert-request"); // TODO: ConfigConstants
-      ocInstanceKey = DirectoryServer.getObjectClass(OC_CRYPTO_INSTANCE_KEY);
-      ocCipherKey = DirectoryServer.getObjectClass(OC_CRYPTO_CIPHER_KEY);
-      ocMacKey = DirectoryServer.getObjectClass(OC_CRYPTO_MAC_KEY);
+      attrKeyID = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_KEY_ID);
+      attrPublicKeyCertificate = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_PUBLIC_KEY_CERTIFICATE);
+      attrTransformation = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_CIPHER_TRANSFORMATION_NAME);
+      attrMacAlgorithm = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_MAC_ALGORITHM_NAME);
+      attrSymmetricKey = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_SYMMETRIC_KEY);
+      attrInitVectorLength = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_INIT_VECTOR_LENGTH_BITS);
+      attrKeyLength = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_KEY_LENGTH_BITS);
+      attrCompromisedTime = DirectoryServer.getSchema().getAttributeType(ATTR_CRYPTO_KEY_COMPROMISED_TIME);
+      // TODO: ConfigConstants
+      ocCertRequest = DirectoryServer.getSchema().getObjectClass("ds-cfg-self-signed-cert-request");
+      ocInstanceKey = DirectoryServer.getSchema().getObjectClass(OC_CRYPTO_INSTANCE_KEY);
+      ocCipherKey = DirectoryServer.getSchema().getObjectClass(OC_CRYPTO_CIPHER_KEY);
+      ocMacKey = DirectoryServer.getSchema().getObjectClass(OC_CRYPTO_MAC_KEY);
 
       localTruststoreDN = DN.valueOf(DN_TRUST_STORE_ROOT);
       DN adminSuffixDN = DN.valueOf(ADSContext.getAdministrationSuffixDN());
@@ -310,7 +343,7 @@ public class CryptoManagerImpl
     if (! requestedDigestAlgorithm.equals(this.preferredDigestAlgorithm))
     {
       try{
-        MessageDigest.getInstance(requestedDigestAlgorithm);
+        getMessageDigest(requestedDigestAlgorithm);
       }
       catch (Exception ex) {
         logger.traceException(ex);
@@ -509,7 +542,7 @@ public class CryptoManagerImpl
           }
 
           final Entry entry = new Entry(entryDN, null, null, null);
-          entry.addObjectClass(DirectoryServer.getTopObjectClass());
+          entry.addObjectClass(CoreSchema.getTopObjectClass());
           entry.addObjectClass(ocCertRequest);
           AddOperation addOperation = icc.processAdd(entry);
           if (ResultCode.SUCCESS != addOperation.getResultCode()) {
@@ -608,7 +641,7 @@ public class CryptoManagerImpl
       final InternalSearchOperation searchOp = icc.processSearch(request);
       if (searchOp.getSearchEntries().isEmpty()) {
         final Entry entry = new Entry(entryDN, null, null, null);
-        entry.addObjectClass(DirectoryServer.getTopObjectClass());
+        entry.addObjectClass(CoreSchema.getTopObjectClass());
         entry.addObjectClass(ocInstanceKey);
 
         // Add the key ID attribute.
@@ -1259,13 +1292,9 @@ public class CryptoManagerImpl
       return uuidBytes;
     }
 
-    /**
-     * Returns the {@code String} representation of this
-     * {@code KeyEntryID}.
-     * @return The {@code String} representation of this
-     * {@code KeyEntryID}.
-     */
-    public String getStringValue() {
+
+    @Override
+    public String toString() {
       return fValue.toString();
     }
 
@@ -1502,7 +1531,7 @@ public class CryptoManagerImpl
      * instantiating a Cipher object in order to validate the supplied
      * parameters when creating a new entry.
      *
-     * @see MacKeyEntry#getKeyEntry(CryptoManagerImpl, String, int)
+     * @see MacKeyEntry#getMacKeyEntryOrNull(CryptoManagerImpl, String, int)
      */
     public static CipherKeyEntry generateKeyEntry(
             final CryptoManagerImpl cryptoManager,
@@ -1550,13 +1579,13 @@ public class CryptoManagerImpl
     {
       // Construct the key entry DN.
       ByteString distinguishedValue =
-           ByteString.valueOfUtf8(keyEntry.getKeyID().getStringValue());
+           ByteString.valueOfUtf8(keyEntry.getKeyID().toString());
       DN entryDN = secretKeysDN.child(
            new RDN(attrKeyID, distinguishedValue));
 
       // Set the entry object classes.
       LinkedHashMap<ObjectClass,String> ocMap = new LinkedHashMap<>(2);
-      ocMap.put(DirectoryServer.getTopObjectClass(), OC_TOP);
+      ocMap.put(CoreSchema.getTopObjectClass(), OC_TOP);
       ocMap.put(ocCipherKey, OC_CRYPTO_CIPHER_KEY);
 
       // Create the user attributes.
@@ -1617,7 +1646,7 @@ public class CryptoManagerImpl
       final KeyEntryID keyID = new KeyEntryID(keyIDString);
 
       // Check map for existing key entry with the supplied keyID.
-      CipherKeyEntry keyEntry = getKeyEntry(cryptoManager, keyID);
+      CipherKeyEntry keyEntry = getCipherKeyEntryOrNull(cryptoManager, keyID);
       if (null != keyEntry) {
         // Paranoiac check to ensure exact type match.
         if (!keyEntry.getType().equals(transformation)
@@ -1645,8 +1674,18 @@ public class CryptoManagerImpl
       }
       getCipher(keyEntry, Cipher.DECRYPT_MODE, iv);
 
-      // Cache new entry.
-      cryptoManager.cipherKeyEntryCache.put(keyEntry.getKeyID(), keyEntry);
+      // Cache new entry
+      cryptoManager.cipherKeyEntryLock.lock();
+      try
+      {
+        cryptoManager.cipherKeyEntryCache.put(keyEntry.getKeyID(), keyEntry);
+        cryptoManager.mostRecentCipherKeys.put(cryptoManager.getKeyFullSpec(transformation, secretKeyLengthBits),
+            keyEntry);
+      }
+      finally
+      {
+        cryptoManager.cipherKeyEntryLock.unlock();
+      }
 
       return keyEntry;
     }
@@ -1667,26 +1706,18 @@ public class CryptoManagerImpl
      * @param keyLengthBits  The cipher key length in bits.
      *
      * @return  The key entry corresponding to the parameters, or
-     * {@code null} if no such entry exists.
+     * {@code null} if no such entry exists or has been compromised
      */
-    public static CipherKeyEntry getKeyEntry(
-            final CryptoManagerImpl cryptoManager,
-            final String transformation,
-            final int keyLengthBits) {
+    public static CipherKeyEntry getCipherKeyEntryOrNull(
+        final CryptoManagerImpl cryptoManager,
+        final String transformation,
+        final int keyLengthBits) {
       Reject.ifNull(cryptoManager, transformation);
       Reject.ifFalse(0 < keyLengthBits);
 
-      // search for an existing key that satisfies the request
-      for (Map.Entry<KeyEntryID, CipherKeyEntry> i
-              : cryptoManager.cipherKeyEntryCache.entrySet()) {
-        CipherKeyEntry entry = i.getValue();
-        if (! entry.isCompromised()
-                && entry.getType().equals(transformation)
-                && entry.getKeyLengthBits() == keyLengthBits) {
-          return entry;
-        }
-      }
-      return null;
+      CipherKeyEntry key = cryptoManager.mostRecentCipherKeys.get(cryptoManager.getKeyFullSpec(transformation,
+          keyLengthBits));
+      return key != null && !key.isCompromised() ? key : null;
     }
 
 
@@ -1714,11 +1745,9 @@ public class CryptoManagerImpl
      * {@code null} if no such entry exists.
      *
      * @see CryptoManagerImpl.MacKeyEntry
-     *  #getKeyEntry(CryptoManagerImpl, String, int)
+     *  #getMacKeyEntryOrNull(CryptoManagerImpl, String, int)
      */
-    public static CipherKeyEntry getKeyEntry(
-            CryptoManagerImpl cryptoManager,
-            final KeyEntryID keyID) {
+    public static CipherKeyEntry getCipherKeyEntryOrNull(CryptoManagerImpl cryptoManager, final KeyEntryID keyID) {
       return cryptoManager.cipherKeyEntryCache.get(keyID);
     }
 
@@ -1908,8 +1937,7 @@ public class CryptoManagerImpl
       }
       cipher = Cipher.getInstance(transformation);
     }
-    catch (GeneralSecurityException ex) {
-      // NoSuchAlgorithmException, NoSuchPaddingException
+    catch (NoSuchAlgorithmException| NoSuchPaddingException ex) {
       logger.traceException(ex);
       throw new CryptoManagerException(
            ERR_CRYPTOMGR_GET_CIPHER_INVALID_CIPHER_TRANSFORMATION.get(
@@ -1926,15 +1954,15 @@ public class CryptoManagerImpl
         else {
           iv = initializationVector;
         }
-        // TODO: https://opends.dev.java.net/issues/show_bug.cgi?id=2471
+        // TODO: RC4 encryption needs nonce to avoid producing identical ciphertext
+        // for identical userpassword attributes
         cipher.init(mode, keyEntry.getSecretKey(), new IvParameterSpec(iv));
       }
       else {
         cipher.init(mode, keyEntry.getSecretKey());
       }
     }
-    catch (GeneralSecurityException ex) {
-      // InvalidKeyException, InvalidAlgorithmParameterException
+    catch (InvalidKeyException| InvalidAlgorithmParameterException ex) {
       logger.traceException(ex);
       throw new CryptoManagerException(
               ERR_CRYPTOMGR_GET_CIPHER_CANNOT_INITIALIZE.get(
@@ -1974,7 +2002,7 @@ public class CryptoManagerImpl
      * instantiating a Mac object in order to validate the supplied
      * parameters when creating a new entry.
      *
-     * @see CipherKeyEntry#getKeyEntry(CryptoManagerImpl, String, int)
+     * @see CipherKeyEntry#getCipherKeyEntryOrNull(CryptoManagerImpl, String, int)
      */
     public static MacKeyEntry generateKeyEntry(
             final CryptoManagerImpl cryptoManager,
@@ -2020,13 +2048,13 @@ public class CryptoManagerImpl
     {
       // Construct the key entry DN.
       ByteString distinguishedValue =
-           ByteString.valueOfUtf8(keyEntry.getKeyID().getStringValue());
+           ByteString.valueOfUtf8(keyEntry.getKeyID().toString());
       DN entryDN = secretKeysDN.child(
            new RDN(attrKeyID, distinguishedValue));
 
       // Set the entry object classes.
       LinkedHashMap<ObjectClass,String> ocMap = new LinkedHashMap<>(2);
-      ocMap.put(DirectoryServer.getTopObjectClass(), OC_TOP);
+      ocMap.put(CoreSchema.getTopObjectClass(), OC_TOP);
       ocMap.put(ocMacKey, OC_CRYPTO_MAC_KEY);
 
       // Create the user attributes.
@@ -2079,7 +2107,7 @@ public class CryptoManagerImpl
       final KeyEntryID keyID = new KeyEntryID(keyIDString);
 
       // Check map for existing key entry with the supplied keyID.
-      MacKeyEntry keyEntry = getKeyEntry(cryptoManager, keyID);
+      MacKeyEntry keyEntry = getMacKeyEntryOrNull(cryptoManager, keyID);
       if (null != keyEntry) {
         // Paranoiac check to ensure exact type match.
         if (! (keyEntry.getType().equals(algorithm)
@@ -2102,10 +2130,17 @@ public class CryptoManagerImpl
       // Validate new entry.
       getMacEngine(keyEntry);
 
-      // Cache new entry.
-      cryptoManager.macKeyEntryCache.put(keyEntry.getKeyID(),
-              keyEntry);
-
+      // Cache new entry
+      cryptoManager.macKeyEntryLock.lock();
+      try
+      {
+        cryptoManager.macKeyEntryCache.put(keyEntry.getKeyID(), keyEntry);
+        cryptoManager.mostRecentMacKeys.put(cryptoManager.getKeyFullSpec(algorithm, secretKeyLengthBits), keyEntry);
+      }
+      finally
+      {
+        cryptoManager.macKeyEntryLock.unlock();
+      }
       return keyEntry;
     }
 
@@ -2124,26 +2159,17 @@ public class CryptoManagerImpl
      * @param keyLengthBits  The MAC key length in bits.
      *
      * @return  The key entry corresponding to the parameters, or
-     * {@code null} if no such entry exists.
+     * {@code null} if no such entry exists or has been compromised
      */
-    public static MacKeyEntry getKeyEntry(
-            final CryptoManagerImpl cryptoManager,
-            final String algorithm,
-            final int keyLengthBits) {
+    public static MacKeyEntry getMacKeyEntryOrNull(
+        final CryptoManagerImpl cryptoManager,
+        final String algorithm,
+        final int keyLengthBits) {
       Reject.ifNull(cryptoManager, algorithm);
       Reject.ifFalse(0 < keyLengthBits);
 
-      // search for an existing key that satisfies the request
-      for (Map.Entry<KeyEntryID, MacKeyEntry> i
-              : cryptoManager.macKeyEntryCache.entrySet()) {
-        MacKeyEntry entry = i.getValue();
-        if (! entry.isCompromised()
-                && entry.getType().equals(algorithm)
-                && entry.getKeyLengthBits() == keyLengthBits) {
-          return entry;
-        }
-      }
-      return null;
+      MacKeyEntry key =cryptoManager.mostRecentMacKeys.get(cryptoManager.getKeyFullSpec(algorithm, keyLengthBits));
+      return key != null && !key.isCompromised() ? key : null;
     }
 
 
@@ -2170,12 +2196,10 @@ public class CryptoManagerImpl
      * @return  The key entry associated with the key identifier, or
      * {@code null} if no such entry exists.
      *
-     * @see CryptoManagerImpl.CipherKeyEntry
-     *     #getKeyEntry(CryptoManagerImpl, String, int)
+     * @see CryptoManagerImpl.MacKeyEntry
+     *     #getMacKeyEntryOrNull(CryptoManagerImpl, String, int)
      */
-    public static MacKeyEntry getKeyEntry(
-            final CryptoManagerImpl cryptoManager,
-            final KeyEntryID keyID) {
+    public static MacKeyEntry getMacKeyEntryOrNull(final CryptoManagerImpl cryptoManager, final KeyEntryID keyID) {
       return cryptoManager.macKeyEntryCache.get(keyID);
     }
 
@@ -2275,9 +2299,10 @@ public class CryptoManagerImpl
   private static Mac getMacEngine(MacKeyEntry keyEntry)
           throws CryptoManagerException
   {
-    Mac mac;
     try {
-      mac = Mac.getInstance(keyEntry.getType());
+      Mac mac = Mac.getInstance(keyEntry.getType());
+      mac.init(keyEntry.getSecretKey());
+      return mac;
     }
     catch (NoSuchAlgorithmException ex){
       logger.traceException(ex);
@@ -2286,18 +2311,12 @@ public class CryptoManagerImpl
                       keyEntry.getType(), getExceptionMessage(ex)),
               ex);
     }
-
-    try {
-      mac.init(keyEntry.getSecretKey());
-    }
     catch (InvalidKeyException ex) {
       logger.traceException(ex);
       throw new CryptoManagerException(
            ERR_CRYPTOMGR_GET_MAC_ENGINE_CANNOT_INITIALIZE.get(
                    getExceptionMessage(ex)), ex);
     }
-
-    return mac;
   }
 
   @Override
@@ -2324,37 +2343,21 @@ public class CryptoManagerImpl
   public byte[] digest(byte[] data)
          throws NoSuchAlgorithmException
   {
-    return MessageDigest.getInstance(preferredDigestAlgorithm).
-                digest(data);
+    return getPreferredMessageDigest().digest(data);
   }
 
   @Override
   public byte[] digest(String digestAlgorithm, byte[] data)
          throws NoSuchAlgorithmException
   {
-    return MessageDigest.getInstance(digestAlgorithm).digest(data);
+    return getMessageDigest(digestAlgorithm).digest(data);
   }
 
   @Override
   public byte[] digest(InputStream inputStream)
          throws IOException, NoSuchAlgorithmException
   {
-    MessageDigest digest =
-         MessageDigest.getInstance(preferredDigestAlgorithm);
-
-    byte[] buffer = new byte[8192];
-    while (true)
-    {
-      int bytesRead = inputStream.read(buffer);
-      if (bytesRead < 0)
-      {
-        break;
-      }
-
-      digest.update(buffer, 0, bytesRead);
-    }
-
-    return digest.digest();
+    return digestInputStream(getPreferredMessageDigest(), inputStream);
   }
 
   @Override
@@ -2362,8 +2365,11 @@ public class CryptoManagerImpl
                        InputStream inputStream)
          throws IOException, NoSuchAlgorithmException
   {
-    MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
+    return digestInputStream(getMessageDigest(digestAlgorithm), inputStream);
+  }
 
+  private byte[] digestInputStream(MessageDigest digest, InputStream inputStream) throws IOException
+  {
     byte[] buffer = new byte[8192];
     while (true)
     {
@@ -2393,22 +2399,33 @@ public class CryptoManagerImpl
          throws CryptoManagerException {
     Reject.ifNull(macAlgorithm);
 
-    MacKeyEntry keyEntry = MacKeyEntry.getKeyEntry(this, macAlgorithm,
-                                                   keyLengthBits);
-    if (null == keyEntry) {
-      keyEntry = MacKeyEntry.generateKeyEntry(this, macAlgorithm,
-                                              keyLengthBits);
+    MacKeyEntry keyEntry = MacKeyEntry.getMacKeyEntryOrNull(this, macAlgorithm, keyLengthBits);
+    if (keyEntry == null)
+    {
+      macKeyEntryLock.lock();
+      try
+      {
+        keyEntry = MacKeyEntry.getMacKeyEntryOrNull(this, macAlgorithm, keyLengthBits);
+        if (keyEntry == null)
+        {
+          keyEntry = MacKeyEntry.generateKeyEntry(this, macAlgorithm, keyLengthBits);
+          mostRecentMacKeys.put(getKeyFullSpec(macAlgorithm, keyLengthBits), keyEntry);
+        }
+      }
+      finally
+      {
+        macKeyEntryLock.unlock();
+      }
     }
 
-    return keyEntry.getKeyID().getStringValue();
+    return keyEntry.getKeyID().toString();
   }
 
   @Override
   public Mac getMacEngine(String keyEntryID)
           throws CryptoManagerException
   {
-    final MacKeyEntry keyEntry = MacKeyEntry.getKeyEntry(this,
-            new KeyEntryID(keyEntryID));
+    final MacKeyEntry keyEntry = MacKeyEntry.getMacKeyEntryOrNull(this, new KeyEntryID(keyEntryID));
     return keyEntry != null ? getMacEngine(keyEntry) : null;
   }
 
@@ -2428,22 +2445,15 @@ public class CryptoManagerImpl
   {
     Reject.ifNull(cipherTransformation, data);
 
-    CipherKeyEntry keyEntry = CipherKeyEntry.getKeyEntry(this,
-            cipherTransformation, keyLengthBits);
-    if (null == keyEntry) {
-      keyEntry = CipherKeyEntry.generateKeyEntry(this, cipherTransformation,
-              keyLengthBits);
-    }
-
+    CipherKeyEntry keyEntry = getCipherKeyEntry(cipherTransformation, keyLengthBits);
     final Cipher cipher = getCipher(keyEntry, Cipher.ENCRYPT_MODE, null);
-
     final byte[] keyID = keyEntry.getKeyID().getByteValue();
     final byte[] iv = cipher.getIV();
-    final int prologueLength
-            = /* version */ 1 + keyID.length + (iv != null ? iv.length : 0);
+    final int prologueLength = /* version */ 1 + keyID.length + (iv != null ? iv.length : 0);
     final int dataLength = cipher.getOutputSize(data.length);
     final byte[] cipherText = new byte[prologueLength + dataLength];
     int writeIndex = 0;
+
     cipherText[writeIndex++] = CIPHERTEXT_PROLOGUE_VERSION;
     System.arraycopy(keyID, 0, cipherText, writeIndex, keyID.length);
     writeIndex += keyID.length;
@@ -2472,15 +2482,10 @@ public class CryptoManagerImpl
   {
     Reject.ifNull(cipherTransformation, outputStream);
 
-    CipherKeyEntry keyEntry = CipherKeyEntry.getKeyEntry(
-            this, cipherTransformation, keyLengthBits);
-    if (null == keyEntry) {
-      keyEntry = CipherKeyEntry.generateKeyEntry(this, cipherTransformation,
-              keyLengthBits);
-    }
-
+    CipherKeyEntry keyEntry = getCipherKeyEntry(cipherTransformation, keyLengthBits);
     final Cipher cipher = getCipher(keyEntry, Cipher.ENCRYPT_MODE, null);
     final byte[] keyID = keyEntry.getKeyID().getByteValue();
+
     try {
       outputStream.write((byte)CIPHERTEXT_PROLOGUE_VERSION);
       outputStream.write(keyID);
@@ -2496,6 +2501,39 @@ public class CryptoManagerImpl
     }
 
     return new CipherOutputStream(outputStream, cipher);
+  }
+
+  @Override
+  public void ensureCipherKeyIsAvailable(String cipherTransformation, int cipherKeyLength) throws CryptoManagerException
+  {
+    getCipherKeyEntry(cipherTransformation, cipherKeyLength);
+  }
+
+  private CipherKeyEntry getCipherKeyEntry(String cipherTransformation, int keyLengthBits) throws CryptoManagerException
+  {
+    CipherKeyEntry keyEntry = CipherKeyEntry.getCipherKeyEntryOrNull(this, cipherTransformation, keyLengthBits);
+    if (keyEntry == null) {
+      cipherKeyEntryLock.lock();
+      try
+      {
+        keyEntry = CipherKeyEntry.getCipherKeyEntryOrNull(this, cipherTransformation, keyLengthBits);
+        if (keyEntry == null)
+        {
+          keyEntry = CipherKeyEntry.generateKeyEntry(this, cipherTransformation, keyLengthBits);
+          mostRecentCipherKeys.put(getKeyFullSpec(cipherTransformation, keyLengthBits), keyEntry);
+        }
+      }
+      finally
+      {
+        cipherKeyEntryLock.unlock();
+      }
+    }
+    return keyEntry;
+  }
+
+  private String getKeyFullSpec(String transformation, int keyLength)
+  {
+    return transformation + "/" + keyLength;
   }
 
   @Override
@@ -2542,7 +2580,7 @@ public class CryptoManagerImpl
                    ex.getMessage()), ex);
     }
 
-    CipherKeyEntry keyEntry = CipherKeyEntry.getKeyEntry(this, keyID);
+    CipherKeyEntry keyEntry = CipherKeyEntry.getCipherKeyEntryOrNull(this, keyID);
     if (null == keyEntry) {
       throw new CryptoManagerException(
               ERR_CRYPTOMGR_DECRYPT_UNKNOWN_KEY_IDENTIFIER.get());
@@ -2607,7 +2645,7 @@ public class CryptoManagerImpl
            ERR_CRYPTOMGR_DECRYPT_FAILED_TO_READ_KEY_IDENTIFIER.get(
                    "stream underflow"));
       }
-      keyEntry = CipherKeyEntry.getKeyEntry(this, new KeyEntryID(keyID));
+      keyEntry = CipherKeyEntry.getCipherKeyEntryOrNull(this, new KeyEntryID(keyID));
       if (null == keyEntry) {
         throw new CryptoManagerException(
                 ERR_CRYPTOMGR_DECRYPT_UNKNOWN_KEY_IDENTIFIER.get());
@@ -2642,14 +2680,7 @@ public class CryptoManagerImpl
       deflater.finish();
 
       int compressedLength = deflater.deflate(dst, dstOff, dstLen);
-      if (deflater.finished())
-      {
-        return compressedLength;
-      }
-      else
-      {
-        return -1;
-      }
+      return deflater.finished() ? compressedLength : -1;
     }
     finally
     {
@@ -2693,16 +2724,13 @@ public class CryptoManagerImpl
   @Override
   public SSLContext getSslContext(String componentName, SortedSet<String> sslCertNicknames) throws ConfigException
   {
-    SSLContext sslContext;
     try
     {
       TrustStoreBackend trustStoreBackend = getTrustStoreBackend();
       KeyManager[] keyManagers = trustStoreBackend.getKeyManagers();
-      TrustManager[] trustManagers =
-           trustStoreBackend.getTrustManagers();
+      TrustManager[] trustManagers = trustStoreBackend.getTrustManagers();
 
-      sslContext = SSLContext.getInstance("TLS");
-
+      SSLContext sslContext = SSLContext.getInstance("TLS");
       if (sslCertNicknames == null)
       {
         sslContext.init(keyManagers, trustManagers, null);
@@ -2713,6 +2741,7 @@ public class CryptoManagerImpl
             SelectableCertificateKeyManager.wrap(keyManagers, sslCertNicknames, componentName);
         sslContext.init(extendedKeyManagers, trustManagers, null);
       }
+      return sslContext;
     }
     catch (Exception e)
     {
@@ -2723,8 +2752,6 @@ public class CryptoManagerImpl
                 getExceptionMessage(e));
       throw new ConfigException(message, e);
     }
-
-    return sslContext;
   }
 
   @Override
@@ -2749,5 +2776,11 @@ public class CryptoManagerImpl
   public SortedSet<String> getSslCipherSuites()
   {
     return sslCipherSuites;
+  }
+
+  @Override
+  public CryptoSuite newCryptoSuite(String cipherTransformation, int cipherKeyLength, boolean encrypt)
+  {
+    return new CryptoSuite(this, cipherTransformation, cipherKeyLength, encrypt);
   }
 }

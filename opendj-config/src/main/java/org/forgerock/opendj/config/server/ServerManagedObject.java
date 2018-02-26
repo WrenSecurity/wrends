@@ -581,7 +581,7 @@ public final class ServerManagedObject<S extends Configuration> implements Prope
     }
 
     /**
-     * Determines whether or not the optional managed object associated with the
+     * Determines whether the optional managed object associated with the
      * specified optional relations exists.
      *
      * @param d
@@ -952,7 +952,6 @@ public final class ServerManagedObject<S extends Configuration> implements Prope
         registerDeleteListener(baseDN, adaptor);
     }
 
-    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -974,7 +973,7 @@ public final class ServerManagedObject<S extends Configuration> implements Prope
     }
 
     /**
-     * Determines whether or not this managed object can be used by the server.
+     * Determines whether this managed object can be used by the server.
      *
      * @throws ConstraintViolationException
      *             If one or more constraints determined that this managed
@@ -1181,10 +1180,7 @@ public final class ServerManagedObject<S extends Configuration> implements Prope
         }
     }
 
-    /**
-     * Register a delayed listener with the nearest existing parent
-     * entry to the provided base DN.
-     */
+    /** Register a delayed listener with the nearest existing parent entry to the provided base DN. */
     private void registerDelayedListener(DN baseDN, ConfigAddListener delayedListener) throws ConfigException {
         DN currentDN = baseDN.parent();
         DN previousDN = currentDN;
@@ -1200,8 +1196,7 @@ public final class ServerManagedObject<S extends Configuration> implements Prope
         }
 
         // No parent entry could be found.
-        LocalizableMessage message = ERR_ADMIN_UNABLE_TO_REGISTER_LISTENER.get(String.valueOf(baseDN));
-        throw new ConfigException(message);
+        throw new ConfigException(ERR_ADMIN_UNABLE_TO_REGISTER_LISTENER.get(baseDN));
     }
 
     /**

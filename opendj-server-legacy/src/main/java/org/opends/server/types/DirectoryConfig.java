@@ -16,17 +16,11 @@
  */
 package org.opends.server.types;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.schema.MatchingRule;
-import org.forgerock.opendj.ldap.schema.Syntax;
 import org.opends.server.api.AlertGenerator;
 import org.opends.server.api.ExtendedOperationHandler;
 import org.opends.server.api.SASLMechanismHandler;
@@ -62,8 +56,6 @@ public final class DirectoryConfig
     return DirectoryServer.getCryptoManager();
   }
 
-
-
   /**
    * Retrieves the operating system on which the Directory Server is
    * running.
@@ -88,8 +80,6 @@ public final class DirectoryConfig
     return DirectoryServer.getServerRoot();
   }
 
-
-
   /**
    * Retrieves the time that the Directory Server was started, in
    * milliseconds since the epoch.
@@ -101,8 +91,6 @@ public final class DirectoryConfig
   {
     return DirectoryServer.getStartTime();
   }
-
-
 
   /**
    * Retrieves the time that the Directory Server was started,
@@ -116,8 +104,6 @@ public final class DirectoryConfig
     return DirectoryServer.getStartTimeUTC();
   }
 
-
-
   /**
    * Retrieves a reference to the Directory Server schema.
    *
@@ -126,459 +112,6 @@ public final class DirectoryConfig
   public static Schema getSchema()
   {
     return DirectoryServer.getSchema();
-  }
-
-
-
-  /**
-   * Retrieves the set of matching rules registered with the Directory
-   * Server.
-   *
-   * @return  The set of matching rules registered with the Directory
-   *          Server.
-   */
-  public static Collection<MatchingRule> getMatchingRules()
-  {
-    return DirectoryServer.getMatchingRules();
-  }
-
-
-
-  /**
-   * Retrieves the matching rule with the specified name or OID.
-   *
-   * @param  lowerName  The lowercase name or OID for the matching
-   *                    rule to retrieve.
-   *
-   * @return  The requested matching rule, or <CODE>null</CODE> if no
-   *          such matching rule has been defined in the server.
-   */
-  public static MatchingRule getMatchingRule(String lowerName)
-  {
-    return DirectoryServer.getMatchingRule(lowerName);
-  }
-
-
-
-  /**
-   * Retrieves the approximate matching rule with the specified name
-   * or OID.
-   *
-   * @param  lowerName  The lowercase name or OID for the approximate
-   *                    matching rule to retrieve.
-   *
-   * @return  The requested approximate matching rule, or
-   *          <CODE>null</CODE> if no such matching rule has been
-   *          defined in the server.
-   */
-  public static MatchingRule
-       getApproximateMatchingRule(String lowerName)
-  {
-    return DirectoryServer.getMatchingRule(lowerName);
-  }
-
-
-
-  /**
-   * Retrieves the equality matching rule with the specified name or
-   * OID.
-   *
-   * @param  lowerName  The lowercase name or OID for the equality
-   *                    matching rule to retrieve.
-   *
-   * @return  The requested equality matching rule, or
-   *          <CODE>null</CODE> if no such matching rule has been
-   *          defined in the server.
-   */
-  public static MatchingRule
-       getEqualityMatchingRule(String lowerName)
-  {
-    return DirectoryServer.getMatchingRule(lowerName);
-  }
-
-
-
-  /**
-   * Retrieves the ordering matching rule with the specified name or
-   * OID.
-   *
-   * @param  lowerName  The lowercase name or OID for the ordering
-   *                    matching rule to retrieve.
-   *
-   * @return  The requested ordering matching rule, or
-   *          <CODE>null</CODE> if no such matching rule has been
-   *          defined in the server.
-   */
-  public static MatchingRule
-       getOrderingMatchingRule(String lowerName)
-  {
-    return DirectoryServer.getMatchingRule(lowerName);
-  }
-
-
-
-  /**
-   * Retrieves the substring matching rule with the specified name or
-   * OID.
-   *
-   * @param  lowerName  The lowercase name or OID for the substring
-   *                    matching rule to retrieve.
-   *
-   * @return  The requested substring matching rule, or
-   *          <CODE>null</CODE> if no such matching rule has been
-   *          defined in the server.
-   */
-  public static MatchingRule
-       getSubstringMatchingRule(String lowerName)
-  {
-    return DirectoryServer.getMatchingRule(lowerName);
-  }
-
-
-
-  /**
-   * Retrieves the set of objectclasses registered with the Directory
-   * Server.  The mapping will be between the lowercase name or OID
-   * for each objectclass and the objectclass implementation.  The
-   * same objectclass instance may be included multiple times with
-   * different keys.  The returned map must not be altered by the
-   * caller.
-   *
-   * @return  The set of objectclasses defined in the Directory
-   *          Server.
-   */
-  public static Map<String,ObjectClass> getObjectClasses()
-  {
-    return DirectoryServer.getObjectClasses();
-  }
-
-
-
-  /**
-   * Retrieves the objectclass for the provided lowercase name or OID.
-   * It can optionally return a generated "default" version if the
-   * requested objectclass is not defined in the schema.
-   *
-   * @param  lowerName      The lowercase name or OID for the
-   *                        objectclass to retrieve.
-   * @param  returnDefault  Indicates whether to generate a default
-   *                        version if the requested objectclass is
-   *                        not defined in the server schema.
-   *
-   * @return  The objectclass type, or <CODE>null</CODE> if there is
-   *          no objectclass with the specified name or OID defined in
-   *          the server schema and a default class should not be
-   *          returned.
-   */
-  public static ObjectClass
-       getObjectClass(String lowerName, boolean returnDefault)
-  {
-    return DirectoryServer.getObjectClass(lowerName, returnDefault);
-  }
-
-
-
-  /**
-   * Retrieves the "top" objectClass, which should be the topmost
-   * objectclass in the inheritance chain for most other
-   * objectclasses.
-   *
-   * @return  The "top" objectClass.
-   */
-  public static ObjectClass getTopObjectClass()
-  {
-    return DirectoryServer.getTopObjectClass();
-  }
-
-
-
-  /**
-   * Retrieves the set of attribute type definitions that have been
-   * defined in the Directory Server.  The mapping will be between the
-   * lowercase name or OID for each attribute type and the attribute
-   * type implementation.  The same attribute type may be included
-   * multiple times with different keys.  The returned map must not be
-   * altered by the caller.
-   *
-   * @return The set of attribute type definitions that have been
-   *         defined in the Directory Server.
-   */
-  public static Collection<AttributeType> getAttributeTypes()
-  {
-    return DirectoryServer.getAttributeTypes();
-  }
-
-  /**
-   * Retrieves the attribute type for the "objectClass" attribute.
-   *
-   * @return  The attribute type for the "objectClass" attribute.
-   */
-  public static AttributeType getObjectClassAttributeType()
-  {
-    return DirectoryServer.getObjectClassAttributeType();
-  }
-
-
-
-  /**
-   * Retrieves the set of attribute syntaxes defined in the Directory
-   * Server.
-   *
-   * @return  The set of attribute syntaxes defined in the Directory
-   *          Server.
-   */
-  public static Collection<Syntax> getAttributeSyntaxes()
-  {
-    return DirectoryServer.getAttributeSyntaxes();
-  }
-
-  /**
-   * Retrieves the default attribute syntax that should be used for
-   * attributes that are not defined in the server schema and are
-   * meant to store binary values.
-   *
-   * @return  The default attribute syntax that should be used for
-   *          attributes that are not defined in the server schema and
-   *          are meant to store binary values.
-   */
-  public static Syntax getDefaultBinarySyntax()
-  {
-    return DirectoryServer.getDefaultBinarySyntax();
-  }
-
-
-
-  /**
-   * Retrieves the default attribute syntax that should be used for
-   * attributes that are not defined in the server schema and are
-   * meant to store Boolean values.
-   *
-   * @return  The default attribute syntax that should be used for
-   *          attributes that are not defined in the server schema and
-   *          are meant to store Boolean values.
-   */
-  public static Syntax getDefaultBooleanSyntax()
-  {
-    return DirectoryServer.getDefaultBooleanSyntax();
-  }
-
-
-
-  /**
-   * Retrieves the default attribute syntax that should be used for
-   * attributes that are not defined in the server schema and are
-   * meant to store DN values.
-   *
-   * @return  The default attribute syntax that should be used for
-   *          attributes that are not defined in the server schema and
-   *          are meant to store DN values.
-   */
-  public static Syntax getDefaultDNSyntax()
-  {
-    return DirectoryServer.getDefaultDNSyntax();
-  }
-
-
-
-  /**
-   * Retrieves the default attribute syntax that should be used for
-   * attributes that are not defined in the server schema and are
-   * meant to store integer values.
-   *
-   * @return  The default attribute syntax that should be used for
-   *          attributes that are not defined in the server schema and
-   *          are meant to store integer values.
-   */
-  public static Syntax getDefaultIntegerSyntax()
-  {
-    return DirectoryServer.getDefaultIntegerSyntax();
-  }
-
-
-
-  /**
-   * Retrieves the default attribute syntax that should be used for
-   * attributes that are not defined in the server schema and are
-   * meant to store string values.
-   *
-   * @return  The default attribute syntax that should be used for
-   *          attributes that are not defined in the server schema and
-   *          are meant to store string values.
-   */
-  public static Syntax getDefaultStringSyntax()
-  {
-    return DirectoryServer.getDefaultStringSyntax();
-  }
-
-
-
-  /**
-   * Retrieves the set of matching rule uses defined in the Directory
-   * Server.  The mapping will be between the matching rule and its
-   * corresponding matching rule use.  The returned map must not be
-   * altered by the caller.
-   *
-   * @return  The set of matching rule uses defined in the Directory
-   *          Server.
-   */
-  public static Map<MatchingRule,MatchingRuleUse>
-       getMatchingRuleUses()
-  {
-    return DirectoryServer.getMatchingRuleUses();
-  }
-
-
-
-  /**
-   * Retrieves the matching rule use associated with the provided
-   * matching rule.
-   *
-   * @param  matchingRule  The matching rule for which to retrieve the
-   *                       matching rule use.
-   *
-   * @return  The matching rule use for the provided matching rule, or
-   *          <CODE>null</CODE> if none is defined.
-   */
-  public static MatchingRuleUse
-       getMatchingRuleUse(MatchingRule matchingRule)
-  {
-    return DirectoryServer.getMatchingRuleUse(matchingRule);
-  }
-
-
-
-  /**
-   * Retrieves the set of DIT content rules defined in the Directory
-   * Server.  The mapping will be between the structural objectclass
-   * and its corresponding DIT content rule.  The returned map must
-   * not be altered by the caller.
-   *
-   * @return  The set of DIT content rules defined in the Directory
-   *          Server.
-   */
-  public static Map<ObjectClass,DITContentRule>
-       getDITContentRules()
-  {
-    return DirectoryServer.getDITContentRules();
-  }
-
-
-
-  /**
-   * Retrieves the DIT content rule associated with the specified
-   * objectclass.
-   *
-   * @param  objectClass  The objectclass for which to retrieve the
-   *                      associated DIT content rule.
-   *
-   * @return  The requested DIT content rule, or <CODE>null</CODE> if
-   *          no such rule is defined in the schema.
-   */
-  public static DITContentRule
-       getDITContentRule(ObjectClass objectClass)
-  {
-    return DirectoryServer.getDITContentRule(objectClass);
-  }
-
-
-
-  /**
-   * Retrieves the set of DIT structure rules defined in the Directory
-   * Server.  The mapping will be between the name form and its
-   * corresponding DIT structure rule.  The returned map must not be
-   * altered by the caller.
-   *
-   * @return  The set of DIT structure rules defined in the Directory
-   *          Server.
-   */
-  public static Map<NameForm,DITStructureRule>
-       getDITStructureRules()
-  {
-    return DirectoryServer.getDITStructureRules();
-  }
-
-
-
-  /**
-   * Retrieves the DIT structure rule associated with the provided
-   * rule ID.
-   *
-   * @param  ruleID  The rule ID for which to retrieve the associated
-   *                 DIT structure rule.
-   *
-   * @return  The requested DIT structure rule, or <CODE>null</CODE>
-   *          if no such rule is defined.
-   */
-  public static DITStructureRule getDITStructureRule(int ruleID)
-  {
-    return DirectoryServer.getDITStructureRule(ruleID);
-  }
-
-
-
-  /**
-   * Retrieves the DIT structure rule associated with the provided
-   * name form.
-   *
-   * @param  nameForm  The name form for which to retrieve the
-   *                   associated DIT structure rule.
-   *
-   * @return  The requested DIT structure rule, or <CODE>null</CODE>
-   *          if no such rule is defined.
-   */
-  public static DITStructureRule
-       getDITStructureRule(NameForm nameForm)
-  {
-    return DirectoryServer.getDITStructureRule(nameForm);
-  }
-
-
-
-  /**
-   * Retrieves the set of name forms defined in the Directory Server.
-   * The mapping will be between the structural objectclass and its
-   * corresponding name forms.  The returned map must not be altered
-   * by the caller.
-   *
-   * @return  The set of name forms defined in the Directory Server.
-   */
-  public static Map<ObjectClass,List<NameForm>> getNameForms()
-  {
-    return DirectoryServer.getNameForms();
-  }
-
-
-
-  /**
-   * Retrieves the list of name forms associated with the specified
-   * structural objectclass.
-   *
-   * @param  objectClass  The structural objectclass for which to
-   *                      retrieve the  associated name form.
-   *
-   * @return  The list of requested name forms, or <CODE>null</CODE>
-   *           if no such name form is defined in the schema.
-   */
-  public static List<NameForm> getNameForm(ObjectClass objectClass)
-  {
-    return DirectoryServer.getNameForm(objectClass);
-  }
-
-
-
-  /**
-   * Retrieves the name form associated with the specified name or
-   * OID.
-   *
-   * @param  lowerName  The name or OID of the name form to retrieve,
-   *                    formatted in all lowercase characters.
-   *
-   * @return  The requested name form, or <CODE>null</CODE> if no such
-   *          name form is defined in the schema.
-   */
-  public static NameForm getNameForm(String lowerName)
-  {
-    return DirectoryServer.getNameForm(lowerName);
   }
 
   /**
@@ -592,8 +125,6 @@ public final class DirectoryConfig
     DirectoryServer.registerAlertGenerator(alertGenerator);
   }
 
-
-
   /**
    * Deregisters the provided alert generator with the Directory
    * Server.
@@ -605,8 +136,6 @@ public final class DirectoryConfig
   {
     DirectoryServer.deregisterAlertGenerator(alertGenerator);
   }
-
-
 
   /**
    * Sends an alert notification with the provided information.
@@ -626,8 +155,6 @@ public final class DirectoryConfig
             alertMessage);
   }
 
-
-
   /**
    * Retrieves the result code that should be used when the Directory
    * Server encounters an internal server error.
@@ -639,8 +166,6 @@ public final class DirectoryConfig
   {
     return DirectoryServer.getServerErrorResultCode();
   }
-
-
 
   /**
    * Retrieves the entry with the requested DN.  It will first
@@ -662,8 +187,6 @@ public final class DirectoryConfig
     return DirectoryServer.getEntry(entryDN);
   }
 
-
-
   /**
    * Indicates whether the specified entry exists in the Directory
    * Server.  The caller is not required to hold any locks when
@@ -684,8 +207,6 @@ public final class DirectoryConfig
     return DirectoryServer.entryExists(entryDN);
   }
 
-
-
   /**
    * Retrieves the set of OIDs for the supported controls registered
    * with the Directory Server.
@@ -697,8 +218,6 @@ public final class DirectoryConfig
   {
     return DirectoryServer.getSupportedControls();
   }
-
-
 
   /**
    * Indicates whether the specified OID is registered with the
@@ -716,8 +235,6 @@ public final class DirectoryConfig
     return DirectoryServer.isSupportedControl(controlOID);
   }
 
-
-
   /**
    * Registers the provided OID as a supported control for the
    * Directory Server.  This will have no effect if the specified
@@ -730,8 +247,6 @@ public final class DirectoryConfig
   {
     DirectoryServer.registerSupportedControl(controlOID);
   }
-
-
 
   /**
    * Deregisters the provided OID as a supported control for the
@@ -747,8 +262,6 @@ public final class DirectoryConfig
     DirectoryServer.deregisterSupportedControl(controlOID);
   }
 
-
-
   /**
    * Retrieves the set of OIDs for the supported features registered
    * with the Directory Server.
@@ -760,8 +273,6 @@ public final class DirectoryConfig
   {
     return DirectoryServer.getSupportedFeatures();
   }
-
-
 
   /**
    * Indicates whether the specified OID is registered with the
@@ -779,8 +290,6 @@ public final class DirectoryConfig
     return DirectoryServer.isSupportedFeature(featureOID);
   }
 
-
-
   /**
    * Registers the provided OID as a supported feature for the
    * Directory Server.  This will have no effect if the specified
@@ -793,8 +302,6 @@ public final class DirectoryConfig
   {
     DirectoryServer.registerSupportedFeature(featureOID);
   }
-
-
 
   /**
    * Deregisters the provided OID as a supported feature for the
@@ -810,26 +317,6 @@ public final class DirectoryConfig
     DirectoryServer.deregisterSupportedFeature(featureOID);
   }
 
-
-
-  /**
-   * Retrieves the set of extended operations that may be processed by
-   * the Directory Server.  The mapping will be between the OID and
-   * the extended operation handler providing the logic for the
-   * extended operation with that OID.  The returned map must not be
-   * altered by the caller.
-   *
-   * @return  The set of extended operations that may be processed by
-   *          the Directory Server.
-   */
-  public static Map<String,ExtendedOperationHandler>
-                     getSupportedExtensions()
-  {
-    return DirectoryServer.getSupportedExtensions();
-  }
-
-
-
   /**
    * Retrieves the handler for the extended operation for the provided
    * extended operation OID.
@@ -839,13 +326,10 @@ public final class DirectoryConfig
    * @return  The handler for the specified extended operation, or
    *          <CODE>null</CODE> if there is none.
    */
-  public static ExtendedOperationHandler
-       getExtendedOperationHandler(String oid)
+  public static ExtendedOperationHandler<?> getExtendedOperationHandler(String oid)
   {
     return DirectoryServer.getExtendedOperationHandler(oid);
   }
-
-
 
   /**
    * Registers the provided extended operation handler with the
@@ -855,13 +339,10 @@ public final class DirectoryConfig
    * @param  handler  The extended operation handler to register with
    *                  the Directory Server.
    */
-  public static void registerSupportedExtension(String oid,
-                          ExtendedOperationHandler handler)
+  public static void registerSupportedExtension(String oid, ExtendedOperationHandler<?> handler)
   {
     DirectoryServer.registerSupportedExtension(oid, handler);
   }
-
-
 
   /**
    * Deregisters the provided extended operation handler with the
@@ -874,25 +355,6 @@ public final class DirectoryConfig
     DirectoryServer.deregisterSupportedExtension(oid);
   }
 
-
-
-  /**
-   * Retrieves the set of SASL mechanisms that are supported by the
-   * Directory Server.  The mapping will be between the mechanism name
-   * and the SASL mechanism handler that implements support for that
-   * mechanism.  The returned map must not be altered by the caller.
-   *
-   * @return  The set of SASL mechanisms that are supported by the
-   *          Directory Server.
-   */
-  public static Map<String,SASLMechanismHandler>
-                     getSupportedSASLMechanisms()
-  {
-    return DirectoryServer.getSupportedSASLMechanisms();
-  }
-
-
-
   /**
    * Retrieves the handler for the specified SASL mechanism.
    *
@@ -901,13 +363,10 @@ public final class DirectoryConfig
    * @return  The handler for the specified SASL mechanism, or
    *          <CODE>null</CODE> if there is none.
    */
-  public static SASLMechanismHandler
-       getSASLMechanismHandler(String name)
+  public static SASLMechanismHandler<?> getSASLMechanismHandler(String name)
   {
     return DirectoryServer.getSASLMechanismHandler(name);
   }
-
-
 
   /**
    * Registers the provided SASL mechanism handler with the Directory
@@ -917,14 +376,10 @@ public final class DirectoryConfig
    * @param  handler  The SASL mechanism handler to register with the
    *                  Directory Server.
    */
-  public static void
-       registerSASLMechanismHandler(String name,
-                                    SASLMechanismHandler handler)
+  public static void registerSASLMechanismHandler(String name, SASLMechanismHandler<?> handler)
   {
     DirectoryServer.registerSASLMechanismHandler(name, handler);
   }
-
-
 
   /**
    * Deregisters the provided SASL mechanism handler with the
@@ -950,8 +405,6 @@ public final class DirectoryConfig
     DirectoryServer.registerShutdownListener(listener);
   }
 
-
-
   /**
    * Deregisters the provided shutdown listener with the Directory
    * Server.
@@ -965,8 +418,6 @@ public final class DirectoryConfig
     DirectoryServer.deregisterShutdownListener(listener);
   }
 
-
-
   /**
    * Retrieves the full version string for the Directory Server.
    *
@@ -977,4 +428,3 @@ public final class DirectoryConfig
     return DirectoryServer.getVersionString();
   }
 }
-

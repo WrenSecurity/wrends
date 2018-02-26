@@ -23,9 +23,7 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.config.DefinitionDecodingException;
 import org.forgerock.opendj.ldap.DN;
 
-/**
- * A utility class for converting admin exceptions to config exceptions.
- */
+/** A utility class for converting admin exceptions to config exceptions. */
 final class ConfigExceptionFactory {
 
     /** The singleton instance. */
@@ -55,8 +53,8 @@ final class ConfigExceptionFactory {
      * @return Returns the configuration exception.
      */
     public ConfigException createDecodingExceptionAdaptor(DN dn, DefinitionDecodingException e) {
-        LocalizableMessage message = ERR_ADMIN_MANAGED_OBJECT_DECODING_PROBLEM.get(String.valueOf(dn),
-                stackTraceToSingleLineString(e, true));
+        LocalizableMessage message = ERR_ADMIN_MANAGED_OBJECT_DECODING_PROBLEM.get(
+                dn, stackTraceToSingleLineString(e, true));
         return new ConfigException(message, e);
     }
 
@@ -71,8 +69,8 @@ final class ConfigExceptionFactory {
 
     public ConfigException createDecodingExceptionAdaptor(ServerManagedObjectDecodingException e) {
         DN dn = e.getPartialManagedObject().getDN();
-        LocalizableMessage message = ERR_ADMIN_MANAGED_OBJECT_DECODING_PROBLEM.get(String.valueOf(dn),
-                stackTraceToSingleLineString(e, true));
+        LocalizableMessage message = ERR_ADMIN_MANAGED_OBJECT_DECODING_PROBLEM.get(
+                dn, stackTraceToSingleLineString(e, true));
         return new ConfigException(message, e);
     }
 
@@ -86,8 +84,8 @@ final class ConfigExceptionFactory {
      */
     public ConfigException createDecodingExceptionAdaptor(ConstraintViolationException e) {
         DN dn = e.getManagedObject().getDN();
-        LocalizableMessage message = ERR_ADMIN_MANAGED_OBJECT_DECODING_PROBLEM.get(String.valueOf(dn),
-                stackTraceToSingleLineString(e, true));
+        LocalizableMessage message = ERR_ADMIN_MANAGED_OBJECT_DECODING_PROBLEM.get(
+                dn, stackTraceToSingleLineString(e, true));
         return new ConfigException(message, e);
     }
 
@@ -106,8 +104,8 @@ final class ConfigExceptionFactory {
      */
 
     public ConfigException createClassLoadingExceptionAdaptor(DN dn, String className, Exception e) {
-        LocalizableMessage message = ERR_ADMIN_CANNOT_INSTANTIATE_CLASS.get(String.valueOf(className),
-                String.valueOf(dn), stackTraceToSingleLineString(e, true));
+        LocalizableMessage message = ERR_ADMIN_CANNOT_INSTANTIATE_CLASS.get(
+                className, dn, stackTraceToSingleLineString(e, true));
         return new ConfigException(message, e);
     }
 }

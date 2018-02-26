@@ -19,6 +19,7 @@ package org.opends.guitools.controlpanel.ui;
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.server.types.CommonSchemaElements.*;
 import static org.opends.server.util.CollectionUtils.*;
+import static org.opends.server.util.SchemaUtils.*;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -60,8 +61,11 @@ import javax.swing.event.ListDataListener;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.ldap.schema.ObjectClassType;
+import org.forgerock.opendj.ldap.schema.SchemaBuilder;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
+import org.opends.guitools.controlpanel.datamodel.SomeSchemaElement;
 import org.opends.guitools.controlpanel.datamodel.SortableListModel;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.event.ConfigurationElementCreatedListener;
@@ -77,8 +81,6 @@ import org.opends.guitools.controlpanel.ui.components.SuperiorObjectClassesEdito
 import org.opends.guitools.controlpanel.ui.components.TitlePanel;
 import org.opends.guitools.controlpanel.ui.renderer.SchemaElementComboBoxCellRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.opends.server.schema.SomeSchemaElement;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 import org.opends.server.util.ServerConstants;
 import org.opends.server.util.StaticUtils;
@@ -138,28 +140,21 @@ public class CustomObjectClassPanel extends SchemaElementPanel
 
   private boolean ignoreChangeEvents;
 
-
-  /**
-   * Default constructor of the panel.
-   *
-   */
+  /** Default constructor of the panel. */
   public CustomObjectClassPanel()
   {
     super();
     createLayout();
   }
 
-  /** {@inheritDoc} */
   @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_CUSTOM_OBJECTCLASS_TITLE.get();
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   */
-  protected void createLayout()
+  /** Creates the layout of the panel (but the contents are not populated here). */
+  private void createLayout()
   {
     JPanel p = new JPanel(new GridBagLayout());
     GridBagConstraints gbc = new GridBagConstraints();
@@ -190,7 +185,6 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     add(delete, gbc);
     delete.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void actionPerformed(ActionEvent ev)
       {
@@ -206,12 +200,11 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     add(saveChanges, gbc);
     saveChanges.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void actionPerformed(ActionEvent ev)
       {
         ArrayList<LocalizableMessage> errors = new ArrayList<>();
-        saveChanges(false, errors);
+        saveChanges(errors);
       }
     });
   }
@@ -221,12 +214,11 @@ public class CustomObjectClassPanel extends SchemaElementPanel
    * @param c the container where all the components will be layed out.
    * @param gbc the grid bag constraints.
    */
-  protected void createBasicLayout(Container c, GridBagConstraints gbc)
+  private void createBasicLayout(Container c, GridBagConstraints gbc)
   {
     SuperiorObjectClassesChangedListener listener =
       new SuperiorObjectClassesChangedListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void parentObjectClassesChanged(
           SuperiorObjectClassesChangedEvent ev)
@@ -265,7 +257,6 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     attributes = new DoubleAddRemovePanel<>(0, AttributeType.class);
     Comparator<AttributeType> comparator = new Comparator<AttributeType>()
     {
-      /** {@inheritDoc} */
       @Override
       public int compare(AttributeType attr1, AttributeType attr2)
       {
@@ -365,7 +356,6 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     add(labels, comps, inlineHelps, p, gbc1);
     ChangeListener changeListener = new ChangeListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void stateChanged(ChangeEvent e)
       {
@@ -378,21 +368,18 @@ public class CustomObjectClassPanel extends SchemaElementPanel
 
     DocumentListener docListener = new DocumentListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void insertUpdate(DocumentEvent ev)
       {
         checkEnableSaveChanges();
       }
 
-      /** {@inheritDoc} */
       @Override
       public void removeUpdate(DocumentEvent ev)
       {
         checkEnableSaveChanges();
       }
 
-      /** {@inheritDoc} */
       @Override
       public void changedUpdate(DocumentEvent arg0)
       {
@@ -418,19 +405,16 @@ public class CustomObjectClassPanel extends SchemaElementPanel
 
     ListDataListener dataListener = new ListDataListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void contentsChanged(ListDataEvent e)
       {
         checkEnableSaveChanges();
       }
-      /** {@inheritDoc} */
       @Override
       public void intervalAdded(ListDataEvent e)
       {
         checkEnableSaveChanges();
       }
-      /** {@inheritDoc} */
       @Override
       public void intervalRemoved(ListDataEvent e)
       {
@@ -460,7 +444,7 @@ public class CustomObjectClassPanel extends SchemaElementPanel
       // Ignore: this is called to get an initial panel size.
       return;
     }
-    String n = oc.getPrimaryName();
+    String n = oc.getNameOrOID();
     if (n == null)
     {
       n = NOT_APPLICABLE.toString();
@@ -468,12 +452,9 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     titlePanel.setDetails(LocalizableMessage.raw(n));
     name.setText(n);
 
-    SortableListModel<AttributeType> modelRequired =
-      attributes.getSelectedListModel1();
-    SortableListModel<AttributeType> modelAvailable =
-      attributes.getSelectedListModel2();
-    SortableListModel<AttributeType> availableModel =
-      attributes.getAvailableListModel();
+    SortableListModel<AttributeType> modelRequired = attributes.getSelectedListModel1();
+    SortableListModel<AttributeType> modelAvailable = attributes.getSelectedListModel2();
+    SortableListModel<AttributeType> availableModel = attributes.getAvailableListModel();
     availableModel.addAll(modelRequired.getData());
     availableModel.addAll(modelAvailable.getData());
     modelRequired.clear();
@@ -494,12 +475,12 @@ public class CustomObjectClassPanel extends SchemaElementPanel
 
     updateAttributesWithParent(false);
 
-    for (AttributeType attr : oc.getRequiredAttributes())
+    for (AttributeType attr : oc.getDeclaredRequiredAttributes())
     {
       availableModel.remove(attr);
       modelRequired.add(attr);
     }
-    for (AttributeType attr : oc.getOptionalAttributes())
+    for (AttributeType attr : oc.getDeclaredOptionalAttributes())
     {
       availableModel.remove(attr);
       modelAvailable.add(attr);
@@ -519,7 +500,7 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     lastAliases.addAll(aliases);
     this.aliases.setText(Utilities.getStringFromCollection(aliases, ", "));
 
-    String sOrigin = Utilities.getOrigin(new SomeSchemaElement(oc));
+    String sOrigin = new SomeSchemaElement(oc).getOrigin();
     if (sOrigin == null)
     {
       sOrigin = "";
@@ -547,37 +528,19 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     ignoreChangeEvents = false;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
     final ServerDescriptor desc = ev.getNewDescriptor();
     Schema s = desc.getSchema();
-    final boolean schemaChanged;
-    if (schema != null && s != null)
-    {
-      schemaChanged = !ServerDescriptor.areSchemasEqual(s, schema);
-    }
-    else if (schema == null && s != null)
-    {
-      schemaChanged = true;
-    }
-    else if (s == null && schema != null)
-    {
-      schemaChanged = false;
-    }
-    else
-    {
-      schemaChanged = false;
-    }
+    final boolean schemaChanged = schemaChanged(s);
     if (schemaChanged)
     {
       schema = s;
 
-      updateErrorPaneIfAuthRequired(desc,
-          isLocal() ?
-        INFO_CTRL_PANEL_AUTHENTICATION_REQUIRED_FOR_OBJECTCLASS_EDIT.get() :
-      INFO_CTRL_PANEL_CANNOT_CONNECT_TO_REMOTE_DETAILS.get(desc.getHostname()));
+      updateErrorPaneIfAuthRequired(desc, isLocal()
+          ? INFO_CTRL_PANEL_AUTHENTICATION_REQUIRED_FOR_OBJECTCLASS_EDIT.get()
+          : INFO_CTRL_PANEL_CANNOT_CONNECT_TO_REMOTE_DETAILS.get(desc.getHostname()));
     }
     else if (schema == null)
     {
@@ -589,18 +552,13 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     }
     SwingUtilities.invokeLater(new Runnable()
     {
-      /** {@inheritDoc} */
       @Override
       public void run()
       {
-        delete.setEnabled(!authenticationRequired(desc)
-            && !authenticationRequired(desc)
-            && schema != null);
+        final boolean enabled = !authenticationRequired(desc) && schema != null;
+        delete.setEnabled(enabled);
         checkEnableSaveChanges();
-        saveChanges.setEnabled(saveChanges.isEnabled() &&
-            !authenticationRequired(desc)
-            && !authenticationRequired(desc)
-            && schema != null);
+        saveChanges.setEnabled(enabled && saveChanges.isEnabled());
         if (schemaChanged && schema != null)
         {
           superiors.setSchema(schema);
@@ -610,14 +568,21 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     });
   }
 
-  /** {@inheritDoc} */
+  private boolean schemaChanged(Schema s)
+  {
+    if (s != null)
+    {
+      return schema == null || !ServerDescriptor.areSchemasEqual(s, schema);
+    }
+    return false;
+  }
+
   @Override
   public boolean mustCheckUnsavedChanges()
   {
     return saveChanges.isEnabled();
   }
 
-  /** {@inheritDoc} */
   @Override
   public UnsavedChangesDialog.Result checkUnsavedChanges()
   {
@@ -633,8 +598,8 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     result = unsavedChangesDlg.getResult();
     if (result == UnsavedChangesDialog.Result.SAVE)
     {
-      ArrayList<LocalizableMessage> errors = new ArrayList<>();
-      saveChanges(true, errors);
+      List<LocalizableMessage> errors = new ArrayList<>();
+      saveChanges(errors);
       if (!errors.isEmpty())
       {
         result = UnsavedChangesDialog.Result.CANCEL;
@@ -644,14 +609,12 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Component getPreferredFocusComponent()
   {
     return name;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void okClicked()
   {
@@ -678,7 +641,7 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     ArrayList<String> childClasses = new ArrayList<>();
     if (schema != null)
     {
-      for (ObjectClass o : schema.getObjectClasses().values())
+      for (ObjectClass o : schema.getObjectClasses())
       {
         for (ObjectClass superior : o.getSuperiorClasses())
         {
@@ -729,7 +692,7 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     }
   }
 
-  private void saveChanges(boolean modal, ArrayList<LocalizableMessage> errors)
+  private void saveChanges(List<LocalizableMessage> errors)
   {
     for (JLabel label : labels)
     {
@@ -794,15 +757,7 @@ public class CustomObjectClassPanel extends SchemaElementPanel
         }
         else
         {
-          boolean notPreviouslyDefined = true;
-          for (String oldAlias : oldAliases)
-          {
-            if (oldAlias.equalsIgnoreCase(alias))
-            {
-              notPreviouslyDefined = false;
-              break;
-            }
-          }
+          boolean notPreviouslyDefined = !containsIgnoreCase(oldAliases, alias);
           if (notPreviouslyDefined)
           {
             LocalizableMessage elementType =
@@ -816,7 +771,6 @@ public class CustomObjectClassPanel extends SchemaElementPanel
         }
       }
     }
-
 
    //validate the superiority.
     for(ObjectClass superior : getObjectClassSuperiors())
@@ -864,9 +818,19 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     }
   }
 
+  private boolean containsIgnoreCase(Collection<String> col, String toFind)
+  {
+    for (String s : col)
+    {
+      if (s.equalsIgnoreCase(toFind))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
 
-  private void validateSuperiority(ObjectClass superior,
-          ArrayList<LocalizableMessage> errors)
+  private void validateSuperiority(ObjectClass superior, List<LocalizableMessage> errors)
   {
     if(superior.getNameOrOID().equalsIgnoreCase(objectClass.getNameOrOID()))
     {
@@ -1000,17 +964,18 @@ public class CustomObjectClassPanel extends SchemaElementPanel
 
   private ObjectClass getNewObjectClass()
   {
-    return new ObjectClass("",
-        getObjectClassName(),
-        getAllNames(),
-        getOID(),
-        getDescription(),
-        getObjectClassSuperiors(),
-        getRequiredAttributes(),
-        getOptionalAttributes(),
-        getObjectClassType(),
-        obsolete.isSelected(),
-        getExtraProperties());
+    return new SchemaBuilder(schema.getSchemaNG()).buildObjectClass(getOID())
+        .names(getAllNames())
+        .description(getDescription())
+        .superiorObjectClasses(getNameOrOIDsForOCs(getObjectClassSuperiors()))
+        .requiredAttributes(getNameOrOIDsForATs(getRequiredAttributes()))
+        .optionalAttributes(getNameOrOIDsForATs(getOptionalAttributes()))
+        .type(getObjectClassType())
+        .obsolete(obsolete.isSelected())
+        .extraProperties(getExtraProperties())
+        .addToSchema()
+        .toSchema()
+        .getObjectClass(getOID());
   }
 
   private void updateAttributes()
@@ -1030,7 +995,6 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     attributes.getAvailableListModel().clear();
     Collection<AttributeType> allAttrs = schema.getAttributeTypes();
     attributes.getAvailableListModel().addAll(allAttrs);
-
 
     HashSet<AttributeType> toDelete = new HashSet<>();
     for (AttributeType attr : attributes.getSelectedListModel1().getData())
@@ -1108,8 +1072,8 @@ public class CustomObjectClassPanel extends SchemaElementPanel
     inheritedRequiredAttributes.clear();
     for (ObjectClass p : getObjectClassSuperiors())
     {
-      inheritedRequiredAttributes.addAll(p.getRequiredAttributeChain());
-      inheritedOptionalAttributes.addAll(p.getOptionalAttributeChain());
+      inheritedRequiredAttributes.addAll(p.getRequiredAttributes());
+      inheritedOptionalAttributes.addAll(p.getOptionalAttributes());
     }
     for (AttributeType attr : inheritedRequiredAttributes)
     {
@@ -1145,26 +1109,20 @@ public class CustomObjectClassPanel extends SchemaElementPanel
         attributes.getSelectedListModel2().getSize() - 1);
   }
 
-
   /**
    * A renderer for the attribute lists.  The renderer basically marks the
    * inherited attributes with an asterisk.
-   *
    */
   private class AttributeTypeCellRenderer implements ListCellRenderer
   {
     private ListCellRenderer defaultRenderer;
 
-    /**
-     * Renderer constructor.
-     *
-     */
+    /** Renderer constructor. */
     public AttributeTypeCellRenderer()
     {
       defaultRenderer = attributes.getAvailableList().getCellRenderer();
     }
 
-    /** {@inheritDoc} */
     @Override
     public Component getListCellRendererComponent(JList list, Object value,
         int index, boolean isSelected, boolean cellHasFocus)

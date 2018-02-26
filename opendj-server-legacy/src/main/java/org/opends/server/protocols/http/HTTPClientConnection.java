@@ -19,7 +19,6 @@ import static org.forgerock.opendj.adapter.server3x.Converters.from;
 import static org.forgerock.opendj.adapter.server3x.Converters.getResponseResult;
 import static org.forgerock.opendj.ldap.LdapException.newLdapException;
 import static org.opends.messages.ProtocolMessages.WARN_CLIENT_DISCONNECT_IN_PROGRESS;
-import static org.opends.server.loggers.CommonAudit.DEFAULT_TRANSACTION_ID;
 import static org.opends.server.loggers.AccessLogger.logDisconnect;
 
 import java.net.InetAddress;
@@ -28,16 +27,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.forgerock.http.MutableUri;
-import org.forgerock.http.header.MalformedHeaderException;
-import org.forgerock.http.header.TransactionIdHeader;
 import org.forgerock.http.protocol.Request;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.LdapException;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchResultHandler;
@@ -57,8 +54,6 @@ import org.opends.server.core.ModifyDNOperation;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.core.SearchOperation;
 import org.opends.server.core.ServerContext;
-import org.opends.server.loggers.HTTPAccessLogger;
-import org.opends.server.loggers.HTTPRequestInfo;
 import org.opends.server.protocols.ldap.AddResponseProtocolOp;
 import org.opends.server.protocols.ldap.BindResponseProtocolOp;
 import org.opends.server.protocols.ldap.CompareResponseProtocolOp;
@@ -73,7 +68,6 @@ import org.opends.server.protocols.ldap.SearchResultEntryProtocolOp;
 import org.opends.server.protocols.ldap.SearchResultReferenceProtocolOp;
 import org.opends.server.types.CancelRequest;
 import org.opends.server.types.CancelResult;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.DisconnectReason;
 import org.opends.server.types.IntermediateResponse;
@@ -87,7 +81,7 @@ import org.opends.server.types.SearchResultReference;
  * connection that will be accepted by an instance of the HTTP connection
  * handler.
  */
-final class HTTPClientConnection extends ClientConnection implements HTTPRequestInfo
+final class HTTPClientConnection extends ClientConnection
 {
 
   // TODO JNR Confirm with Matt that persistent searches are inapplicable to Rest2LDAP.
@@ -103,7 +97,7 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
     final Operation operation;
     final LdapPromiseImpl<Result> promise;
 
-    public OperationWithPromise(Operation operation, LdapPromiseImpl<Result> promise)
+    private OperationWithPromise(Operation operation, LdapPromiseImpl<Result> promise)
     {
       this.operation = operation;
       this.promise = promise;
@@ -122,7 +116,7 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
 
     final SearchResultHandler entryHandler;
 
-    public SearchOperationWithPromise(
+    private SearchOperationWithPromise(
         Operation operation, LdapPromiseImpl<Result> promise, SearchResultHandler entryHandler)
     {
       super(operation, promise);
@@ -194,24 +188,11 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
 
   /** The HTTP method/verb used for this request. */
   private final String method;
-  /** The query issued by the client. */
-  private final String query;
-  /** The user agent used by the client. */
-  private final String userAgent;
-
-  /** The username that was used to authenticate. */
-  private String authUser;
-  /**
-   * The HTTP status code returned to the client. Using 0 to say no status code
-   * was set since it is not .
-   */
-  private final AtomicInteger statusCode = new AtomicInteger(0);
+  /** The URI issued by the client. */
+  private final MutableUri uri;
 
   /** The client (remote) address. */
   private final String clientAddress;
-
-  /** The client (remote) host name. */
-  private String clientHost;
 
   /** The client (remote) port. */
   private final int clientPort;
@@ -221,9 +202,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
 
   /** The server (local) address. */
   private final String serverAddress;
-
-  /** The server (local) host name. */
-  private String serverHost;
 
   /** The server (local) port. */
   private final int serverPort;
@@ -236,9 +214,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
 
   /** Security-Strength Factor extracted from the request attribute. */
   private final int securityStrengthFactor;
-
-  /** TransactionId for tracking of ForgeRock stack transactions. */
-  private final String transactionId;
 
   /**
    * Constructs an instance of this class.
@@ -260,16 +235,14 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
     this.clientPort = clientCtx.getRemotePort();
     this.isSecure = clientCtx.isSecure();
 
-    final MutableUri uri = request.getUri();
+    this.uri = request.getUri();
     this.serverAddress = uri.getHost();
     this.localAddress = toInetAddress(serverAddress);
     this.serverPort = uri.getPort();
     this.securityStrengthFactor = calcSSF(
             context.asContext(AttributesContext.class).getAttributes().get(SERVLET_SSF_CONSTANT));
     this.method = request.getMethod();
-    this.query = uri.getQuery();
     this.protocol = request.getVersion();
-    this.userAgent = clientCtx.getUserAgent();
 
     this.statTracker = this.connectionHandler.getStatTracker();
 
@@ -279,31 +252,8 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
       this.statTracker.updateConnect();
       this.useNanoTime = DirectoryServer.getUseNanoTime();
     }
-    this.transactionId = getTransactionId(serverContext, request);
     this.connectionID = DirectoryServer.newConnectionAccepted(this);
-  }
-
-  private String getTransactionId(ServerContext serverContext, Request request)
-  {
-    if (serverContext.getCommonAudit().shouldTrustTransactionIds())
-    {
-      try
-      {
-        TransactionIdHeader txHeader = request.getHeaders().get(TransactionIdHeader.class);
-        return txHeader == null ? DEFAULT_TRANSACTION_ID :  txHeader.getTransactionId().getValue();
-      }
-      catch (MalformedHeaderException e)
-      {
-        // ignore it
-      }
-    }
-    return DEFAULT_TRANSACTION_ID;
-  }
-
-  @Override
-  public String getAuthUser()
-  {
-    return this.authUser;
+    context.asContext(HttpLogContext.class).setConnectionID(connectionID);
   }
 
   @Override
@@ -319,12 +269,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
   }
 
   @Override
-  public long getTotalProcessingTime()
-  {
-    return totalProcessingTime.get();
-  }
-
-  @Override
   public String getProtocol()
   {
     return protocol;
@@ -337,12 +281,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
   }
 
   @Override
-  public String getClientHost()
-  {
-    return clientHost;
-  }
-
-  @Override
   public int getClientPort()
   {
     return clientPort;
@@ -352,12 +290,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
   public String getServerAddress()
   {
     return serverAddress;
-  }
-
-  @Override
-  public String getServerHost()
-  {
-    return serverHost;
   }
 
   @Override
@@ -379,12 +311,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
   }
 
   @Override
-  public String getTransactionId()
-  {
-    return transactionId;
-  }
-
-  @Override
   public boolean isSecure()
   {
     return isSecure;
@@ -398,7 +324,7 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
 
     if (keepStats)
     {
-      this.statTracker.updateRequestMonitoringData(getMethod(), time);
+      this.statTracker.updateRequestMonitoringData(method, time);
       this.statTracker.updateOperationMonitoringData(operation.getOperationType(), time);
     }
 
@@ -516,12 +442,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
     throw new RuntimeException("Not implemented");
   }
 
-  @Override
-  public void setAuthUser(String authUser)
-  {
-    this.authUser = authUser;
-  }
-
   /**
    * {@inheritDoc}
    *
@@ -575,30 +495,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
 
     this.connectionHandler.removeClientConnection(this);
     logDisconnect(this, disconnectReason, message);
-  }
-
-  @Override
-  public String getMethod()
-  {
-    return this.method;
-  }
-
-  @Override
-  public String getQuery()
-  {
-    return this.query;
-  }
-
-  @Override
-  public int getStatusCode()
-  {
-    return this.statusCode.get();
-  }
-
-  @Override
-  public String getUserAgent()
-  {
-    return this.userAgent;
   }
 
   @Override
@@ -821,16 +717,6 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
     buffer.append(getServerAddress()).append(":").append(getServerPort());
   }
 
-  /**
-   * Returns the statTracker for this connection handler.
-   *
-   * @return the statTracker for this connection handler
-   */
-  public HTTPStatistics getStatTracker()
-  {
-    return statTracker;
-  }
-
   @Override
   public int getSSF()
   {
@@ -847,14 +733,5 @@ final class HTTPClientConnection extends ClientConnection implements HTTPRequest
   public boolean isInnerConnection()
   {
     return true;
-  }
-
-  @Override
-  public void log(int statusCode)
-  {
-    if (this.statusCode.compareAndSet(0, statusCode))
-    { // This request was not logged before
-      HTTPAccessLogger.logRequestInfo(this);
-    }
   }
 }

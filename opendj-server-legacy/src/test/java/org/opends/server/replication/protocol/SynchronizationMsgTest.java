@@ -16,6 +16,18 @@
  */
 package org.opends.server.replication.protocol;
 
+import static org.forgerock.opendj.ldap.ModificationType.*;
+import static org.forgerock.opendj.ldap.requests.Requests.*;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
+import static org.opends.server.TestCaseUtils.*;
+import static org.opends.server.protocols.internal.InternalClientConnection.*;
+import static org.opends.server.replication.common.AssuredMode.*;
+import static org.opends.server.replication.protocol.OperationContext.*;
+import static org.opends.server.replication.protocol.ProtocolVersion.*;
+import static org.opends.server.util.CollectionUtils.*;
+import static org.opends.server.util.StaticUtils.*;
+import static org.testng.Assert.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,15 +39,14 @@ import java.util.zip.DataFormatException;
 import org.assertj.core.api.Assertions;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.DN;
-import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.requests.ModifyDNRequest;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.controls.SubtreeDeleteControl;
 import org.opends.server.core.AddOperation;
 import org.opends.server.core.AddOperationBasis;
 import org.opends.server.core.DeleteOperation;
 import org.opends.server.core.DeleteOperationBasis;
-import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ModifyDNOperation;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.core.ModifyOperationBasis;
@@ -52,7 +63,6 @@ import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.LDAPException;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.RawAttribute;
 import org.opends.server.util.TimeThread;
 import org.opends.server.workflowelement.localbackend.LocalBackendAddOperation;
@@ -62,15 +72,6 @@ import org.opends.server.workflowelement.localbackend.LocalBackendModifyOperatio
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.replication.protocol.OperationContext.*;
-import static org.opends.server.replication.protocol.ProtocolVersion.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.StaticUtils.*;
-import static org.testng.Assert.*;
 
 /**
  * Test the constructors, encoders and decoders of the replication protocol
@@ -105,48 +106,43 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     CSN csn2 = new CSN(TimeThread.getTime(), 123,  45);
     CSN csn3 = new CSN(TimeThread.getTime(), 67894123,  45678);
 
-    AttributeType type = DirectoryServer.getAttributeType("description");
+    AttributeType type = getDescriptionAttributeType();
 
-    Attribute attr1 = Attributes.create("description", "new value");
-    Modification mod1 = new Modification(ModificationType.REPLACE, attr1);
+    Modification mod1 = new Modification(REPLACE, Attributes.create("description", "new value"));
     List<Modification> mods1 = newArrayList(mod1);
 
-    Attribute attr2 = Attributes.empty("description");
-    Modification mod2 = new Modification(ModificationType.DELETE, attr2);
+    Modification mod2 = new Modification(DELETE, Attributes.empty("description"));
     List<Modification> mods2 = newArrayList(mod1, mod2);
 
     AttributeBuilder builder = new AttributeBuilder(type);
     builder.add("string");
     builder.add("value");
     builder.add("again");
-    Attribute attr3 = builder.toAttribute();
-    Modification mod3 = new Modification(ModificationType.ADD, attr3);
+    Modification mod3 = new Modification(ADD, builder.toAttribute());
     List<Modification> mods3 = newArrayList(mod3);
 
     List<Modification> mods4 = new ArrayList<>();
     for (int i = 0; i < 10; i++)
     {
-      Attribute attr = Attributes.create("description", "string" + i);
-      mods4.add(new Modification(ModificationType.ADD, attr));
+      mods4.add(new Modification(ADD, Attributes.create("description", "string" + i)));
     }
 
-    Attribute attr5 = Attributes.create("namingcontexts", TEST_ROOT_DN_STRING);
-    Modification mod5 = new Modification(ModificationType.REPLACE, attr5);
+    Modification mod5 = new Modification(REPLACE, Attributes.create("namingcontexts", TEST_ROOT_DN_STRING));
     List<Modification> mods5 = newArrayList(mod5);
 
     List<Attribute> eclIncludes = getEntryAttributes();
     return new Object[][] {
-        { csn1, "dc=test", mods1, false, AssuredMode.SAFE_DATA_MODE, (byte)0, null},
-        { csn2, "dc=cn2", mods1, true, AssuredMode.SAFE_READ_MODE, (byte)1, eclIncludes},
+        { csn1, "dc=test", mods1, false, SAFE_DATA_MODE, (byte)0, null},
+        { csn2, "dc=cn2", mods1, true, SAFE_READ_MODE, (byte)1, eclIncludes},
         { csn2, "dc=test with a much longer dn in case this would "
-               + "make a difference", mods1, true, AssuredMode.SAFE_READ_MODE, (byte)3, null},
-        { csn2, "dc=test, cn=with a, o=more complex, ou=dn", mods1, false, AssuredMode.SAFE_READ_MODE, (byte)5, eclIncludes},
-        { csn2, "cn=use\\, backslash", mods1, true, AssuredMode.SAFE_READ_MODE, (byte)3, null},
-        { csn2, "dc=test with several mod", mods2, false, AssuredMode.SAFE_DATA_MODE, (byte)16, eclIncludes},
-        { csn2, "dc=test with several values", mods3, false, AssuredMode.SAFE_READ_MODE, (byte)3, null},
-        { csn2, "dc=test with long mod", mods4, true, AssuredMode.SAFE_READ_MODE, (byte)120, eclIncludes},
-        { csn2, "dc=testDsaOperation", mods5, true, AssuredMode.SAFE_DATA_MODE, (byte)99, null},
-        { csn3, "dc=serverIdLargerThan32767", mods1, true, AssuredMode.SAFE_READ_MODE, (byte)1, null},
+               + "make a difference", mods1, true, SAFE_READ_MODE, (byte)3, null},
+        { csn2, "dc=test, cn=with a, o=more complex, ou=dn", mods1, false, SAFE_READ_MODE, (byte)5, eclIncludes},
+        { csn2, "cn=use\\, backslash", mods1, true, SAFE_READ_MODE, (byte)3, null},
+        { csn2, "dc=test with several mod", mods2, false, SAFE_DATA_MODE, (byte)16, eclIncludes},
+        { csn2, "dc=test with several values", mods3, false, SAFE_READ_MODE, (byte)3, null},
+        { csn2, "dc=test with long mod", mods4, true, SAFE_READ_MODE, (byte)120, eclIncludes},
+        { csn2, "dc=testDsaOperation", mods5, true, SAFE_DATA_MODE, (byte)99, null},
+        { csn3, "dc=serverIdLargerThan32767", mods1, true, SAFE_READ_MODE, (byte)1, null},
         };
   }
 
@@ -221,7 +217,7 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     assertEquals(msg.isAssured(), isAssured);
 
     // Check assured mode
-    assertEquals(msg.getAssuredMode(), AssuredMode.SAFE_DATA_MODE);
+    assertEquals(msg.getAssuredMode(), SAFE_DATA_MODE);
     msg.setAssuredMode(assuredMode);
     assertEquals(msg.getAssuredMode(), assuredMode);
 
@@ -337,39 +333,35 @@ public class SynchronizationMsgTest extends ReplicationTestCase
   @DataProvider(name = "createModifyDnData")
   public Object[][] createModifyDnData() {
 
-    AttributeType type = DirectoryServer.getAttributeType("description");
+    AttributeType type = getDescriptionAttributeType();
 
-    Attribute attr1 = Attributes.create("description", "new value");
-    Modification mod1 = new Modification(ModificationType.REPLACE, attr1);
+    Modification mod1 = new Modification(REPLACE, Attributes.create("description", "new value"));
     List<Modification> mods1 = newArrayList(mod1);
 
-    Attribute attr2 = Attributes.empty("description");
-    Modification mod2 = new Modification(ModificationType.DELETE, attr2);
+    Modification mod2 = new Modification(DELETE, Attributes.empty("description"));
     List<Modification> mods2 = newArrayList(mod1, mod2);
 
     AttributeBuilder builder = new AttributeBuilder(type);
     builder.add("string");
     builder.add("value");
     builder.add("again");
-    Attribute attr3 = builder.toAttribute();
-    Modification mod3 = new Modification(ModificationType.ADD, attr3);
+    Modification mod3 = new Modification(ADD, builder.toAttribute());
     List<Modification> mods3 = newArrayList(mod3);
 
     List<Modification> mods4 = new ArrayList<>();
     for (int i = 0; i < 10; i++)
     {
-      Attribute attr = Attributes.create("description", "string" + i);
-      mods4.add(new Modification(ModificationType.ADD, attr));
+      mods4.add(new Modification(ADD, Attributes.create("description", "string" + i)));
     }
 
     List<Attribute> entryAttrList = getEntryAttributes();
     return new Object[][] {
-        {"dc=test,dc=com", "dc=new", false, "dc=change", mods1, false, AssuredMode.SAFE_DATA_MODE, (byte)0, entryAttrList},
-        {"dc=test,dc=com", "dc=new", true, "dc=change", mods2, true, AssuredMode.SAFE_READ_MODE, (byte)1, null},
+        {"dc=test,dc=com", "dc=new", false, "dc=change", mods1, false, SAFE_DATA_MODE, (byte)0, entryAttrList},
+        {"dc=test,dc=com", "dc=new", true, "dc=change", mods2, true, SAFE_READ_MODE, (byte)1, null},
         // testNG does not like null argument so use "" for the newSuperior instead of null
-        {"dc=test,dc=com", "dc=new", false, "", mods3, true, AssuredMode.SAFE_READ_MODE, (byte)3, entryAttrList},
+        {"dc=test,dc=com", "dc=new", false, "", mods3, true, SAFE_READ_MODE, (byte)3, entryAttrList},
         {"dc=delete,dc=an,dc=entry,dc=with,dc=a,dc=long dn",
-                   "dc=new", true, "", mods4, true, AssuredMode.SAFE_DATA_MODE, (byte)99, null},
+                   "dc=new", true, "", mods4, true, SAFE_DATA_MODE, (byte)99, null},
         };
   }
 
@@ -441,9 +433,9 @@ public class SynchronizationMsgTest extends ReplicationTestCase
   {
     List<Attribute> entryAttrList = getEntryAttributes();
     return new Object[][] {
-        {"dc=example,dc=com", false, AssuredMode.SAFE_DATA_MODE, (byte)0, entryAttrList},
-        {"o=test", true, AssuredMode.SAFE_READ_MODE, (byte)1, null},
-        {"o=group,dc=example,dc=com", true, AssuredMode.SAFE_READ_MODE, (byte)3, entryAttrList}};
+        {"dc=example,dc=com", false, SAFE_DATA_MODE, (byte)0, entryAttrList},
+        {"o=test", true, SAFE_READ_MODE, (byte)1, null},
+        {"o=group,dc=example,dc=com", true, SAFE_READ_MODE, (byte)3, entryAttrList}};
   }
 
   @Test(enabled=true,dataProvider = "createAddData")
@@ -453,21 +445,18 @@ public class SynchronizationMsgTest extends ReplicationTestCase
   {
     final DN dn = DN.valueOf(rawDN);
 
-    Attribute objectClass = Attributes.create(DirectoryServer
-        .getObjectClassAttributeType(), "organization");
+    Attribute objectClass = Attributes.create(getObjectClassAttributeType(), "organization");
     Map<ObjectClass, String> objectClassList = new HashMap<>();
-    objectClassList.put(DirectoryServer.getObjectClass("organization"), "organization");
+    objectClassList.put(getOrganizationObjectClass(), "organization");
 
     Attribute attr = Attributes.create("o", "com");
     List<Attribute> userAttributes = newArrayList(attr);
-    Map<AttributeType, List<Attribute>> userAttList = new HashMap<>();
-    userAttList.put(attr.getAttributeDescription().getAttributeType(), userAttributes);
+    Map<AttributeType, List<Attribute>> userAttList = addAttribute(attr, userAttributes);
 
 
     attr = Attributes.create("creatorsname", "dc=creator");
     List<Attribute> operationalAttributes = newArrayList(attr);
-    Map<AttributeType, List<Attribute>> opList = new HashMap<>();
-    opList.put(attr.getAttributeDescription().getAttributeType(), operationalAttributes);
+    Map<AttributeType, List<Attribute>> opList = addAttribute(attr, operationalAttributes);
 
     CSN csn = new CSN(TimeThread.getTime(), 123,  45);
 
@@ -538,6 +527,13 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     // Create an update message from this op
     AddMsg updateMsg = (AddMsg) LDAPUpdateMsg.generateMsg(localAddOp);
     assertEquals(msg.getCSN(), updateMsg.getCSN());
+  }
+
+  private Map<AttributeType, List<Attribute>> addAttribute(Attribute attr, List<Attribute> userAttributes)
+  {
+    Map<AttributeType, List<Attribute>> userAttList = new HashMap<>();
+    userAttList.put(attr.getAttributeDescription().getAttributeType(), userAttributes);
+    return userAttList;
   }
 
   private void assertAttributesEqual(List<RawAttribute> actualAttrs,
@@ -810,15 +806,15 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     Set<String> a4 = newHashSet();
 
     DSInfo dsInfo1 = new DSInfo(13, "dsHost1:111", 26, 154631, ServerStatus.FULL_UPDATE_STATUS,
-      false, AssuredMode.SAFE_DATA_MODE, (byte)12, (byte)132, urls1, a1, a1, (short)1);
+      false, SAFE_DATA_MODE, (byte)12, (byte)132, urls1, a1, a1, (short)1);
     DSInfo dsInfo2 = new DSInfo(-436, "dsHost2:222", 493, -227896, ServerStatus.DEGRADED_STATUS,
-      true, AssuredMode.SAFE_READ_MODE, (byte)-7, (byte)-265, urls2, a2, a2, (short)2);
+      true, SAFE_READ_MODE, (byte)-7, (byte)-265, urls2, a2, a2, (short)2);
     DSInfo dsInfo3 = new DSInfo(2436, "dsHost3:333", 591, 0, ServerStatus.NORMAL_STATUS,
-      false, AssuredMode.SAFE_READ_MODE, (byte)17, (byte)0, urls3, a3, a3, (short)3);
+      false, SAFE_READ_MODE, (byte)17, (byte)0, urls3, a3, a3, (short)3);
     DSInfo dsInfo4 = new DSInfo(415, "dsHost4:444", 146, 0, ServerStatus.BAD_GEN_ID_STATUS,
-      true, AssuredMode.SAFE_DATA_MODE, (byte)2, (byte)15, urls4, a4, a4, (short)4);
+      true, SAFE_DATA_MODE, (byte)2, (byte)15, urls4, a4, a4, (short)4);
     DSInfo dsInfo5 = new DSInfo(452436, "dsHost5:555", 45591, 0, ServerStatus.NORMAL_STATUS,
-      false, AssuredMode.SAFE_READ_MODE, (byte)17, (byte)0, urls3, a1, a1, (short)5);
+      false, SAFE_READ_MODE, (byte)17, (byte)0, urls3, a1, a1, (short)5);
 
     List<DSInfo> dsList1 = newArrayList(dsInfo1);
     List<DSInfo> dsList2 = newArrayList();
@@ -894,12 +890,12 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     Set<String> a3 = newHashSet("dc", "uid");
 
     return new Object[][]{
-      {ServerStatus.NORMAL_STATUS, urls1, true, AssuredMode.SAFE_DATA_MODE, (byte)1, a1},
-      {ServerStatus.DEGRADED_STATUS, urls2, false, AssuredMode.SAFE_READ_MODE, (byte)123, a2},
-      {ServerStatus.FULL_UPDATE_STATUS, urls3, false, AssuredMode.SAFE_DATA_MODE, (byte)111, a3},
-      {ServerStatus.NORMAL_STATUS, urls4, true, AssuredMode.SAFE_READ_MODE, (byte)-1, a1},
-      {ServerStatus.DEGRADED_STATUS, urls5, true, AssuredMode.SAFE_DATA_MODE, (byte)97, a2},
-      {ServerStatus.FULL_UPDATE_STATUS, urls6, false, AssuredMode.SAFE_READ_MODE, (byte)-13, a3}
+      {ServerStatus.NORMAL_STATUS, urls1, true, SAFE_DATA_MODE, (byte)1, a1},
+      {ServerStatus.DEGRADED_STATUS, urls2, false, SAFE_READ_MODE, (byte)123, a2},
+      {ServerStatus.FULL_UPDATE_STATUS, urls3, false, SAFE_DATA_MODE, (byte)111, a3},
+      {ServerStatus.NORMAL_STATUS, urls4, true, SAFE_READ_MODE, (byte)-1, a1},
+      {ServerStatus.DEGRADED_STATUS, urls5, true, SAFE_DATA_MODE, (byte)97, a2},
+      {ServerStatus.FULL_UPDATE_STATUS, urls6, false, SAFE_READ_MODE, (byte)-13, a3}
     };
   }
 
@@ -1183,7 +1179,7 @@ public class SynchronizationMsgTest extends ReplicationTestCase
       byte safeDataLevel, List<Attribute> entryAttrList) throws Exception
   {
     Map<ObjectClass, String> objectClassList = new HashMap<>();
-    objectClassList.put(DirectoryServer.getObjectClass("organization"), "organization");
+    objectClassList.put(getOrganizationObjectClass(), "organization");
 
     Attribute attr = Attributes.create("o", "com");
     Map<AttributeType, List<Attribute>> userAttList = new HashMap<>();

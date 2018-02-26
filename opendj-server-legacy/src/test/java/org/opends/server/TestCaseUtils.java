@@ -17,13 +17,40 @@
  */
 package org.opends.server;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.net.*;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
@@ -49,15 +76,27 @@ import org.opends.server.backends.pluggable.RootContainer;
 import org.opends.server.core.AddOperation;
 import org.opends.server.core.DeleteOperation;
 import org.opends.server.core.DirectoryServer;
-import org.opends.server.loggers.*;
+import org.opends.server.loggers.AccessLogPublisher;
+import org.opends.server.loggers.AccessLogger;
+import org.opends.server.loggers.DebugLogger;
+import org.opends.server.loggers.ErrorLogPublisher;
+import org.opends.server.loggers.ErrorLogger;
+import org.opends.server.loggers.HTTPAccessLogPublisher;
+import org.opends.server.loggers.HTTPAccessLogger;
 import org.opends.server.plugins.InvocationCounterPlugin;
 import org.opends.server.protocols.ldap.BindRequestProtocolOp;
 import org.opends.server.protocols.ldap.BindResponseProtocolOp;
 import org.opends.server.protocols.ldap.LDAPMessage;
 import org.opends.server.protocols.ldap.LDAPReader;
 import org.opends.server.tools.LDAPModify;
-import org.opends.server.types.*;
+import org.opends.server.types.Attribute;
+import org.opends.server.types.DirectoryEnvironmentConfig;
+import org.opends.server.types.DirectoryException;
+import org.opends.server.types.Entry;
 import org.opends.server.types.FilePermission;
+import org.opends.server.types.InitializationException;
+import org.opends.server.types.LDIFImportConfig;
+import org.opends.server.types.Schema;
 import org.opends.server.util.BuildVersion;
 import org.opends.server.util.EmbeddedUtils;
 import org.opends.server.util.LDIFReader;
@@ -383,10 +422,11 @@ public final class TestCaseUtils {
 
       // Find some free ports for the listeners and write them to the
       // config-chamges.ldif file.
-      serverLdapPort = getFreePort(PROPERTY_LDAP_PORT);
-      serverAdminPort = getFreePort(PROPERTY_ADMIN_PORT);
-      serverJmxPort = findFreePort();
-      serverLdapsPort = findFreePort();
+      final int[] ports = findFreePorts(4);
+      serverLdapPort = getFreePort(PROPERTY_LDAP_PORT, ports[0]);
+      serverAdminPort = getFreePort(PROPERTY_ADMIN_PORT, ports[1]);
+      serverJmxPort = ports[2];
+      serverLdapsPort = ports[3];
 
       String defaultConfigChangeFile = testResourceDir + File.separator
           + "config-changes.ldif";
@@ -459,12 +499,12 @@ public final class TestCaseUtils {
     }
   }
 
-  private static int getFreePort(String portPropertyName) throws IOException
+  private static int getFreePort(String portPropertyName, int defaultPort) throws IOException
   {
     String port = System.getProperty(portPropertyName);
     if (port == null)
     {
-      return findFreePort();
+      return defaultPort;
     }
     int portNb = Integer.parseInt(port);
     // Check this port is free
@@ -498,6 +538,8 @@ public final class TestCaseUtils {
     }
 
     try {
+      new File(DirectoryServer.getEnvironmentConfig().getSchemaDirectory(), "99-user.ldif").delete();
+
       long startMs = System.currentTimeMillis();
 
       clearLoggersContents();
@@ -530,7 +572,8 @@ public final class TestCaseUtils {
 
   private static void clearJEBackends() throws Exception
   {
-    for (Backend<?> backend : DirectoryServer.getBackends().values()) {
+    for (Backend<?> backend : DirectoryServer.getBackends())
+    {
       if (backend instanceof BackendImpl) {
         clearBackend(backend.getBackendID());
       }
@@ -607,27 +650,40 @@ public final class TestCaseUtils {
    * @return the bounded Server socket.
    *
    * @throws IOException in case of underlying exception.
-   * @throws SocketException in case of underlying exception.
    */
   private static ServerSocket bindPort(int port)
           throws IOException
   {
     ServerSocket serverLdapSocket = new ServerSocket();
     serverLdapSocket.setReuseAddress(true);
-    serverLdapSocket.bind(new InetSocketAddress("127.0.0.1", port));
+    serverLdapSocket.bind(new InetSocketAddress(port));
     return serverLdapSocket;
   }
 
   /**
-   * Find and binds to a free server socket port on the local host.
+   * Find and binds to a free server socket port on the local host. Avoid allocating ephemeral ports since these may
+   * be used by client applications such as dsconfig. Instead scan through ports starting from a reasonably high number
+   * which avoids most reserved services (see /etc/services) and continues up to the beginning of the ephemeral port
+   * range. On most Linux OSes this is 32768, but may be higher.
+   *
    * @return the bounded Server socket.
    *
    * @throws IOException in case of underlying exception.
-   * @throws SocketException in case of underlying exception.
    */
   public static ServerSocket bindFreePort() throws IOException
   {
-    return bindPort(0);
+    for (int port = 10000; port < 32768; port++)
+    {
+      try
+      {
+        return bindPort(port);
+      }
+      catch (BindException e)
+      {
+        // Try next port.
+      }
+    }
+    throw new BindException("Unable to bind to a free port");
   }
 
   /**
@@ -770,7 +826,7 @@ public final class TestCaseUtils {
     {
       memoryBackend = new MemoryBackend();
       memoryBackend.setBackendID(backendID);
-      memoryBackend.setBaseDNs(new DN[] {baseDN});
+      memoryBackend.setBaseDNs(baseDN);
       memoryBackend.openBackend();
       DirectoryServer.registerBackend(memoryBackend);
     }

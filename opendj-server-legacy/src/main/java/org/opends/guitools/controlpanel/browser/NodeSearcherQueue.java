@@ -12,12 +12,14 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.browser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.opends.guitools.controlpanel.ui.nodes.BasicNode;
 
@@ -29,15 +31,14 @@ import org.opends.guitools.controlpanel.ui.nodes.BasicNode;
  *
  * The queue will basically start a certain number of threads and this threads
  * will "consume" the AbstractNodeTask objects that are added to this queue.
- *
  */
 class NodeSearcherQueue implements Runnable {
 
-  private String name;
-  private ArrayList<AbstractNodeTask> waitingQueue = new ArrayList<>();
-  private HashMap<BasicNode, AbstractNodeTask> workingList = new HashMap<>();
-  private HashMap<BasicNode, BasicNode> cancelList = new HashMap<>();
-  private ThreadGroup threadGroup;
+  private final String name;
+  private final List<AbstractNodeTask> waitingQueue = new ArrayList<>();
+  private final Map<BasicNode, AbstractNodeTask> workingList = new HashMap<>();
+  private final Map<BasicNode, BasicNode> cancelList = new HashMap<>();
+  private final ThreadGroup threadGroup;
 
 
   /**
@@ -65,10 +66,7 @@ class NodeSearcherQueue implements Runnable {
   }
 
 
-  /**
-   * Shutdown this queue.
-   * All the associated threads are stopped.
-   */
+  /** Shutdown this queue. All the associated threads are stopped. */
   public void shutdown() {
     threadGroup.interrupt();
   }
@@ -131,9 +129,7 @@ class NodeSearcherQueue implements Runnable {
   }
 
 
-  /**
-   * Cancel all the object from this queue.
-   */
+  /** Cancel all the object from this queue. */
   public synchronized void cancelAll() {
     waitingQueue.clear();
     for (BasicNode node : workingList.keySet())
@@ -225,6 +221,7 @@ class NodeSearcherQueue implements Runnable {
    * the NodeSearchQueue constructor.
    * Basically this method fetches objects from the waiting queue and runs them.
    */
+  @Override
   public void run() {
     boolean interrupted = false;
     while (!interrupted)

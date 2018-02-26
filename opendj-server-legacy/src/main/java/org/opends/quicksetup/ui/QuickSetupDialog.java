@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2009 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 
 package org.opends.quicksetup.ui;
@@ -20,9 +20,7 @@ package org.opends.quicksetup.ui;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.HashSet;
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -30,11 +28,18 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-import org.opends.quicksetup.*;
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.opends.quicksetup.ButtonName;
+import org.opends.quicksetup.CurrentInstallStatus;
+import org.opends.quicksetup.ProgressDescriptor;
+import org.opends.quicksetup.ProgressStep;
+import org.opends.quicksetup.UserData;
+import org.opends.quicksetup.WizardStep;
 import org.opends.quicksetup.event.ButtonActionListener;
 import org.opends.quicksetup.event.ButtonEvent;
 import org.opends.quicksetup.event.MinimumSizeComponentListener;
-import org.opends.quicksetup.ProgressDescriptor;
+
 /**
  * This class represents the dialog used by quicksetup applications.
  *
@@ -44,29 +49,23 @@ import org.opends.quicksetup.ProgressDescriptor;
  *
  * If we are installing Open DS and the server has already been installed it
  * will display an error message.  In the other cases it will display a wizard.
- *
  */
 public class QuickSetupDialog
 {
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-  private JFrame frame;
+  private final JFrame frame;
   private QuickSetupErrorPanel installedPanel;
   private JPanel framePanel;
   private StepsPanel stepsPanel;
   private CurrentStepPanel currentStepPanel;
   private ButtonsPanel buttonsPanel;
-
   private WizardStep displayedStep;
 
-  private CurrentInstallStatus installStatus;
-
-  private HashSet<ButtonActionListener> buttonListeners = new HashSet<>();
-
-  private GuiApplication application;
-
-  private QuickSetup quickSetup;
-
+  private final CurrentInstallStatus installStatus;
+  private final Set<ButtonActionListener> buttonListeners = new HashSet<>();
+  private final GuiApplication application;
+  private final QuickSetup quickSetup;
   private boolean forceToDisplay;
 
   /**
@@ -88,6 +87,7 @@ public class QuickSetupDialog
     frame = new JFrame(String.valueOf(application.getFrameTitle()));
     frame.getContentPane().add(getFramePanel());
     frame.addWindowListener(new WindowAdapter() {
+      @Override
       public void windowClosing(WindowEvent e) {
         application.windowClosing(QuickSetupDialog.this, e);
       }
@@ -96,10 +96,7 @@ public class QuickSetupDialog
     Utilities.setFrameIcon(frame);
   }
 
-  /**
-   * Packs and displays this dialog.
-   *
-   */
+  /** Packs and displays this dialog. */
   public void packAndShow()
   {
     frame.pack();
@@ -243,12 +240,12 @@ public class QuickSetupDialog
    *
    * This method can be called from the event thread or outside the event
    * thread.
-   *
    */
   public void workerStarted()
   {
     Runnable r = new Runnable()
     {
+      @Override
       public void run()
       {
         displayWorkingProgressImage(true);
@@ -266,12 +263,12 @@ public class QuickSetupDialog
    *
    * This method can be called from the event thread or outside the event
    * thread.
-   *
    */
   public void workerFinished()
   {
     Runnable r = new Runnable()
     {
+      @Override
       public void run()
       {
         displayWorkingProgressImage(false);
@@ -281,20 +278,6 @@ public class QuickSetupDialog
       }
     };
     runOnEventThread(r);
-  }
-
-  /**
-   * Notification telling that the installation/uninstallation is finished.
-   * @param successful a boolean telling whether the setup was successful or
-   * not.
-   */
-  public void finished(boolean successful)
-  {
-    setButtonEnabled(ButtonName.CLOSE, true);
-    if (!successful)
-    {
-      // Do nothing... all the error messages
-    }
   }
 
   /**

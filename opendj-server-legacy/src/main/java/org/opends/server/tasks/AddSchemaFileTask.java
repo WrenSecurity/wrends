@@ -34,13 +34,20 @@ import org.opends.server.backends.task.Task;
 import org.opends.server.backends.task.TaskState;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.SchemaConfigManager;
-import org.opends.server.types.*;
+import org.opends.server.types.Attribute;
+import org.opends.server.types.AttributeBuilder;
+import org.opends.server.types.DirectoryException;
+import org.opends.server.types.Entry;
+import org.opends.server.types.InitializationException;
 import org.opends.server.types.LockManager.DNLock;
+import org.opends.server.types.Modification;
+import org.opends.server.types.Operation;
+import org.opends.server.types.Privilege;
+import org.opends.server.types.Schema;
 
 import static org.opends.messages.TaskMessages.*;
 import static org.opends.server.config.ConfigConstants.*;
 import static org.opends.server.core.DirectoryServer.*;
-import static org.opends.server.util.ServerConstants.*;
 import static org.opends.server.util.StaticUtils.*;
 
 /**
@@ -55,13 +62,11 @@ public class AddSchemaFileTask
   /** The list of files to be added to the server schema. */
   private TreeSet<String> filesToAdd;
 
-  /** {@inheritDoc} */
   @Override
   public LocalizableMessage getDisplayName() {
     return INFO_TASK_ADD_SCHEMA_FILE_NAME.get();
   }
 
-  /** {@inheritDoc} */
   @Override
   public void initializeTask()
          throws DirectoryException
@@ -80,10 +85,9 @@ public class AddSchemaFileTask
       }
     }
 
-
     // Get the attribute that specifies which schema file(s) to add.
     Entry taskEntry = getTaskEntry();
-    AttributeType attrType = DirectoryServer.getAttributeType(ATTR_TASK_ADDSCHEMAFILE_FILENAME);
+    AttributeType attrType = DirectoryServer.getSchema().getAttributeType(ATTR_TASK_ADDSCHEMAFILE_FILENAME);
     List<Attribute> attrList = taskEntry.getAttribute(attrType);
     if (attrList.isEmpty())
     {
@@ -91,7 +95,6 @@ public class AddSchemaFileTask
           ATTR_TASK_ADDSCHEMAFILE_FILENAME, taskEntry.getName());
       throw new DirectoryException(ResultCode.CONSTRAINT_VIOLATION, message);
     }
-
 
     // Get the name(s) of the schema files to add and make sure they exist in
     // the schema directory.
@@ -129,7 +132,6 @@ public class AddSchemaFileTask
       }
     }
 
-
     // Create a new dummy schema and make sure that we can add the contents of
     // all the schema files into it.  Even though this duplicates work we'll
     // have to do later, it will be good to do it now as well so we can reject
@@ -152,9 +154,6 @@ public class AddSchemaFileTask
     }
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   protected TaskState runTask()
   {
@@ -175,34 +174,17 @@ public class AddSchemaFileTask
       {
         try
         {
-          List<Modification> modList = SchemaConfigManager.loadSchemaFile(schema, schemaFile);
+          List<Modification> modList = SchemaConfigManager.loadSchemaFileReturnModifications(schema, schemaFile);
           for (Modification m : modList)
           {
             Attribute a = m.getAttribute();
-            AttributeType attrType = a.getAttributeDescription().getAttributeType();
-            AttributeBuilder builder = new AttributeBuilder(attrType, attrType.getNameOrOID());
+            AttributeBuilder builder = new AttributeBuilder(a.getAttributeDescription());
             for (ByteString v : a)
             {
-              String s = v.toString();
-              if (!s.contains(SCHEMA_PROPERTY_FILENAME))
-              {
-                if (s.endsWith(" )"))
-                {
-                 s = s.substring(0, s.length()-1) + SCHEMA_PROPERTY_FILENAME +
-                     " '" + schemaFile + "' )";
-                }
-                else if (s.endsWith(")"))
-                {
-                 s = s.substring(0, s.length()-1) + " " +
-                     SCHEMA_PROPERTY_FILENAME + " '" + schemaFile + "' )";
-                }
-              }
-
-              builder.add(s);
+              builder.add(Schema.addSchemaFileToElementDefinitionIfAbsent(v.toString(), schemaFile));
             }
 
-            mods.add(new Modification(m.getModificationType(), builder
-                .toAttribute()));
+            mods.add(new Modification(m.getModificationType(), builder.toAttribute()));
           }
         }
         catch (ConfigException | InitializationException e)
@@ -244,4 +226,3 @@ public class AddSchemaFileTask
     }
   }
 }
-

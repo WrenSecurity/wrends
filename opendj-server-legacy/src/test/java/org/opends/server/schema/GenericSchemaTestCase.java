@@ -16,34 +16,33 @@
  */
 package org.opends.server.schema;
 
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
+import static org.opends.server.util.ServerConstants.*;
+
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.NameForm;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.ldap.schema.Syntax;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.Entry;
 import org.opends.server.types.LDIFImportConfig;
-import org.opends.server.types.NameForm;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 import org.opends.server.util.LDIFReader;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
-
-/**
- * This class defines a set of generic tests that may be used to examine the
- * server schema.
- */
+/** This class defines a set of generic tests that may be used to examine the server schema. */
 public class GenericSchemaTestCase
        extends SchemaTestCase
 {
@@ -54,18 +53,12 @@ public class GenericSchemaTestCase
    */
   @Override
   @BeforeClass
-  public void setUp()
-         throws Exception
+  public void setUp() throws Exception
   {
     TestCaseUtils.startServer();
   }
 
-
-
-  /**
-   * Tests to ensure that all attribute syntaxes defined in the schema have
-   * valid OIDs.
-   */
+  /** Tests to ensure that all attribute syntaxes defined in the schema have valid OIDs. */
   @Test
   public void testEnsureValidSyntaxOIDs()
   {
@@ -80,26 +73,10 @@ public class GenericSchemaTestCase
       }
     }
 
-    if (! invalidOIDs.isEmpty())
-    {
-      StringBuilder message = new StringBuilder();
-      message.append("All attribute syntaxes defined in OpenDS must have valid OIDs assigned.").append(EOL);
-      message.append("Attribute syntaxes without valid OIDs:").append(EOL);
-      for (String s : invalidOIDs)
-      {
-        message.append("- ").append(s).append(EOL);
-      }
-
-      throw new AssertionError(message.toString());
-    }
+    throwIfInvalidOidsExist("attribute syntaxes", invalidOIDs);
   }
 
-
-
-  /**
-   * Tests to ensure that all matching rules defined in the schema have valid
-   * OIDs.
-   */
+  /** Tests to ensure that all matching rules defined in the schema have valid OIDs. */
   @Test
   public void testEnsureValidMatchingRuleOIDs()
   {
@@ -114,28 +91,11 @@ public class GenericSchemaTestCase
       }
     }
 
-    if (! invalidOIDs.isEmpty())
-    {
-      StringBuilder message = new StringBuilder();
-      message.append("All matching rules defined in OpenDS must have valid ").append("OIDs assigned.");
-      message.append(EOL);
-      message.append("Matching rules without valid OIDs:");
-      message.append(EOL);
-      for (String s : invalidOIDs)
-      {
-        message.append("- ").append(s);
-        message.append(EOL);
-      }
-
-      throw new AssertionError(message.toString());
-    }
+    throwIfInvalidOidsExist("matching rules", invalidOIDs);
   }
 
-
-
   /**
-   * Tests to ensure that all attribute types defined in the schema have valid
-   * OIDs.
+   * Tests to ensure that all attribute types defined in the schema have valid OIDs.
    *
    * @throws  Exception  If an unexpected problem occurs.
    */
@@ -145,37 +105,9 @@ public class GenericSchemaTestCase
   {
     TreeSet<String> invalidOIDs = new TreeSet<>();
 
-    String buildRoot = System.getProperty(TestCaseUtils.PROPERTY_BUILD_ROOT);
-    File schemaDir = new File(new File(buildRoot, "resource"), "schema");
-    for (File f : schemaDir.listFiles())
+    for (File f : getSchemaFiles())
     {
-      if (! f.getName().toLowerCase().endsWith(".ldif"))
-      {
-        // This could be some other kind of file, like ".svn".
-        continue;
-      }
-
-      LDIFImportConfig importConfig = new LDIFImportConfig(f.getAbsolutePath());
-      LDIFReader reader = new LDIFReader(importConfig);
-      Entry e = reader.readEntry();
-      reader.close();
-
-      if (e == null)
-      {
-        // An empty schema file.  This is OK.
-        continue;
-      }
-
-      AttributeType attrType = DirectoryServer.getAttributeType("attributetypes");
-      assertNotNull(attrType);
-      List<Attribute> attrList = e.getAttribute(attrType);
-      if (attrList.isEmpty())
-      {
-        // No attribute types in the schema file.  This is OK.
-        continue;
-      }
-
-      for (Attribute a : attrList)
+      for (Attribute a : getAttributesFromSchemaFile(f, getAttributeTypesAttributeType()))
       {
         for (ByteString v : a)
         {
@@ -188,30 +120,14 @@ public class GenericSchemaTestCase
       }
     }
 
-    if (! invalidOIDs.isEmpty())
-    {
-      StringBuilder message = new StringBuilder();
-      message.append("All attribute types defined in OpenDS must have valid ").append("OIDs assigned.");
-      message.append(EOL);
-      message.append("Attribute types without valid OIDs:");
-      message.append(EOL);
-      for (String s : invalidOIDs)
-      {
-        message.append("- ").append(s);
-        message.append(EOL);
-      }
-
-      throw new AssertionError(message.toString());
-    }
+    throwIfInvalidOidsExist("attribute types", invalidOIDs);
   }
 
-
-
   /**
-   * Tests to ensure that all object classes defined in the schema have valid
-   * OIDs.
+   * Tests to ensure that all object classes defined in the schema have valid OIDs.
    *
-   * @throws  Exception  If an unexpected problem occurs.
+   * @throws Exception
+   *           If an unexpected problem occurs.
    */
   @Test
   public void testEnsureValidObjectClassOIDs()
@@ -219,42 +135,13 @@ public class GenericSchemaTestCase
   {
     TreeSet<String> invalidOIDs = new TreeSet<>();
 
-    String buildRoot = System.getProperty(TestCaseUtils.PROPERTY_BUILD_ROOT);
-    File schemaDir = new File(new File(buildRoot, "resource"), "schema");
-    for (File f : schemaDir.listFiles())
+    for (File f : getSchemaFiles())
     {
-      if (! f.getName().toLowerCase().endsWith(".ldif"))
-      {
-        // This could be some other kind of file, like ".svn".
-        continue;
-      }
-
-      LDIFImportConfig importConfig = new LDIFImportConfig(f.getAbsolutePath());
-      LDIFReader reader = new LDIFReader(importConfig);
-      Entry e = reader.readEntry();
-      reader.close();
-
-      if (e == null)
-      {
-        // An empty schema file.  This is OK.
-        continue;
-      }
-
-      AttributeType attrType = DirectoryServer.getAttributeType("objectclasses");
-      assertNotNull(attrType);
-      List<Attribute> attrList = e.getAttribute(attrType);
-      if (attrList.isEmpty())
-      {
-        // No attribute types in the schema file.  This is OK.
-        continue;
-      }
-
-      for (Attribute a : attrList)
+      for (Attribute a : getAttributesFromSchemaFile(f, getObjectClassesAttributeType()))
       {
         for (ByteString v : a)
         {
-          ObjectClass oc = ObjectClassSyntax.decodeObjectClass(
-              v, DirectoryServer.getSchema(), true);
+          ObjectClass oc = DirectoryServer.getSchema().parseObjectClass(v.toString());
           if (! isNumericOID(oc.getOID()))
           {
             invalidOIDs.add(oc.getNameOrOID());
@@ -263,24 +150,8 @@ public class GenericSchemaTestCase
       }
     }
 
-    if (! invalidOIDs.isEmpty())
-    {
-      StringBuilder message = new StringBuilder();
-      message.append("All object classes defined in OpenDS must have valid ").append("OIDs assigned.");
-      message.append(EOL);
-      message.append("Object classes without valid OIDs:");
-      message.append(EOL);
-      for (String s : invalidOIDs)
-      {
-        message.append("- ").append(s);
-        message.append(EOL);
-      }
-
-      throw new AssertionError(message.toString());
-    }
+    throwIfInvalidOidsExist("object classes", invalidOIDs);
   }
-
-
 
   /**
    * Tests to ensure that all name forms defined in the schema have valid OIDs.
@@ -293,42 +164,13 @@ public class GenericSchemaTestCase
   {
     TreeSet<String> invalidOIDs = new TreeSet<>();
 
-    String buildRoot = System.getProperty(TestCaseUtils.PROPERTY_BUILD_ROOT);
-    File schemaDir = new File(new File(buildRoot, "resource"), "schema");
-    for (File f : schemaDir.listFiles())
+    for (File f : getSchemaFiles())
     {
-      if (! f.getName().toLowerCase().endsWith(".ldif"))
-      {
-        // This could be some other kind of file, like ".svn".
-        continue;
-      }
-
-      LDIFImportConfig importConfig = new LDIFImportConfig(f.getAbsolutePath());
-      LDIFReader reader = new LDIFReader(importConfig);
-      Entry e = reader.readEntry();
-      reader.close();
-
-      if (e == null)
-      {
-        // An empty schema file.  This is OK.
-        continue;
-      }
-
-      AttributeType attrType = DirectoryServer.getAttributeType("nameforms");
-      assertNotNull(attrType);
-      List<Attribute> attrList = e.getAttribute(attrType);
-      if (attrList.isEmpty())
-      {
-        // No attribute types in the schema file.  This is OK.
-        continue;
-      }
-
-      for (Attribute a : attrList)
+      for (Attribute a : getAttributesFromSchemaFile(f, getNameFormsAttributeType()))
       {
         for (ByteString v : a)
         {
-          NameForm nf = NameFormSyntax.decodeNameForm(
-              v, DirectoryServer.getSchema(), true);
+          NameForm nf = DirectoryServer.getSchema().parseNameForm(v.toString());
           if (! isNumericOID(nf.getOID()))
           {
             invalidOIDs.add(nf.getNameOrOID());
@@ -337,24 +179,54 @@ public class GenericSchemaTestCase
       }
     }
 
-    if (! invalidOIDs.isEmpty())
-    {
-      StringBuilder message = new StringBuilder();
-      message.append("All name forms defined in OpenDS must have valid OIDs ").append("assigned.");
-      message.append(EOL);
-      message.append("Name forms without valid OIDs:");
-      message.append(EOL);
-      for (String s : invalidOIDs)
-      {
-        message.append("- ").append(s);
-        message.append(EOL);
-      }
+    throwIfInvalidOidsExist("name forms", invalidOIDs);
+  }
 
-      throw new AssertionError(message.toString());
+  private File[] getSchemaFiles()
+  {
+    String buildRoot = System.getProperty(TestCaseUtils.PROPERTY_BUILD_ROOT);
+    File schemaDir = new File(new File(buildRoot, "resource"), "schema");
+    return schemaDir.listFiles();
+  }
+
+  private List<Attribute> getAttributesFromSchemaFile(File f, AttributeType attributeType) throws Exception
+  {
+    Entry e = readSchemaEntry(f);
+    return e != null
+        ? e.getAttribute(attributeType)
+        // An empty schema file. This is OK.
+        : Collections.<Attribute> emptyList();
+  }
+
+  private Entry readSchemaEntry(File f) throws Exception
+  {
+    if (!f.getName().toLowerCase().endsWith(".ldif"))
+    {
+      // This could be some other kind of file, like ".svn".
+      return null;
+    }
+
+    LDIFImportConfig importConfig = new LDIFImportConfig(f.getAbsolutePath());
+    try (LDIFReader reader = new LDIFReader(importConfig))
+    {
+      return reader.readEntry();
     }
   }
 
-
+  private void throwIfInvalidOidsExist(String elementType, Set<String> invalidOIDs) throws AssertionError
+  {
+    if (! invalidOIDs.isEmpty())
+    {
+      StringBuilder message = new StringBuilder()
+          .append("All ").append(elementType).append(" defined in OpenDJ must have valid OIDs assigned." + EOL)
+          .append(elementType).append(" without valid OIDs:" + EOL);
+      for (String oid : invalidOIDs)
+      {
+        message.append("- ").append(oid).append(EOL);
+      }
+      throw new AssertionError(message.toString());
+    }
+  }
 
   /**
    * Indicates whether the string represents a valid numeric OID.
@@ -366,27 +238,13 @@ public class GenericSchemaTestCase
    */
   private boolean isNumericOID(String oid)
   {
-    // It must not be null, and it must not be empty.
-    if (oid == null || oid.length() == 0)
-    {
-      return false;
-    }
-
-    // It must start and end with numeric digits.
-    if (!Character.isDigit(oid.charAt(0)) ||
-        !Character.isDigit(oid.charAt(oid.length()-1)))
-    {
-      return false;
-    }
-
-    // It must contain at least one period.
-    if (!oid.contains("."))
-    {
-      return false;
-    }
-
-    // It must not contain any double periods.
-    if (oid.contains(".."))
+    if (oid == null
+        || oid.isEmpty()
+        || !startsAndEndsWithDigit(oid)
+        // It must contain at least one period.
+        || !oid.contains(".")
+        // It must not contain any double periods.
+        || oid.contains(".."))
     {
       return false;
     }
@@ -408,5 +266,9 @@ public class GenericSchemaTestCase
     // If we've gotten here, then it should be a valid numeric OID.
     return true;
   }
-}
 
+  private boolean startsAndEndsWithDigit(String oid)
+  {
+    return Character.isDigit(oid.charAt(0)) && Character.isDigit(oid.charAt(oid.length() - 1));
+  }
+}

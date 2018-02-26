@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.controlpanel.ui.components;
@@ -25,9 +25,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.text.ParseException;
 
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -36,6 +33,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.guitools.controlpanel.browser.IconPool;
 import org.opends.guitools.controlpanel.datamodel.BinaryValue;
 import org.opends.guitools.controlpanel.ui.ColorAndFontConstants;
@@ -45,31 +44,27 @@ import org.opends.guitools.controlpanel.util.Utilities;
  * A simple panel used in the LDAP entry viewers to display a binary value.
  * It does not allow to edit the binary value.  It is used for instance in the
  * tables.
- *
  */
 public class BinaryCellPanel extends JPanel
 {
+  private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
   private static final long serialVersionUID = 6607973945986559802L;
-  private JButton iconButton;
-  private JLabel label;
-  private CellEditorButton editButton;
-  private CellEditorButton deleteButton;
-  private boolean displayDelete;
-  private JLabel lockLabel = Utilities.createDefaultLabel();
+  private static final int THUMBNAIL_HEIGHT = 50;
 
-  private ImageIcon lockIcon =
+  private final JButton iconButton;
+  private final JLabel label;
+  private final CellEditorButton editButton;
+  private final CellEditorButton deleteButton;
+  private boolean displayDelete;
+  private final JLabel lockLabel = Utilities.createDefaultLabel();
+
+  private final ImageIcon lockIcon =
     Utilities.createImageIcon(IconPool.IMAGE_PATH+"/field-locked.png");
 
   private Object value;
 
-  private static final int THUMBNAIL_HEIGHT = 50;
 
-  private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
-
-  /**
-   * Default constructor.
-   *
-   */
+  /** Default constructor. */
   public BinaryCellPanel()
   {
     super(new GridBagLayout());
@@ -275,15 +270,6 @@ public class BinaryCellPanel extends JPanel
   }
 
   /**
-   * Explicitly request the focus for the edit button of this panel.
-   *
-   */
-  public void requestFocusForButton()
-  {
-    editButton.requestFocusInWindow();
-  }
-
-  /**
    * Adds an action listener to this panel.  The action listener will be
    * invoked when the user clicks on the 'Edit' button or the icon.
    * @param listener the action listener.
@@ -325,7 +311,7 @@ public class BinaryCellPanel extends JPanel
     deleteButton.removeActionListener(listener);
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected boolean processKeyBinding(KeyStroke ks, KeyEvent e,
       int condition, boolean pressed)
   {

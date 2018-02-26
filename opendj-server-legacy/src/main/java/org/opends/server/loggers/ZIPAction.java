@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2008 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.server.loggers;
 
@@ -25,10 +25,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 
-/**
- * This class implements a post rotation action that compresses
- * the file using ZIP compression.
- */
+/** This class implements a post rotation action that compresses the file using ZIP compression. */
 class ZIPAction implements PostRotationAction
 {
 
@@ -61,13 +58,9 @@ class ZIPAction implements PostRotationAction
    * @return  <CODE>true</CODE> if the compression was successful, or
    *          <CODE>false</CODE> if it was not.
    */
+  @Override
   public boolean execute()
   {
-    FileInputStream fis = null;
-    ZipOutputStream zip = null;
-    boolean inputStreamOpen = false;
-    boolean outputStreamOpen = false;
-
     try
     {
       if(!originalFile.exists())
@@ -76,27 +69,20 @@ class ZIPAction implements PostRotationAction
         return false;
       }
 
-      fis = new FileInputStream(originalFile);
-      inputStreamOpen = true;
-      FileOutputStream fos = new FileOutputStream(newFile);
-      zip = new ZipOutputStream(fos);
-      outputStreamOpen = true;
-
-      ZipEntry zipEntry = new ZipEntry(originalFile.getName());
-      zip.putNextEntry(zipEntry);
-
-      byte[] buf = new byte[8192];
-      int n;
-
-      while((n = fis.read(buf)) != -1)
+      try (FileInputStream fis = new FileInputStream(originalFile);
+          FileOutputStream fos = new FileOutputStream(newFile);
+          ZipOutputStream zip = new ZipOutputStream(fos))
       {
-        zip.write(buf, 0, n);
-      }
+        ZipEntry zipEntry = new ZipEntry(originalFile.getName());
+        zip.putNextEntry(zipEntry);
 
-      zip.close();
-      outputStreamOpen = false;
-      fis.close();
-      inputStreamOpen = false;
+        byte[] buf = new byte[8192];
+        int n;
+        while ((n = fis.read(buf)) != -1)
+        {
+          zip.write(buf, 0, n);
+        }
+      }
 
       if(deleteOriginal && !originalFile.delete())
       {
@@ -108,34 +94,7 @@ class ZIPAction implements PostRotationAction
     } catch(IOException ioe)
     {
       logger.traceException(ioe);
-      if (inputStreamOpen)
-      {
-        try
-        {
-          fis.close();
-        }
-        catch (Exception fe)
-        {
-          logger.traceException(fe);
-          // Cannot do much. Ignore.
-        }
-      }
-      if (outputStreamOpen)
-      {
-        try
-        {
-          zip.close();
-        }
-        catch (Exception ze)
-        {
-          logger.traceException(ze);
-          // Cannot do much. Ignore.
-        }
-      }
       return false;
     }
   }
-
-
 }
-

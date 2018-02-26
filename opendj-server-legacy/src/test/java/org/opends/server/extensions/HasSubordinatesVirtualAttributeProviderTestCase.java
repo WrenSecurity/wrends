@@ -19,7 +19,9 @@ package org.opends.server.extensions;
 import java.util.List;
 
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.SearchScope;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.core.DirectoryServer;
@@ -29,14 +31,13 @@ import org.opends.server.protocols.internal.Requests;
 import org.opends.server.protocols.internal.SearchRequest;
 import org.opends.server.protocols.ldap.LDAPControl;
 import org.opends.server.types.Attribute;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.Entry;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.forgerock.opendj.ldap.SearchScope.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
 import static org.opends.server.protocols.internal.Requests.*;
 import static org.opends.server.util.ServerConstants.*;
@@ -61,8 +62,7 @@ public class HasSubordinatesVirtualAttributeProviderTestCase extends DirectorySe
   {
     TestCaseUtils.startServer();
 
-    hasSubordinatesType = DirectoryServer.getAttributeType("hassubordinates");
-    assertNotNull(hasSubordinatesType);
+    hasSubordinatesType = DirectoryServer.getSchema().getAttributeType("hassubordinates");
 
     entries = TestCaseUtils.makeEntries(
         "dn: dc=example,dc=com",
@@ -343,7 +343,7 @@ public class HasSubordinatesVirtualAttributeProviderTestCase extends DirectorySe
   public void testSearchhasSubordinatesAttrInMatchingFilter(DN entryDN, boolean hasSubs)
          throws Exception
   {
-    final SearchRequest request = newSearchRequest(entryDN, SearchScope.BASE_OBJECT, "(hasSubordinates=" + hasSubs + ")")
+    final SearchRequest request = newSearchRequest(entryDN, BASE_OBJECT, "(hasSubordinates=" + hasSubs + ")")
         .addAttribute("hasSubordinates");
     InternalSearchOperation searchOperation = getRootConnection().processSearch(request);
     assertEquals(searchOperation.getSearchEntries().size(), 1);
@@ -366,8 +366,8 @@ public class HasSubordinatesVirtualAttributeProviderTestCase extends DirectorySe
   public void testSearchhasSubordinatesAttrInNonMatchingFilter(DN entryDN, boolean hasSubs)
          throws Exception
   {
-    final SearchRequest request =
-        newSearchRequest(entryDN, SearchScope.BASE_OBJECT, "(hasSubordinates=wrong)").addAttribute("hasSubordinates");
+    final SearchRequest request = newSearchRequest(entryDN, BASE_OBJECT, "(hasSubordinates=wrong)")
+        .addAttribute("hasSubordinates");
     InternalSearchOperation searchOperation = getRootConnection().processSearch(request);
     assertEquals(searchOperation.getSearchEntries().size(), 0);
   }

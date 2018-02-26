@@ -36,6 +36,7 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteSequence;
 import org.forgerock.opendj.ldap.ByteString;
@@ -47,10 +48,10 @@ import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.SortKey;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
-import org.forgerock.util.Reject;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.schema.UnknownSchemaElementException;
 import org.forgerock.opendj.server.config.meta.BackendVLVIndexCfgDefn.Scope;
 import org.forgerock.opendj.server.config.server.BackendVLVIndexCfg;
+import org.forgerock.util.Reject;
 import org.opends.server.backends.pluggable.State.IndexFlag;
 import org.opends.server.backends.pluggable.spi.Cursor;
 import org.opends.server.backends.pluggable.spi.Importer;
@@ -416,16 +417,9 @@ class VLVIndex extends AbstractTree implements ConfigurationChangeListener<Backe
     for (final SortKey sortKey : sortKeys)
     {
       final AttributeDescription attrDesc = AttributeDescription.valueOf(sortKey.getAttributeDescription());
-      final AttributeType attributeType = attrDesc.getAttributeType();
-      final List<AttributeType> subTypes = DirectoryServer.getSchema().getSubTypes(attributeType);
-      for (final Modification mod : mods)
+      if (EntryContainer.isAttributeModified(attrDesc.getAttributeType(), mods))
       {
-        final AttributeType modAttrType = mod.getAttribute().getAttributeDescription().getAttributeType();
-        if (modAttrType.equals(attributeType)
-            || subTypes.contains(modAttrType))
-        {
-          return true;
-        }
+        return true;
       }
     }
     return false;
@@ -841,10 +835,12 @@ class VLVIndex extends AbstractTree implements ConfigurationChangeListener<Backe
     String mrOid = sortKey.getOrderingMatchingRule();
     if (mrOid != null)
     {
-      MatchingRule orderingRule = getMatchingRule(mrOid);
-      if (orderingRule != null)
+      try
       {
-        return orderingRule;
+        return getSchema().getMatchingRule(mrOid);
+      }
+      catch (UnknownSchemaElementException e)
+      {
       }
     }
     AttributeDescription attrDesc = AttributeDescription.valueOf(sortKey.getAttributeDescription());

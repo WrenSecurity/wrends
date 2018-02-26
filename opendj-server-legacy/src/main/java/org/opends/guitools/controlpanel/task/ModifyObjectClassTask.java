@@ -18,6 +18,7 @@ package org.opends.guitools.controlpanel.task;
 
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.server.util.CollectionUtils.*;
+import static org.opends.server.util.SchemaUtils.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,7 +36,8 @@ import org.opends.guitools.controlpanel.ui.ProgressDialog;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.forgerock.opendj.ldap.schema.SchemaBuilder;
 import org.opends.server.types.OpenDsException;
 import org.opends.server.types.Schema;
 
@@ -71,20 +73,20 @@ public class ModifyObjectClassTask extends Task
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Type getType()
   {
     return Type.MODIFY_SCHEMA_ELEMENT;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTaskDescription()
   {
     return INFO_CTRL_PANEL_MODIFY_OBJECTCLASS_TASK_DESCRIPTION.get(
         oldObjectClass.getNameOrOID());
   }
 
-  /** {@inheritDoc} */
+  @Override
   public boolean canLaunch(Task taskToBeLaunched,
       Collection<LocalizableMessage> incompatibilityReasons)
   {
@@ -101,25 +103,25 @@ public class ModifyObjectClassTask extends Task
     return canLaunch;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Set<String> getBackends()
   {
     return Collections.emptySet();
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected List<String> getCommandLineArguments()
   {
     return Collections.emptyList();
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected String getCommandLinePath()
   {
     return null;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void runTask()
   {
     try
@@ -145,7 +147,6 @@ public class ModifyObjectClassTask extends Task
     }
     else if (currentSups.contains(oldObjectClass))
     {
-      ArrayList<String> allNames = new ArrayList<>(ocToDelete.getNormalizedNames());
       Map<String, List<String>> extraProperties =
         DeleteSchemaElementsTask.cloneExtraProperties(ocToDelete);
       Set<ObjectClass> newSups = new LinkedHashSet<>();
@@ -160,17 +161,20 @@ public class ModifyObjectClassTask extends Task
           newSups.add(oc);
         }
       }
-      return new ObjectClass("",
-          ocToDelete.getPrimaryName(),
-          allNames,
-          ocToDelete.getOID(),
-          ocToDelete.getDescription(),
-          newSups,
-          ocToDelete.getRequiredAttributes(),
-          ocToDelete.getOptionalAttributes(),
-          ocToDelete.getObjectClassType(),
-          ocToDelete.isObsolete(),
-          extraProperties);
+      final String oid = ocToDelete.getOID();
+      final Schema schema = getInfo().getServerDescriptor().getSchema();
+      return new SchemaBuilder(schema.getSchemaNG()).buildObjectClass(oid)
+          .names(ocToDelete.getNames())
+          .description(ocToDelete.getDescription())
+          .superiorObjectClasses(getNameOrOIDsForOCs(newSups))
+          .requiredAttributes(getNameOrOIDsForATs(ocToDelete.getDeclaredRequiredAttributes()))
+          .optionalAttributes(getNameOrOIDsForATs(ocToDelete.getDeclaredOptionalAttributes()))
+          .type(ocToDelete.getObjectClassType())
+          .obsolete(ocToDelete.isObsolete())
+          .extraProperties(extraProperties)
+          .addToSchema()
+          .toSchema()
+          .getObjectClass(oid);
     }
     else
     {
@@ -199,6 +203,7 @@ public class ModifyObjectClassTask extends Task
 
     SwingUtilities.invokeLater(new Runnable()
     {
+      @Override
       public void run()
       {
         getProgressDialog().appendProgressHtml(Utilities.applyFont(
@@ -215,6 +220,7 @@ public class ModifyObjectClassTask extends Task
 
     SwingUtilities.invokeLater(new Runnable()
     {
+      @Override
       public void run()
       {
         getProgressDialog().appendProgressHtml(Utilities.applyFont("<br><br>",

@@ -12,11 +12,10 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2009 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.opends.server.util;
 
-import static org.opends.server.util.CollectionUtils.*;
 import static org.testng.Assert.*;
 
 import java.io.BufferedReader;
@@ -31,13 +30,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.forgerock.opendj.ldap.ByteSequence;
 import org.forgerock.opendj.ldap.ByteString;
 import org.opends.server.TestCaseUtils;
 import org.testng.Assert;
@@ -49,6 +44,7 @@ import org.testng.annotations.Test;
  * This class defines a set of tests for the
  * {@link org.opends.server.util.StaticUtils} class.
  */
+@SuppressWarnings("javadoc")
 public final class TestStaticUtils extends UtilTestCase {
   /** Lower case hex digit lookup table. */
   private static final char[] HEX_DIGITS_LOWER = new char[] { '0', '1',
@@ -583,7 +579,7 @@ public final class TestStaticUtils extends UtilTestCase {
   }
 
   /**
-   * Tests the {@link StaticUtils#needsBase64Encoding(ByteSequence)} method.
+   * Tests the {@link StaticUtils#needsBase64Encoding(org.forgerock.opendj.ldap.ByteSequence)} method.
    *
    * @param s
    *          The test string.
@@ -600,71 +596,6 @@ public final class TestStaticUtils extends UtilTestCase {
   }
 
   /**
-   * Create test strings for the
-   * {@link StaticUtils#isRelativePath(String)}.
-   *
-   * @return Returns an array of test data.
-   */
-  @DataProvider(name = "isRelativePathTestData")
-  public Object[][] createIsRelativePathTestData() {
-    String root = File.listRoots()[0].getPath();
-    return new Object[][] { { "", true }, { root, false },
-         { root + "foo", false }, { "foo", true },
-         { "foo" + File.separator + "bar", true },
-         { root + "foo" + File.separator + "bar", false },
-         { ".", true }, { "..", true },
-         { root + "foo" + File.separator + ".", false },
-         { root + "foo" + File.separator + "..", false } };
-  }
-
-  /**
-   * Tests the {@link StaticUtils#isRelativePath(String)} method.
-   *
-   * @param path
-   *          The test string.
-   * @param result
-   *          Expected result.
-   * @throws Exception
-   *           If the test failed unexpectedly.
-   */
-  @Test(dataProvider = "isRelativePathTestData")
-  public void testIsRelativePath(String path, boolean result)
-      throws Exception {
-    Assert.assertEquals(StaticUtils.isRelativePath(path), result);
-  }
-
-  /**
-   * Create test lists for the {@link StaticUtils#listToArray(List)}.
-   *
-   * @return Returns an array of test data.
-   */
-  @DataProvider(name = "listToArrayTestData")
-  public Object[][] createListToArrayTestData() {
-    return new Object[][] { { null }, { new String[] {} },
-        { new String[] { "aaa" } },
-        { new String[] { "aaa", "bbb", "ccc" } } };
-  }
-
-  /**
-   * Tests the {@link StaticUtils#listToArray(List)} method.
-   *
-   * @param strings
-   *          The test string list.
-   * @throws Exception
-   *           If the test failed unexpectedly.
-   */
-  @Test(dataProvider = "listToArrayTestData")
-  public void testListToArray(String[] strings) throws Exception {
-    if (strings != null) {
-      List<String> list = new ArrayList<>(strings.length);
-      Collections.addAll(list, strings);
-      Assert.assertEquals(StaticUtils.listToArray(list), strings);
-    } else {
-      Assert.assertNull(StaticUtils.listToArray(null));
-    }
-  }
-
-  /**
    * Tests the {@link StaticUtils#moveFile(java.io.File, java.io.File)}
    * method.
    *
@@ -675,17 +606,10 @@ public final class TestStaticUtils extends UtilTestCase {
   public void testMoveFileNonExistentSrc() throws Exception {
     File src = File.createTempFile("src", null);
     File dst = TestCaseUtils.createTemporaryDirectory("dst");
-    File newSrc = new File(dst, src.getName());
 
     src.delete();
 
-    try {
-      StaticUtils.moveFile(src, dst);
-    } finally {
-      src.delete();
-      dst.delete();
-      newSrc.delete();
-    }
+    moveFile(src, dst);
   }
 
   /**
@@ -699,17 +623,10 @@ public final class TestStaticUtils extends UtilTestCase {
   public void testMoveFileNonExistentDst() throws Exception {
     File src = File.createTempFile("src", null);
     File dst = TestCaseUtils.createTemporaryDirectory("dst");
-    File newSrc = new File(dst, src.getName());
 
     dst.delete();
 
-    try {
-      StaticUtils.moveFile(src, dst);
-    } finally {
-      src.delete();
-      dst.delete();
-      newSrc.delete();
-    }
+    moveFile(src, dst);
   }
 
   /**
@@ -723,15 +640,8 @@ public final class TestStaticUtils extends UtilTestCase {
   public void testMoveFileSrcNotFile() throws Exception {
     File src = TestCaseUtils.createTemporaryDirectory("src");
     File dst = TestCaseUtils.createTemporaryDirectory("dst");
-    File newSrc = new File(dst, src.getName());
 
-    try {
-      StaticUtils.moveFile(src, dst);
-    } finally {
-      src.delete();
-      dst.delete();
-      newSrc.delete();
-    }
+    moveFile(src, dst);
   }
 
   /**
@@ -745,8 +655,13 @@ public final class TestStaticUtils extends UtilTestCase {
   public void testMoveFileDstNotDirectory() throws Exception {
     File src = File.createTempFile("src", null);
     File dst = File.createTempFile("dst", null);
-    File newSrc = new File(dst, src.getName());
 
+    moveFile(src, dst);
+  }
+
+  private void moveFile(File src, File dst) throws IOException
+  {
+    File newSrc = new File(dst, src.getName());
     try {
       StaticUtils.moveFile(src, dst);
     } finally {
@@ -984,7 +899,7 @@ public final class TestStaticUtils extends UtilTestCase {
 
   /**
    * Tests the
-   * {@link StaticUtils#toLowerCase(ByteSequence, StringBuilder, boolean)}
+   * {@link StaticUtils#toLowerCase(org.forgerock.opendj.ldap.ByteSequence, StringBuilder, boolean)}
    * method.
    *
    * @param input
@@ -1047,8 +962,9 @@ public final class TestStaticUtils extends UtilTestCase {
   }
 
   /**
-   * Create test strings for the {@link StaticUtils#toLowerCase(ByteSequence, StringBuilder, boolean)} method
-   * with trimming enabled.
+   * Create test strings for the
+   * {@link StaticUtils#toLowerCase(org.forgerock.opendj.ldap.ByteSequence, StringBuilder, boolean)}
+   * method with trimming enabled.
    *
    * @return Returns an array of test data.
    */
@@ -1115,72 +1031,19 @@ public final class TestStaticUtils extends UtilTestCase {
     Assert.assertEquals(builder.toString(), expected);
   }
 
-  /**
-   * Create test lists for the
-   * {@link StaticUtils#listsAreEqual(List, List)} method.
-   *
-   * @return Returns an array of test data.
-   */
-  @DataProvider(name = "listsAreEqualTestData")
-  public Object[][] createListsAreEqualTestData() {
-    return new Object[][] {
-        // Check null behaviour.
-        { null, null, true },
-        { null, Collections.emptyList(), false },
-        { Collections.emptyList(), null, false },
-
-        // Check empty-list behaviour.
-        { Collections.emptyList(), Collections.emptyList(), true },
-        { Collections.singletonList(0), Collections.emptyList(), false },
-        { Collections.emptyList(), Collections.singletonList(0), false },
-
-        // Check single-element behaviour.
-        { Collections.singletonList(0), Collections.singletonList(0), true },
-        { Collections.singletonList(0), Collections.singletonList(1), false },
-
-        // Check multi-element random access behaviour.
-        { Arrays.asList(0, 1), Arrays.asList(0, 1), true },
-        { Arrays.asList(0, 1), Arrays.asList(1, 0), false },
-
-        // ...With duplicates.
-        { Arrays.asList(0, 1), Arrays.asList(0, 1, 1), false },
-
-        // Check multi-element sequential behaviour.
-        { newLinkedList(0, 1), newLinkedList(0, 1), true },
-        { newLinkedList(0, 1), newLinkedList(1, 0), false },
-
-        // ...With duplicates.
-        { newLinkedList(0, 1), newLinkedList(0, 1, 1), false } };
-  }
-
-  /**
-   * Tests the {@link StaticUtils#listsAreEqual(List, List)} method.
-   *
-   * @param list1
-   *          The first list.
-   * @param list2
-   *          The second list.
-   * @param result
-   *          The expected equality result.
-   * @throws Exception
-   *           If the test failed unexpectedly.
-   */
-  @Test(dataProvider = "listsAreEqualTestData")
-  public void testListsAreEqual(List<?> list1, List<?> list2, boolean result)
-      throws Exception {
-    Assert.assertEquals(StaticUtils.listsAreEqual(list1, list2), result);
-  }
-
   @Test
   public void testStackTraceHasCause() throws Exception
   {
-    boolean hasCause = StaticUtils.stackTraceContainsCause(new RuntimeException(new ArithmeticException()), ArithmeticException.class);
+    boolean hasCause = StaticUtils.stackTraceContainsCause(
+        new RuntimeException(new ArithmeticException()), ArithmeticException.class);
     Assert.assertTrue(hasCause, "First case : ArithmeticException should be detected as a cause");
 
-    hasCause = StaticUtils.stackTraceContainsCause(new RuntimeException(new RuntimeException()), ArithmeticException.class);
+    hasCause = StaticUtils.stackTraceContainsCause(
+        new RuntimeException(new RuntimeException()), ArithmeticException.class);
     Assert.assertFalse(hasCause, "Second case : ArithmeticException should not be detected as a cause");
 
-    hasCause = StaticUtils.stackTraceContainsCause(new RuntimeException(new IllegalThreadStateException()), IllegalArgumentException.class);
+    hasCause = StaticUtils.stackTraceContainsCause(
+        new RuntimeException(new IllegalThreadStateException()), IllegalArgumentException.class);
     Assert.assertTrue(hasCause, "Third case : IllegalThreadStateException should be detected as a cause");
   }
 }

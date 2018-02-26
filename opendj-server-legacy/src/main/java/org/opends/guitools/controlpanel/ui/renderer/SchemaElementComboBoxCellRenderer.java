@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.ui.renderer;
 
@@ -23,15 +23,14 @@ import java.awt.Component;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 
-import org.forgerock.opendj.ldap.schema.Syntax;
-import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.AttributeUsage;
-import org.opends.server.types.CommonSchemaElements;
+import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.ldap.schema.ObjectClassType;
+import org.forgerock.opendj.ldap.schema.Syntax;
 
-/**
- * The cell renderer to be used to render schema elements in a combo box.
- */
+/** The cell renderer to be used to render schema elements in a combo box. */
 public class SchemaElementComboBoxCellRenderer extends CustomListCellRenderer
 {
   /**
@@ -52,37 +51,39 @@ public class SchemaElementComboBoxCellRenderer extends CustomListCellRenderer
     super(list);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getListCellRendererComponent(JList list, Object value,
       int index, boolean isSelected, boolean cellHasFocus)
   {
+    return super.getListCellRendererComponent(
+        list, getLabel(value), index, isSelected, cellHasFocus);
+  }
+
+  private Object getLabel(Object value)
+  {
     if (value instanceof Syntax)
     {
-      String syntaxName = ((Syntax)value).getName();
-      if (syntaxName == null)
-      {
-        value = ((Syntax)value).getOID();
-      }
-      else
-      {
-        value = syntaxName;
-      }
+      Syntax syntax = (Syntax) value;
+      return syntax.getName() != null ? syntax.getName() : syntax.getOID();
     }
-    else if (value instanceof CommonSchemaElements)
+    else if (value instanceof AttributeType)
     {
-      value = ((CommonSchemaElements)value).getNameOrOID();
+      return ((AttributeType) value).getNameOrOID();
+    }
+    else if (value instanceof ObjectClass)
+    {
+      return ((ObjectClass) value).getNameOrOID();
     }
     else if (value instanceof MatchingRule)
     {
-      value = ((MatchingRule)value).getNameOrOID();
+      return ((MatchingRule) value).getNameOrOID();
     }
     else if (value instanceof AttributeUsage)
     {
       boolean isOperational = ((AttributeUsage)value).isOperational();
       if (isOperational)
       {
-        value = INFO_CTRL_PANEL_ATTRIBUTE_USAGE_OPERATIONAL.get(
-            value.toString());
+        return INFO_CTRL_PANEL_ATTRIBUTE_USAGE_OPERATIONAL.get(value.toString());
       }
     }
     else if (value instanceof ObjectClassType)
@@ -90,17 +91,13 @@ public class SchemaElementComboBoxCellRenderer extends CustomListCellRenderer
       switch ((ObjectClassType)value)
       {
       case AUXILIARY:
-        value = INFO_CTRL_PANEL_OBJECTCLASS_AUXILIARY_LABEL.get().toString();
-        break;
+        return INFO_CTRL_PANEL_OBJECTCLASS_AUXILIARY_LABEL.get().toString();
       case STRUCTURAL:
-        value = INFO_CTRL_PANEL_OBJECTCLASS_STRUCTURAL_LABEL.get().toString();
-        break;
+        return INFO_CTRL_PANEL_OBJECTCLASS_STRUCTURAL_LABEL.get().toString();
       case ABSTRACT:
-        value = INFO_CTRL_PANEL_OBJECTCLASS_ABSTRACT_LABEL.get().toString();
-        break;
+        return INFO_CTRL_PANEL_OBJECTCLASS_ABSTRACT_LABEL.get().toString();
       }
     }
-    return super.getListCellRendererComponent(
-        list, value, index, isSelected, cellHasFocus);
+    return value;
   }
 }

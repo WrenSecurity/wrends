@@ -18,6 +18,7 @@ package org.opends.guitools.controlpanel.task;
 
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.server.util.CollectionUtils.*;
+import static org.opends.server.util.SchemaUtils.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,12 +33,13 @@ import javax.swing.SwingUtilities;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.forgerock.opendj.ldap.schema.SchemaBuilder;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
+import org.opends.guitools.controlpanel.datamodel.SomeSchemaElement;
 import org.opends.guitools.controlpanel.ui.ColorAndFontConstants;
 import org.opends.guitools.controlpanel.ui.ProgressDialog;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.opends.server.schema.SomeSchemaElement;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.OpenDsException;
 import org.opends.server.types.Schema;
 
@@ -73,20 +75,20 @@ public class ModifyAttributeTask extends Task
     this.newAttribute = newAttribute;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Type getType()
   {
     return Type.MODIFY_SCHEMA_ELEMENT;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTaskDescription()
   {
     return INFO_CTRL_PANEL_MODIFY_ATTRIBUTE_TASK_DESCRIPTION.get(
         oldAttribute.getNameOrOID());
   }
 
-  /** {@inheritDoc} */
+  @Override
   public boolean canLaunch(Task taskToBeLaunched,
       Collection<LocalizableMessage> incompatibilityReasons)
   {
@@ -103,25 +105,25 @@ public class ModifyAttributeTask extends Task
     return canLaunch;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Set<String> getBackends()
   {
     return Collections.emptySet();
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected List<String> getCommandLineArguments()
   {
     return Collections.emptyList();
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected String getCommandLinePath()
   {
     return null;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void runTask()
   {
     try
@@ -159,15 +161,14 @@ public class ModifyAttributeTask extends Task
   private ObjectClass getObjectClassToAdd(ObjectClass ocToDelete)
   {
     boolean containsAttribute =
-      ocToDelete.getRequiredAttributeChain().contains(oldAttribute) ||
-      ocToDelete.getOptionalAttributeChain().contains(oldAttribute);
+      ocToDelete.getRequiredAttributes().contains(oldAttribute) ||
+      ocToDelete.getOptionalAttributes().contains(oldAttribute);
     if (containsAttribute)
     {
-      ArrayList<String> allNames = new ArrayList<>(ocToDelete.getNormalizedNames());
       Map<String, List<String>> extraProperties =
         DeleteSchemaElementsTask.cloneExtraProperties(ocToDelete);
-      Set<AttributeType> required = new HashSet<>(ocToDelete.getRequiredAttributes());
-      Set<AttributeType> optional = new HashSet<>(ocToDelete.getOptionalAttributes());
+      Set<AttributeType> required = new HashSet<>(ocToDelete.getDeclaredRequiredAttributes());
+      Set<AttributeType> optional = new HashSet<>(ocToDelete.getDeclaredOptionalAttributes());
       if (required.contains(oldAttribute))
       {
         required.remove(oldAttribute);
@@ -178,17 +179,21 @@ public class ModifyAttributeTask extends Task
         optional.remove(oldAttribute);
         optional.add(newAttribute);
       }
-      return new ObjectClass("",
-          ocToDelete.getPrimaryName(),
-          allNames,
-          ocToDelete.getOID(),
-          ocToDelete.getDescription(),
-          ocToDelete.getSuperiorClasses(),
-          required,
-          optional,
-          ocToDelete.getObjectClassType(),
-          ocToDelete.isObsolete(),
-          extraProperties);
+
+      Schema schema = getInfo().getServerDescriptor().getSchema();
+      String oid = ocToDelete.getOID();
+      return new SchemaBuilder(schema.getSchemaNG()).buildObjectClass(oid)
+          .names(ocToDelete.getNames())
+          .description(ocToDelete.getDescription())
+          .superiorObjectClasses(getNameOrOIDsForOCs(ocToDelete.getSuperiorClasses()))
+          .requiredAttributes(getNameOrOIDsForATs(required))
+          .optionalAttributes(getNameOrOIDsForATs(optional))
+          .type(ocToDelete.getObjectClassType())
+          .obsolete(ocToDelete.isObsolete())
+          .extraProperties(extraProperties)
+          .addToSchema()
+          .toSchema()
+          .getObjectClass(oid);
     }
     else
     {
@@ -231,6 +236,7 @@ public class ModifyAttributeTask extends Task
 
     SwingUtilities.invokeLater(new Runnable()
     {
+      @Override
       public void run()
       {
         getProgressDialog().appendProgressHtml(Utilities.applyFont(
@@ -247,6 +253,7 @@ public class ModifyAttributeTask extends Task
 
     SwingUtilities.invokeLater(new Runnable()
     {
+      @Override
       public void run()
       {
         getProgressDialog().appendProgressHtml(Utilities.applyFont("<br><br>",

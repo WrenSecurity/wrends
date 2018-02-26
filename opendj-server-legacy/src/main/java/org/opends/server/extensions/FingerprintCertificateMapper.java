@@ -30,11 +30,12 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.server.config.server.CertificateMapperCfg;
 import org.forgerock.opendj.server.config.server.FingerprintCertificateMapperCfg;
 import org.opends.server.api.Backend;
@@ -43,12 +44,16 @@ import org.opends.server.core.DirectoryServer;
 import org.opends.server.protocols.internal.InternalClientConnection;
 import org.opends.server.protocols.internal.InternalSearchOperation;
 import org.opends.server.protocols.internal.SearchRequest;
-import static org.opends.server.protocols.internal.Requests.*;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.opends.server.types.*;
+import org.opends.server.types.DirectoryException;
+import org.opends.server.types.Entry;
+import org.opends.server.types.IndexType;
+import org.opends.server.types.InitializationException;
+import org.opends.server.types.SearchFilter;
+import org.opends.server.types.SearchResultEntry;
 
 import static org.opends.messages.ExtensionMessages.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
+import static org.opends.server.protocols.internal.Requests.*;
 import static org.opends.server.util.CollectionUtils.*;
 import static org.opends.server.util.StaticUtils.*;
 
@@ -65,20 +70,12 @@ public class FingerprintCertificateMapper
 {
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-
-
-  /** The DN of the configuration entry for this certificate mapper. */
-  private DN configEntryDN;
-
   /** The current configuration for this certificate mapper. */
   private FingerprintCertificateMapperCfg currentConfig;
-
   /** The algorithm that will be used to generate the fingerprint. */
   private String fingerprintAlgorithm;
-
   /** The set of attributes to return in search result entries. */
   private LinkedHashSet<String> requestedAttributes;
-
 
   /**
    * Creates a new instance of this certificate mapper.  Note that all actual
@@ -90,9 +87,6 @@ public class FingerprintCertificateMapper
     super();
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void initializeCertificateMapper(
                    FingerprintCertificateMapperCfg configuration)
@@ -101,8 +95,6 @@ public class FingerprintCertificateMapper
     configuration.addFingerprintChangeListener(this);
 
     currentConfig = configuration;
-    configEntryDN = configuration.dn();
-
 
     // Get the algorithm that will be used to generate the fingerprint.
     switch (configuration.getFingerprintAlgorithm())
@@ -115,7 +107,6 @@ public class FingerprintCertificateMapper
         break;
     }
 
-
     // Make sure that the fingerprint attribute is configured for equality in
     // all appropriate backends.
     Set<DN> cfgBaseDNs = configuration.getUserBaseDN();
@@ -127,7 +118,7 @@ public class FingerprintCertificateMapper
     AttributeType t = configuration.getFingerprintAttribute();
     for (DN baseDN : cfgBaseDNs)
     {
-      Backend b = DirectoryServer.getBackend(baseDN);
+      Backend<?> b = DirectoryServer.getBackend(baseDN);
       if (b != null && ! b.isIndexed(t, IndexType.EQUALITY))
       {
         logger.warn(WARN_SATUACM_ATTR_UNINDEXED, configuration.dn(),
@@ -140,18 +131,12 @@ public class FingerprintCertificateMapper
     requestedAttributes = newLinkedHashSet("*", "+");
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void finalizeCertificateMapper()
   {
     currentConfig.removeFingerprintChangeListener(this);
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public Entry mapCertificateToUser(Certificate[] certificateChain)
          throws DirectoryException
@@ -167,7 +152,6 @@ public class FingerprintCertificateMapper
       throw new DirectoryException(ResultCode.INVALID_CREDENTIALS, message);
     }
 
-
     // Get the first certificate in the chain.  It must be an X.509 certificate.
     X509Certificate peerCertificate;
     try
@@ -182,7 +166,6 @@ public class FingerprintCertificateMapper
           certificateChain[0].getType());
       throw new DirectoryException(ResultCode.INVALID_CREDENTIALS, message);
     }
-
 
     // Get the signature from the peer certificate and create a digest of it
     // using the configured algorithm.
@@ -205,12 +188,10 @@ public class FingerprintCertificateMapper
       throw new DirectoryException(ResultCode.INVALID_CREDENTIALS, message);
     }
 
-
     // Create the search filter from the fingerprint.
     ByteString value = ByteString.valueOfUtf8(fingerprintString);
     SearchFilter filter =
          SearchFilter.createEqualityFilter(fingerprintAttributeType, value);
-
 
     // If we have an explicit set of base DNs, then use it.  Otherwise, use the
     // set of public naming contexts in the server.
@@ -219,7 +200,6 @@ public class FingerprintCertificateMapper
     {
       baseDNs = DirectoryServer.getPublicNamingContexts().keySet();
     }
-
 
     // For each base DN, issue an internal search in an attempt to map the
     // certificate.
@@ -251,7 +231,6 @@ public class FingerprintCertificateMapper
           throw new DirectoryException(
                   ResultCode.INVALID_CREDENTIALS, message);
 
-
         case TIME_LIMIT_EXCEEDED:
         case ADMIN_LIMIT_EXCEEDED:
           // The search criteria was too inefficient.
@@ -281,15 +260,11 @@ public class FingerprintCertificateMapper
       }
     }
 
-
     // If we've gotten here, then we either found exactly one user entry or we
     // didn't find any.  Either way, return the entry or null to the caller.
     return userEntry;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAcceptable(CertificateMapperCfg configuration,
                                            List<LocalizableMessage> unacceptableReasons)
@@ -299,9 +274,6 @@ public class FingerprintCertificateMapper
     return isConfigurationChangeAcceptable(config, unacceptableReasons);
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(
                       FingerprintCertificateMapperCfg configuration,
@@ -310,15 +282,11 @@ public class FingerprintCertificateMapper
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
               FingerprintCertificateMapperCfg configuration)
   {
     final ConfigChangeResult ccr = new ConfigChangeResult();
-
 
     // Get the algorithm that will be used to generate the fingerprint.
     String newFingerprintAlgorithm = null;
@@ -331,7 +299,6 @@ public class FingerprintCertificateMapper
         newFingerprintAlgorithm = "SHA1";
         break;
     }
-
 
     if (ccr.getResultCode() == ResultCode.SUCCESS)
     {
@@ -350,7 +317,7 @@ public class FingerprintCertificateMapper
     AttributeType t = configuration.getFingerprintAttribute();
     for (DN baseDN : cfgBaseDNs)
     {
-      Backend b = DirectoryServer.getBackend(baseDN);
+      Backend<?> b = DirectoryServer.getBackend(baseDN);
       if (b != null && ! b.isIndexed(t, IndexType.EQUALITY))
       {
         LocalizableMessage message = WARN_SATUACM_ATTR_UNINDEXED.get(

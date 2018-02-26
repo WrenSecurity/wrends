@@ -17,6 +17,10 @@
  */
 package org.forgerock.opendj.ldap.schema;
 
+import static com.forgerock.opendj.ldap.CoreMessages.*;
+
+import static org.forgerock.opendj.ldap.AttributeDescription.*;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -45,9 +49,6 @@ import org.forgerock.util.Reject;
 
 import com.forgerock.opendj.util.StaticUtils;
 
-import static org.forgerock.opendj.ldap.AttributeDescription.*;
-import static com.forgerock.opendj.ldap.CoreMessages.*;
-
 /**
  * This class defines a data structure that holds information about the
  * components of the LDAP schema. It includes the following kinds of elements:
@@ -73,8 +74,6 @@ public final class Schema {
         MatchingRule getDefaultMatchingRule();
 
         Syntax getDefaultSyntax();
-
-        String getOIDForName(String lowerCaseName);
 
         AttributeType getAttributeType(Schema schema, String nameOrOid);
 
@@ -188,11 +187,6 @@ public final class Schema {
         }
 
         @Override
-        public String getOIDForName(final String lowerCaseName) {
-            return strictImpl.getOIDForName(lowerCaseName);
-        }
-
-        @Override
         public AttributeType getAttributeType(final Schema schema, final String nameOrOid) {
             return getAttributeType0(nameOrOid, schema.getDefaultSyntax(), schema.getDefaultMatchingRule());
         }
@@ -204,7 +198,7 @@ public final class Schema {
 
         private AttributeType getAttributeType0(String nameOrOid, Syntax syntax, MatchingRule equalityMatchingRule) {
             final AttributeType type = strictImpl.getAttributeType0(nameOrOid);
-            return type != null ? type : new AttributeType(nameOrOid, syntax, equalityMatchingRule);
+            return type != null ? type : AttributeType.newPlaceHolder(nameOrOid, syntax, equalityMatchingRule);
         }
 
         @Override
@@ -314,7 +308,8 @@ public final class Schema {
 
         @Override
         public ObjectClass getObjectClass(final String nameOrOid) {
-            return strictImpl.getObjectClass(nameOrOid);
+            ObjectClass result = strictImpl.getObjectClass0(nameOrOid);
+            return result != null ? result : ObjectClass.newPlaceHolder(nameOrOid);
         }
 
         @Override
@@ -418,7 +413,6 @@ public final class Schema {
         private final Map<String, ObjectClass> numericOID2ObjectClasses;
         private final Map<String, Syntax> numericOID2Syntaxes;
         private final Map<String, List<NameForm>> objectClass2NameForms;
-        private final Map<String, String> name2OIDs;
         private final List<LocalizableMessage> warnings;
         private final String schemaName;
         private final Options options;
@@ -448,7 +442,6 @@ public final class Schema {
                 final Map<String, List<DITStructureRule>> name2StructureRules,
                 final Map<String, List<NameForm>> objectClass2NameForms,
                 final Map<String, List<DITStructureRule>> nameForm2StructureRules,
-                final Map<String, String> name2OIDs,
                 final List<LocalizableMessage> warnings) {
             this.schemaName = schemaName;
             this.options = options;
@@ -471,7 +464,6 @@ public final class Schema {
             this.name2StructureRules = Collections.unmodifiableMap(name2StructureRules);
             this.objectClass2NameForms = Collections.unmodifiableMap(objectClass2NameForms);
             this.nameForm2StructureRules = Collections.unmodifiableMap(nameForm2StructureRules);
-            this.name2OIDs = Collections.unmodifiableMap(name2OIDs);
             this.warnings = Collections.unmodifiableList(warnings);
             this.strictSchema = new Schema(this);
             this.nonStrictSchema = new Schema(new NonStrictImpl(this));
@@ -500,15 +492,6 @@ public final class Schema {
         @Override
         public MatchingRule getDefaultMatchingRule() {
             return defaultMatchingRule;
-        }
-
-        @Override
-        public String getOIDForName(String lowerCaseName) {
-            final String oid = name2OIDs.get(lowerCaseName);
-            if (SchemaBuilder.AMBIGUOUS_OID.equals(oid)) {
-                throw new UnknownSchemaElementException(WARN_NAME_AMBIGUOUS.get(lowerCaseName));
-            }
-            return oid;
         }
 
         @Override
@@ -717,6 +700,14 @@ public final class Schema {
 
         @Override
         public ObjectClass getObjectClass(final String nameOrOid) {
+            ObjectClass result = getObjectClass0(nameOrOid);
+            if (result != null) {
+                return result;
+            }
+            throw new UnknownSchemaElementException(WARN_OBJECTCLASS_UNKNOWN.get(nameOrOid));
+        }
+
+        private ObjectClass getObjectClass0(final String nameOrOid) {
             final ObjectClass oc = numericOID2ObjectClasses.get(nameOrOid);
             if (oc != null) {
                 return oc;
@@ -728,7 +719,7 @@ public final class Schema {
                 }
                 throw new UnknownSchemaElementException(WARN_OBJECTCLASS_AMBIGUOUS.get(nameOrOid));
             }
-            throw new UnknownSchemaElementException(WARN_OBJECTCLASS_UNKNOWN.get(nameOrOid));
+            return null;
         }
 
         @Override
@@ -1112,17 +1103,6 @@ public final class Schema {
     }
 
     /**
-     * Return the numerical OID matching the lowerCaseName.
-     * @param lowerCaseName The lower case name
-     * @return OID matching the name or null if name doesn't match to an OID
-     * @throws UnknownSchemaElementException if multiple OID are matching
-     * lowerCaseName
-     */
-    String getOIDForName(String lowerCaseName) {
-        return impl.getOIDForName(lowerCaseName);
-    }
-
-    /**
      * Returns the attribute type for the specified name or numeric OID.
      * <p>
      * If the requested attribute type is not registered in this schema and this
@@ -1437,6 +1417,11 @@ public final class Schema {
 
     /**
      * Returns the object class with the specified name or numeric OID.
+     * <p>
+     * If the requested object class is not registered in this schema and this
+     * schema is non-strict then a temporary "place-holder" object class will
+     * be created and returned. Place holder object classes have an OID which
+     * is the normalized name with the string {@code -oid} appended.
      *
      * @param nameOrOid
      *            The name or OID of the object class to retrieve.
@@ -1444,6 +1429,7 @@ public final class Schema {
      * @throws UnknownSchemaElementException
      *             If this is a strict schema and the requested object class was
      *             not found or if the provided name is ambiguous.
+     * @see ObjectClass#isPlaceHolder()
      */
     public ObjectClass getObjectClass(final String nameOrOid) {
         return impl.getObjectClass(nameOrOid);
@@ -1542,7 +1528,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains an attribute type with the
+     * Indicates whether this schema contains an attribute type with the
      * specified name or numeric OID.
      *
      * @param nameOrOid
@@ -1555,7 +1541,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains a DIT content rule with the
+     * Indicates whether this schema contains a DIT content rule with the
      * specified name or numeric OID.
      *
      * @param nameOrOid
@@ -1568,7 +1554,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains a DIT structure rule with
+     * Indicates whether this schema contains a DIT structure rule with
      * the specified rule ID.
      *
      * @param ruleID
@@ -1581,7 +1567,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains a matching rule with the
+     * Indicates whether this schema contains a matching rule with the
      * specified name or numeric OID.
      *
      * @param nameOrOid
@@ -1594,7 +1580,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains a matching rule use with
+     * Indicates whether this schema contains a matching rule use with
      * the specified name or numeric OID.
      *
      * @param nameOrOid
@@ -1607,7 +1593,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains a name form with the
+     * Indicates whether this schema contains a name form with the
      * specified name or numeric OID.
      *
      * @param nameOrOid
@@ -1620,7 +1606,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains an object class with the
+     * Indicates whether this schema contains an object class with the
      * specified name or numeric OID.
      *
      * @param nameOrOid
@@ -1633,7 +1619,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema contains a syntax with the specified
+     * Indicates whether this schema contains a syntax with the specified
      * numeric OID.
      *
      * @param numericOID
@@ -1646,7 +1632,7 @@ public final class Schema {
     }
 
     /**
-     * Indicates whether or not this schema is strict.
+     * Indicates whether this schema is strict.
      * <p>
      * Attribute type queries against non-strict schema always succeed: if the
      * requested attribute type is not found then a temporary attribute type is
@@ -1676,71 +1662,25 @@ public final class Schema {
      *             If {@code entry} was {@code null}.
      */
     public Entry toEntry(final Entry entry) {
-        Attribute attr = new LinkedAttribute(Schema.ATTR_LDAP_SYNTAXES);
-        for (final Syntax syntax : getSyntaxes()) {
-            attr.add(syntax.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
-        attr = new LinkedAttribute(Schema.ATTR_ATTRIBUTE_TYPES);
-        for (final AttributeType attributeType : getAttributeTypes()) {
-            attr.add(attributeType.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
-        attr = new LinkedAttribute(Schema.ATTR_OBJECT_CLASSES);
-        for (final ObjectClass objectClass : getObjectClasses()) {
-            attr.add(objectClass.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
-        attr = new LinkedAttribute(Schema.ATTR_MATCHING_RULE_USE);
-        for (final MatchingRuleUse matchingRuleUse : getMatchingRuleUses()) {
-            attr.add(matchingRuleUse.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
-        attr = new LinkedAttribute(Schema.ATTR_MATCHING_RULES);
-        for (final MatchingRule matchingRule : getMatchingRules()) {
-            attr.add(matchingRule.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
-        attr = new LinkedAttribute(Schema.ATTR_DIT_CONTENT_RULES);
-        for (final DITContentRule ditContentRule : getDITContentRules()) {
-            attr.add(ditContentRule.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
-        attr = new LinkedAttribute(Schema.ATTR_DIT_STRUCTURE_RULES);
-        for (final DITStructureRule ditStructureRule : getDITStuctureRules()) {
-            attr.add(ditStructureRule.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
-        attr = new LinkedAttribute(Schema.ATTR_NAME_FORMS);
-        for (final NameForm nameForm : getNameForms()) {
-            attr.add(nameForm.toString());
-        }
-        if (!attr.isEmpty()) {
-            entry.addAttribute(attr);
-        }
-
+        addAttribute(entry, Schema.ATTR_LDAP_SYNTAXES, getSyntaxes());
+        addAttribute(entry, Schema.ATTR_ATTRIBUTE_TYPES, getAttributeTypes());
+        addAttribute(entry, Schema.ATTR_OBJECT_CLASSES, getObjectClasses());
+        addAttribute(entry, Schema.ATTR_MATCHING_RULE_USE, getMatchingRuleUses());
+        addAttribute(entry, Schema.ATTR_MATCHING_RULES, getMatchingRules());
+        addAttribute(entry, Schema.ATTR_DIT_CONTENT_RULES, getDITContentRules());
+        addAttribute(entry, Schema.ATTR_DIT_STRUCTURE_RULES, getDITStuctureRules());
+        addAttribute(entry, Schema.ATTR_NAME_FORMS, getNameForms());
         return entry;
+    }
+
+    private void addAttribute(Entry entry, String attrName, Collection<? extends SchemaElement> schemaElements) {
+        Attribute attr = new LinkedAttribute(attrName);
+        for (final Object o : schemaElements) {
+            attr.add(o.toString());
+        }
+        if (!attr.isEmpty()) {
+            entry.addAttribute(attr);
+        }
     }
 
     /**
@@ -1780,7 +1720,7 @@ public final class Schema {
                 final String objectClassName = v.toString();
                 final ObjectClass objectClass;
                 try {
-                    objectClass = getObjectClass(objectClassName);
+                    objectClass = asStrictSchema().getObjectClass(objectClassName);
                     objectClasses.add(objectClass);
                 } catch (final UnknownSchemaElementException e) {
                     if (policy.checkAttributesAndObjectClasses().needsChecking()) {
@@ -2064,26 +2004,16 @@ public final class Schema {
 
                 if (!t.isOperational()
                         && (checkObjectClasses || checkDITContentRule)) {
-                    boolean isAllowed = false;
-                    for (final ObjectClass objectClass : objectClasses) {
-                        if (objectClass.isRequiredOrOptional(t)) {
-                            isAllowed = true;
-                            break;
-                        }
-                    }
+                    boolean isAllowed = isRequiredOrOptional(objectClasses, t);
                     if (!isAllowed && ditContentRule != null && ditContentRule.isRequiredOrOptional(t)) {
                         isAllowed = true;
                     }
                     if (!isAllowed) {
                         if (errorMessages != null) {
-                            final LocalizableMessage message;
-                            if (ditContentRule != null) {
-                                message = ERR_ENTRY_SCHEMA_DCR_DISALLOWED_ATTRIBUTES.get(
-                                        entry.getName(), t.getNameOrOID(), ditContentRule.getNameOrOID());
-                            } else {
-                                message = ERR_ENTRY_SCHEMA_OC_DISALLOWED_ATTRIBUTES.get(
-                                        entry.getName(), t.getNameOrOID());
-                            }
+                            final LocalizableMessage message = ditContentRule != null
+                                ? ERR_ENTRY_SCHEMA_DCR_DISALLOWED_ATTRIBUTES.get(
+                                        entry.getName(), t.getNameOrOID(), ditContentRule.getNameOrOID())
+                                : ERR_ENTRY_SCHEMA_OC_DISALLOWED_ATTRIBUTES.get(entry.getName(), t.getNameOrOID());
                             errorMessages.add(message);
                         }
                         if (policy.checkAttributesAndObjectClasses().isReject()
@@ -2096,7 +2026,6 @@ public final class Schema {
                 // Check all attributes contain an appropriate number of values.
                 if (checkAttributeValues) {
                     final int sz = attribute.size();
-
                     if (sz == 0) {
                         if (errorMessages != null) {
                             errorMessages.add(ERR_ENTRY_SCHEMA_AT_EMPTY_ATTRIBUTE.get(
@@ -2120,6 +2049,15 @@ public final class Schema {
 
         // If we've gotten here, then things are OK.
         return true;
+    }
+
+    private boolean isRequiredOrOptional(final List<ObjectClass> objectClasses, final AttributeType t) {
+        for (final ObjectClass objectClass : objectClasses) {
+            if (objectClass.isRequiredOrOptional(t)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean checkDITStructureRule(final Entry entry,

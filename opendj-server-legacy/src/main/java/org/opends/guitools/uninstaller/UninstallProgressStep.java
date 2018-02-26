@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2008 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.guitools.uninstaller;
 
@@ -23,6 +23,8 @@ public enum UninstallProgressStep implements ProgressStep {
 
   /** Uninstall not started. */
   NOT_STARTED,
+  /** Uninstall has started. */
+  STARTED,
   /** Unconfiguring replication in remote servers. */
   UNCONFIGURING_REPLICATION,
   /** Stopping server. */
@@ -46,7 +48,7 @@ public enum UninstallProgressStep implements ProgressStep {
   /** Installation finished with an error. */
   FINISHED_WITH_ERROR;
 
-  /** {@inheritDoc} */
+  @Override
   public boolean isLast() {
     return this == FINISHED_SUCCESSFULLY ||
     this == FINISHED_WITH_ERROR ||
@@ -54,7 +56,7 @@ public enum UninstallProgressStep implements ProgressStep {
     this == FINISHED_WITH_ERROR_DELETING;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public boolean isError() {
     return this.equals(FINISHED_WITH_ERROR);
   }

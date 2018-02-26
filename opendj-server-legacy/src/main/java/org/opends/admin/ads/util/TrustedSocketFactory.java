@@ -12,45 +12,52 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
-
 package org.opends.admin.ads.util;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.net.InetAddress;
-import java.util.Map;
-import java.util.HashMap;
-
+import java.net.Socket;
 import java.security.GeneralSecurityException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
 /**
  * An implementation of SSLSocketFactory.
+ * <p>
+ * Note: The class must be public so it can be instantiated by the
+ * {@link javax.naming.ldap.InitialLdapContext}.
  */
 public class TrustedSocketFactory extends SSLSocketFactory
 {
-  private static Map<Thread, TrustManager> hmTrustManager = new HashMap<>();
-  private static Map<Thread, KeyManager> hmKeyManager = new HashMap<>();
+  private static final Map<Thread, TrustManager> hmTrustManager = new HashMap<>();
+  private static final Map<Thread, KeyManager> hmKeyManager = new HashMap<>();
 
-  private static Map<TrustManager, SocketFactory> hmDefaultFactoryTm = new HashMap<>();
-  private static Map<KeyManager, SocketFactory> hmDefaultFactoryKm = new HashMap<>();
+  private static final Map<TrustManager, SocketFactory> hmDefaultFactoryTm = new HashMap<>();
+  private static final Map<KeyManager, SocketFactory> hmDefaultFactoryKm = new HashMap<>();
 
   private SSLSocketFactory innerFactory;
-  private TrustManager trustManager;
-  private KeyManager   keyManager;
+  private final TrustManager trustManager;
+  private final KeyManager keyManager;
 
   /**
    * Constructor of the TrustedSocketFactory.
-   * @param trustManager the trust manager to use.
-   * @param keyManager   the key manager to use.
+   * <p>
+   * Note: The class must be public so it can be instantiated by the
+   * {@link javax.naming.ldap.InitialLdapContext}.
+   *
+   * @param trustManager
+   *          the trust manager to use.
+   * @param keyManager
+   *          the key manager to use.
    */
   public TrustedSocketFactory(TrustManager trustManager, KeyManager keyManager)
   {
@@ -67,8 +74,7 @@ public class TrustedSocketFactory extends SSLSocketFactory
    * @param keyManager
    *          the key manager to use.
    */
-  public static synchronized void setCurrentThreadTrustManager(
-      TrustManager trustManager, KeyManager keyManager)
+  static synchronized void setCurrentThreadTrustManager(TrustManager trustManager, KeyManager keyManager)
   {
     setThreadTrustManager(trustManager, Thread.currentThread());
     setThreadKeyManager  (keyManager, Thread.currentThread());
@@ -79,8 +85,7 @@ public class TrustedSocketFactory extends SSLSocketFactory
    * @param trustManager the trust manager to use.
    * @param thread the thread where we want to use the provided trust manager.
    */
-  public static synchronized void setThreadTrustManager(
-      TrustManager trustManager, Thread thread)
+  static synchronized void setThreadTrustManager(TrustManager trustManager, Thread thread)
   {
     TrustManager currentTrustManager = hmTrustManager.get(thread);
     if (currentTrustManager != null) {
@@ -97,8 +102,7 @@ public class TrustedSocketFactory extends SSLSocketFactory
    * @param keyManager the key manager to use.
    * @param thread the thread where we want to use the provided key manager.
    */
-  public static synchronized void setThreadKeyManager(
-      KeyManager keyManager, Thread thread)
+  static synchronized void setThreadKeyManager(KeyManager keyManager, Thread thread)
   {
     KeyManager currentKeyManager = hmKeyManager.get(thread);
     if (currentKeyManager != null) {
@@ -110,9 +114,7 @@ public class TrustedSocketFactory extends SSLSocketFactory
     }
   }
 
-  //
   // SocketFactory implementation
-  //
   /**
    * Returns the default SSL socket factory. The default
    * implementation can be changed by setting the value of the
@@ -161,22 +163,21 @@ public class TrustedSocketFactory extends SSLSocketFactory
       {
         SocketFactory tmsf = hmDefaultFactoryTm.get(trustManager);
         SocketFactory kmsf = hmDefaultFactoryKm.get(keyManager);
-        if ( tmsf == null || kmsf == null)
+        if (tmsf == null || kmsf == null)
+        {
+          result = new TrustedSocketFactory(trustManager, keyManager);
+          hmDefaultFactoryTm.put(trustManager, result);
+          hmDefaultFactoryKm.put(keyManager, result);
+        }
+        else if (!tmsf.equals(kmsf))
         {
           result = new TrustedSocketFactory(trustManager, keyManager);
           hmDefaultFactoryTm.put(trustManager, result);
           hmDefaultFactoryKm.put(keyManager, result);
         }
         else
-        if ( !tmsf.equals(kmsf) )
         {
-          result = new TrustedSocketFactory(trustManager, keyManager);
-          hmDefaultFactoryTm.put(trustManager, result);
-          hmDefaultFactoryKm.put(keyManager, result);
-        }
-        else
-        {
-          result = tmsf ;
+          result = tmsf;
         }
       }
     }
@@ -184,40 +185,39 @@ public class TrustedSocketFactory extends SSLSocketFactory
     return result;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Socket createSocket(InetAddress address, int port) throws IOException {
     return getInnerFactory().createSocket(address, port);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Socket createSocket(InetAddress address, int port,
       InetAddress clientAddress, int clientPort) throws IOException
   {
-    return getInnerFactory().createSocket(address, port, clientAddress,
-        clientPort);
+    return getInnerFactory().createSocket(address, port, clientAddress, clientPort);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Socket createSocket(String host, int port) throws IOException
   {
     return getInnerFactory().createSocket(host, port);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Socket createSocket(String host, int port, InetAddress clientHost,
       int clientPort) throws IOException
   {
     return getInnerFactory().createSocket(host, port, clientHost, clientPort);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Socket createSocket(Socket s, String host, int port, boolean autoClose)
   throws IOException
   {
     return getInnerFactory().createSocket(s, host, port, autoClose);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public String[] getDefaultCipherSuites()
   {
     try
@@ -230,7 +230,7 @@ public class TrustedSocketFactory extends SSLSocketFactory
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public String[] getSupportedCipherSuites()
   {
     try
@@ -247,11 +247,10 @@ public class TrustedSocketFactory extends SSLSocketFactory
     if (innerFactory == null)
     {
       String algorithm = "TLSv1";
-      SSLKeyException xx;
-      KeyManager[] km = null;
-      TrustManager[] tm = null;
 
       try {
+        KeyManager[] km = null;
+        TrustManager[] tm = null;
         SSLContext sslCtx = SSLContext.getInstance(algorithm);
         if (trustManager != null)
         {
@@ -265,8 +264,7 @@ public class TrustedSocketFactory extends SSLSocketFactory
         innerFactory = sslCtx.getSocketFactory();
       }
       catch(GeneralSecurityException x) {
-        xx = new SSLKeyException("Failed to create SSLContext for " +
-            algorithm);
+        SSLKeyException xx = new SSLKeyException("Failed to create SSLContext for " + algorithm);
         xx.initCause(x);
         throw xx;
       }
@@ -274,4 +272,3 @@ public class TrustedSocketFactory extends SSLSocketFactory
     return innerFactory;
   }
 }
-

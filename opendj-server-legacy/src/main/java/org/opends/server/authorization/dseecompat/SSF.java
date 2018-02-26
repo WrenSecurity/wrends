@@ -12,24 +12,21 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.opends.server.authorization.dseecompat;
 
-import org.forgerock.i18n.LocalizableMessage;
 import static org.opends.messages.AccessControlMessages.*;
 
-/**
- * The class represents the ssf keyword in a bind rule.SSF stands for
- * security strength factor.
- */
+import org.forgerock.i18n.LocalizableMessage;
+
+/** The class represents the ssf keyword in a bind rule.SSF stands for security strength factor. */
 public class SSF implements KeywordBindRule {
+    private static final int MAX_KEY_BITS=1024;
 
     /** Enumeration representing the bind rule operation type. */
-    private EnumBindRuleType type;
-
-    private static final int MAX_KEY_BITS=1024;
-    private int ssf;
+    private final EnumBindRuleType type;
+    private final int ssf;
 
     private SSF(int ssf, EnumBindRuleType type) {
         this.ssf = ssf;
@@ -54,8 +51,7 @@ public class SSF implements KeywordBindRule {
             throw new AciException(message);
         }
         if (valueAsInt <= 0 || valueAsInt > MAX_KEY_BITS) {
-            LocalizableMessage message = WARN_ACI_SYNTAX_INVALID_SSF_RANGE.get(expr);
-            throw new AciException(message);
+            throw new AciException(WARN_ACI_SYNTAX_INVALID_SSF_RANGE.get(expr));
         }
         return new SSF(valueAsInt, type);
     }
@@ -67,48 +63,35 @@ public class SSF implements KeywordBindRule {
      * @return An evaluation result enumeration containing the result of the
      *         context evaluation.
      */
+    @Override
     public EnumEvalResult evaluate(AciEvalContext evalCtx) {
-        int currentSSF = evalCtx.getCurrentSSF();
-        EnumEvalResult matched = getMatched(currentSSF);
+        EnumEvalResult matched = getMatched(evalCtx.getCurrentSSF());
         return matched.getRet(type, false);
     }
 
     private EnumEvalResult getMatched(int currentSSF) {
+      return getMatched0(currentSSF) ? EnumEvalResult.TRUE : EnumEvalResult.FALSE;
+    }
+
+    private boolean getMatched0(int currentSSF)
+    {
       switch (type) {
       case EQUAL_BINDRULE_TYPE:
       case NOT_EQUAL_BINDRULE_TYPE:
-          if (currentSSF == ssf) {
-            return EnumEvalResult.TRUE;
-          }
-          break;
-
+          return currentSSF == ssf;
       case LESS_OR_EQUAL_BINDRULE_TYPE:
-          if (currentSSF <= ssf) {
-            return EnumEvalResult.TRUE;
-          }
-          break;
-
+          return currentSSF <= ssf;
       case LESS_BINDRULE_TYPE:
-          if (currentSSF < ssf) {
-            return EnumEvalResult.TRUE;
-          }
-          break;
-
+          return currentSSF < ssf;
       case GREATER_OR_EQUAL_BINDRULE_TYPE:
-          if (currentSSF >= ssf) {
-            return EnumEvalResult.TRUE;
-          }
-          break;
-
+          return currentSSF >= ssf;
       case GREATER_BINDRULE_TYPE:
-          if (currentSSF > ssf) {
-            return EnumEvalResult.TRUE;
-          }
+          return currentSSF > ssf;
+      default:
+          return false;
       }
-      return EnumEvalResult.FALSE;
     }
 
-    /** {@inheritDoc} */
     @Override
     public String toString()
     {
@@ -117,11 +100,9 @@ public class SSF implements KeywordBindRule {
         return sb.toString();
     }
 
-    /** {@inheritDoc} */
     @Override
     public final void toString(StringBuilder buffer)
     {
         buffer.append(super.toString());
     }
-
 }

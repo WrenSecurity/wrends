@@ -29,8 +29,8 @@ import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.Entry;
 import org.forgerock.opendj.ldap.LdapException;
 import org.forgerock.opendj.ldap.ResultCode;
-import org.forgerock.opendj.ldap.schema.SchemaValidationPolicy.EntryResolver;
 import org.forgerock.opendj.ldap.schema.SchemaValidationPolicy.Action;
+import org.forgerock.opendj.ldap.schema.SchemaValidationPolicy.EntryResolver;
 import org.forgerock.opendj.ldif.LDIFEntryReader;
 import org.testng.annotations.Test;
 
@@ -38,6 +38,7 @@ import org.testng.annotations.Test;
  * Test schema validation using {@link Schema#validateEntry}.
  */
 @Test
+@SuppressWarnings("javadoc")
 public class EntrySchemaCheckingTestCase extends AbstractSchemaTestCase {
 
     /**
@@ -953,6 +954,31 @@ public class EntrySchemaCheckingTestCase extends AbstractSchemaTestCase {
             "o: example");
         // @formatter:on
 
+        assertConformsToSchema(e, defaultPolicy());
+    }
+
+    @Test
+    public void testExtensibleObjectAcceptsAnyAttributeIncludingPlaceholderAttribute() throws Exception {
+        // @formatter:off
+        final Entry e2 = newEntry(
+                "dn: dc=example,dc=com",
+                "objectClass: top",
+                "objectClass: organization",
+                "objectClass: extensibleObject",
+                "o: example",
+                "telephonenumber: 123456");
+        // @formatter:on
+        assertConformsToSchema(e2, defaultPolicy());
+
+        // @formatter:off
+        final Entry e = newEntry(
+            "dn: dc=example,dc=com",
+            "objectClass: top",
+            "objectClass: organization",
+            "objectClass: extensibleObject",
+            "o: example",
+            "dummy: unknown attribute!!");
+        // @formatter:on
         assertConformsToSchema(e, defaultPolicy());
     }
 

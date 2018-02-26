@@ -39,6 +39,7 @@ import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
 import org.opends.admin.ads.ADSContext;
 import org.opends.server.api.Backend;
 import org.opends.server.api.BackendInitializationListener;
@@ -59,7 +60,7 @@ import org.opends.server.types.CryptoManagerException;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.InitializationException;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.types.SearchFilter;
 import org.opends.server.types.SearchResultEntry;
 import org.opends.server.types.operation.PostResponseAddOperation;
@@ -154,13 +155,13 @@ public class CryptoManagerSync extends InternalDirectoryServerPlugin
     {
     }
 
-    ocInstanceKey = DirectoryServer.getObjectClass(OC_CRYPTO_INSTANCE_KEY, true);
-    ocCipherKey = DirectoryServer.getObjectClass(OC_CRYPTO_CIPHER_KEY, true);
-    ocMacKey = DirectoryServer.getObjectClass(OC_CRYPTO_MAC_KEY, true);
+    ocInstanceKey = DirectoryServer.getSchema().getObjectClass(OC_CRYPTO_INSTANCE_KEY);
+    ocCipherKey = DirectoryServer.getSchema().getObjectClass(OC_CRYPTO_CIPHER_KEY);
+    ocMacKey = DirectoryServer.getSchema().getObjectClass(OC_CRYPTO_MAC_KEY);
 
-    attrCert = getAttributeType(ATTR_CRYPTO_PUBLIC_KEY_CERTIFICATE);
-    attrAlias = getAttributeType(ATTR_CRYPTO_KEY_ID);
-    attrCompromisedTime = getAttributeType(ATTR_CRYPTO_KEY_COMPROMISED_TIME);
+    attrCert = getSchema().getAttributeType(ATTR_CRYPTO_PUBLIC_KEY_CERTIFICATE);
+    attrAlias = getSchema().getAttributeType(ATTR_CRYPTO_KEY_ID);
+    attrCompromisedTime = getSchema().getAttributeType(ATTR_CRYPTO_KEY_COMPROMISED_TIME);
 
     if (DirectoryServer.getBackendWithBaseDN(adminSuffixDN) != null)
     {
@@ -199,15 +200,11 @@ public class CryptoManagerSync extends InternalDirectoryServerPlugin
   @Override
   public void performBackendPreInitializationProcessing(Backend<?> backend)
   {
-    DN[] baseDNs = backend.getBaseDNs();
-    if (baseDNs != null)
+    for (DN baseDN : backend.getBaseDNs())
     {
-      for (DN baseDN : baseDNs)
+      if (baseDN.equals(adminSuffixDN))
       {
-        if (baseDN.equals(adminSuffixDN))
-        {
-          searchAdminSuffix();
-        }
+        searchAdminSuffix();
       }
     }
   }
@@ -377,7 +374,7 @@ public class CryptoManagerSync extends InternalDirectoryServerPlugin
   private void addEntry(Entry srcEntry, DN dstDN)
   {
     Map<ObjectClass, String> ocMap = new LinkedHashMap<>(2);
-    ocMap.put(DirectoryServer.getTopObjectClass(), OC_TOP);
+    ocMap.put(CoreSchema.getTopObjectClass(), OC_TOP);
     ocMap.put(ocInstanceKey, OC_CRYPTO_INSTANCE_KEY);
 
     Map<AttributeType, List<Attribute>> userAttrs = new HashMap<>();

@@ -12,30 +12,30 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2009 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.util;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JScrollPane;
 
 /**
  * A class used to be able to update the scroll position in different panels.
  * It basically contains two lists of scrollbars and points.
- *
  */
 public class ViewPositions
 {
-  private ArrayList<JScrollPane> scrolls = new ArrayList<>();
-  private ArrayList<Point> points = new ArrayList<>();
+  private final List<JScrollPane> scrolls = new ArrayList<>();
+  private final List<Point> points = new ArrayList<>();
 
   /**
    * Returns the size of the lists.
    * @return the size of the lists.
    */
-  public int size()
+  int size()
   {
     return scrolls.size();
   }
@@ -45,20 +45,10 @@ public class ViewPositions
    * @param scroll the scroll bar.
    * @param p the point.
    */
-  public void add(JScrollPane scroll, Point p)
+  void add(JScrollPane scroll, Point p)
   {
     scrolls.add(scroll);
     points.add(p);
-  }
-
-  /**
-   * Clears the contents of both lists.
-   *
-   */
-  public void clear()
-  {
-    scrolls.clear();
-    points.clear();
   }
 
   /**
@@ -66,7 +56,7 @@ public class ViewPositions
    * @param index the index.
    * @return the point at the provided index.
    */
-  public Point getPoint(int index)
+  Point getPoint(int index)
   {
     return points.get(index);
   }
@@ -76,7 +66,7 @@ public class ViewPositions
    * @param index the index.
    * @return the scroll at the provided index.
    */
-  public JScrollPane getScrollPane(int index)
+  JScrollPane getScrollPane(int index)
   {
     return scrolls.get(index);
   }

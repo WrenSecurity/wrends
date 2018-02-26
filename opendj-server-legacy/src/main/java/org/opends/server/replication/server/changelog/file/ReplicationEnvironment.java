@@ -15,6 +15,9 @@
  */
 package org.opends.server.replication.server.changelog.file;
 
+import static org.opends.messages.ReplicationMessages.*;
+import static org.opends.server.util.StaticUtils.*;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -40,13 +43,12 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.jcip.annotations.GuardedBy;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.util.time.TimeService;
+import org.opends.server.crypto.CryptoSuite;
 import org.opends.server.replication.common.CSN;
 import org.opends.server.replication.protocol.UpdateMsg;
 import org.opends.server.replication.server.ChangelogState;
@@ -57,7 +59,7 @@ import org.opends.server.replication.server.changelog.api.ChangelogStateProvider
 import org.opends.server.replication.server.changelog.file.Log.LogRotationParameters;
 import org.opends.server.util.StaticUtils;
 
-import static org.opends.messages.ReplicationMessages.*;
+import net.jcip.annotations.GuardedBy;
 
 /**
  * Represents the replication environment, which allows to manage the lifecycle
@@ -337,8 +339,8 @@ class ReplicationEnvironment implements ChangelogStateProvider
    * @throws ChangelogException
    *           if an error occurs.
    */
-  Log<CSN, UpdateMsg> getOrCreateReplicaDB(final DN domainDN, final int serverId, final long generationId)
-      throws ChangelogException
+  Log<CSN, UpdateMsg> getOrCreateReplicaDB(final DN domainDN, final int serverId, final long generationId,
+      final CryptoSuite cryptoSuite) throws ChangelogException
   {
     if (logger.isTraceEnabled())
     {
@@ -366,14 +368,15 @@ class ReplicationEnvironment implements ChangelogStateProvider
         ensureGenerationIdFileExists(generationIdPath);
         changelogState.setDomainGenerationId(domainDN, generationId);
 
-        return openLog(serverIdPath, FileReplicaDB.RECORD_PARSER,
+        return openLog(serverIdPath, FileReplicaDB.newReplicaDBParser(cryptoSuite),
             new LogRotationParameters(REPLICA_DB_MAX_LOG_FILE_SIZE_IN_BYTES, 0, 0), logsReplicaDB);
       }
     }
     catch (Exception e)
     {
-      throw new ChangelogException(
-          ERR_CHANGELOG_UNABLE_TO_CREATE_REPLICA_DB.get(domainDN.toString(), serverId, generationId), e);
+      LocalizableMessage msg = ERR_CHANGELOG_UNABLE_TO_CREATE_REPLICA_DB.get(
+          domainDN, serverId, generationId, stackTraceToSingleLineString(e));
+      throw new ChangelogException(msg, e);
     }
   }
 
@@ -963,14 +966,6 @@ class ReplicationEnvironment implements ChangelogStateProvider
             ERR_CHANGELOG_UNABLE_TO_CREATE_GENERATION_ID_FILE.get(generationIdPath.getPath()));
       }
     }
-  }
-
-  private void debug(String message)
-  {
-    // Replication server may be null when testing
-    String monitorInstanceName = replicationServer != null ? replicationServer.getMonitorInstanceName() :
-      "no monitor [test]";
-    logger.trace("In %s, %s", monitorInstanceName, message);
   }
 
   private int toServerId(final String serverIdName) throws ChangelogException

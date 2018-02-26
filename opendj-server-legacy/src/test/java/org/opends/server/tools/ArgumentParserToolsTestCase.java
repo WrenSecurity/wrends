@@ -36,6 +36,7 @@ import org.testng.annotations.Test;
  * This class tests that help reference message is prompted for all tools when
  * no arguments are provided or if they failed to be parsed.
  */
+@SuppressWarnings("javadoc")
 public class ArgumentParserToolsTestCase extends ToolsTestCase
 {
   private static final boolean ERRORS_ON_STDOUT = false;
@@ -198,7 +199,7 @@ public class ArgumentParserToolsTestCase extends ToolsTestCase
   @Test(dataProvider = "invalidArg")
   public void testManageTasks(final String[] args)
   {
-    assertToolFailsWithUsage(ManageTasks.mainTaskInfo(args, null, outStream, errStream, false), ERRORS_ON_STDOUT);
+    assertToolFailsWithUsage(ManageTasks.mainTaskInfo(args, outStream, errStream, false), ERRORS_ON_STDOUT);
   }
 
   @Test(dataProvider = "invalidArgs")
@@ -216,13 +217,12 @@ public class ArgumentParserToolsTestCase extends ToolsTestCase
   @Test(dataProvider = "invalidArg")
   public void testStatus(final String[] args)
   {
-    assertToolFailsWithUsage(StatusCli.mainCLI(args, false, outStream, errStream, null), ERRORS_ON_STDOUT);
+    assertToolFailsWithUsage(StatusCli.mainCLI(args, outStream, errStream), ERRORS_ON_STDOUT);
   }
 
   @Test(dataProvider = "invalidArgs")
   public void testVerifyIndex(final String[] args)
   {
-    assertToolFailsWithUsage(VerifyIndex.mainVerifyIndex(args, false, outStream, errStream));
+    assertToolFailsWithUsage(VerifyIndex.mainVerifyIndex(args, false, errStream));
   }
-
 }

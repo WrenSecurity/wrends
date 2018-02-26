@@ -45,11 +45,11 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.ByteSequence;
 import org.forgerock.opendj.ldap.ByteString;
-import org.forgerock.util.Reject;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.server.config.server.PDBBackendCfg;
+import org.forgerock.util.Reject;
 import org.opends.server.api.Backupable;
 import org.opends.server.api.DiskSpaceMonitorHandler;
 import org.opends.server.backends.pluggable.spi.AccessMode;
@@ -83,6 +83,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
+import com.persistit.Transaction.CommitPolicy;
 import com.persistit.Value;
 import com.persistit.Volume;
 import com.persistit.VolumeSpecification;
@@ -295,7 +296,7 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
       {
         txn.begin();
         getNewExchange(treeName, true);
-        txn.commit();
+        txn.commit(commitPolicy);
       }
       catch (PersistitException e)
       {
@@ -315,7 +316,7 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
         txn.begin();
         ex = getNewExchange(treeName, true);
         ex.removeTree();
-        txn.commit();
+        txn.commit(commitPolicy);
       }
       catch (PersistitException e)
       {
@@ -697,10 +698,10 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
   }
 
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
-  private final ThreadLocal<Boolean> isInsideWriteTransaction = new ThreadLocal<Boolean>();
 
   private final ServerContext serverContext;
   private final File backendDirectory;
+  private CommitPolicy commitPolicy;
   private AccessMode accessMode;
   private Persistit db;
   private Volume volume;
@@ -732,7 +733,7 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
   {
     final Configuration dbCfg = buildConfiguration(AccessMode.READ_WRITE);
     getBufferPoolCfg(dbCfg).setMaximumMemory(IMPORT_DB_CACHE_SIZE);
-    dbCfg.setCommitPolicy(SOFT);
+    commitPolicy = SOFT;
     return dbCfg;
   }
 
@@ -762,7 +763,7 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
       bufferPoolCfg.setMaximumMemory(memQuota.memPercentToBytes(config.getDBCachePercent()));
       memQuota.acquireMemory(memQuota.memPercentToBytes(config.getDBCachePercent()));
     }
-    dbCfg.setCommitPolicy(config.isDBTxnNoSync() ? SOFT : GROUP);
+    commitPolicy = config.isDBTxnNoSync() ? SOFT : GROUP;
     dbCfg.setJmxEnabled(false);
     return dbCfg;
   }
@@ -844,8 +845,6 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
   {
     // This check may be unnecessary for PDB, but it will help us detect bad business logic
     // in the pluggable backend that would cause problems for JE.
-    throwIfNestedInWriteTransaction();
-
     final Transaction txn = db.getTransaction();
     for (;;)
     {
@@ -855,7 +854,7 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
         try (final StorageImpl storageImpl = newStorageImpl())
         {
           final T result = operation.run(storageImpl);
-          txn.commit();
+          txn.commit(commitPolicy);
           return result;
         }
         catch (final StorageRuntimeException e)
@@ -893,19 +892,16 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
   @Override
   public void write(final WriteOperation operation) throws Exception
   {
-    throwIfNestedInWriteTransaction();
-
     final Transaction txn = db.getTransaction();
     for (;;)
     {
       txn.begin();
-      isInsideWriteTransaction.set(Boolean.TRUE);
       try
       {
         try (final StorageImpl storageImpl = newStorageImpl())
         {
           operation.run(storageImpl);
-          txn.commit();
+          txn.commit(commitPolicy);
           return;
         }
         catch (final StorageRuntimeException e)
@@ -930,26 +926,7 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
       finally
       {
         txn.end();
-        isInsideWriteTransaction.set(Boolean.FALSE);
       }
-    }
-  }
-
-  /**
-   * A nested transaction within a write transaction may cause a self-deadlock where an inner read
-   * attempts to read-lock a record that has been write-locked in an outer write.
-   * <p>
-   * It would also be good to forbid any nested transactions, but it is impractical due to some
-   * transactions being deeply nested into the call hierarchy.
-   *
-   * @see <a href="https://bugster.forgerock.org/jira/browse/OPENDJ-2645">OPENDJ-2645</a>
-   */
-  private void throwIfNestedInWriteTransaction()
-  {
-    if (Boolean.TRUE.equals(isInsideWriteTransaction.get()))
-    {
-      throw new IllegalStateException("OpenDJ does not support transactions nested in a write transaction. "
-          + "Code is forbidden from opening one.");
     }
   }
 
@@ -1267,6 +1244,7 @@ public final class PDBStorage implements Storage, Backupable, ConfigurationChang
       }
       registerMonitoredDirectory(cfg);
       config = cfg;
+      commitPolicy = config.isDBTxnNoSync() ? SOFT : GROUP;
     }
     catch (Exception e)
     {

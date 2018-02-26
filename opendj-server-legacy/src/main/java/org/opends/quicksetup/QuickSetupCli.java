@@ -12,37 +12,31 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
- * Portions Copyright 2014 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
-
 package org.opends.quicksetup;
 
-import static com.forgerock.opendj.cli.Utils.wrapText;
+import static com.forgerock.opendj.cli.Utils.*;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
-
-import org.opends.quicksetup.util.ProgressMessageFormatter;
-import org.opends.quicksetup.util.PlainTextProgressMessageFormatter;
-import org.opends.quicksetup.util.Utils;
-import org.opends.quicksetup.event.ProgressUpdateListener;
 import org.opends.quicksetup.event.ProgressUpdateEvent;
+import org.opends.quicksetup.event.ProgressUpdateListener;
+import org.opends.quicksetup.util.PlainTextProgressMessageFormatter;
+import org.opends.quicksetup.util.ProgressMessageFormatter;
+import org.opends.quicksetup.util.Utils;
+
 import com.forgerock.opendj.cli.ClientException;
 
-/**
- * Class used by Launcher to start a CLI application.
- *
- */
+/** Class used by Launcher to start a CLI application. */
 public class QuickSetupCli {
 
-  /** Arguments passed in the command line. */
-  protected Launcher launcher;
-
-  private CliApplication cliApp;
-
-  private UserData userData;
-
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
+
+  /** Arguments passed in the command line. */
+  private final Launcher launcher;
+  private final CliApplication cliApp;
+  private UserData userData;
 
   /**
    * Creates a QuickSetupCli instance.
@@ -69,7 +63,7 @@ public class QuickSetupCli {
    * @return the return code (SUCCESSFUL, CANCELLED, USER_DATA_ERROR,
    * ERROR_ACCESSING_FILE_SYSTEM, ERROR_STOPPING_SERVER or BUG.
    */
-  public ReturnCode run()
+  ReturnCode run()
   {
     ReturnCode returnValue;
     // Parse the arguments
@@ -85,6 +79,7 @@ public class QuickSetupCli {
         if (!userData.isQuiet()) {
           cliApp.addProgressUpdateListener(
                   new ProgressUpdateListener() {
+                    @Override
                     public void progressUpdate(ProgressUpdateEvent ev) {
                       LocalizableMessage newLogs = ev.getNewLogs();
                       if (newLogs != null) {

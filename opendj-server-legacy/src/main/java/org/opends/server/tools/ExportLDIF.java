@@ -20,8 +20,8 @@ import static org.opends.messages.ToolMessages.*;
 import static org.opends.server.config.ConfigConstants.*;
 import static org.opends.server.util.StaticUtils.*;
 import static com.forgerock.opendj.cli.ArgumentConstants.*;
-import static com.forgerock.opendj.cli.Utils.*;
 import static com.forgerock.opendj.cli.CommonArguments.*;
+import static com.forgerock.opendj.cli.Utils.*;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -31,23 +31,18 @@ import java.util.List;
 import java.util.Set;
 
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.server.config.server.BackendCfg;
 import org.opends.server.api.Backend;
 import org.opends.server.api.Backend.BackendOperation;
 import org.opends.server.api.plugin.PluginType;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.LockFileManager;
-import org.opends.server.loggers.DebugLogger;
-import org.opends.server.loggers.ErrorLogPublisher;
-import org.opends.server.loggers.ErrorLogger;
 import org.opends.server.loggers.JDKLogging;
-import org.opends.server.loggers.TextErrorLogPublisher;
-import org.opends.server.loggers.TextWriter;
 import org.opends.server.protocols.ldap.LDAPAttribute;
 import org.opends.server.tasks.ExportTask;
 import org.opends.server.tools.tasks.TaskTool;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.ExistingFileBehavior;
 import org.opends.server.types.InitializationException;
@@ -83,23 +78,10 @@ public class ExportLDIF extends TaskTool {
   public static void main(String[] args)
   {
     int retCode = mainExportLDIF(args, true, System.out, System.err);
-
     if(retCode != 0)
     {
       System.exit(filterExitCode(retCode));
     }
-  }
-
-  /**
-   * Processes the command-line arguments and invokes the export process.
-   *
-   * @param  args  The command-line arguments provided to this program.
-   *
-   * @return The error code.
-   */
-  public static int mainExportLDIF(String[] args)
-  {
-    return mainExportLDIF(args, true, System.out, System.err);
   }
 
   /**
@@ -248,13 +230,13 @@ public class ExportLDIF extends TaskTool {
               BooleanArgument.builder("encryptLDIF")
                       .shortIdentifier('y')
                       .description(INFO_LDIFEXPORT_DESCRIPTION_ENCRYPT_LDIF.get())
-                      .hidden() // See issue #27
+                      .hidden() // See issue OPENDJ-448
                       .buildAndAddToParser(argParser);
       signHash =
               BooleanArgument.builder("signHash")
                       .shortIdentifier('s')
                       .description(INFO_LDIFEXPORT_DESCRIPTION_SIGN_HASH.get())
-                      .hidden() // See issue #28
+                      .hidden() // See issue OPENDJ-448
                       .buildAndAddToParser(argParser);
 
       displayUsage = showUsageArgument();
@@ -311,7 +293,6 @@ public class ExportLDIF extends TaskTool {
     return process(argParser, initializeServer, out, err);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void addTaskAttributes(List<RawAttribute> attributes)
   {
@@ -375,25 +356,12 @@ public class ExportLDIF extends TaskTool {
         new DirectoryServer.InitializationBuilder(configFile.getValue())
             .requireCryptoServices()
             .requireUserPlugins(PluginType.LDIF_EXPORT)
+            .requireErrorAndDebugLogPublisher(out, err)
             .initialize();
       }
       catch (InitializationException ie)
       {
         printWrappedText(err, ERR_CANNOT_INITIALIZE_SERVER_COMPONENTS.get(getExceptionMessage(ie)));
-        return 1;
-      }
-
-      try
-      {
-        ErrorLogPublisher errorLogPublisher = TextErrorLogPublisher.getToolStartupTextErrorPublisher(
-            new TextWriter.STREAM(out));
-        ErrorLogger.getInstance().addLogPublisher(errorLogPublisher);
-
-        DebugLogger.getInstance().addPublisherIfRequired(new TextWriter.STREAM(out));
-      }
-      catch (Exception e)
-      {
-        err.println("Error installing the custom error logger: " + stackTraceToSingleLineString(e));
         return 1;
       }
     }
@@ -462,20 +430,20 @@ public class ExportLDIF extends TaskTool {
     // through them, finding the one backend that should be used for the export,
     // and also finding backends with subordinate base DNs that should be
     // excluded from the export.
-    Backend       backend                = null;
+    Backend<?>    backend                = null;
     List<DN>      baseDNList             = null;
     List<DN>      defaultIncludeBranches = null;
     ArrayList<DN> excludeBranches        = null;
 
-    ArrayList<Backend>     backendList = new ArrayList<>();
-    ArrayList<BackendCfg>  entryList   = new ArrayList<>();
-    ArrayList<List<DN>>    dnList      = new ArrayList<>();
+    List<Backend<?>> backendList = new ArrayList<>();
+    List<BackendCfg> entryList = new ArrayList<>();
+    List<List<DN>> dnList = new ArrayList<>();
     BackendToolUtils.getBackends(backendList, entryList, dnList);
 
     int numBackends = backendList.size();
     for (int i=0; i < numBackends; i++)
     {
-      Backend b = backendList.get(i);
+      Backend<?> b = backendList.get(i);
       if (! backendID.getValue().equals(b.getBackendID()))
       {
         continue;
@@ -663,6 +631,12 @@ public class ExportLDIF extends TaskTool {
     return !errorOccurred ? 0 : 1;
   }
 
+  @Override
+  protected void cleanup()
+  {
+    DirectoryServer.shutdownBackends();
+  }
+
   private Set<AttributeType> toAttributeTypes(StringArgument attributeArg)
   {
     if (attributeArg == null)
@@ -673,12 +647,11 @@ public class ExportLDIF extends TaskTool {
     Set<AttributeType> results = new HashSet<>();
     for (String attrName : attributeArg.getValues())
     {
-      results.add(DirectoryServer.getAttributeType(attrName));
+      results.add(DirectoryServer.getSchema().getAttributeType(attrName));
     }
     return results;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getTaskId() {
     // NYI.

@@ -34,9 +34,7 @@ import org.forgerock.util.Reject;
  */
 public class MissingMandatoryPropertiesException extends OperationsException {
 
-    /**
-     * Serialization ID.
-     */
+    /** Serialization ID. */
     private static final long serialVersionUID = 6342522125252055588L;
 
     /** Create the message. */
@@ -126,7 +124,7 @@ public class MissingMandatoryPropertiesException extends OperationsException {
     }
 
     /**
-     * Indicates whether or not this exception was thrown during managed object
+     * Indicates whether this exception was thrown during managed object
      * creation or during modification.
      *
      * @return Returns <code>true</code> if this exception was thrown during

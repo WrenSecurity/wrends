@@ -14,8 +14,9 @@
  * Copyright 2009 Sun Microsystems, Inc.
  * Portions copyright 2015-2016 ForgeRock AS.
  */
-
 package org.forgerock.opendj.ldap.schema;
+
+import static org.forgerock.opendj.ldap.schema.SchemaConstants.TOP_OBJECTCLASS_OID;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,13 +30,13 @@ import java.util.Set;
 
 import org.forgerock.i18n.LocalizableMessage;
 
+import com.forgerock.opendj.util.StaticUtils;
+
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
-
 import static org.forgerock.opendj.ldap.schema.ObjectClassType.*;
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.*;
 import static org.forgerock.opendj.ldap.schema.SchemaUtils.*;
-
 import static com.forgerock.opendj.ldap.CoreMessages.*;
 
 /**
@@ -47,7 +48,7 @@ import static com.forgerock.opendj.ldap.CoreMessages.*;
  * provided, the ordering will be preserved when the associated fields are
  * accessed via their getters or via the {@link #toString()} methods.
  */
-public final class ObjectClass extends SchemaElement {
+public final class ObjectClass extends AbstractSchemaElement {
 
     /** A fluent API for incrementally constructing object classes. */
     public static final class Builder extends SchemaElementBuilder<Builder> {
@@ -67,7 +68,12 @@ public final class ObjectClass extends SchemaElement {
             this.type = oc.objectClassType;
             this.superiorClasses.addAll(oc.superiorClassOIDs);
             this.requiredAttributes.addAll(oc.requiredAttributeOIDs);
-            this.optionalAttributes.addAll(optionalAttributes);
+            // Don't copy optional attributes for extensibleObject because they will
+            // prevent attribute types from being removed from the schema.
+            // The optional attributes will be refreshed during validation.
+            if (!oc.isExtensible()) {
+                this.optionalAttributes.addAll(oc.optionalAttributeOIDs);
+            }
         }
 
         Builder(final String oid, final SchemaBuilder builder) {
@@ -389,11 +395,26 @@ public final class ObjectClass extends SchemaElement {
     private Set<AttributeType> declaredOptionalAttributes = emptySet();
     private Set<AttributeType> optionalAttributes = emptySet();
 
-    /** Indicates whether or not validation has been performed. */
+    /** Indicates whether validation has been performed. */
     private boolean needsValidating = true;
 
-    /** The indicates whether or not validation failed. */
+    /** Indicates whether validation failed. */
     private boolean isValid;
+
+    /**
+     * Indicates whether this object class is a placeholder.
+     * <p>
+     * A placeholder objectclass is returned by a non-strict schema when the requested
+     * object class does not exist in the schema. The placeholder is not registered to
+     * the schema.
+     * It is defined as an abstract object class, with no optional or required attribute.
+     * <p>
+     * A strict schema never returns a placeholder: it throws an UnknownSchemaElementException.
+     */
+    private boolean isPlaceHolder;
+
+    /** Indicates whether this object class is the extensibleObject class. */
+    private final boolean isExtensibleObject;
 
     /**
      * Construct a extensibleObject object class where the set of allowed
@@ -415,6 +436,20 @@ public final class ObjectClass extends SchemaElement {
                .type(AUXILIARY));
     }
 
+    /**
+     * Creates a new place-holder object class having the specified name.
+     * <p>
+     * A place-holder object class is never registered to a schema.
+     * <p>
+     * The OID of the place-holder object class will be the normalized object
+     * class name followed by the suffix "-oid".
+     *
+     * @param name
+     *            The name of the place-holder object class.
+     */
+    static ObjectClass newPlaceHolder(String name) {
+        return new ObjectClass(name);
+    }
 
     private ObjectClass(final Builder builder) {
         super(builder);
@@ -430,6 +465,35 @@ public final class ObjectClass extends SchemaElement {
         this.objectClassType = builder.type;
         this.requiredAttributeOIDs = unmodifiableCopyOfSet(builder.requiredAttributes);
         this.optionalAttributeOIDs = unmodifiableCopyOfSet(builder.optionalAttributes);
+        this.isExtensibleObject = oid.equals(EXTENSIBLE_OBJECT_OBJECTCLASS_OID);
+        this.isPlaceHolder = false;
+    }
+
+    /**
+     * Creates a new place-holder object class having the specified name.
+     * The OID of the place-holder object class will be the normalized object class name
+     * followed by the suffix "-oid".
+     *
+     * @param name
+     *            The name of the place-holder object class.
+     */
+    private ObjectClass(final String name) {
+        this.oid = toOID(name);
+        this.names = Collections.singletonList(name);
+        this.isObsolete = false;
+        this.superiorClassOIDs = Collections.singleton(TOP_OBJECTCLASS_NAME);
+        this.objectClassType = ObjectClassType.ABSTRACT;
+        this.requiredAttributeOIDs = Collections.emptySet();
+        this.optionalAttributeOIDs = Collections.emptySet();
+        this.isExtensibleObject = oid.equals(EXTENSIBLE_OBJECT_OBJECTCLASS_OID);
+        this.isPlaceHolder = true;
+    }
+
+    private static String toOID(final String name) {
+        final StringBuilder builder = new StringBuilder(name.length() + 4);
+        StaticUtils.toLowerCase(name, builder);
+        builder.append("-oid");
+        return builder.toString();
     }
 
     /**
@@ -612,6 +676,20 @@ public final class ObjectClass extends SchemaElement {
     }
 
     /**
+     * Indicates whether this object class is extensibleObject class.
+     * <p>
+     * An extensible object class has an optional attributes list corresponding
+     * to all the attributes types defined in the schema. It means any attribute
+     * type can be used with this object class.
+     *
+     * @return {@code true} if this object class is extensible.
+     */
+    public boolean isExtensible() {
+        return isExtensibleObject;
+    }
+
+
+    /**
      * Indicates whether this schema definition is declared "obsolete".
      *
      * @return <code>true</code> if this schema definition is declared
@@ -619,6 +697,20 @@ public final class ObjectClass extends SchemaElement {
      */
     public boolean isObsolete() {
         return isObsolete;
+    }
+
+    /**
+     * Returns whether this object class is a placeholder,
+     * i.e. a dummy object class that does not exist in the schema.
+     *
+     * @return {@code true} if this object class is a placeholder,
+     *         {@code false} otherwise
+     * @deprecated This method may be removed at any time
+     * @since OPENDJ-2987 Migrate ObjectClass
+     */
+    @Deprecated
+    public boolean isPlaceHolder() {
+        return isPlaceHolder;
     }
 
     /**
@@ -632,7 +724,11 @@ public final class ObjectClass extends SchemaElement {
      *         <code>false</code> if not.
      */
     public boolean isOptional(final AttributeType attributeType) {
-        return optionalAttributes.contains(attributeType);
+        // In theory, attribute types not defined in the schema (i.e place holder attributes) should
+        // not be considered as optional.
+        // However, in practice, some parts of the server have historically relied on non-defined
+        // attributes to behave properly.
+        return isExtensibleObject || optionalAttributes.contains(attributeType);
     }
 
     /**
@@ -740,7 +836,7 @@ public final class ObjectClass extends SchemaElement {
             }
         }
 
-        if (!optionalAttributeOIDs.isEmpty()) {
+        if (!isExtensible() && !optionalAttributeOIDs.isEmpty()) {
             final Iterator<String> iterator = optionalAttributeOIDs.iterator();
 
             final String firstName = iterator.next();
@@ -852,29 +948,36 @@ public final class ObjectClass extends SchemaElement {
                 }
 
                 // Inherit all required attributes from superior class.
-                Iterator<AttributeType> i = superiorClass.getRequiredAttributes().iterator();
-                if (i.hasNext() && requiredAttributes == Collections.EMPTY_SET) {
-                    requiredAttributes = new HashSet<>();
-                }
-                while (i.hasNext()) {
-                    requiredAttributes.add(i.next());
+                final Set<AttributeType> supRequiredAttrs = superiorClass.getRequiredAttributes();
+                if (!supRequiredAttrs.isEmpty()) {
+                    if (requiredAttributes == Collections.EMPTY_SET) {
+                        requiredAttributes = new HashSet<>(supRequiredAttrs);
+                    } else {
+                        requiredAttributes.addAll(supRequiredAttrs);
+                    }
                 }
 
                 // Inherit all optional attributes from superior class.
-                i = superiorClass.getRequiredAttributes().iterator();
-                if (i.hasNext() && requiredAttributes == Collections.EMPTY_SET) {
-                    requiredAttributes = new HashSet<>();
-                }
-                while (i.hasNext()) {
-                    requiredAttributes.add(i.next());
+                final Set<AttributeType> supOptionalAttrs = superiorClass.getOptionalAttributes();
+                if (!supOptionalAttrs.isEmpty()) {
+                    if (optionalAttributes == Collections.EMPTY_SET) {
+                        optionalAttributes = new HashSet<>(supOptionalAttrs);
+                    } else {
+                        optionalAttributes.addAll(supOptionalAttrs);
+                    }
                 }
 
                 superiorClasses.add(superiorClass);
             }
+        } else if (superiorClasses.isEmpty() && getObjectClassType() == ObjectClassType.STRUCTURAL) {
+            // default superior to top
+            superiorClasses = new HashSet<>(1);
+            superiorClasses.add(schema.getObjectClass(TOP_OBJECTCLASS_OID));
+            derivesTop = true;
         }
 
         if (!derivesTop) {
-            derivesTop = isDescendantOf(schema.getObjectClass("2.5.6.0"));
+            derivesTop = isDescendantOf(schema.getObjectClass(TOP_OBJECTCLASS_OID));
         }
 
         // Structural classes must have the "top" objectclass somewhere
@@ -886,14 +989,16 @@ public final class ObjectClass extends SchemaElement {
             return false;
         }
 
-        if (oid.equals(EXTENSIBLE_OBJECT_OBJECTCLASS_OID)) {
-            declaredOptionalAttributes = new HashSet<>(requiredAttributeOIDs.size());
-            for (final AttributeType attributeType : schema.getAttributeTypes()) {
-                if (attributeType.getUsage() == AttributeUsage.USER_APPLICATIONS) {
+        if (isExtensible()) {
+            Collection<AttributeType> attributeTypes = schema.getAttributeTypes();
+            declaredOptionalAttributes = new HashSet<>(attributeTypes.size());
+            for (final AttributeType attributeType : attributeTypes) {
+                if (attributeType.getUsage() == AttributeUsage.USER_APPLICATIONS
+                        && !requiredAttributes.contains(attributeType)) {
                     declaredOptionalAttributes.add(attributeType);
                 }
             }
-            optionalAttributes = declaredRequiredAttributes;
+            optionalAttributes = declaredOptionalAttributes;
         } else {
             if (!requiredAttributeOIDs.isEmpty()) {
                 declaredRequiredAttributes = new HashSet<>(requiredAttributeOIDs.size());

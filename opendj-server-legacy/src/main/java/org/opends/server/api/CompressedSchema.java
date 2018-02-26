@@ -17,7 +17,6 @@
 package org.opends.server.api;
 
 import static org.opends.messages.CoreMessages.*;
-import static com.forgerock.opendj.util.StaticUtils.toLowerCase;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Collection;
@@ -42,6 +41,7 @@ import org.forgerock.opendj.ldap.ByteSequenceReader;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.ByteStringBuilder;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.ldap.schema.Schema;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ServerContext;
@@ -49,8 +49,6 @@ import org.opends.server.types.Attribute;
 import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.DirectoryException;
-import org.opends.server.types.ObjectClass;
-import org.opends.server.util.RemoveOnceSDKSchemaIsUsed;
 
 /**
  * This class provides a utility for interacting with compressed representations
@@ -91,7 +89,7 @@ public class CompressedSchema
 
   private final ServerContext serverContext;
   /** Lock to update the maps. */
-  final ReadWriteLock lock = new ReentrantReadWriteLock();
+  private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock exclusiveLock = lock.writeLock();
   private final Lock sharedLock = lock.readLock();
 
@@ -125,22 +123,21 @@ public class CompressedSchema
     }
   }
 
-  private Mappings reloadMappingsIfSchemaChanged(boolean force)
+  private Mappings reloadMappingsIfSchemaChanged()
   {
-    // @RemoveOnceSDKSchemaIsUsed remove the "force" parameter
     sharedLock.lock();
     boolean shared = true;
     try
     {
       Schema currentSchema = serverContext.getSchemaNG();
-      if (force || schemaNG != currentSchema)
+      if (schemaNG != currentSchema)
       {
         sharedLock.unlock();
         exclusiveLock.lock();
         shared = false;
 
         currentSchema = serverContext.getSchemaNG();
-        if (force || schemaNG != currentSchema)
+        if (schemaNG != currentSchema)
         {
           // build new maps from existing ones
           Mappings newMappings = new Mappings(mappings.adEncodeMap.size(), mappings.ocEncodeMap.size());
@@ -201,15 +198,15 @@ public class CompressedSchema
       throws DirectoryException
   {
     // First decode the encoded attribute description id.
-    final int id = decodeId(reader);
+    final int adId = decodeId(reader);
 
     // Before returning the attribute, make sure that the attribute type is not stale.
-    final Mappings mappings = reloadMappingsIfSchemaChanged(false);
-    final AttributeDescription ad = mappings.adDecodeMap.get(id);
+    final Mappings mappings = reloadMappingsIfSchemaChanged();
+    final AttributeDescription ad = mappings.adDecodeMap.get(adId);
     if (ad == null)
     {
       throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
-          ERR_COMPRESSEDSCHEMA_UNRECOGNIZED_AD_TOKEN.get(id));
+          ERR_COMPRESSEDSCHEMA_UNRECOGNIZED_AD_TOKEN.get(adId));
     }
 
     AttributeType attrType = ad.getAttributeType();
@@ -254,43 +251,17 @@ public class CompressedSchema
       final ByteSequenceReader reader) throws DirectoryException
   {
     // First decode the encoded object class id.
-    final int id = decodeId(reader);
+    final int ocId = decodeId(reader);
 
-    // Look up the object classes.
-    final Mappings mappings = getMappings();
-    Map<ObjectClass, String> ocMap = mappings.ocDecodeMap.get(id);
+    // Before returning the object classes, make sure that none of them are stale.
+    final Mappings mappings = reloadMappingsIfSchemaChanged();
+    Map<ObjectClass, String> ocMap = mappings.ocDecodeMap.get(ocId);
     if (ocMap == null)
     {
-      // @RemoveOnceSDKSchemaIsUsed remove this first check (check is performed again later)
       throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
-          ERR_COMPRESSEDSCHEMA_UNKNOWN_OC_TOKEN.get(id));
-    }
-    // Before returning the object classes, make sure that none of them are stale.
-    boolean forceReload = isAnyObjectClassDirty(ocMap.keySet());
-    final Mappings newMappings = reloadMappingsIfSchemaChanged(forceReload);
-    if (mappings != newMappings)
-    {
-      ocMap = newMappings.ocDecodeMap.get(id);
-      if (ocMap == null)
-      {
-        throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
-            ERR_COMPRESSEDSCHEMA_UNKNOWN_OC_TOKEN.get(id));
-      }
+          ERR_COMPRESSEDSCHEMA_UNKNOWN_OC_TOKEN.get(ocId));
     }
     return ocMap;
-  }
-
-  @RemoveOnceSDKSchemaIsUsed
-  private boolean isAnyObjectClassDirty(Set<ObjectClass> objectClasses)
-  {
-    for (final ObjectClass oc : objectClasses)
-    {
-      if (oc.isDirty())
-      {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**
@@ -542,7 +513,7 @@ public class CompressedSchema
   private AttributeDescription loadAttributeToMaps(final int id, final String attributeName,
       final Iterable<String> attributeOptions, final Mappings mappings)
   {
-    final AttributeType type = DirectoryServer.getAttributeType(attributeName);
+    final AttributeType type = DirectoryServer.getSchema().getAttributeType(attributeName);
     final Set<String> options = getOptions(attributeOptions);
     final AttributeDescription ad = AttributeDescription.create(type, options);
     exclusiveLock.lock();
@@ -632,9 +603,7 @@ public class CompressedSchema
     final LinkedHashMap<ObjectClass, String> ocMap = new LinkedHashMap<>(objectClassNames.size());
     for (final String name : objectClassNames)
     {
-      final String lowerName = toLowerCase(name);
-      final ObjectClass oc = DirectoryServer.getObjectClass(lowerName, true);
-      ocMap.put(oc, name);
+      ocMap.put(DirectoryServer.getSchema().getObjectClass(name), name);
     }
     if (sync)
     {

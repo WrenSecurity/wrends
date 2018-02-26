@@ -49,6 +49,7 @@ import javax.swing.tree.TreePath;
 
 import org.opends.admin.ads.ADSContext;
 import org.opends.admin.ads.util.ConnectionUtils;
+import org.opends.admin.ads.util.ConnectionWrapper;
 import org.opends.guitools.controlpanel.datamodel.CustomSearchResult;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
 import org.opends.guitools.controlpanel.event.BrowserEvent;
@@ -65,7 +66,7 @@ import org.opends.server.config.ConfigConstants;
 import org.opends.server.types.HostPort;
 import org.opends.server.types.LDAPURL;
 
-import static org.opends.admin.ads.util.ConnectionUtils.getPort;
+import static org.opends.admin.ads.util.ConnectionUtils.isSSL;
 import static org.opends.server.util.ServerConstants.*;
 
 /**
@@ -79,15 +80,10 @@ import static org.opends.server.util.ServerConstants.*;
 public class BrowserController
 implements TreeExpansionListener, ReferralAuthenticationListener
 {
-  /**
-   * The mask used to display the number of ACIs or not.
-   */
+  /** The mask used to display the number of ACIs or not. */
   private static final int DISPLAY_ACI_COUNT = 0x01;
 
-  /**
-   * The list of attributes that are used to sort the entries (if the sorting
-   * option is used).
-   */
+  /** The list of attributes that are used to sort the entries (if the sorting option is used). */
   private static final String[] SORT_ATTRIBUTES =
       { "cn", "givenname", "o", "ou", "sn", "uid" };
 
@@ -97,9 +93,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
    */
   private static final String RDN_ATTRIBUTE = "rdn attribute";
 
-  /**
-   * The filter used to retrieve all the entries.
-   */
+  /** The filter used to retrieve all the entries. */
   public static final String ALL_OBJECTS_FILTER =
     "(|(objectClass=*)(objectClass=ldapsubentry))";
 
@@ -113,6 +107,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
   private int displayFlags;
   private String displayAttribute;
   private final boolean showAttributeName;
+  private ConnectionWrapper connConfig;
   private InitialLdapContext ctxConfiguration;
   private InitialLdapContext ctxUserData;
   private boolean followReferrals;
@@ -189,17 +184,18 @@ implements TreeExpansionListener, ReferralAuthenticationListener
    */
   public void setConnections(
       ServerDescriptor server,
-      InitialLdapContext ctxConfiguration,
+      ConnectionWrapper ctxConfiguration,
       InitialLdapContext ctxUserData) throws NamingException {
     String rootNodeName;
     if (ctxConfiguration != null)
     {
-      this.ctxConfiguration = ctxConfiguration;
+      this.connConfig = ctxConfiguration;
+      this.ctxConfiguration = connConfig.getLdapContext();
       this.ctxUserData = ctxUserData;
 
       this.ctxConfiguration.setRequestControls(getConfigurationRequestControls());
       this.ctxUserData.setRequestControls(getRequestControls());
-      rootNodeName = new HostPort(server.getHostname(), getPort(ctxConfiguration)).toString();
+      rootNodeName = new HostPort(server.getHostname(), connConfig.getHostPort().getPort()).toString();
     }
     else {
       rootNodeName = "";
@@ -611,10 +607,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
     startRefreshNode(node, null, false);
   }
 
-  /**
-   * Notify this controller that authentication data have changed in the
-   * connection pool.
-   */
+  /** Notify this controller that authentication data have changed in the connection pool. */
   @Override
   public void notifyAuthDataChanged() {
     notifyAuthDataChanged(null);
@@ -655,10 +648,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
     startRefreshNode(node, null, true);
   }
 
-  /**
-   * Stop the current refreshing.
-   * Nodes being expanded are collapsed.
-   */
+  /** Stop the current refreshing. Nodes being expanded are collapsed. */
   private void stopRefresh() {
     stopRefreshNode(rootNode);
     // TODO: refresh must be stopped in a clean state.
@@ -1044,7 +1034,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
    */
   LDAPURL findUrlForLocalEntry(BasicNode node) {
     if (node == rootNode) {
-      return LDAPConnectionPool.makeLDAPUrl(ctxConfiguration, "");
+      return LDAPConnectionPool.makeLDAPUrl(connConfig.getHostPort(), "", isSSL(ctxConfiguration));
     }
     final BasicNode parent = (BasicNode) node.getParent();
     if (parent != null)
@@ -1052,7 +1042,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
       final LDAPURL parentUrl = findUrlForDisplayedEntry(parent);
       return LDAPConnectionPool.makeLDAPUrl(parentUrl, node.getDN());
     }
-    return LDAPConnectionPool.makeLDAPUrl(ctxConfiguration, node.getDN());
+    return LDAPConnectionPool.makeLDAPUrl(connConfig.getHostPort(), node.getDN(), isSSL(ctxConfiguration));
   }
 
 
@@ -1226,7 +1216,6 @@ implements TreeExpansionListener, ReferralAuthenticationListener
    * are not invoked directly by the task classes: they are
    * invoked using SwingUtilities.invokeAndWait() (each of the
    * methods XXX() below has a matching wrapper invokeXXX()).
-   *
    */
 
   /**
@@ -1335,8 +1324,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
           updateNodeRendering(node, task.getDisplayedEntry());
           nodeChanged = true;
           if (node.isLeaf()) {
-            /* We didn't detect any child: remove the previously existing
-             * ones */
+            /* We didn't detect any child: remove the previously existing ones */
             removeAllChildNodes(node, false /* Remove suffixes */);
           }
         }
@@ -1992,9 +1980,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
 
 
 
-  /**
-   * Collection utilities
-   */
+  /** Collection utilities. */
   /**
    * Returns an array of integer from a Collection of Integer objects.
    * @param v the Collection of Integer objects.
@@ -2033,9 +2019,7 @@ implements TreeExpansionListener, ReferralAuthenticationListener
   }
 
 
-  /**
-   * The default implementation of the BrowserNodeInfo interface.
-   */
+  /** The default implementation of the BrowserNodeInfo interface. */
   private class BrowserNodeInfoImpl implements BrowserNodeInfo
   {
     private BasicNode node;

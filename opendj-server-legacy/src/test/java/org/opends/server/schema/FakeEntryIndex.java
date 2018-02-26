@@ -52,7 +52,7 @@ class FakeEntryIndex
 
   FakeEntryIndex(String attrName) throws DecodeException
   {
-    attrType = DirectoryServer.getAttributeType(attrName);
+    attrType = DirectoryServer.getSchema().getAttributeType(attrName);
     if (attrType == null)
     {
       throw new IllegalArgumentException("Cannot find attribute with name \"" + attrName + "\"");
@@ -125,7 +125,7 @@ class FakeEntryIndex
       return matchingRule.getGreaterOrEqualAssertion(filter.getAssertionValue());
 
     case EXTENSIBLE_MATCH:
-      MatchingRule rule = DirectoryServer.getMatchingRule(filter.getMatchingRuleID());
+      MatchingRule rule = DirectoryServer.getSchema().getMatchingRule(filter.getMatchingRuleID());
       return rule.getAssertion(filter.getAssertionValue());
 
     default:

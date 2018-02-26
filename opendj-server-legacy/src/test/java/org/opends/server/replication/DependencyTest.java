@@ -24,6 +24,7 @@ import java.util.SortedSet;
 
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.backends.MemoryBackend;
 import org.opends.server.core.DirectoryServer;
@@ -39,14 +40,13 @@ import org.opends.server.replication.server.ReplServerFakeConfiguration;
 import org.opends.server.replication.server.ReplicationServer;
 import org.opends.server.replication.service.ReplicationBroker;
 import org.opends.server.types.Attributes;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.Entry;
 import org.opends.server.types.Modification;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.core.DirectoryServer.*;
 import static org.opends.server.util.CollectionUtils.*;
 import static org.testng.Assert.*;
 
@@ -120,7 +120,8 @@ public class DependencyTest extends ReplicationTestCase
           "objectClass: organization",
           "entryuuid: " + stringUID(1));
 
-      replServer = newReplicationServer(replServerId, addSequenceLength * 5 + 100, "dependencyTestAddModDelDependencyTestDb");
+      replServer = newReplicationServer(
+          replServerId, addSequenceLength * 5 + 100, "dependencyTestAddModDelDependencyTestDb");
 
       ReplicationBroker broker = openReplicationSession(
           baseDN, brokerId, 1000, replServer.getReplicationPort(), 1000, CLEAN_DB_GENERATION_ID);
@@ -134,7 +135,7 @@ public class DependencyTest extends ReplicationTestCase
       int sequence;
       for (sequence = 1; sequence<=addSequenceLength; sequence ++)
       {
-        entry.removeAttribute(getAttributeType("entryuuid"));
+        entry.removeAttribute(getEntryUUIDAttributeType());
         entry.addAttribute(Attributes.create("entryuuid", stringUID(sequence+1)),
                            new LinkedList<ByteString>());
         addDN = DN.valueOf("dc=dependency" + sequence + "," + addDN);
@@ -261,7 +262,7 @@ public class DependencyTest extends ReplicationTestCase
           baseDN, brokerId, 1000, replServer.getReplicationPort(), 1000, CLEAN_DB_GENERATION_ID);
 
       // add an entry to play with.
-      entry.removeAttribute(getAttributeType("entryuuid"));
+      entry.removeAttribute(getEntryUUIDAttributeType());
       entry.addAttribute(Attributes.create("entryuuid",
                          stringUID(renamedEntryUuid)),
                          new LinkedList<ByteString>());
@@ -348,7 +349,8 @@ public class DependencyTest extends ReplicationTestCase
           "objectClass: top",
           "objectClass: organization");
 
-      replServer = newReplicationServer(replServerId, 5 * addSequenceLength + 100, "dependencyTestAddDelAddDependencyTestDb");
+      replServer = newReplicationServer(
+          replServerId, 5 * addSequenceLength + 100, "dependencyTestAddDelAddDependencyTestDb");
 
       ReplicationBroker broker = openReplicationSession(
           baseDN, brokerId, 100, replServer.getReplicationPort(), 1000, CLEAN_DB_GENERATION_ID);
@@ -360,7 +362,7 @@ public class DependencyTest extends ReplicationTestCase
       for (sequence = 1; sequence<=addSequenceLength; sequence ++)
       {
         // add the entry a first time
-        entry.removeAttribute(getAttributeType("entryuuid"));
+        entry.removeAttribute(getEntryUUIDAttributeType());
         entry.addAttribute(Attributes.create("entryuuid", stringUID(sequence+1)),
                            new LinkedList<ByteString>());
         DN addDN = DN.valueOf("dc=dependency" + sequence + "," + TEST_ROOT_DN_STRING);
@@ -368,7 +370,7 @@ public class DependencyTest extends ReplicationTestCase
         broker.publish(delMsg(addDN, sequence + 1, gen));
 
         // add again the entry with a new entryuuid.
-        entry.removeAttribute(getAttributeType("entryuuid"));
+        entry.removeAttribute(getEntryUUIDAttributeType());
         entry.addAttribute(Attributes.create("entryuuid", stringUID(sequence+1025)),
                            new LinkedList<ByteString>());
         broker.publish(addMsg(addDN, entry, sequence + 1025, 1, gen));
@@ -452,7 +454,8 @@ public class DependencyTest extends ReplicationTestCase
           "objectClass: top",
           "objectClass: organization");
 
-      replServer = newReplicationServer(replServerId, 5 * addSequenceLength + 100, "dependencyTestAddModdnDependencyTestDb");
+      replServer = newReplicationServer(
+          replServerId, 5 * addSequenceLength + 100, "dependencyTestAddModdnDependencyTestDb");
 
       ReplicationBroker broker = openReplicationSession(
           baseDN, brokerId, 100, replServer.getReplicationPort(), 1000, CLEAN_DB_GENERATION_ID);
@@ -466,7 +469,7 @@ public class DependencyTest extends ReplicationTestCase
       for (sequence = 1; sequence<=addSequenceLength; sequence ++)
       {
         // add the entry
-        entry.removeAttribute(getAttributeType("entryuuid"));
+        entry.removeAttribute(getEntryUUIDAttributeType());
         entry.addAttribute(Attributes.create("entryuuid", stringUID(sequence+1)),
                            new LinkedList<ByteString>());
         addDN = DN.valueOf("dc=dependency" + sequence + "," + TEST_ROOT_DN_STRING);

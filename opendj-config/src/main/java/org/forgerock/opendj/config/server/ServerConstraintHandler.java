@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
+ * Portions Copyright 2016 ForgeRock AS.
  */
 package org.forgerock.opendj.config.server;
 
@@ -39,15 +40,13 @@ import org.forgerock.i18n.LocalizableMessage;
  */
 public abstract class ServerConstraintHandler {
 
-    /**
-     * Creates a new server constraint handler.
-     */
+    /** Creates a new server constraint handler. */
     protected ServerConstraintHandler() {
         // No implementation required.
     }
 
     /**
-     * Determines whether or not the existing managed object can be deleted from
+     * Determines whether the existing managed object can be deleted from
      * the server's configuration. For example, an implementation might enforce
      * referential integrity by preventing referenced managed objects from being
      * deleted.
@@ -75,7 +74,7 @@ public abstract class ServerConstraintHandler {
     }
 
     /**
-     * Determines whether or not the provided managed object can be used by the
+     * Determines whether the provided managed object can be used by the
      * server. This method is invoked each time a managed object is decoded by
      * the administration framework: when an attempt is made to add a new
      * configuration, modify an existing configuration, or during server

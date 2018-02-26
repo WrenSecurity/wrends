@@ -47,7 +47,7 @@ import com.forgerock.opendj.util.StaticUtils;
  * will be preserved when the associated fields are accessed via their getters
  * or via the {@link #toString()} methods.
  */
-public final class AttributeType extends SchemaElement implements Comparable<AttributeType> {
+public final class AttributeType extends AbstractSchemaElement implements Comparable<AttributeType> {
 
     /** A fluent API for incrementally constructing attribute type. */
     public static final class Builder extends SchemaElementBuilder<Builder> {
@@ -408,10 +408,10 @@ public final class AttributeType extends SchemaElement implements Comparable<Att
     /** The syntax for this attribute type. */
     private Syntax syntax;
 
-    /** Indicates whether or not validation has been performed. */
+    /** Indicates whether validation has been performed. */
     private boolean needsValidating = true;
 
-    /** The indicates whether or not validation failed. */
+    /** The indicates whether validation failed. */
     private boolean isValid;
 
     private AttributeType(Builder builder) {
@@ -454,7 +454,15 @@ public final class AttributeType extends SchemaElement implements Comparable<Att
      * @param equalityMatchingRule
      *            The equality matching rule of the place-holder attribute type.
      */
-    AttributeType(final String name, final Syntax syntax, final MatchingRule equalityMatchingRule) {
+    static AttributeType newPlaceHolder(final String name, final Syntax syntax,
+            final MatchingRule equalityMatchingRule) {
+        return new AttributeType(name, syntax, equalityMatchingRule);
+    }
+
+    /**
+     * Creates a new place-holder attribute type having the specified name, default syntax, and default matching rule.
+     */
+    private AttributeType(final String name, final Syntax syntax, final MatchingRule equalityMatchingRule) {
         final StringBuilder builder = new StringBuilder(name.length() + 4);
         StaticUtils.toLowerCase(name, builder);
         builder.append("-oid");
@@ -710,7 +718,7 @@ public final class AttributeType extends SchemaElement implements Comparable<Att
     }
 
     /**
-     * Indicates whether or not this attribute type is the {@code objectClass}
+     * Indicates whether this attribute type is the {@code objectClass}
      * attribute type having the OID 2.5.4.0.
      *
      * @return {@code true} if this attribute type is the {@code objectClass}
@@ -772,7 +780,7 @@ public final class AttributeType extends SchemaElement implements Comparable<Att
     }
 
     /**
-     * Indicates whether or not this attribute type is a sub-type of the
+     * Indicates whether this attribute type is a sub-type of the
      * provided attribute type.
      *
      * @param type
@@ -794,7 +802,7 @@ public final class AttributeType extends SchemaElement implements Comparable<Att
     }
 
     /**
-     * Indicates whether or not this attribute type is a super-type of the
+     * Indicates whether this attribute type is a super-type of the
      * provided attribute type.
      *
      * @param type

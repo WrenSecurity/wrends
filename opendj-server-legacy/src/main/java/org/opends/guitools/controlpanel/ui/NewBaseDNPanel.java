@@ -57,7 +57,6 @@ import javax.swing.event.DocumentListener;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
-import org.forgerock.opendj.config.LDAPProfile;
 import org.forgerock.opendj.config.client.ManagementContext;
 import org.forgerock.opendj.config.client.ldap.LDAPManagementContext;
 import org.forgerock.opendj.ldap.DN;
@@ -692,7 +691,7 @@ public class NewBaseDNPanel extends StatusGenericPanel
   }
 
   /** The task in charge of creating the base DN (and if required, the backend). */
-  protected class NewBaseDNTask extends Task
+  private class NewBaseDNTask extends Task
   {
     private final Set<String> backendSet;
     private final String newBaseDN;
@@ -706,7 +705,7 @@ public class NewBaseDNPanel extends StatusGenericPanel
      * @param dlg
      *          the progress dialog that shows the progress of the task.
      */
-    public NewBaseDNTask(ControlPanelInfo info, ProgressDialog dlg)
+    private NewBaseDNTask(ControlPanelInfo info, ProgressDialog dlg)
     {
       super(info, dlg);
       backendSet = new HashSet<>();
@@ -974,8 +973,7 @@ public class NewBaseDNPanel extends StatusGenericPanel
       {
         getInfo().initializeConfigurationFramework();
         final File config = Installation.getLocal().getCurrentConfigurationFile();
-        final LDAPProfile profile = LDAPProfile.getInstance();
-        try (ManagementContext context = LDAPManagementContext.newLDIFManagementContext(config, profile))
+        try (ManagementContext context = LDAPManagementContext.newLDIFManagementContext(config))
         {
           final BackendCfgClient backend = context.getRootConfiguration().getBackend(backendName);
           final SortedSet<DN> baseDNs = backend.getBaseDN();

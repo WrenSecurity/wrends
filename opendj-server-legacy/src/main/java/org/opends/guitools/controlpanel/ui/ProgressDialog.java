@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.ui;
 
@@ -40,17 +40,15 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.html.HTMLDocument;
 
+import org.forgerock.i18n.LocalizableMessage;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.event.PrintStreamListener;
 import org.opends.guitools.controlpanel.ui.components.BasicExpander;
 import org.opends.guitools.controlpanel.util.ApplicationPrintStream;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.i18n.LocalizableMessage;
 
-/**
- * The dialog that is used to display progress in a task.
- */
+/** The dialog that is used to display progress in a task. */
 public class ProgressDialog extends GenericDialog
 {
   private static final long serialVersionUID = -6462866257463062629L;
@@ -96,11 +94,12 @@ public class ProgressDialog extends GenericDialog
   {
     errorPrintStream.addListener(new PrintStreamListener()
     {
+      @Override
       public void newLine(final String msg)
       {
         SwingUtilities.invokeLater(new Runnable()
         {
-          /** {@inheritDoc} */
+          @Override
           public void run()
           {
             progressPanel.appendErrorLine(msg);
@@ -110,11 +109,12 @@ public class ProgressDialog extends GenericDialog
     });
     outPrintStream.addListener(new PrintStreamListener()
     {
+      @Override
       public void newLine(final String msg)
       {
-        /** {@inheritDoc} */
         SwingUtilities.invokeLater(new Runnable()
         {
+          @Override
           public void run()
           {
             progressPanel.appendOutputLine(msg);
@@ -142,10 +142,7 @@ public class ProgressDialog extends GenericDialog
     progressPanel.appendHtml(text);
   }
 
-  /**
-   * Resets the contents of the 'Details' section of the dialog.
-   *
-   */
+  /** Resets the contents of the 'Details' section of the dialog. */
   public void resetProgressLogs()
   {
     progressPanel.resetLogs();
@@ -161,7 +158,7 @@ public class ProgressDialog extends GenericDialog
     progressPanel.setSummary(text);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void setEnabledClose(boolean enable)
   {
     progressPanel.closeButton.setEnabled(enable);
@@ -179,11 +176,8 @@ public class ProgressDialog extends GenericDialog
     progressPanel.closeWhenOverClicked();
   }
 
-  /**
-   * The panel contained in the progress dialog.
-   *
-   */
-  static class ProgressPanel extends StatusGenericPanel
+  /** The panel contained in the progress dialog. */
+  private static class ProgressPanel extends StatusGenericPanel
   {
     private static final long serialVersionUID = -364496083928260306L;
     private BasicExpander details;
@@ -209,35 +203,32 @@ public class ProgressDialog extends GenericDialog
 
     private boolean taskIsOver;
 
-    /**
-     * Default constructor.
-     *
-     */
+    /** Default constructor. */
     public ProgressPanel()
     {
       super();
       createLayout();
     }
 
-    /** {@inheritDoc} */
+    @Override
     public LocalizableMessage getTitle()
     {
       return null;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public boolean requiresScroll()
     {
       return false;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public boolean requiresBorder()
     {
       return false;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public boolean isDisposeOnClose()
     {
       return true;
@@ -248,7 +239,7 @@ public class ProgressDialog extends GenericDialog
      * will have a new-line char at the end (is similar to println()).
      * @param msg the HTML formatted text to be appended.
      */
-    public void appendErrorLine(String msg)
+    private void appendErrorLine(String msg)
     {
       msg = filterForBugID4988885(msg+"<br>");
       msg = Utilities.applyFont(msg, ColorAndFontConstants.progressFont);
@@ -290,7 +281,7 @@ public class ProgressDialog extends GenericDialog
      * will be preceded by a new line (is similar to println()).
      * @param msg the HTML formatted text to be appended.
      */
-    public void appendOutputLine(String msg)
+    private void appendOutputLine(String msg)
     {
       appendErrorLine(msg);
     }
@@ -300,7 +291,7 @@ public class ProgressDialog extends GenericDialog
      * will be appended as it is (is similar to print()).
      * @param msg the HTML formatted text to be appended.
      */
-    public void appendHtml(String msg)
+    private void appendHtml(String msg)
     {
       HTMLDocument doc = (HTMLDocument)logs.getDocument();
 
@@ -316,20 +307,13 @@ public class ProgressDialog extends GenericDialog
       }
     }
 
-    /**
-     * Resets the contents of the logs (Details) section.
-     *
-     */
-    public void resetLogs()
+    /** Resets the contents of the logs (Details) section. */
+    private void resetLogs()
     {
       logs.setText(INIT_TEXT);
     }
 
-    /**
-     * Creates the layout of the panel (but the contents are not populated
-     * here).
-     *
-     */
+    /** Creates the layout of the panel (but the contents are not populated here). */
     private void createLayout()
     {
       GridBagConstraints gbc = new GridBagConstraints();
@@ -389,7 +373,7 @@ public class ProgressDialog extends GenericDialog
       updateVisibility(lastShowDetails);
       details.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           lastShowDetails = details.isSelected();
@@ -419,7 +403,7 @@ public class ProgressDialog extends GenericDialog
       closeWhenOver.setOpaque(false);
       closeWhenOver.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           closeWhenOverClicked();
@@ -446,7 +430,7 @@ public class ProgressDialog extends GenericDialog
       buttonsPanel.add(closeButton, gbc);
       closeButton.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           closeClicked();
@@ -470,6 +454,7 @@ public class ProgressDialog extends GenericDialog
       {
         final Runnable repaint = new Runnable()
         {
+          @Override
           public void run()
           {
             invalidate();
@@ -508,24 +493,24 @@ public class ProgressDialog extends GenericDialog
       }
     }
 
-    /** {@inheritDoc} */
+    @Override
     public GenericDialog.ButtonType getButtonType()
     {
       return GenericDialog.ButtonType.NO_BUTTON;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public void configurationChanged(ConfigurationChangeEvent ev)
     {
     }
 
-    /** {@inheritDoc} */
+    @Override
     public Component getPreferredFocusComponent()
     {
       return details;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public void okClicked()
     {
       Utilities.getParentDialog(this).setVisible(false);
@@ -544,7 +529,6 @@ public class ProgressDialog extends GenericDialog
      * Checks if the 'Close when over' check box is selected and if it is the
      * case, closes the dialog after waiting for 2 seconds (so that the user
      * can see the result, or cancel the automatic closing of the dialog).
-     *
      */
     private void closeWhenOverClicked()
     {
@@ -553,7 +537,7 @@ public class ProgressDialog extends GenericDialog
       {
         Thread t = new Thread(new Runnable()
         {
-          /** {@inheritDoc} */
+          @Override
           public void run()
           {
             try
@@ -561,6 +545,7 @@ public class ProgressDialog extends GenericDialog
               Thread.sleep(2000);
               SwingUtilities.invokeLater(new Runnable()
               {
+                @Override
                 public void run()
                 {
                   if (closeWhenOver.isSelected() && taskIsOver)

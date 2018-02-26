@@ -28,9 +28,9 @@ import org.opends.server.api.ClientConnection;
 import org.opends.server.api.ConnectionHandler;
 import org.opends.server.api.MonitorData;
 import org.opends.server.api.MonitorProvider;
-import org.opends.server.types.DirectoryConfig;
+import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.HostPort;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 
 /**
  * This class implements a monitor provider that will report generic information
@@ -91,7 +91,7 @@ public class ConnectionHandlerMonitor
   @Override
   public ObjectClass getMonitorObjectClass()
   {
-    return DirectoryConfig.getObjectClass(OC_MONITOR_CONNHANDLER, true);
+    return DirectoryServer.getSchema().getObjectClass(OC_MONITOR_CONNHANDLER);
   }
 
 

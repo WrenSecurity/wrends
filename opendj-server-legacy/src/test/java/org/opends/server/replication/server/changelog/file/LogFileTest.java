@@ -11,11 +11,12 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
- * Copyright 2014-2015 ForgeRock AS.
+ * Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.server.replication.server.changelog.file;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import org.forgerock.i18n.LocalizableMessage;
@@ -267,9 +268,9 @@ public class LogFileTest extends DirectoryServerTestCase
   {
     try (LogFile<String, String> writeLog = getLogFile(RECORD_PARSER))
     {
-      for (int i = 1; i <= 100; i++)
+      for (int i = 1; i <= 90; i++)
       {
-        Record<String, String> record = Record.from("newkey" + i, "newvalue" + i);
+        Record<String, String> record = Record.from(String.format("newkey%02d", i), "newvalue" + i);
         writeLog.append(record);
         assertThat(writeLog.getNewestRecord()).as("write changelog " + i).isEqualTo(record);
         assertThat(writeLog.getOldestRecord()).as("write changelog " + i).isEqualTo(Record.from("key01", "value1"));
@@ -327,7 +328,7 @@ public class LogFileTest extends DirectoryServerTestCase
     }
 
     @Override
-    public ByteString encodeRecord(Record<String, String> record)
+    public ByteString encodeRecord(Record<String, String> record) throws IOException
     {
       return new ByteStringBuilder()
         .appendUtf8(record.getKey()).appendByte(STRING_SEPARATOR)

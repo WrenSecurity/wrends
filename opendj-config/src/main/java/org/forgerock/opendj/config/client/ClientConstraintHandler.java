@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2014 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.forgerock.opendj.config.client;
 
@@ -36,15 +36,13 @@ import org.forgerock.opendj.ldap.LdapException;
  */
 public abstract class ClientConstraintHandler {
 
-    /**
-     * Creates a new client constraint handler.
-     */
+    /** Creates a new client constraint handler. */
     protected ClientConstraintHandler() {
         // No implementation required.
     }
 
     /**
-     * Determines whether or not the newly created managed object which is about
+     * Determines whether the newly created managed object which is about
      * to be added to the server configuration satisfies this constraint.
      * <p>
      * If the constraint is not satisfied, the implementation must return
@@ -70,7 +68,7 @@ public abstract class ClientConstraintHandler {
     }
 
     /**
-     * Determines whether or not the changes to an existing managed object which
+     * Determines whether the changes to an existing managed object which
      * are about to be committed to the server configuration satisfies this
      * constraint.
      * <p>
@@ -97,7 +95,7 @@ public abstract class ClientConstraintHandler {
     }
 
     /**
-     * Determines whether or not the existing managed object which is about to
+     * Determines whether the existing managed object which is about to
      * be deleted from the server configuration satisfies this constraint.
      * <p>
      * If the constraint is not satisfied, the implementation must return

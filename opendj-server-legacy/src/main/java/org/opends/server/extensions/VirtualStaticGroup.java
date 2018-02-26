@@ -17,14 +17,17 @@
 package org.opends.server.extensions;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
@@ -33,13 +36,11 @@ import org.opends.server.api.Group;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ServerContext;
 import org.opends.server.types.Attribute;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.MemberList;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.SearchFilter;
 
 import static org.forgerock.util.Reject.*;
@@ -62,8 +63,6 @@ public class VirtualStaticGroup
   /** The DN of the target group that will provide membership information. */
   private DN targetGroupDN;
 
-
-
   /**
    * Creates a new, uninitialized virtual static group instance.  This is
    * intended for internal use only.
@@ -74,8 +73,6 @@ public class VirtualStaticGroup
 
     // No initialization is required here.
   }
-
-
 
   /**
    * Creates a new virtual static group instance with the provided information.
@@ -96,9 +93,6 @@ public class VirtualStaticGroup
     this.targetGroupDN = targetGroupDN;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void initializeGroupImplementation(
                    VirtualStaticGroupImplementationCfg configuration)
@@ -107,20 +101,15 @@ public class VirtualStaticGroup
     // No additional initialization is required.
   }
 
-
-
-
-  /** {@inheritDoc} */
   @Override
   public VirtualStaticGroup newInstance(ServerContext serverContext, Entry groupEntry)
          throws DirectoryException
   {
     ifNull(groupEntry);
 
-
     // Get the target group DN attribute from the entry, if there is one.
     DN targetDN = null;
-    AttributeType targetType = DirectoryServer.getAttributeType(ATTR_TARGET_GROUP_DN);
+    AttributeType targetType = DirectoryServer.getSchema().getAttributeType(ATTR_TARGET_GROUP_DN);
     for (Attribute a : groupEntry.getAttribute(targetType))
     {
       for (ByteString v : a)
@@ -155,9 +144,6 @@ public class VirtualStaticGroup
     return new VirtualStaticGroup(groupEntry.getName(), targetDN);
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public SearchFilter getGroupDefinitionFilter()
          throws DirectoryException
@@ -168,40 +154,26 @@ public class VirtualStaticGroup
                                                OC_VIRTUAL_STATIC_GROUP + ")");
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isGroupDefinition(Entry entry)
   {
     ifNull(entry);
 
-    // FIXME -- This needs to exclude enhanced groups once we have support for
-    //them.
-    ObjectClass virtualStaticGroupClass =
-         DirectoryServer.getObjectClass(OC_VIRTUAL_STATIC_GROUP, true);
-    return entry.hasObjectClass(virtualStaticGroupClass);
+    // FIXME -- This needs to exclude enhanced groups once we have support for them.
+    return entry.hasObjectClass(DirectoryServer.getSchema().getObjectClass(OC_VIRTUAL_STATIC_GROUP));
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public DN getGroupDN()
   {
     return groupEntryDN;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void setGroupDN(DN groupDN)
   {
     groupEntryDN = groupDN;
   }
-
-
 
   /**
    * Retrieves the DN of the target group for this virtual static group.
@@ -213,9 +185,6 @@ public class VirtualStaticGroup
     return targetGroupDN;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean supportsNestedGroups()
   {
@@ -223,9 +192,6 @@ public class VirtualStaticGroup
     return false;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public List<DN> getNestedGroupDNs()
   {
@@ -233,9 +199,6 @@ public class VirtualStaticGroup
     return Collections.<DN>emptyList();
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void addNestedGroup(DN nestedGroupDN)
          throws UnsupportedOperationException, DirectoryException
@@ -245,9 +208,6 @@ public class VirtualStaticGroup
     throw new UnsupportedOperationException(message.toString());
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void removeNestedGroup(DN nestedGroupDN)
          throws UnsupportedOperationException, DirectoryException
@@ -257,14 +217,12 @@ public class VirtualStaticGroup
     throw new UnsupportedOperationException(message.toString());
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
-  public boolean isMember(DN userDN, Set<DN> examinedGroups)
+  public boolean isMember(DN userDN, AtomicReference<Set<DN>> examinedGroups)
          throws DirectoryException
   {
-    if (! examinedGroups.add(getGroupDN()))
+    Set<DN> groups = getExaminedGroups(examinedGroups);
+    if (! groups.add(getGroupDN()))
     {
       return false;
     }
@@ -287,14 +245,12 @@ public class VirtualStaticGroup
     }
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
-  public boolean isMember(Entry userEntry, Set<DN> examinedGroups)
+  public boolean isMember(Entry userEntry, AtomicReference<Set<DN>> examinedGroups)
          throws DirectoryException
   {
-    if (! examinedGroups.add(getGroupDN()))
+    Set<DN> groups = getExaminedGroups(examinedGroups);
+    if (! groups.add(getGroupDN()))
     {
       return false;
     }
@@ -317,9 +273,17 @@ public class VirtualStaticGroup
     }
   }
 
+  private Set<DN> getExaminedGroups(AtomicReference<Set<DN>> examinedGroups)
+  {
+    Set<DN> groups = examinedGroups.get();
+    if (groups == null)
+    {
+      groups = new HashSet<DN>();
+      examinedGroups.set(groups);
+    }
+    return groups;
+  }
 
-
-  /** {@inheritDoc} */
   @Override
   public MemberList getMembers()
          throws DirectoryException
@@ -342,9 +306,6 @@ public class VirtualStaticGroup
     }
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public MemberList getMembers(DN baseDN, SearchScope scope,
                                SearchFilter filter)
@@ -368,16 +329,12 @@ public class VirtualStaticGroup
     }
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean mayAlterMemberList()
   {
     return false;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void updateMembers(List<Modification> modifications)
          throws UnsupportedOperationException, DirectoryException
@@ -387,7 +344,6 @@ public class VirtualStaticGroup
     throw new UnsupportedOperationException(message.toString());
   }
 
-  /** {@inheritDoc} */
   @Override
   public void addMember(Entry userEntry)
          throws UnsupportedOperationException, DirectoryException
@@ -397,9 +353,6 @@ public class VirtualStaticGroup
     throw new UnsupportedOperationException(message.toString());
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void removeMember(DN userDN)
          throws UnsupportedOperationException, DirectoryException
@@ -409,9 +362,6 @@ public class VirtualStaticGroup
     throw new UnsupportedOperationException(message.toString());
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void toString(StringBuilder buffer)
   {
@@ -422,4 +372,3 @@ public class VirtualStaticGroup
     buffer.append(")");
   }
 }
-

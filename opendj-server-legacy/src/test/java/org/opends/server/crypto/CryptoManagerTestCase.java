@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import javax.crypto.Mac;
 
@@ -33,6 +34,7 @@ import org.forgerock.opendj.ldap.SearchScope;
 import org.opends.admin.ads.ADSContext;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.core.DirectoryServer;
+import org.opends.server.protocols.internal.InternalClientConnection;
 import org.opends.server.protocols.internal.InternalSearchOperation;
 import org.opends.server.protocols.internal.SearchRequest;
 import org.opends.server.protocols.ldap.LDAPAttribute;
@@ -41,7 +43,9 @@ import org.opends.server.tools.RemoteConnection;
 import org.opends.server.types.CryptoManager;
 import org.opends.server.types.CryptoManagerException;
 import org.forgerock.opendj.ldap.DN;
+import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
+import org.opends.server.types.Modification;
 import org.opends.server.util.EmbeddedUtils;
 import org.opends.server.util.StaticUtils;
 import org.opends.server.util.TimeThread;
@@ -51,9 +55,11 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.forgerock.opendj.ldap.ModificationType.*;
 import static org.opends.server.config.ConfigConstants.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
 import static org.opends.server.protocols.internal.Requests.*;
+import static org.opends.server.types.Attributes.create;
 import static org.testng.Assert.*;
 
 /**
@@ -74,6 +80,30 @@ public class CryptoManagerTestCase extends CryptoTestCase {
     TestCaseUtils.restartServer();
   }
 
+  @Test
+  public void testImportKeysUsesLatestKey()
+      throws Exception {
+    final CryptoManagerImpl cm = DirectoryServer.getCryptoManager();
+    final int keyLength = 56;
+    final String cipher = "DES/CFB/NoPadding";
+    byte[] cipherText = cm.encrypt(cipher, keyLength, new byte[56]);
+    Entry oldKey = getKeyForCipher(cipher, keyLength);
+    // Force import by changing the keyID
+    Modification mod = new Modification(REPLACE, create("ds-cfg-key-id", UUID.randomUUID().toString()));
+    oldKey.applyModification(mod);
+    cm.importCipherKeyEntry(oldKey);
+    byte[] newCipherText = cm.encrypt(cipher, keyLength, new byte[56]);
+    assertThat(ByteString.wrap(cipherText, 1, 16).compareTo(newCipherText, 1, 16)).isNotEqualTo(0);
+  }
+
+  private Entry getKeyForCipher(String cipher, int keyLength) throws DirectoryException
+  {
+    SearchRequest request = newSearchRequest("cn=secret keys, cn=admin data", SearchScope.WHOLE_SUBTREE,
+        "&(ds-cfg-cipher-transformation-name=" + cipher + ")(ds-cfg-key-length-bits=" + keyLength + ")");
+    InternalClientConnection conn = getRootConnection();
+    InternalSearchOperation search = conn.processSearch(request);
+    return search.getSearchEntries().get(0);
+  }
 
   @Test
   public void testGetInstanceKeyCertificate()
@@ -348,7 +378,12 @@ public class CryptoManagerTestCase extends CryptoTestCase {
     final String FILTER_CIPHER_KEY_LENGTH =
         "(" + ATTR_CRYPTO_KEY_LENGTH_BITS + "=" + cipherKeyLength + ")";
     final String searchFilter =
-        "(&" + FILTER_OC_INSTANCE_KEY + FILTER_NOT_COMPROMISED + FILTER_CIPHER_TRANSFORMATION_NAME + FILTER_CIPHER_KEY_LENGTH + ")";
+        "(&"
+        + FILTER_OC_INSTANCE_KEY
+        + FILTER_NOT_COMPROMISED
+        + FILTER_CIPHER_TRANSFORMATION_NAME
+        + FILTER_CIPHER_KEY_LENGTH
+        + ")";
     final SearchRequest request = newSearchRequest(baseDN, SearchScope.SINGLE_LEVEL, searchFilter).addAttribute("dn");
     InternalSearchOperation searchOp = getRootConnection().processSearch(request);
     assertFalse(searchOp.getSearchEntries().isEmpty());

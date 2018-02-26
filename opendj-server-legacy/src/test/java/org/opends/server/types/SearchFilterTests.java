@@ -17,8 +17,6 @@
  */
 package org.opends.server.types;
 
-import org.forgerock.opendj.ldap.schema.AttributeType;
-
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.core.DirectoryServer;
@@ -70,8 +69,8 @@ public class SearchFilterTests extends DirectoryServerTestCase {
   //
   // -------------------------------------------------------------------------
 
-  // These are valid filters.
-  @DataProvider(name = "paramsCreateFilterFromStringValidFilters")
+  /** These are valid filters. */
+  @DataProvider
   public Object[][] paramsCreateFilterFromStringValidFilters() {
     return new Object[][]{
             {"(&)", "(&)"},
@@ -84,8 +83,9 @@ public class SearchFilterTests extends DirectoryServerTestCase {
             {"(!(sn=test))", "(!(sn=test))"},
             {"(|(sn=test)(sn=test2))", "(|(sn=test)(sn=test2))"},
 
-            {"(&(sn=test))", "(&(sn=test))"},
-            {"(|(sn=test))", "(|(sn=test))"},
+            {"(&(sn=test))", "(sn=test)"},
+            {"(|(sn=test))", "(sn=test)"},
+            {"(&(objectclass=person)(|(sn=test)))", "(&(objectClass=person)(sn=test))"},
     };
   }
 
@@ -97,12 +97,10 @@ public class SearchFilterTests extends DirectoryServerTestCase {
     runRecreateFilterTest(originalFilter, expectedToStringFilter);
   }
 
-  private void runRecreateFilterTest(
-          String originalFilter,
-          String expectedToStringFilter
-  ) throws DirectoryException {
+  private void runRecreateFilterTest(String originalFilter, String expectedToStringFilter) throws DirectoryException {
     String regenerated = SearchFilter.createFilterFromString(originalFilter).toString();
-    Assert.assertEquals(regenerated, expectedToStringFilter, "original=" + originalFilter + ", expected=" + expectedToStringFilter);
+    assertEquals(regenerated, expectedToStringFilter,
+        "original=" + originalFilter + ", expected=" + expectedToStringFilter);
   }
 
   /** These are valid filters. */
@@ -164,7 +162,7 @@ public class SearchFilterTests extends DirectoryServerTestCase {
 
 
   /** These are filters with invalid escape sequences. */
-  @DataProvider(name = "invalidEscapeSequenceFilters")
+  @DataProvider
   public Object[][] invalidEscapeSequenceFilters() {
     final char[] VALID_NIBBLES = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                                  'a', 'b', 'c', 'd', 'e', 'f',
@@ -221,13 +219,13 @@ public class SearchFilterTests extends DirectoryServerTestCase {
    * @return a value that can be used in an LDAP filter.
    */
   private String getFilterValueForChar(byte value) {
-    if (((value & 0x7F) != value) ||  // Not 7-bit clean
-         (value <= 0x1F) ||           // Below the printable character range
-         (value == 0x28) ||           // Open parenthesis
-         (value == 0x29) ||           // Close parenthesis
-         (value == 0x2A) ||           // Asterisk
-         (value == 0x5C) ||           // Backslash
-         (value == 0x7F))             // Delete character
+    if (((value & 0x7F) != value)  // Not 7-bit clean
+        || value <= 0x1F           // Below the printable character range
+        || value == 0x28           // Open parenthesis
+        || value == 0x29           // Close parenthesis
+        || value == 0x2A           // Asterisk
+        || value == 0x5C           // Backslash
+        || value == 0x7F)          // Delete character
     {
       return "\\" + StaticUtils.byteToHex(value);
     }
@@ -259,7 +257,7 @@ public class SearchFilterTests extends DirectoryServerTestCase {
   // -------------------------------------------------------------------------
 
   /** Invalid filters that are detected. */
-  @DataProvider(name = "invalidFilters")
+  @DataProvider
   public Object[][] invalidFilters() {
     return new Object[][]{
             {null},
@@ -337,7 +335,7 @@ public class SearchFilterTests extends DirectoryServerTestCase {
           "labeledUri: http://opends.org/john"
           );
 
-  @DataProvider(name = "matchesParams")
+  @DataProvider
   public Object[][] matchesParams() {
     return new Object[][]{
             {JOHN_SMITH_LDIF, "(objectclass=inetorgperson)", true},
@@ -569,7 +567,7 @@ public class SearchFilterTests extends DirectoryServerTestCase {
     FilterDescription description = new FilterDescription();
 
     description.filterType = filterType;
-    description.attributeType = DirectoryServer.getAttributeType(attributeType);
+    description.attributeType = DirectoryServer.getSchema().getAttributeType(attributeType);
     description.assertionValue = ByteString.valueOfUtf8(attributeValue);
 
     if (filterType == FilterType.EQUALITY) {
@@ -631,7 +629,7 @@ public class SearchFilterTests extends DirectoryServerTestCase {
     FilterDescription description = new FilterDescription();
 
     description.filterType = FilterType.SUBSTRING;
-    description.attributeType = DirectoryServer.getAttributeType(attributeType);
+    description.attributeType = DirectoryServer.getSchema().getAttributeType(attributeType);
 
     description.subInitialElement = ByteString.valueOfUtf8(subInitial);
     description.subAnyElements = new ArrayList<>();
@@ -820,8 +818,8 @@ public class SearchFilterTests extends DirectoryServerTestCase {
 
 
 
-  @DataProvider(name = "filterDescriptions")
-  public Object[][] getFilterDescriptions() throws Exception {
+  @DataProvider
+  public Object[][] filterDescriptions() throws Exception {
     List<FilterDescription> allDescriptions = getFilterDescriptionList();
 
     // Now convert to [][]
@@ -864,8 +862,8 @@ public class SearchFilterTests extends DirectoryServerTestCase {
 
   private static final Object[][] TEST_EQUALS_PARAMS = new Object[][]{
           // These have duplicates, and their String representation should even reflect that.
-          {"(&(sn=Smith))", "(&(sn=Smith)(sn=Smith))", true, true},
-          {"(|(sn=Smith))", "(|(sn=Smith)(sn=Smith))", true, true},
+          {"(&(sn=Smith))", "(sn=Smith)", true, true},
+          {"(|(sn=Smith))", "(sn=Smith)", true, true},
 
           // These are reordered, so they are equivalent, but their String representations will differ
           {"(&(sn=Smith)(sn<=Aus))", "(&(sn<=Aus)(sn=Smith))", true, false},
@@ -967,14 +965,15 @@ public class SearchFilterTests extends DirectoryServerTestCase {
   };
 
 
-  @DataProvider(name = "equalsTest")
-  public Object[][] getEqualsTests() throws Exception {
+  @DataProvider
+  public Object[][] equalsTest() throws Exception {
     return TEST_EQUALS_PARAMS;
   }
 
 
   @Test(dataProvider = "equalsTest")
-  public void testEquals(String stringFilter1, String stringFilter2, boolean expectEquals, boolean expectStringEquals) throws Exception {
+  public void testEquals(String stringFilter1, String stringFilter2, boolean expectEquals, boolean expectStringEquals)
+      throws Exception {
     SearchFilter filter1 = SearchFilter.createFilterFromString(stringFilter1);
     SearchFilter filter2 = SearchFilter.createFilterFromString(stringFilter2);
 
@@ -1002,8 +1001,8 @@ public class SearchFilterTests extends DirectoryServerTestCase {
   /**
    * Dataprovider for testing different normalization for value and assertion.
    */
-  @DataProvider(name = "differentNormalization")
-  public Object[][] differentNormalizationData() throws ParseException
+  @DataProvider
+  public Object[][] differentNormalization() throws ParseException
   {
     final String BASE64_CERT_VALUE =
       "MIICpTCCAg6gAwIBAgIJALeoA6I3ZC/cMA0GCSqGSIb3DQEBBQUAMFYxCzAJBgNV" +

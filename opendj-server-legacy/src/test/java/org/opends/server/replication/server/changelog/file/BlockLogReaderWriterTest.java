@@ -11,17 +11,19 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
- * Copyright 2014-2015 ForgeRock AS.
+ * Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.server.replication.server.changelog.file;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.*;
 import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.*;
 import static org.opends.server.replication.server.changelog.file.BlockLogReader.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -250,7 +252,7 @@ public class BlockLogReaderWriterTest extends DirectoryServerTestCase
   }
 
   @Test
-  public void testGetClosestMarkerBeforeOrAtPosition() throws Exception
+  public void testGetClosestBlockStartBeforeOrAtPosition() throws Exception
   {
     final int blockSize = 10;
     BlockLogReader<Integer, Integer> reader = newReaderWithNullFile(blockSize);
@@ -261,6 +263,67 @@ public class BlockLogReaderWriterTest extends DirectoryServerTestCase
     assertThat(reader.getClosestBlockStartBeforeOrAtPosition(10)).isEqualTo(10);
     assertThat(reader.getClosestBlockStartBeforeOrAtPosition(15)).isEqualTo(10);
     assertThat(reader.getClosestBlockStartBeforeOrAtPosition(20)).isEqualTo(20);
+  }
+
+  @DataProvider
+  Object[][] recordsForNewest()
+  {
+    return new Object[][]
+    {
+      // raw size taken by each record is: 4 (record size) + 4 (key) + 4 (value) = 12 bytes
+
+      // size of block, records to write
+      { 12, records(1) }, // zero block marker
+      { 10, records(1) }, // one block marker
+      { 8, records(1) },  // one block marker
+      { 7, records(1) },  // two block markers
+      { 6, records(1) },  // three block markers
+      { 5, records(1) },  // seven block markers
+      { 16, records(1,2) }, // one block marker
+      { 12, records(1,2) }, // two block markers
+      { 10, records(1,2) }, // three block markers
+    };
+  }
+
+  @Test(dataProvider="recordsForNewest")
+  public void testGetNewestRecord(int blockSize, List<Record<Integer, Integer>> records) throws Exception
+  {
+    writeRecords(blockSize, records);
+
+    try(BlockLogReader<Integer, Integer> reader = newReader(blockSize))
+    {
+      assertThat(reader.getNewestRecord()).isEqualTo(records.get(records.size()-1));
+    }
+  }
+
+  @DataProvider
+  Object[][] recordsForEndOfFile()
+  {
+    return new Object[][]
+        {
+      // raw size taken by each record is: 4 (record size) + 4 (key) + 4 (value) = 12 bytes
+
+      // size of block, records to write, expected closest block start to end of file
+      { 12, records(1), 0 }, // zero block marker
+      { 10, records(1), 10 }, // one block marker
+      { 8, records(1), 8 },  // one block marker
+      { 7, records(1), 14 },  // two block markers
+      { 6, records(1), 18 },  // three block markers
+      { 5, records(1), 35 },  // seven block markers
+      { 16, records(1,2), 16 }, // one block marker
+      { 12, records(1,2), 24 }, // two block markers
+      { 10, records(1,2), 30 }, // three block markers
+        };
+  }
+  @Test(dataProvider="recordsForEndOfFile")
+  public void testGetClosestBlockStartToEndOfFile(int blockSize, List<Record<Integer, Integer>> records,
+      int expectedBlockStart) throws Exception
+  {
+    writeRecords(blockSize, records);
+    try(BlockLogReader<Integer, Integer> reader = newReader(blockSize))
+    {
+      assertThat(reader.getClosestBlockStartToEndOfFile()).isEqualTo(expectedBlockStart);
+    }
   }
 
   @Test
@@ -494,7 +557,7 @@ public class BlockLogReaderWriterTest extends DirectoryServerTestCase
     }
 
     @Override
-    public ByteString encodeRecord(Record<Integer, Integer> record)
+    public ByteString encodeRecord(Record<Integer, Integer> record) throws IOException
     {
       return new ByteStringBuilder().appendInt(record.getKey()).appendInt(record.getValue()).toByteString();
     }

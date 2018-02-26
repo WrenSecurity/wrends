@@ -79,19 +79,19 @@ public final class AciHandler extends
    * String used to indicate that the evaluating ACI had a all
    * operational attributes targetattr match (targetattr="+").
    */
-  public static final String ALL_OP_ATTRS_MATCHED = "allOpAttrsMatched";
+  static final String ALL_OP_ATTRS_MATCHED = "allOpAttrsMatched";
 
   /**
    * String used to indicate that the evaluating ACI had a all user
    * attributes targetattr match (targetattr="*").
    */
-  public static final String ALL_USER_ATTRS_MATCHED = "allUserAttrsMatched";
+  static final String ALL_USER_ATTRS_MATCHED = "allUserAttrsMatched";
 
   /**
    * String used to save the original authorization entry in an
    * operation attachment if a proxied authorization control was seen.
    */
-  public static final String ORIG_AUTH_ENTRY = "origAuthorizationEntry";
+  static final String ORIG_AUTH_ENTRY = "origAuthorizationEntry";
 
   /** Attribute type corresponding to "aci" attribute. */
   static AttributeType aciType;
@@ -123,10 +123,10 @@ public final class AciHandler extends
    */
   private static void initStatics()
   {
-    aciType = getAttributeType("aci");
-    globalAciType = getAttributeType(ATTR_AUTHZ_GLOBAL_ACI);
-    debugSearchIndex = getAttributeType(SuffixContainer.ATTR_DEBUG_SEARCH_INDEX);
-    refAttrType = getAttributeType(ATTR_REFERRAL_URL);
+    aciType = getSchema().getAttributeType("aci");
+    globalAciType = getSchema().getAttributeType(ATTR_AUTHZ_GLOBAL_ACI);
+    debugSearchIndex = getSchema().getAttributeType(SuffixContainer.ATTR_DEBUG_SEARCH_INDEX);
+    refAttrType = getSchema().getAttributeType(ATTR_REFERRAL_URL);
 
     try
     {
@@ -299,7 +299,7 @@ public final class AciHandler extends
       baseName = toLowerCase(rawAttributeType);
     }
 
-    container.setCurrentAttributeType(getAttributeType(baseName));
+    container.setCurrentAttributeType(getSchema().getAttributeType(baseName));
     container.setCurrentAttributeValue(operation.getAssertionValue());
     return isAllowed(container, operation);
   }
@@ -420,7 +420,7 @@ public final class AciHandler extends
     }
 
     // Load the values, a bind rule might want to evaluate them.
-    final AttributeBuilder builder = new AttributeBuilder(refAttrType, ATTR_REFERRAL_URL);
+    final AttributeBuilder builder = new AttributeBuilder(refAttrType);
     builder.addAllStrings(reference.getReferralURLs());
 
     final Entry e = new Entry(dn, null, null, null);

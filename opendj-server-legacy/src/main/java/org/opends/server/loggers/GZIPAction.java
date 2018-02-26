@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2008 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.server.loggers;
 
@@ -61,13 +61,9 @@ class GZIPAction implements PostRotationAction
    * @return  <CODE>true</CODE> if the compression succeeded, or
    *          <CODE>false</CODE> if it did not.
    */
+  @Override
   public boolean execute()
   {
-    FileInputStream fis = null;
-    GZIPOutputStream gzip = null;
-    boolean inputStreamOpen = false;
-    boolean outputStreamOpen = false;
-
     try
     {
       if(!originalFile.exists())
@@ -76,24 +72,17 @@ class GZIPAction implements PostRotationAction
         return false;
       }
 
-      fis = new FileInputStream(originalFile);
-      inputStreamOpen = true;
-      FileOutputStream fos = new FileOutputStream(newFile);
-      gzip = new GZIPOutputStream(fos);
-      outputStreamOpen = true;
-
-      byte[] buf = new byte[8192];
-      int n;
-
-      while((n = fis.read(buf)) != -1)
+      try (FileInputStream fis = new FileInputStream(originalFile);
+          FileOutputStream fos = new FileOutputStream(newFile);
+          GZIPOutputStream gzip = new GZIPOutputStream(fos);)
       {
-        gzip.write(buf, 0, n);
+        byte[] buf = new byte[8192];
+        int n;
+        while ((n = fis.read(buf)) != -1)
+        {
+          gzip.write(buf, 0, n);
+        }
       }
-
-      gzip.close();
-      outputStreamOpen = false;
-      fis.close();
-      inputStreamOpen = false;
 
       if(deleteOriginal && !originalFile.delete())
       {
@@ -105,34 +94,7 @@ class GZIPAction implements PostRotationAction
     } catch(IOException ioe)
     {
       logger.traceException(ioe);
-      if (inputStreamOpen)
-      {
-        try
-        {
-          fis.close();
-        }
-        catch (Exception fe)
-        {
-         logger.traceException(fe);
-          // Cannot do much. Ignore.
-        }
-      }
-      if (outputStreamOpen)
-      {
-        try
-        {
-          gzip.close();
-        }
-        catch (Exception ge)
-        {
-          logger.traceException(ge);
-          // Cannot do much. Ignore.
-        }
-      }
       return false;
     }
   }
-
-
 }
-

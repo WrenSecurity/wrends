@@ -21,34 +21,52 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
 
-import javax.crypto.*;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.config.server.ConfigChangeResult;
+import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.server.config.meta.PluginCfgDefn;
 import org.forgerock.opendj.server.config.meta.SambaPasswordPluginCfgDefn.PwdSyncPolicy;
 import org.forgerock.opendj.server.config.server.SambaPasswordPluginCfg;
 import org.opends.server.api.plugin.DirectoryServerPlugin;
 import org.opends.server.api.plugin.PluginResult;
 import org.opends.server.api.plugin.PluginType;
-import org.forgerock.opendj.config.server.ConfigChangeResult;
-import org.forgerock.opendj.config.server.ConfigException;
 import org.opends.server.controls.LDAPAssertionRequestControl;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.extensions.PasswordModifyExtendedOperation;
 import org.opends.server.protocols.internal.InternalClientConnection;
 import org.opends.server.protocols.ldap.LDAPFilter;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.opends.server.types.*;
-import org.forgerock.opendj.ldap.ResultCode;
+import org.opends.server.types.Attribute;
+import org.opends.server.types.Attributes;
+import org.opends.server.types.Control;
+import org.opends.server.types.DirectoryException;
+import org.opends.server.types.Entry;
+import org.opends.server.types.InitializationException;
+import org.opends.server.types.Modification;
+import org.opends.server.types.RawFilter;
+import org.opends.server.types.Schema;
 import org.opends.server.types.operation.PostOperationExtendedOperation;
 import org.opends.server.types.operation.PreOperationModifyOperation;
 
@@ -128,9 +146,7 @@ public final class SambaPasswordPlugin extends
 
 
 
-    /**
-     * Creates a new MD4 message digest algorithm.
-     */
+    /** Creates a new MD4 message digest algorithm. */
     MD4MessageDigest()
     {
       super("MD4");
@@ -139,7 +155,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-    /** {@inheritDoc} */
     @Override
     public byte[] engineDigest()
     {
@@ -155,7 +170,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-    /** {@inheritDoc} */
     @Override
     public void engineReset()
     {
@@ -179,7 +193,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-    /** {@inheritDoc} */
     @Override
     public void engineUpdate(final byte input)
     {
@@ -194,7 +207,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-    /** {@inheritDoc} */
     @Override
     public void engineUpdate(final byte[] in, int inOff, int len)
     {
@@ -387,9 +399,7 @@ public final class SambaPasswordPlugin extends
 
 
 
-    /*
-     * rotate int x left n bits.
-     */
+    /** Rotate int x left n bits. */
     private int rotateLeft(final int x, final int n)
     {
       return (x << n) | (x >>> 32 - n);
@@ -408,9 +418,7 @@ public final class SambaPasswordPlugin extends
 
 
 
-  /**
-   * Plugin configuration object.
-   */
+  /** Plugin configuration object. */
   private SambaPasswordPluginCfg config;
 
   /** The name of the Samba LanMan password attribute. */
@@ -608,9 +616,7 @@ public final class SambaPasswordPlugin extends
 
 
 
-  /**
-   * Default constructor.
-   */
+  /** Default constructor. */
   public SambaPasswordPlugin()
   {
     super();
@@ -618,7 +624,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
       final SambaPasswordPluginCfg newConfig)
@@ -632,23 +637,17 @@ public final class SambaPasswordPlugin extends
 
 
 
-  /** {@inheritDoc} */
   @Override
   public PluginResult.PostOperation doPostOperation(
       final PostOperationExtendedOperation extendedOperation)
   {
-    /*
-     * If the operation is not Password Modify Extended Operation then skip this
-     * operation.
-     */
+    /* If the operation is not Password Modify Extended Operation then skip this operation. */
     if (!extendedOperation.getRequestOID().equals(PWMOD_EXTOP_OID))
     {
       return PluginResult.PostOperation.continueOperationProcessing();
     }
 
-    /*
-     * If the operation has not been successful then ignore the operation.
-     */
+    /* If the operation has not been successful then ignore the operation. */
     if (extendedOperation.getResultCode() != ResultCode.SUCCESS)
     {
       return PluginResult.PostOperation.continueOperationProcessing();
@@ -765,7 +764,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-  /** {@inheritDoc} */
   @Override
   public PluginResult.PreOperation doPreOperation(
       final PreOperationModifyOperation modifyOperation)
@@ -842,7 +840,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-  /** {@inheritDoc} */
   @Override
   public void initializePlugin(final Set<PluginType> pluginTypes,
       final SambaPasswordPluginCfg configuration) throws ConfigException,
@@ -888,7 +885,6 @@ public final class SambaPasswordPlugin extends
 
 
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(
       final SambaPasswordPluginCfg newConfig, final List<LocalizableMessage> messages)
@@ -973,9 +969,8 @@ public final class SambaPasswordPlugin extends
   private boolean isSynchronizable(final Entry entry)
   {
     final Schema schema = DirectoryServer.getSchema();
-    final ObjectClass sambaOc = schema
-        .getObjectClass(toLowerCase(SAMBA_SAM_ACCOUNT_OC_NAME));
-    return sambaOc != null && entry.hasObjectClass(sambaOc);
+    final ObjectClass sambaOc = schema.getObjectClass(SAMBA_SAM_ACCOUNT_OC_NAME);
+    return !sambaOc.isPlaceHolder() && entry.hasObjectClass(sambaOc);
   }
 
 
@@ -1011,9 +1006,7 @@ public final class SambaPasswordPlugin extends
     }
   }
 
-  /**
-   * Timestamp provider interface. Intended primarily for testing purposes.
-   */
+  /** Timestamp provider interface. Intended primarily for testing purposes. */
   static interface TimeStampProvider
   {
     /**

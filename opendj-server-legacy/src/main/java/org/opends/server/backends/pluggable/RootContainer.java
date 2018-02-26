@@ -68,7 +68,7 @@ public class RootContainer implements ConfigurationChangeListener<PluggableBacke
   /** The ID of the backend to which this entry root container belongs. */
   private final String backendId;
   /** The backend configuration. */
-  private final PluggableBackendCfg config;
+  private volatile PluggableBackendCfg config;
   /** The monitor for this backend. */
   private BackendMonitor monitor;
 
@@ -174,7 +174,7 @@ public class RootContainer implements ConfigurationChangeListener<PluggableBacke
   EntryContainer openEntryContainer(DN baseDN, WriteableTransaction txn, AccessMode accessMode)
       throws StorageRuntimeException, ConfigException
   {
-    EntryContainer ec = new EntryContainer(baseDN, backendId, config, storage, this);
+    EntryContainer ec = new EntryContainer(baseDN, backendId, config, storage, this, serverContext);
     ec.open(txn, accessMode);
     return ec;
   }
@@ -450,8 +450,9 @@ public class RootContainer implements ConfigurationChangeListener<PluggableBacke
   @Override
   public ConfigChangeResult applyConfigurationChange(PluggableBackendCfg configuration)
   {
-    getMonitorProvider().enableFilterUseStats(configuration.isIndexFilterAnalyzerEnabled());
-    getMonitorProvider().setMaxEntries(configuration.getIndexFilterAnalyzerMaxFilters());
+    config = configuration;
+    getMonitorProvider().enableFilterUseStats(config.isIndexFilterAnalyzerEnabled());
+    getMonitorProvider().setMaxEntries(config.getIndexFilterAnalyzerMaxFilters());
 
     return new ConfigChangeResult();
   }

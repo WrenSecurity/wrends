@@ -134,7 +134,7 @@ public class ExactMatchIdentityMapperTestCase
          "ds-cfg-enabled: true",
          "ds-cfg-match-attribute: uid");
 
-    AttributeType t = DirectoryServer.getAttributeType("ds-cfg-match-base-dn");
+    AttributeType t = DirectoryServer.getSchema().getAttributeType("ds-cfg-match-base-dn");
     e.addAttribute(Attributes.empty(t), new ArrayList<ByteString>());
     entries.add(e);
 
@@ -702,8 +702,7 @@ public class ExactMatchIdentityMapperTestCase
     mapper.finalizeIdentityMapper();
   }
 
-  private ExactMatchIdentityMapper initializeIdentityMapper(Entry mapperEntry)
-      throws ConfigException, InitializationException {
+  private ExactMatchIdentityMapper initializeIdentityMapper(Entry mapperEntry) throws Exception {
     return InitializationUtils.initializeIdentityMapper(
         new ExactMatchIdentityMapper(), mapperEntry, ExactMatchIdentityMapperCfgDefn.getInstance());
   }

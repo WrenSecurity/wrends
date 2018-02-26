@@ -16,6 +16,7 @@
  */
 package org.opends.guitools.controlpanel.task;
 
+import static org.forgerock.opendj.ldap.ModificationType.*;
 import static org.forgerock.util.Utils.*;
 import static org.opends.messages.AdminToolMessages.*;
 
@@ -38,16 +39,17 @@ import javax.naming.directory.ModificationItem;
 import javax.swing.SwingUtilities;
 
 import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
+import org.opends.guitools.controlpanel.datamodel.SomeSchemaElement;
 import org.opends.guitools.controlpanel.ui.ColorAndFontConstants;
 import org.opends.guitools.controlpanel.ui.ProgressDialog;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.server.config.ConfigConstants;
 import org.opends.server.core.DirectoryServer;
-import org.opends.server.schema.SomeSchemaElement;
+import org.opends.server.types.Attribute;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
@@ -55,7 +57,6 @@ import org.opends.server.types.ExistingFileBehavior;
 import org.opends.server.types.LDIFExportConfig;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.OpenDsException;
 import org.opends.server.util.LDIFReader;
 import org.opends.server.util.LDIFWriter;
@@ -100,10 +101,11 @@ public class NewSchemaElementsTask extends Task
   @Override
   public boolean canLaunch(Task taskToBeLaunched, Collection<LocalizableMessage> incompatibilityReasons)
   {
+    Type taskTypeToBeLaunched = taskToBeLaunched.getType();
     if (state == State.RUNNING &&
-        (taskToBeLaunched.getType() == Task.Type.DELETE_SCHEMA_ELEMENT ||
-         taskToBeLaunched.getType() == Task.Type.MODIFY_SCHEMA_ELEMENT ||
-         taskToBeLaunched.getType() == Task.Type.NEW_SCHEMA_ELEMENT))
+        (taskTypeToBeLaunched == Task.Type.DELETE_SCHEMA_ELEMENT
+            || taskTypeToBeLaunched == Task.Type.MODIFY_SCHEMA_ELEMENT
+            || taskTypeToBeLaunched == Task.Type.NEW_SCHEMA_ELEMENT))
     {
       incompatibilityReasons.add(getIncompatibilityMessage(this, taskToBeLaunched));
       return false;
@@ -150,18 +152,19 @@ public class NewSchemaElementsTask extends Task
     {
       final List<String> attrNames = getElementsNameOrOID(attributeTypesToSchemaElements(attrsToAdd));
       final List<String> ocNames = getElementsNameOrOID(objectClassesToSchemaElements(ocsToAdd));
+      String attrNamesStr = joinAsString(", ", attrNames);
+      String ocNamesStr = joinAsString(", ", ocNames);
       if (ocNames.isEmpty())
       {
-        return INFO_CTRL_PANEL_NEW_ATTRIBUTES_TASK_DESCRIPTION.get(joinAsString(", ", attrNames));
+        return INFO_CTRL_PANEL_NEW_ATTRIBUTES_TASK_DESCRIPTION.get(attrNamesStr);
       }
       else if (attrNames.isEmpty())
       {
-        return INFO_CTRL_PANEL_NEW_OBJECTCLASSES_TASK_DESCRIPTION.get(joinAsString(", ", ocNames));
+        return INFO_CTRL_PANEL_NEW_OBJECTCLASSES_TASK_DESCRIPTION.get(ocNamesStr);
       }
       else
       {
-        return INFO_CTRL_PANEL_NEW_SCHEMA_ELEMENTS_TASK_DESCRIPTION.get(
-            joinAsString(", ", attrNames), joinAsString(", ", ocNames));
+        return INFO_CTRL_PANEL_NEW_SCHEMA_ELEMENTS_TASK_DESCRIPTION.get(attrNamesStr, ocNamesStr);
       }
     }
   }
@@ -264,11 +267,7 @@ public class NewSchemaElementsTask extends Task
   private List<SomeSchemaElement> get(Map<String, List<SomeSchemaElement>> hmElems, String fileName)
   {
     List<SomeSchemaElement> elems = hmElems.get(fileName);
-    if (elems != null)
-    {
-      return elems;
-    }
-    return Collections.emptyList();
+    return elems != null ? elems : Collections.<SomeSchemaElement> emptyList();
   }
 
   private Map<String, List<SomeSchemaElement>> copy(Set<SomeSchemaElement> elemsToAdd)
@@ -417,8 +416,8 @@ public class NewSchemaElementsTask extends Task
     appendIfTrue(buffer, " OBSOLETE", objectClass.isObsolete());
     appendOIDs(buffer, "SUP", objectClassesToSchemaElements(objectClass.getSuperiorClasses()));
     appendIfNotNull(buffer, " ", objectClass.getObjectClassType());
-    appendOIDs(buffer, "MUST", attributeTypesToSchemaElements(objectClass.getRequiredAttributes()));
-    appendOIDs(buffer, "MAY", attributeTypesToSchemaElements(objectClass.getOptionalAttributes()));
+    appendOIDs(buffer, "MUST", attributeTypesToSchemaElements(objectClass.getDeclaredRequiredAttributes()));
+    appendOIDs(buffer, "MAY", attributeTypesToSchemaElements(objectClass.getDeclaredOptionalAttributes()));
     appendExtraProperties(buffer, objectClass.getExtraProperties());
     buffer.append(")");
 
@@ -430,12 +429,13 @@ public class NewSchemaElementsTask extends Task
   {
     if (!schemaElements.isEmpty())
     {
-      final Iterator<SomeSchemaElement> iterator = schemaElements.iterator();
-      final String firstOID = iterator.next().getOID();
-      buffer.append(" ").append(label).append(" ( ").append(firstOID);
-      while (iterator.hasNext())
+      buffer.append(" ").append(label).append(" ( ");
+
+      final Iterator<SomeSchemaElement> it = schemaElements.iterator();
+      buffer.append(it.next().getOID());
+      while (it.hasNext())
       {
-        buffer.append(" $ ").append(iterator.next().getOID());
+        buffer.append(" $ ").append(it.next().getOID());
       }
       buffer.append(" )");
     }
@@ -523,16 +523,16 @@ public class NewSchemaElementsTask extends Task
 
   private void appendCollection(final StringBuilder buffer, final String property, final Collection<String> values)
   {
-    final Iterator<String> iterator = values.iterator();
     final boolean isMultiValued = values.size() > 1;
-    if (iterator.hasNext())
+    if (!values.isEmpty())
     {
-      final String first = iterator.next();
       buffer.append(" ").append(property);
-      buffer.append(isMultiValued ? " ( '" : " '").append(first).append("' ");
-      while (iterator.hasNext())
+      buffer.append(isMultiValued ? " ( '" : " '");
+      final Iterator<String> it = values.iterator();
+      buffer.append(it.next()).append("' ");
+      while (it.hasNext())
       {
-        buffer.append("'").append(iterator.next()).append("' ");
+        buffer.append("'").append(it.next()).append("' ");
       }
       if (isMultiValued)
       {
@@ -743,9 +743,8 @@ public class NewSchemaElementsTask extends Task
   {
     for (SomeSchemaElement schemaElement : schemaElements)
     {
-      final Modification mod = new Modification(ModificationType.ADD,
-          Attributes.create(schemaElement.getAttributeName().toLowerCase(), getValueOffline(schemaElement)));
-      schemaEntry.applyModification(mod);
+      Attribute attr = Attributes.create(schemaElement.getAttributeName(), getValueOffline(schemaElement));
+      schemaEntry.applyModification(new Modification(ADD, attr));
     }
   }
 

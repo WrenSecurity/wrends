@@ -16,16 +16,31 @@
  */
 package org.opends.server.types;
 
-import org.forgerock.opendj.ldap.DN;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-
 import static org.opends.messages.UtilityMessages.*;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 import org.forgerock.i18n.LocalizableMessageDescriptor.Arg1;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.tools.makeldif.MakeLDIFInputStream;
 import org.opends.server.tools.makeldif.TemplateFile;
 import org.opends.server.util.CollectionUtils;
@@ -77,7 +92,7 @@ public final class LDIFImportConfig extends OperationConfig
   private int bufferSize = DEFAULT_BUFFER_SIZE;
 
   /** The iterator used to read through the set of LDIF files. */
-  private Iterator<String> ldifFileIterator;
+  private final Iterator<String> ldifFileIterator;
 
   /** The set of base DNs to exclude from the import. */
   private Set<DN> excludeBranches = new HashSet<>(0);
@@ -90,7 +105,7 @@ public final class LDIFImportConfig extends OperationConfig
   private List<SearchFilter> includeFilters = new ArrayList<>(0);
 
   /** The set of LDIF files to be imported. */
-  private List<String> ldifFiles;
+  private final List<String> ldifFiles;
 
   /** The set of attribute types that should be excluded from the import. */
   private Set<AttributeType> excludeAttributes = new HashSet<>(0);
@@ -107,12 +122,7 @@ public final class LDIFImportConfig extends OperationConfig
   private boolean excludeAllOpAttrs;
 
   private String tmpDirectory;
-  private boolean skipDNValidation;
   private int threadCount;
-
-  /** Indicates the memory size, in megabytes, to use for off-heap buffers. */
-  private int offHeapSize;
-
 
   /**
    * Creates a new LDIF import configuration that will read from the
@@ -150,6 +160,7 @@ public final class LDIFImportConfig extends OperationConfig
    */
   public LDIFImportConfig(InputStream ldifInputStream)
   {
+    this(Collections.<String> emptyList());
     this.ldifInputStream   = ldifInputStream;
   }
 
@@ -162,6 +173,7 @@ public final class LDIFImportConfig extends OperationConfig
    */
   public LDIFImportConfig(Reader ldifInputReader)
   {
+    this(Collections.<String> emptyList());
     reader                 = getBufferedReader(ldifInputReader);
   }
 
@@ -422,26 +434,7 @@ public final class LDIFImportConfig extends OperationConfig
     }
   }
 
-  /**
-   * Indicates that skipped entries should be written to the provided
-   * output stream.  Note that this does not apply to entries that are
-   * rejected because they are invalid (e.g., are malformed or don't
-   * conform to schema requirements), but only apply to entries that
-   * are skipped because they matched exclude criteria.
-   *
-   * @param  outputStream  The output stream to which skipped entries
-   *                       should be written.
-   */
-  public void writeSkippedEntries(OutputStream outputStream)
-  {
-    if (outputStream == null)
-    {
-      closeSkipWriter();
-      return;
-    }
-    skipWriter =
-         new BufferedWriter(new OutputStreamWriter(outputStream));
-  }
+
 
 
 
@@ -1041,47 +1034,6 @@ public final class LDIFImportConfig extends OperationConfig
   public String getTmpDirectory()
   {
     return tmpDirectory;
-  }
-
-  /**
-   * Set the dn check in phase two boolean to the specified value.
-   *
-   * @param v The value to set the dn check in phase two boolean to.
-   */
-  public void setSkipDNValidation(boolean v)
-  {
-    skipDNValidation = v;
-  }
-
-  /**
-   * Return the dn check in phase two boolean.
-   *
-   * @return Return the dn check in phase two boolean value.
-   */
-  public boolean getSkipDNValidation()
-  {
-    return skipDNValidation;
-  }
-
-
-  /**
-   * Set the memory size available for off-heap buffers.
-   *
-   * @param sizeInMb The memory size available expressed in megabytes.
-   */
-  public void setOffHeapSize(int sizeInMb)
-  {
-    this.offHeapSize = sizeInMb;
-  }
-
-  /**
-   * Get the memory size available for off-heap buffers.
-   *
-   * @return The memory size in megabytes.
-   */
-  public int getOffHeapSize()
-  {
-    return offHeapSize;
   }
 
   /**

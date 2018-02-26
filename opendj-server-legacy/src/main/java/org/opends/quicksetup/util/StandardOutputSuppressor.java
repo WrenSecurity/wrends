@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 
 package org.opends.quicksetup.util;
@@ -21,10 +21,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-/**
- * Tool for suppressing and unsuppressing output to standard
- * output streams.
- */
+/** Tool for suppressing and unsuppressing output to standard output streams. */
 public class StandardOutputSuppressor {
 
   private static Token token;
@@ -67,19 +64,17 @@ public class StandardOutputSuppressor {
   }
 
   /**
-   * Checks whether or not this class has suppressed standard out streams.
+   * Checks whether this class has suppressed standard out streams.
    * @return boolean where true indicates output is suppressed
    */
   public static boolean isSuppressed() {
     return token != null;
   }
 
-  /**
-   * PrintWriter for suppressing stream.
-   */
+  /** PrintWriter for suppressing stream. */
   private static class NullOutputStream extends OutputStream {
 
-    /** {@inheritDoc} */
+    @Override
     public void write(int b) throws IOException {
       // do nothing;
     }

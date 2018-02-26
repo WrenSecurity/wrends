@@ -16,24 +16,24 @@
  */
 package org.forgerock.opendj.ldap;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.WeakHashMap;
 
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.opendj.ldap.schema.CoreSchema;
 import org.forgerock.opendj.ldap.schema.Schema;
 import org.forgerock.opendj.ldap.schema.UnknownSchemaElementException;
+import org.forgerock.util.Pair;
 import org.forgerock.util.Reject;
 
 import com.forgerock.opendj.util.SubstringReader;
 
 import static com.forgerock.opendj.ldap.CoreMessages.*;
-import static com.forgerock.opendj.util.StaticUtils.*;
 
 /**
  * A distinguished name (DN) as defined in RFC 4512 section 2.3 is the
@@ -68,13 +68,18 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
      */
     private static final int DN_CACHE_SIZE = 32;
 
-    private static final ThreadLocal<WeakHashMap<Schema, Map<String, DN>>> CACHE =
-            new ThreadLocal<WeakHashMap<Schema, Map<String, DN>>>() {
+    private static final ThreadLocal<Map<String, DN>> CACHE = new ThreadLocal<Map<String, DN>>() {
+        @SuppressWarnings("serial")
+        @Override
+        protected Map<String, DN> initialValue() {
+            return new LinkedHashMap<String, DN>(DN_CACHE_SIZE, 0.75f, true) {
                 @Override
-                protected WeakHashMap<Schema, Map<String, DN>> initialValue() {
-                    return new WeakHashMap<>();
+                protected boolean removeEldestEntry(Entry<String, DN> eldest) {
+                    return size() > DN_CACHE_SIZE;
                 }
             };
+        }
+    };
 
     /**
      * Returns the LDAP string representation of the provided DN attribute value
@@ -230,9 +235,9 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
         }
 
         // First check if DN is already cached.
-        final Map<String, DN> cache = getCache(schema);
+        final Map<String, DN> cache = CACHE.get();
         final DN cachedDN = cache.get(dn);
-        if (cachedDN != null) {
+        if (cachedDN != null && cachedDN.schema == schema) {
             return cachedDN;
         }
 
@@ -270,47 +275,47 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
                     ERR_DN_TYPE_NOT_FOUND.get(reader.getString(), e.getMessageObject()));
         }
 
-        if (reader.remaining() > 0 && reader.read() == ',') {
+        LinkedList<Pair<Integer, RDN>> parentRDNs = null;
+        DN parent = null;
+        while (reader.remaining() > 0 && reader.read() == ',') {
             reader.skipWhitespaces();
             if (reader.remaining() == 0) {
                 throw new LocalizedIllegalArgumentException(ERR_ATTR_SYNTAX_DN_ATTR_NO_NAME.get(reader.getString()));
             }
             reader.mark();
             final String parentString = reader.read(reader.remaining());
-            DN parent = cache.get(parentString);
-            if (parent == null) {
-                reader.reset();
-                parent = decode(reader, schema, cache);
-
-                // Only cache parent DNs since leaf DNs are likely to make the cache to volatile.
-                cache.put(parentString, parent);
+            parent = cache.get(parentString);
+            if (parent != null) {
+                break;
             }
-            return new DN(schema, parent, rdn);
-        } else {
-            return new DN(schema, ROOT_DN, rdn);
+            reader.reset();
+            if (parentRDNs == null) {
+                parentRDNs = new LinkedList<>();
+            }
+            parentRDNs.add(Pair.of(reader.pos(), RDN.decode(reader, schema)));
         }
-    }
+        if (parent == null) {
+            parent = ROOT_DN;
+        }
 
-    @SuppressWarnings("serial")
-    private static Map<String, DN> getCache(final Schema schema) {
-        final WeakHashMap<Schema, Map<String, DN>> threadLocalMap = CACHE.get();
-        Map<String, DN> schemaLocalMap = threadLocalMap.get(schema);
-
-        if (schemaLocalMap == null) {
-            schemaLocalMap = new LinkedHashMap<String, DN>(DN_CACHE_SIZE, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(final Map.Entry<String, DN> e) {
-                    return size() > DN_CACHE_SIZE;
+        if (parentRDNs != null) {
+            Iterator<Pair<Integer, RDN>> iter = parentRDNs.descendingIterator();
+            int parentsLeft = parentRDNs.size();
+            while (iter.hasNext()) {
+                Pair<Integer, RDN> parentRDN = iter.next();
+                parent = new DN(schema, parent, parentRDN.getSecond());
+                if (parentsLeft-- < DN_CACHE_SIZE) {
+                    cache.put(reader.getString().substring(parentRDN.getFirst()), parent);
                 }
-            };
-            threadLocalMap.put(schema, schemaLocalMap);
+            }
         }
-        return schemaLocalMap;
+        return new DN(schema, parent, rdn);
     }
 
     private final RDN rdn;
     private DN parent;
     private final int size;
+    private int hashCode = -1;
 
     /**
      * The normalized byte string representation of this DN, which is not
@@ -454,7 +459,10 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
 
     @Override
     public int hashCode() {
-        return toNormalizedByteString().hashCode();
+        if (hashCode == -1) {
+            hashCode = toNormalizedByteString().hashCode();
+        }
+        return hashCode;
     }
 
     /**
@@ -785,10 +793,12 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
      * @see #localName(int) for the reverse operation (starting from the left)
      */
     public DN parent(final int index) {
-        // We allow size + 1 so that we can return null as the parent of the
-        // Root DN.
-        Reject.ifFalse(index >= 0, "index less than zero");
+        // We allow size + 1 so that we can return null as the parent of the Root DN.
+        Reject.ifTrue(index < 0, "index less than zero");
 
+        if (index > size) {
+            return null;
+        }
         DN parentDN = this;
         for (int i = 0; parentDN != null && i < index; i++) {
             parentDN = parentDN.parent;
@@ -875,10 +885,15 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
     public String toString() {
         // We don't care about potential race conditions here.
         if (stringValue == null) {
-            final StringBuilder builder = rdn.toString(new StringBuilder());
-            if (!parent.isRootDN()) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append(rdn);
+            for (DN dn = parent; dn.rdn != null; dn = dn.parent) {
                 builder.append(RDN_CHAR_SEPARATOR);
-                builder.append(parent);
+                if (dn.stringValue != null) {
+                    builder.append(dn.stringValue);
+                    break;
+                }
+                builder.append(dn.rdn);
             }
             stringValue = builder.toString();
         }
@@ -900,9 +915,14 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
             if (rdn == null) {
                 normalizedDN = ByteString.empty();
             } else {
-                final ByteString normalizedParent = parent.toNormalizedByteString();
-                final ByteStringBuilder builder = new ByteStringBuilder(normalizedParent.length() + 16);
-                builder.appendBytes(normalizedParent);
+                final ByteStringBuilder builder = new ByteStringBuilder(size * 8);
+                if (parent.normalizedDN != null) {
+                    builder.appendBytes(parent.normalizedDN);
+                } else {
+                    for (int i = size() - 1; i > 0; i--) {
+                        parent(i).rdn().toNormalizedByteString(builder);
+                    }
+                }
                 rdn.toNormalizedByteString(builder);
                 normalizedDN = builder.toByteString();
             }
@@ -955,92 +975,4 @@ public final class DN implements Iterable<RDN>, Comparable<DN> {
         return UUID.nameUUIDFromBytes(normDN.toByteArray());
     }
 
-    /**
-     * A compact representation of a DN, suitable for equality and comparisons, and providing a natural hierarchical
-     * ordering.
-     * <p>
-     * This representation should be used when it is important to reduce memory usage. The memory consumption compared
-     * to a regular DN object is minimal. Prototypical usage is for static groups implementation where large groups of
-     * DNs must be recorded and must be converted back to DNs.
-     * <p>
-     * This representation can be created either eagerly or lazily.
-     * <ul>
-     *   <li>eagerly: the normalized value is computed immediately at creation time.</li>
-     *   <li>lazily: the normalized value is computed only the first time it is needed.</li>
-     * </ul>
-     *
-     * @deprecated This class will eventually be replaced by a compact implementation of a DN.
-     */
-    @Deprecated
-    public static final class CompactDn implements Comparable<CompactDn> {
-        /** Original string corresponding to the DN. */
-        private final byte[] originalValue;
-
-        /**
-         * Normalized byte string, suitable for equality and comparisons, and providing a natural hierarchical ordering,
-         * but not usable as a valid DN.
-         */
-        private volatile byte[] normalizedValue;
-
-        private final Schema schema;
-
-        private CompactDn(final DN dn) {
-            this.originalValue = getBytes(dn.toString());
-            this.schema = dn.schema;
-        }
-
-        @Override
-        public int compareTo(final CompactDn other) {
-            byte[] normValue = getNormalizedValue();
-            byte[] otherNormValue = other.getNormalizedValue();
-            return ByteString.compareTo(normValue, 0, normValue.length, otherNormValue, 0, otherNormValue.length);
-        }
-
-        /**
-         * Returns the DN corresponding to this compact representation.
-         *
-         *  @return the DN
-         */
-        public DN toDn() {
-            return DN.valueOf(ByteString.toString(originalValue, 0, originalValue.length), schema);
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(getNormalizedValue());
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            } else if (obj instanceof CompactDn) {
-                final CompactDn other = (CompactDn) obj;
-                return Arrays.equals(getNormalizedValue(), other.getNormalizedValue());
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public String toString() {
-            return ByteString.toString(originalValue, 0, originalValue.length);
-        }
-
-        private byte[] getNormalizedValue() {
-            if (normalizedValue == null) {
-                normalizedValue = toDn().toNormalizedByteString().toByteArray();
-            }
-            return normalizedValue;
-        }
-    }
-
-    /**
-     * Returns a compact representation of this DN, with lazy evaluation of the normalized value.
-     *
-     * @return the DN compact representation
-     */
-    public CompactDn compact() {
-        return new CompactDn(this);
-    }
 }

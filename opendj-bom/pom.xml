@@ -26,7 +26,7 @@
 
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-bom</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>3.5.1</version>
 
     <packaging>pom</packaging>
 
@@ -44,8 +44,8 @@
             <!-- ForgeRock BOM -->
             <dependency>
                 <groupId>org.forgerock.commons</groupId>
-                <artifactId>forgerock-bom</artifactId>
-                <version>4.1.1</version>
+                <artifactId>commons-bom</artifactId>
+                <version>20.1.0</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -98,6 +98,20 @@
         </dependencies>
     </dependencyManagement>
 
+    <!-- For deployment to private ForgeRock Maven repositories -->
+    <distributionManagement>
+        <repository>
+            <id>forgerock-private-releases</id>
+            <name>maven.forgerock.org-releases</name>
+            <url>http://maven.forgerock.org/repo/private-releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>forgerock-private-snapshots</id>
+            <name>maven.forgerock.org-snapshots</name>
+            <url>http://maven.forgerock.org/repo/private-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <repositories>
         <repository>
             <id>forgerock-staging-repository</id>
@@ -126,4 +140,8 @@
             </snapshots>
         </repository>
     </repositories>
+
+  <scm>
+    <tag>3.5.1</tag>
+  </scm>
 </project>

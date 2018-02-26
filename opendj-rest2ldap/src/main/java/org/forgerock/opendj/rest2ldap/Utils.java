@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
- * Copyright 2012-2015 ForgeRock AS.
+ * Copyright 2012-2016 ForgeRock AS.
  */
 package org.forgerock.opendj.rest2ldap;
 
@@ -25,14 +25,18 @@ import static org.forgerock.opendj.ldap.Functions.byteStringToString;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.getBooleanSyntax;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.getGeneralizedTimeSyntax;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.getIntegerSyntax;
+import static org.forgerock.opendj.rest2ldap.Rest2ldapMessages.ERR_UNRECOGNIZED_JSON_VALUE;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.json.JsonValue;
+import org.forgerock.json.JsonValueException;
+import org.forgerock.json.resource.BadRequestException;
+import org.forgerock.json.resource.NotSupportedException;
 import org.forgerock.opendj.ldap.Attribute;
 import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteString;
@@ -64,13 +68,6 @@ final class Utils {
                 }
             };
 
-
-    static Object attributeToJson(final Attribute a) {
-        final Function<ByteString, Object, NeverThrowsException> f = byteStringToJson(a.getAttributeDescription());
-        final boolean isSingleValued = a.getAttributeDescription().getAttributeType().isSingleValue();
-        return isSingleValued ? a.parse().as(f) : asList(a.parse().asSetOf(f));
-    }
-
     static Function<Object, ByteString, NeverThrowsException> base64ToByteString() {
         return BASE64_TO_BYTESTRING;
     }
@@ -98,38 +95,7 @@ final class Utils {
         };
     }
 
-    static <T> T ensureNotNull(final T object) {
-        if (object == null) {
-            throw new NullPointerException();
-        }
-        return object;
-    }
-
-    static <T> T ensureNotNull(final T object, final String message) {
-        if (object == null) {
-            throw new NullPointerException(message);
-        }
-        return object;
-    }
-
-    static String getAttributeName(final Attribute a) {
-        return a.getAttributeDescription().withoutOption("binary").toString();
-    }
-
-    /**
-     * Stub formatter for i18n strings.
-     *
-     * @param format
-     *            The format string.
-     * @param args
-     *            The string arguments.
-     * @return The formatted string.
-     */
-    static String i18n(final String format, final Object... args) {
-        return String.format(format, args);
-    }
-
-    static boolean isJSONPrimitive(final Object value) {
+    private static boolean isJsonPrimitive(final Object value) {
         return value instanceof String || value instanceof Boolean || value instanceof Number;
     }
 
@@ -137,13 +103,9 @@ final class Utils {
         return v == null || v.isNull() || (v.isList() && v.size() == 0);
     }
 
-    static Attribute jsonToAttribute(final Object value, final AttributeDescription ad) {
-        return jsonToAttribute(value, ad, jsonToByteString(ad));
-    }
-
     static Attribute jsonToAttribute(final Object value, final AttributeDescription ad,
             final Function<Object, ByteString, NeverThrowsException> f) {
-        if (isJSONPrimitive(value)) {
+        if (isJsonPrimitive(value)) {
             return new LinkedAttribute(ad, f.apply(value));
         } else if (value instanceof Collection<?>) {
             final Attribute a = new LinkedAttribute(ad);
@@ -152,8 +114,7 @@ final class Utils {
             }
             return a;
         } else {
-            throw new IllegalArgumentException("Unrecognized type of JSON value: "
-                    + value.getClass().getName());
+            throw new LocalizedIllegalArgumentException(ERR_UNRECOGNIZED_JSON_VALUE.get(value.getClass().getName()));
         }
     }
 
@@ -161,7 +122,7 @@ final class Utils {
         return new Function<Object, ByteString, NeverThrowsException>() {
             @Override
             public ByteString apply(final Object value) {
-                if (isJSONPrimitive(value)) {
+                if (isJsonPrimitive(value)) {
                     final Syntax syntax = ad.getAttributeType().getSyntax();
                     if (syntax.equals(getGeneralizedTimeSyntax())) {
                         return ByteString.valueOfObject(GeneralizedTime.valueOf(parseDateTime(value.toString())));
@@ -169,8 +130,8 @@ final class Utils {
                         return ByteString.valueOfObject(value);
                     }
                 } else {
-                    throw new IllegalArgumentException("Unrecognized type of JSON value: "
-                            + value.getClass().getName());
+                    throw new LocalizedIllegalArgumentException(ERR_UNRECOGNIZED_JSON_VALUE.get(value.getClass()
+                                                                                                     .getName()));
                 }
             }
         };
@@ -208,11 +169,20 @@ final class Utils {
         return s != null ? s.toLowerCase(Locale.ENGLISH) : null;
     }
 
-    private static <T> List<T> asList(final Collection<T> c) {
-        if (c instanceof List) {
-            return (List<T>) c;
-        }
-        return new ArrayList<>(c);
+    static NotSupportedException newNotSupportedException(final LocalizableMessage message) {
+        return new NotSupportedException(message.toString());
+    }
+
+    static JsonValueException newJsonValueException(final JsonValue value, final LocalizableMessage message) {
+        return new JsonValueException(value, message.toString());
+    }
+
+    static BadRequestException newBadRequestException(final LocalizableMessage message) {
+        return newBadRequestException(message, null);
+    }
+
+    static BadRequestException newBadRequestException(final LocalizableMessage message, final Throwable cause) {
+        return new BadRequestException(message.toString(), cause);
     }
 
     /** Prevent instantiation. */

@@ -16,12 +16,14 @@
  */
 package org.opends.admin.ads;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,7 +32,6 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapName;
 
 import org.forgerock.i18n.LocalizableMessage;
@@ -38,10 +39,10 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.admin.ads.ADSContext.ServerProperty;
 import org.opends.admin.ads.util.ApplicationTrustManager;
 import org.opends.admin.ads.util.ConnectionUtils;
+import org.opends.admin.ads.util.ConnectionWrapper;
 import org.opends.admin.ads.util.PreferredConnection;
 import org.opends.admin.ads.util.ServerLoader;
 import org.opends.quicksetup.util.Utils;
-import org.opends.server.util.StaticUtils;
 
 import static com.forgerock.opendj.cli.Utils.*;
 
@@ -179,7 +180,7 @@ public class TopologyCache
   private void readReplicationMonitoring()
   {
     Set<ReplicaDescriptor> replicasToUpdate = getReplicasToUpdate();
-    for (ServerDescriptor server : getServers())
+    for (ServerDescriptor server : putQueriedReplicaFirst(this.servers))
     {
       if (server.isReplicationServer())
       {
@@ -208,6 +209,23 @@ public class TopologyCache
         break;
       }
     }
+  }
+
+  /** Put first in the list the replica which host/port was provided on the command line. */
+  private List<ServerDescriptor> putQueriedReplicaFirst(Set<ServerDescriptor> servers)
+  {
+    List<ServerDescriptor> results = new ArrayList<>(servers);
+    for (Iterator<ServerDescriptor> it = results.iterator(); it.hasNext();)
+    {
+      ServerDescriptor server = it.next();
+      if (adsContext.getHostPort().equals(server.getHostPort(true)))
+      {
+        it.remove();
+        results.add(0, server);
+        break; // avoids any ConcurrentModificationException
+      }
+    }
+    return results;
   }
 
   private Set<ReplicaDescriptor> getReplicasToUpdate()
@@ -441,15 +459,11 @@ public class TopologyCache
           "domain-name", "server-id"
         });
 
-    InitialLdapContext ctx = null;
     NamingEnumeration<SearchResult> monitorEntries = null;
-    try
+    ServerLoader loader = getServerLoader(replicationServer.getAdsProperties());
+    try (ConnectionWrapper conn = loader.createConnectionWrapper())
     {
-      ServerLoader loader =
-          getServerLoader(replicationServer.getAdsProperties());
-      ctx = loader.createContext();
-
-      monitorEntries = ctx.search(
+      monitorEntries = conn.getLdapContext().search(
           new LdapName("cn=monitor"), "(missing-changes=*)", ctls);
 
       while (monitorEntries.hasMore())
@@ -505,7 +519,6 @@ public class TopologyCache
               "Unexpected error closing enumeration on monitor entries" + t, t));
         }
       }
-      StaticUtils.close(ctx);
     }
   }
 

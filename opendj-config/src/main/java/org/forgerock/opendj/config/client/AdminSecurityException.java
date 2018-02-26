@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
+ * Portions Copyright 2016 ForgeRock AS.
  */
 
 package org.forgerock.opendj.config.client;
@@ -23,11 +24,9 @@ import org.forgerock.i18n.LocalizableMessage;
  * interacting with the Directory Server. These fall broadly into two
  * categories: authentication problems and authorization problems.
  */
-public abstract class AdminSecurityException extends AdminClientException {
+abstract class AdminSecurityException extends AdminClientException {
 
-    /**
-     * Fake serialization ID.
-     */
+    /** Fake serialization ID. */
     private static final long serialVersionUID = 1L;
 
     /**

@@ -12,9 +12,8 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2009 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
-
 package org.opends.guitools.controlpanel.task;
 
 import static org.opends.messages.AdminToolMessages.*;
@@ -26,19 +25,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
+import org.forgerock.i18n.LocalizableMessage;
 import org.opends.guitools.controlpanel.datamodel.BackendDescriptor;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
 import org.opends.guitools.controlpanel.ui.ProgressDialog;
-import org.forgerock.i18n.LocalizableMessage;
 import org.opends.server.tools.ManageTasks;
 import org.opends.server.tools.tasks.TaskEntry;
 
-/**
- * Task used to cancel tasks in server.
- *
- */
+/** Task used to cancel tasks in server. */
 public class CancelTaskTask extends Task
 {
   private Set<String> backendSet;
@@ -62,38 +59,38 @@ public class CancelTaskTask extends Task
     this.tasks = new ArrayList<>(tasks);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Type getType()
   {
     // TODO: change this
     return Type.MODIFY_ENTRY;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Set<String> getBackends()
   {
     return backendSet;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTaskDescription()
   {
     return INFO_CTRL_PANEL_CANCEL_TASK_DESCRIPTION.get();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public boolean regenerateDescriptor()
   {
     return true;
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected String getCommandLinePath()
   {
     return null;
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected ArrayList<String> getCommandLineArguments()
   {
     return new ArrayList<>();
@@ -114,7 +111,7 @@ public class CancelTaskTask extends Task
     return args;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public boolean canLaunch(Task taskToBeLaunched,
       Collection<LocalizableMessage> incompatibilityReasons)
   {
@@ -134,7 +131,7 @@ public class CancelTaskTask extends Task
     return true;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void runTask()
   {
     state = State.RUNNING;
@@ -146,6 +143,7 @@ public class CancelTaskTask extends Task
 
       SwingUtilities.invokeLater(new Runnable()
       {
+        @Override
         public void run()
         {
           getProgressDialog().getProgressBar().setIndeterminate(true);
@@ -158,6 +156,7 @@ public class CancelTaskTask extends Task
         final boolean isFirst = numberCanceled == 0;
         SwingUtilities.invokeLater(new Runnable()
         {
+          @Override
           public void run()
           {
             if (isFirst)
@@ -175,29 +174,27 @@ public class CancelTaskTask extends Task
 
         arguments.toArray(args);
 
-        returnCode = ManageTasks.mainTaskInfo(args, System.in,
-            outPrintStream, errorPrintStream, false);
+        returnCode = ManageTasks.mainTaskInfo(args, outPrintStream, errorPrintStream, false);
         if (returnCode != 0)
         {
           break;
         }
-        else
+
+        numberCanceled++;
+        final int fNumberCanceled = numberCanceled;
+        SwingUtilities.invokeLater(new Runnable()
         {
-          numberCanceled ++;
-          final int fNumberCanceled = numberCanceled;
-          SwingUtilities.invokeLater(new Runnable()
+          @Override
+          public void run()
           {
-            public void run()
+            JProgressBar progressBar = getProgressDialog().getProgressBar();
+            if (fNumberCanceled == 1)
             {
-              if (fNumberCanceled == 1)
-              {
-                getProgressDialog().getProgressBar().setIndeterminate(false);
-              }
-              getProgressDialog().getProgressBar().setValue(
-                  (fNumberCanceled * 100) / totalNumber);
+              progressBar.setIndeterminate(false);
             }
-          });
-        }
+            progressBar.setValue((fNumberCanceled * 100) / totalNumber);
+          }
+        });
       }
       if (returnCode != 0)
       {

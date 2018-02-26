@@ -67,9 +67,11 @@ import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.AttributeUsage;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.ldap.schema.SchemaBuilder;
 import org.forgerock.opendj.ldap.schema.Syntax;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
+import org.opends.guitools.controlpanel.datamodel.SomeSchemaElement;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.event.ConfigurationElementCreatedListener;
 import org.opends.guitools.controlpanel.event.ScrollPaneBorderListener;
@@ -82,8 +84,6 @@ import org.opends.guitools.controlpanel.ui.components.TitlePanel;
 import org.opends.guitools.controlpanel.ui.renderer.SchemaElementComboBoxCellRenderer;
 import org.opends.guitools.controlpanel.util.LowerCaseComparator;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.opends.server.schema.SomeSchemaElement;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 import org.opends.server.util.ServerConstants;
 import org.opends.server.util.StaticUtils;
@@ -157,16 +157,13 @@ class CustomAttributePanel extends SchemaElementPanel
     createLayout();
   }
 
-  /** {@inheritDoc} */
   @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_CUSTOM_ATTRIBUTE_TITLE.get();
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   */
+  /** Creates the layout of the panel (but the contents are not populated here). */
   private void createLayout()
   {
     GridBagConstraints gbc = new GridBagConstraints();
@@ -198,7 +195,6 @@ class CustomAttributePanel extends SchemaElementPanel
     add(delete, gbc);
     delete.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void actionPerformed(ActionEvent ev)
       {
@@ -214,7 +210,6 @@ class CustomAttributePanel extends SchemaElementPanel
     add(saveChanges, gbc);
     saveChanges.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void actionPerformed(ActionEvent ev)
       {
@@ -333,7 +328,6 @@ class CustomAttributePanel extends SchemaElementPanel
       final BasicExpander expander = expanders[i];
       ChangeListener changeListener = new ChangeListener()
       {
-        /** {@inheritDoc} */
         @Override
         public void stateChanged(ChangeEvent e)
         {
@@ -347,7 +341,6 @@ class CustomAttributePanel extends SchemaElementPanel
 
     ItemListener itemListener = new ItemListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void itemStateChanged(ItemEvent ev)
       {
@@ -401,7 +394,6 @@ class CustomAttributePanel extends SchemaElementPanel
       final JList list = lists[i];
       MouseAdapter clickListener = new MouseAdapter()
       {
-        /** {@inheritDoc} */
         @Override
         public void mouseClicked(MouseEvent ev)
         {
@@ -415,7 +407,6 @@ class CustomAttributePanel extends SchemaElementPanel
 
       KeyAdapter keyListener = new KeyAdapter()
       {
-        /** {@inheritDoc} */
         @Override
         public void keyTyped(KeyEvent ev)
         {
@@ -431,21 +422,18 @@ class CustomAttributePanel extends SchemaElementPanel
 
     DocumentListener docListener = new DocumentListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void insertUpdate(DocumentEvent ev)
       {
         checkEnableSaveChanges();
       }
 
-      /** {@inheritDoc} */
       @Override
       public void removeUpdate(DocumentEvent ev)
       {
         checkEnableSaveChanges();
       }
 
-      /** {@inheritDoc} */
       @Override
       public void changedUpdate(DocumentEvent arg0)
       {
@@ -482,14 +470,12 @@ class CustomAttributePanel extends SchemaElementPanel
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean mustCheckUnsavedChanges()
   {
     return saveChanges.isEnabled();
   }
 
-  /** {@inheritDoc} */
   @Override
   public UnsavedChangesDialog.Result checkUnsavedChanges()
   {
@@ -510,7 +496,6 @@ class CustomAttributePanel extends SchemaElementPanel
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean requiresScroll()
   {
@@ -542,7 +527,7 @@ class CustomAttributePanel extends SchemaElementPanel
     this.aliases.setText(Utilities.getStringFromCollection(someAliases, ", "));
 
     SomeSchemaElement element = new SomeSchemaElement(attr);
-    String sOrigin = Utilities.getOrigin(element);
+    String sOrigin = element.getOrigin();
     if (sOrigin == null)
     {
       sOrigin = "";
@@ -575,9 +560,9 @@ class CustomAttributePanel extends SchemaElementPanel
 
     Comparator<String> lowerCaseComparator = new LowerCaseComparator();
     SortedSet<String> requiredByOcs = new TreeSet<>(lowerCaseComparator);
-    for (ObjectClass oc : schema.getObjectClasses().values())
+    for (ObjectClass oc : schema.getObjectClasses())
     {
-      if (oc.getRequiredAttributeChain().contains(attr))
+      if (oc.getRequiredAttributes().contains(attr))
       {
         requiredByOcs.add(oc.getNameOrOID());
       }
@@ -591,9 +576,9 @@ class CustomAttributePanel extends SchemaElementPanel
     }
 
     SortedSet<String> optionalByOcs = new TreeSet<>(lowerCaseComparator);
-    for (ObjectClass oc : schema.getObjectClasses().values())
+    for (ObjectClass oc : schema.getObjectClasses())
     {
-      if (oc.getOptionalAttributeChain().contains(attr))
+      if (oc.getOptionalAttributes().contains(attr))
       {
         optionalByOcs.add(oc.getNameOrOID());
       }
@@ -618,7 +603,6 @@ class CustomAttributePanel extends SchemaElementPanel
     ignoreChangeEvents = false;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
@@ -687,7 +671,6 @@ class CustomAttributePanel extends SchemaElementPanel
     }
     SwingUtilities.invokeLater(new Runnable()
     {
-      /** {@inheritDoc} */
       @Override
       public void run()
       {
@@ -711,14 +694,12 @@ class CustomAttributePanel extends SchemaElementPanel
     return schema == null && s != null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Component getPreferredFocusComponent()
   {
     return name;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void okClicked()
   {
@@ -754,13 +735,13 @@ class CustomAttributePanel extends SchemaElementPanel
         }
       }
 
-      for (ObjectClass o : schema.getObjectClasses().values())
+      for (ObjectClass o : schema.getObjectClasses())
       {
-        if (o.getRequiredAttributeChain().contains(attribute))
+        if (o.getRequiredAttributes().contains(attribute))
         {
           dependentClasses.add(o.getNameOrOID());
         }
-        else if (o.getOptionalAttributeChain().contains(attribute))
+        else if (o.getOptionalAttributes().contains(attribute))
         {
           dependentClasses.add(o.getNameOrOID());
         }

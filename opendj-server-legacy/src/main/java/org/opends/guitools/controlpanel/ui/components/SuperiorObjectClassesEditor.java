@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2010 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.ui.components;
 
@@ -40,51 +40,46 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.guitools.controlpanel.event.SuperiorObjectClassesChangedEvent;
-import org.opends.guitools.controlpanel.event.
- SuperiorObjectClassesChangedListener;
+import org.opends.guitools.controlpanel.event.SuperiorObjectClassesChangedListener;
 import org.opends.guitools.controlpanel.ui.GenericDialog;
 import org.opends.guitools.controlpanel.ui.SelectObjectClassesPanel;
-import org.opends.guitools.controlpanel.ui.renderer.
- SchemaElementComboBoxCellRenderer;
+import org.opends.guitools.controlpanel.ui.renderer.SchemaElementComboBoxCellRenderer;
 import org.opends.guitools.controlpanel.util.LowerCaseComparator;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 
-/**
- * A panel that can be used to select one (or several) object classes.
- */
+/** A panel that can be used to select one (or several) object classes. */
 public class SuperiorObjectClassesEditor extends JPanel
 {
   private static final long serialVersionUID = 123123973933568L;
 
-  private Set<ObjectClass> toExclude = new HashSet<>();
-  private JComboBox singleSuperior = Utilities.createComboBox();
-  private JLabel multipleSuperiors = Utilities.createDefaultLabel();
-  private JButton bSpecifyMultiple = Utilities.createButton(
+  private final Set<ObjectClass> toExclude = new HashSet<>();
+  private final JComboBox<ObjectClass> singleSuperior = Utilities.createComboBox();
+  private final JLabel multipleSuperiors = Utilities.createDefaultLabel();
+  private final JButton bSpecifyMultiple = Utilities.createButton(
       INFO_CTRL_PANEL_SPECIFY_MULTIPLE_SUPERIORS_LABEL.get());
-  private JButton bUpdateMultiple = Utilities.createButton(
+  private final JButton bUpdateMultiple = Utilities.createButton(
       INFO_CTRL_PANEL_UPDATE_MULTIPLE_SUPERIORS_LABEL.get());
 
   private SelectObjectClassesPanel superiorsPanel;
   private GenericDialog superiorsDialog;
 
-  private String MULTIPLE = "Multiple";
-  private String SINGLE = "Single";
+  private static final String MULTIPLE = "Multiple";
+  private static final String SINGLE = "Single";
 
-  private CardLayout cardLayout = new CardLayout();
+  private final CardLayout cardLayout;
 
   private boolean isMultiple;
 
-  private Set<ObjectClass> selectedMultipleSuperiors = new HashSet<>();
-  private Set<SuperiorObjectClassesChangedListener> listeners = new HashSet<>();
+  private final Set<ObjectClass> selectedMultipleSuperiors = new HashSet<>();
+  private final Set<SuperiorObjectClassesChangedListener> listeners = new HashSet<>();
 
   private Schema schema;
 
-  /**
-   * Default constructor for this panel.
-   */
+  /** Default constructor for this panel. */
   public SuperiorObjectClassesEditor()
   {
     super(new CardLayout());
@@ -93,25 +88,14 @@ public class SuperiorObjectClassesEditor extends JPanel
     createLayout();
   }
 
-  /**
-   * Constructor for this panel.
-   * @param schema a non {@code null} schema object.
-   */
-  public SuperiorObjectClassesEditor(Schema schema)
-  {
-    this();
-    updateWithSchema(schema);
-  }
-
-  /**
-   * Creates the layout of this panel.
-   */
+  /** Creates the layout of this panel. */
   private void createLayout()
   {
     bSpecifyMultiple.setToolTipText(
         INFO_CTRL_PANEL_SPECIFY_MULTIPLE_SUPERIORS_TOOLTIP.get().toString());
     bSpecifyMultiple.addActionListener(new ActionListener()
     {
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         specifyMultipleClicked();
@@ -121,6 +105,7 @@ public class SuperiorObjectClassesEditor extends JPanel
         INFO_CTRL_PANEL_UPDATE_MULTIPLE_SUPERIORS_TOOLTIP.get().toString());
     bUpdateMultiple.addActionListener(new ActionListener()
     {
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         updateMultipleClicked();
@@ -128,12 +113,11 @@ public class SuperiorObjectClassesEditor extends JPanel
     });
     SchemaElementComboBoxCellRenderer renderer = new
     SchemaElementComboBoxCellRenderer(singleSuperior);
-    DefaultComboBoxModel model = new DefaultComboBoxModel();
-    singleSuperior.setModel(model);
+    singleSuperior.setModel(new DefaultComboBoxModel<ObjectClass>());
     singleSuperior.setRenderer(renderer);
     ItemListener itemListener = new ItemListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void itemStateChanged(ItemEvent ev)
       {
         notifyListeners();
@@ -250,7 +234,7 @@ public class SuperiorObjectClassesEditor extends JPanel
     }
 
     ObjectClass oc = (ObjectClass)singleSuperior.getSelectedItem();
-    if (oc != null)
+    if (oc != null && !oc.isPlaceHolder())
     {
       return Collections.singleton(oc);
     }
@@ -274,9 +258,8 @@ public class SuperiorObjectClassesEditor extends JPanel
   private void updateWithSchema(Schema schema)
   {
     HashMap<String, ObjectClass> objectClassNameMap = new HashMap<>();
-    for (String key : schema.getObjectClasses().keySet())
+    for (ObjectClass oc : schema.getObjectClasses())
     {
-      ObjectClass oc = schema.getObjectClass(key);
       if (!toExclude.contains(oc))
       {
         objectClassNameMap.put(oc.getNameOrOID(), oc);
@@ -289,14 +272,11 @@ public class SuperiorObjectClassesEditor extends JPanel
     {
       newParents.add(objectClassNameMap.get(key));
     }
-    Utilities.updateComboBoxModel(newParents,
-        (DefaultComboBoxModel)singleSuperior.getModel());
+    Utilities.updateComboBoxModel(newParents, (DefaultComboBoxModel<ObjectClass>) singleSuperior.getModel());
 
     if (this.schema == null)
     {
-      // Select the values.
-      ObjectClass topClass = schema.getObjectClass("top");
-      singleSuperior.setSelectedItem(topClass);
+      singleSuperior.setSelectedItem(CoreSchema.getTopObjectClass());
     }
     this.schema = schema;
   }
@@ -310,16 +290,6 @@ public class SuperiorObjectClassesEditor extends JPanel
       SuperiorObjectClassesChangedListener listener)
   {
     listeners.add(listener);
-  }
-
-  /**
-   * Removes the provided listener.
-   * @param listener the listener to be removed.
-   */
-  public void removeParentObjectClassesChangedListener(
-      SuperiorObjectClassesChangedListener listener)
-  {
-    listeners.remove(listener);
   }
 
   private void specifyMultipleClicked()

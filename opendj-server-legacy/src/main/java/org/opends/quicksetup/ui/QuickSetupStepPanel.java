@@ -12,17 +12,20 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.opends.quicksetup.ui;
+
+import static org.opends.messages.QuickSetupMessages.*;
 
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.Box;
 import javax.swing.JEditorPane;
@@ -31,22 +34,20 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import org.opends.quicksetup.event.ButtonActionListener;
-import org.opends.quicksetup.event.ButtonEvent;
+import org.forgerock.i18n.LocalizableMessage;
 import org.opends.quicksetup.ProgressDescriptor;
 import org.opends.quicksetup.UserData;
+import org.opends.quicksetup.event.ButtonActionListener;
+import org.opends.quicksetup.event.ButtonEvent;
 import org.opends.quicksetup.util.HtmlProgressMessageFormatter;
 import org.opends.quicksetup.util.ProgressMessageFormatter;
 import org.opends.quicksetup.util.URLWorker;
-import org.forgerock.i18n.LocalizableMessage;
-import static org.opends.messages.QuickSetupMessages.*;
 
 /**
  * This is an abstract class that is extended by all the classes that are in
  * the CardLayout of CurrentStepPanel.  All the panels that appear on the
  * top-right side of the dialog extend this class: WelcomePane, ReviewPanel,
  * etc.
- *
  */
 public abstract class QuickSetupStepPanel extends QuickSetupPanel
 implements HyperlinkListener
@@ -55,7 +56,7 @@ implements HyperlinkListener
   private JPanel inputContainer;
   private Component inputPanel;
 
-  private HashSet<ButtonActionListener> buttonListeners = new HashSet<>();
+  private final Set<ButtonActionListener> buttonListeners = new HashSet<>();
 
   private ProgressMessageFormatter formatter;
 
@@ -68,7 +69,7 @@ implements HyperlinkListener
    * We can use a HashMap (not multi-thread safe) because all
    * the calls to this object are done in the event-thread.
   */
-  private HashMap<String, URLWorker> hmURLWorkers = new HashMap<>();
+  private final Map<String, URLWorker> hmURLWorkers = new HashMap<>();
 
   /**
    * Creates a default instance.
@@ -94,13 +95,13 @@ implements HyperlinkListener
    */
   public void beginDisplay(UserData data)
   {
+    // no-op
   }
 
-  /**
-   * Called just after the panel is shown: used to set focus properly.
-   */
+  /** Called just after the panel is shown: used to set focus properly. */
   public void endDisplay()
   {
+    // no-op
   }
 
   /**
@@ -121,6 +122,7 @@ implements HyperlinkListener
    */
   public void displayProgress(ProgressDescriptor descriptor)
   {
+    // no-op
   }
 
   /**
@@ -129,6 +131,7 @@ implements HyperlinkListener
    *
    * @param e the HyperlinkEvent.
    */
+  @Override
   public void hyperlinkUpdate(HyperlinkEvent e)
   {
     if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
@@ -136,10 +139,7 @@ implements HyperlinkListener
       String url = e.getURL().toString();
       if (!isURLWorkerRunning(url))
       {
-        /*
-         * Only launch the worker if there is not already a worker trying to
-         * display this URL.
-         */
+        /* Only launch the worker if there is not already a worker trying to display this URL. */
         URLWorker worker = new URLWorker(this, url);
         startWorker(worker);
       }
@@ -270,11 +270,8 @@ implements HyperlinkListener
       l.buttonActionPerformed(ev);
     }
   }
-  /**
-   * Creates the layout of the panel.
-   *
-   */
-  protected void createLayout()
+  /** Creates the layout of the panel. */
+  private void createLayout()
   {
     setLayout(new GridBagLayout());
 

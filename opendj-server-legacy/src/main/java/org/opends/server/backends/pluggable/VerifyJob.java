@@ -210,7 +210,7 @@ class VerifyJob
           }
           else
           {
-            AttributeType attrType = DirectoryServer.getAttributeType(lowerName);
+            AttributeType attrType = DirectoryServer.getSchema().getAttributeType(lowerName);
             if (attrType.isPlaceHolder())
             {
               throw new StorageRuntimeException(ERR_ATTRIBUTE_INDEX_NOT_CONFIGURED.get(index).toString());
@@ -373,7 +373,7 @@ class VerifyJob
         Entry entry;
         try
         {
-          entry = ID2Entry.entryFromDatabase(value, rootContainer.getCompressedSchema());
+          entry = id2entry.entryFromDatabase(value, rootContainer.getCompressedSchema());
         }
         catch (Exception e)
         {

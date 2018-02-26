@@ -176,13 +176,9 @@ public class ConnectionUtils
     env.put("java.naming.ldap.factory.socket",
         org.opends.admin.ads.util.TrustedSocketFactory.class.getName());
 
-    if (dn != null)
+    if (dn != null && pwd != null)
     {
       env.put(Context.SECURITY_PRINCIPAL, dn);
-    }
-
-    if (pwd != null)
-    {
       env.put(Context.SECURITY_CREDENTIALS, pwd);
     }
 
@@ -398,17 +394,6 @@ public class ConnectionUtils
   }
 
   /**
-   * Returns the port number used in the provided InitialLdapContext.
-   * @param ctx the context to analyze.
-   * @return the port number used in the provided InitialLdapContext.
-   */
-  public static int getPort(InitialLdapContext ctx)
-  {
-    HostPort hp = getHostPort(ctx);
-    return hp != null ? hp.getPort() : -1;
-  }
-
-  /**
    * Returns the host port representation of the server to which this
    * context is connected.
    * @param ctx the context to analyze.
@@ -491,44 +476,7 @@ public class ConnectionUtils
     return "true".equalsIgnoreCase(getEnvProperty(ctx, STARTTLS_PROPERTY));
   }
 
-  /**
-   * Method used to know if we can connect as administrator in a server with a
-   * given password and dn.
-   * @param ldapUrl the LDAP URL of the server.
-   * @param dn the dn to be used.
-   * @param pwd the password to be used.
-   * @param timeout the timeout to establish the connection in milliseconds.
-   * Use {@code 0} to express no timeout.
-   * @return <CODE>true</CODE> if we can connect and read the configuration and
-   * <CODE>false</CODE> otherwise.
-   */
-  public static boolean canConnectAsAdministrativeUser(String ldapUrl,
-      String dn, String pwd, int timeout)
-  {
-    try
-    {
-      InitialLdapContext ctx;
-      if (ldapUrl.toLowerCase().startsWith("ldap:"))
-      {
-        ctx = createLdapContext(ldapUrl, dn, pwd, timeout,
-            null);
-      }
-      else
-      {
-        ctx = createLdapsContext(ldapUrl, dn, pwd, timeout,
-            null, null, null);
-      }
 
-      return connectedAsAdministrativeUser(ctx);
-    } catch (NamingException ne)
-    {
-      // Nothing to do.
-      return false;
-    } catch (Throwable t)
-    {
-      throw new IllegalStateException("Unexpected throwable.", t);
-    }
-  }
 
   /**
    * Method used to know if we are connected as administrator in a server with a
@@ -537,7 +485,7 @@ public class ConnectionUtils
    * @return <CODE>true</CODE> if we are connected and read the configuration
    * and <CODE>false</CODE> otherwise.
    */
-  public static boolean connectedAsAdministrativeUser(InitialLdapContext ctx)
+  static boolean connectedAsAdministrativeUser(InitialLdapContext ctx)
   {
     try
     {

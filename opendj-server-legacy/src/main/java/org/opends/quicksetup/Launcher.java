@@ -12,23 +12,22 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.opends.quicksetup;
 
-import org.forgerock.i18n.LocalizableMessage;
-import com.forgerock.opendj.cli.ArgumentParser;
-
-import static org.opends.messages.QuickSetupMessages.*;
-import static org.opends.server.util.DynamicConstants.PRINTABLE_VERSION_STRING;
 import static com.forgerock.opendj.cli.ArgumentConstants.*;
 
-import org.opends.quicksetup.util.Utils;
+import static org.opends.messages.QuickSetupMessages.*;
+import static org.opends.server.util.DynamicConstants.*;
 
 import java.io.PrintStream;
-import java.io.File;
 
+import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.opends.quicksetup.util.Utils;
+
+import com.forgerock.opendj.cli.ArgumentParser;
 
 /**
  * Responsible for providing initial evaluation of command line arguments
@@ -39,18 +38,25 @@ public abstract class Launcher {
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
   /** Arguments with which this launcher was invoked. */
-  protected String[] args;
+  protected final String[] args;
+
+  /** The temporary log file which will be kept if an error occurs. */
+  protected final TempLogFile tempLogFile;
 
   /**
    * Creates a Launcher.
-   * @param args String[] of argument passes from the command line
+   *
+   * @param args
+   *          String[] of argument passes from the command line
+   * @param tempLogFilePrefix
+   *          temporary log file path where messages will be logged
    */
-  public Launcher(String[] args) {
+  public Launcher(final String[] args, final String tempLogFilePrefix) {
     if (args == null) {
       throw new IllegalArgumentException("args cannot be null");
     }
     this.args = args;
-
+    this.tempLogFile = TempLogFile.newTempLogFile(tempLogFilePrefix);
   }
 
   /**
@@ -69,9 +75,8 @@ public abstract class Launcher {
   public abstract ArgumentParser getArgumentParser();
 
   /**
-   * Indicates whether or not the launcher should print a usage
-   * statement based on the content of the arguments passed into
-   * the constructor.
+   * Indicates whether the launcher should print a usage statement
+   * based on the content of the arguments passed into the constructor.
    * @return boolean where true indicates usage should be printed
    */
   protected boolean shouldPrintUsage() {
@@ -88,9 +93,8 @@ public abstract class Launcher {
   }
 
   /**
-   * Indicates whether or not the launcher should print a usage
-   * statement based on the content of the arguments passed into
-   * the constructor.
+   * Indicates whether the launcher should print a usage statement
+   * based on the content of the arguments passed into the constructor.
    * @return boolean where true indicates usage should be printed
    */
   protected boolean isQuiet() {
@@ -107,9 +111,8 @@ public abstract class Launcher {
   }
 
   /**
-   * Indicates whether or not the launcher should print a version
-   * statement based on the content of the arguments passed into
-   * the constructor.
+   * Indicates whether the launcher should print a version statement
+   * based on the content of the arguments passed into the constructor.
    * @return boolean where true indicates version should be printed
    */
   protected boolean shouldPrintVersion() {
@@ -150,7 +153,8 @@ public abstract class Launcher {
    * @param toStdErr whether the message must be printed to the standard error
    * or the standard output.
    */
-  protected void printUsage(String i18nMsg, boolean toStdErr) {
+  private void printUsage(String i18nMsg, boolean toStdErr)
+  {
     if (toStdErr)
     {
       System.err.println(i18nMsg);
@@ -185,16 +189,17 @@ public abstract class Launcher {
       { -1 };
     Thread t = new Thread(new Runnable()
     {
+      @Override
       public void run()
       {
         try
         {
-          SplashScreen.main(args);
+          SplashScreen.main(tempLogFile, args);
           returnValue[0] = 0;
         }
         catch (Throwable t)
         {
-          if (QuickSetupLog.isInitialized())
+          if (tempLogFile.isEnabled())
           {
             logger.warn(LocalizableMessage.raw("Error launching GUI: "+t));
             StringBuilder buf = new StringBuilder();
@@ -228,8 +233,7 @@ public abstract class Launcher {
     }
     catch (InterruptedException ie)
     {
-      /* An error occurred, so the return value will be -1.  We got nothing to
-      do with this exception. */
+      /* An error occurred, so the return value will be -1. We got nothing to do with this exception. */
     }
     System.setErr(printStream);
     return returnValue[0];
@@ -249,7 +253,7 @@ public abstract class Launcher {
    * @return 0 if everything worked fine, and an error code if something wrong
    *         occurred.
    */
-  protected int launchCli(CliApplication cliApp)
+  private int launchCli(CliApplication cliApp)
   {
     System.setProperty(Constants.CLI_JAVA_PROPERTY, "true");
     QuickSetupCli cli = new QuickSetupCli(cliApp, this);
@@ -270,10 +274,8 @@ public abstract class Launcher {
     return returnValue.getReturnCode();
   }
 
-  /**
-   * Prints the version statement to standard output terminal.
-   */
-  protected void printVersion()
+  /** Prints the version statement to standard output terminal. */
+  private void printVersion()
   {
     System.out.print(PRINTABLE_VERSION_STRING);
   }
@@ -284,7 +286,8 @@ public abstract class Launcher {
    * @param toStdErr whether the message must be printed to the standard error
    * or the standard output.
    */
-  protected void printUsage(boolean toStdErr) {
+  private void printUsage(boolean toStdErr)
+  {
     try
     {
       ArgumentParser argParser = getArgumentParser();
@@ -315,18 +318,10 @@ public abstract class Launcher {
    */
   protected abstract void willLaunchGui();
 
-  /**
-   * Called if launching of the GUI failed.  Here
-   * subclasses can so application specific things
-   * like print a message.
-   * @param logFileName the log file containing more information about why
-   * the launch failed.
-   */
-  protected abstract void guiLaunchFailed(String logFileName);
+  /** Called if launching of the GUI failed. */
+  protected abstract void guiLaunchFailed();
 
-  /**
-   * The main method which is called by the command lines.
-   */
+  /** The main method which is called by the command lines. */
   public void launch() {
     if (shouldPrintVersion()) {
       ArgumentParser parser = getArgumentParser();
@@ -350,15 +345,7 @@ public abstract class Launcher {
       willLaunchGui();
       int exitCode = launchGui(args);
       if (exitCode != 0) {
-        File logFile = QuickSetupLog.getLogFile();
-        if (logFile != null)
-        {
-          guiLaunchFailed(logFile.toString());
-        }
-        else
-        {
-          guiLaunchFailed(null);
-        }
+        guiLaunchFailed();
         CliApplication cliApp = createCliApplication();
         exitCode = launchCli(cliApp);
         preExit(cliApp);
@@ -374,11 +361,8 @@ public abstract class Launcher {
 
         // Add an extra space systematically
         System.out.println();
-
-        File logFile = QuickSetupLog.getLogFile();
-        if (logFile != null) {
-          System.out.println(INFO_GENERAL_SEE_FOR_DETAILS.get(
-                  QuickSetupLog.getLogFile().getPath()));
+        if (tempLogFile.isEnabled()) {
+          System.out.println(INFO_GENERAL_SEE_FOR_DETAILS.get(tempLogFile.getPath()));
         }
       }
     }

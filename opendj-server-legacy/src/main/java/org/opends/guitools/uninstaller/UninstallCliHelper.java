@@ -17,9 +17,10 @@
 package org.opends.guitools.uninstaller;
 
 import static org.forgerock.util.Utils.*;
-import static org.opends.admin.ads.util.ConnectionUtils.*;
+import static org.opends.admin.ads.util.PreferredConnection.Type.*;
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.messages.QuickSetupMessages.*;
+
 import static com.forgerock.opendj.cli.ArgumentConstants.*;
 import static com.forgerock.opendj.cli.Utils.*;
 
@@ -34,8 +35,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.naming.NamingException;
-import javax.naming.NoPermissionException;
-import javax.naming.ldap.InitialLdapContext;
 import javax.net.ssl.TrustManager;
 
 import org.forgerock.i18n.LocalizableMessage;
@@ -46,8 +45,8 @@ import org.opends.admin.ads.ServerDescriptor;
 import org.opends.admin.ads.TopologyCache;
 import org.opends.admin.ads.TopologyCacheException;
 import org.opends.admin.ads.util.ApplicationTrustManager;
-import org.opends.admin.ads.util.ConnectionUtils;
 import org.opends.admin.ads.util.ConnectionWrapper;
+import org.opends.admin.ads.util.PreferredConnection.Type;
 import org.opends.guitools.controlpanel.datamodel.ConnectionProtocolPolicy;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
 import org.opends.quicksetup.Application;
@@ -64,6 +63,7 @@ import org.opends.quicksetup.util.PlainTextProgressMessageFormatter;
 import org.opends.quicksetup.util.ServerController;
 import org.opends.quicksetup.util.Utils;
 import org.opends.server.admin.client.cli.SecureConnectionCliArgs;
+import org.opends.server.types.HostPort;
 import org.opends.server.util.StaticUtils;
 import org.opends.server.util.cli.LDAPConnectionConsoleInteraction;
 
@@ -94,8 +94,7 @@ public class UninstallCliHelper extends ConsoleApplication {
   private ControlPanelInfo info;
 
   private boolean forceNonInteractive;
-  private boolean useSSL = true;
-  private boolean useStartTLS;
+  private Type connectionType = LDAPS;
 
   /** Default constructor. */
   public UninstallCliHelper()
@@ -110,8 +109,6 @@ public class UninstallCliHelper extends ConsoleApplication {
    * @param args
    *          the ArgumentParser with the allowed arguments of the command line.
    *          The code assumes that the arguments have already been parsed.
-   * @param rawArguments
-   *          the arguments provided in the command line.
    * @return the UserData object with what the user wants to uninstall and null
    *         if the user cancels the uninstallation.
    * @throws UserDataException
@@ -120,9 +117,8 @@ public class UninstallCliHelper extends ConsoleApplication {
    *           If there is an error processing data in non-interactive mode and
    *           an error must be thrown (not in force on error mode).
    */
-  public UninstallUserData createUserData(UninstallerArgumentParser args,
-      String[] rawArguments)
-  throws UserDataException, ClientException
+  public UninstallUserData createUserData(UninstallerArgumentParser args)
+      throws UserDataException, ClientException
   {
     parser = args;
     UninstallUserData userData = new UninstallUserData();
@@ -997,10 +993,12 @@ public class UninstallCliHelper extends ConsoleApplication {
       @Override
       public void cancel()
       {
+        // no-op
       }
       @Override
       public void run()
       {
+        // no-op
       }
     };
     application.setProgressMessageFormatter(
@@ -1051,59 +1049,6 @@ public class UninstallCliHelper extends ConsoleApplication {
   }
 
   /**
-   * Returns an InitialLdapContext using the provided parameters. We try to
-   * guarantee that the connection is able to read the configuration.
-   *
-   * @param host
-   *          the host name.
-   * @param port
-   *          the port to connect.
-   * @param useSSL
-   *          whether to use SSL or not.
-   * @param useStartTLS
-   *          whether to use StartTLS or not.
-   * @param bindDn
-   *          the bind dn to be used.
-   * @param pwd
-   *          the password.
-   * @param connectTimeout
-   *          the timeout in milliseconds to connect to the server.
-   * @param trustManager
-   *          the trust manager.
-   * @return an InitialLdapContext connected.
-   * @throws NamingException
-   *           if there was an error establishing the connection.
-   */
-  private InitialLdapContext createAdministrativeContext(String host,
-      int port, boolean useSSL, boolean useStartTLS, String bindDn, String pwd,
-      int connectTimeout, ApplicationTrustManager trustManager)
-      throws NamingException
-  {
-    InitialLdapContext ctx;
-    String ldapUrl = ConnectionUtils.getLDAPUrl(host, port, useSSL);
-    if (useSSL)
-    {
-      ctx = createLdapsContext(ldapUrl, bindDn, pwd, connectTimeout, null, trustManager, null);
-    }
-    else if (useStartTLS)
-    {
-      ctx =
-          Utils.createStartTLSContext(ldapUrl, bindDn, pwd, connectTimeout,
-              null, trustManager, null);
-    }
-    else
-    {
-      ctx = createLdapContext(ldapUrl, bindDn, pwd, connectTimeout, null);
-    }
-    if (!ConnectionUtils.connectedAsAdministrativeUser(ctx))
-    {
-      throw new NoPermissionException(ERR_NOT_ADMINISTRATIVE_USER.get()
-          .toString());
-    }
-    return ctx;
-  }
-
-  /**
    * Updates the contents of the UninstallUserData while trying to connect to
    * the remote servers. It returns <CODE>true</CODE> if we could connect to the
    * remote servers and all the presented certificates were accepted and
@@ -1134,7 +1079,7 @@ public class UninstallCliHelper extends ConsoleApplication {
 
     logger.info(LocalizableMessage.raw("Updating user data with remote servers."));
 
-    InitialLdapContext ctx = null;
+    ConnectionWrapper conn = null;
     try
     {
       info.setTrustManager(userData.getTrustManager());
@@ -1157,11 +1102,10 @@ public class UninstallCliHelper extends ConsoleApplication {
       {
         logger.error(LocalizableMessage.raw("Error parsing url: "+adminConnectorUrl));
       }
-      ctx = createAdministrativeContext(host, port, useSSL, useStartTLS, dn,
-          pwd, getConnectTimeout(), userData.getTrustManager());
-      ConnectionWrapper connWrapper = new ConnectionWrapper(ctx, getConnectTimeout(), userData.getTrustManager());
+      conn = new ConnectionWrapper(new HostPort(host, port), connectionType, dn, pwd,
+          getConnectTimeout(), userData.getTrustManager());
 
-      ADSContext adsContext = new ADSContext(connWrapper);
+      ADSContext adsContext = new ADSContext(conn);
       if (interactive && userData.getTrustManager() == null)
       {
         // This is required when the user did  connect to the server using SSL
@@ -1208,7 +1152,7 @@ public class UninstallCliHelper extends ConsoleApplication {
     }
     finally
     {
-      StaticUtils.close(ctx);
+      StaticUtils.close(conn);
     }
     if (exceptionOccurred)
     {

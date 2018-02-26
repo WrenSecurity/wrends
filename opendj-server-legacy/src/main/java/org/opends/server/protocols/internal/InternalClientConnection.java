@@ -16,6 +16,15 @@
  */
 package org.opends.server.protocols.internal;
 
+import static org.forgerock.opendj.adapter.server3x.Converters.*;
+import static org.forgerock.opendj.ldap.ByteString.*;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
+import static org.opends.messages.ProtocolMessages.*;
+import static org.opends.server.config.ConfigConstants.*;
+import static org.opends.server.util.CollectionUtils.*;
+import static org.opends.server.util.ServerConstants.*;
+import static org.opends.server.util.StaticUtils.*;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +38,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.RDN;
@@ -37,6 +45,7 @@ import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.requests.ModifyDNRequest;
 import org.forgerock.opendj.ldap.requests.ModifyRequest;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.api.ClientConnection;
 import org.opends.server.api.ConnectionHandler;
 import org.opends.server.core.AddOperation;
@@ -67,7 +76,6 @@ import org.opends.server.types.DisconnectReason;
 import org.opends.server.types.Entry;
 import org.opends.server.types.IntermediateResponse;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Operation;
 import org.opends.server.types.Privilege;
 import org.opends.server.types.RawAttribute;
@@ -78,13 +86,6 @@ import org.opends.server.util.AddChangeRecordEntry;
 import org.opends.server.util.DeleteChangeRecordEntry;
 import org.opends.server.util.ModifyChangeRecordEntry;
 import org.opends.server.util.ModifyDNChangeRecordEntry;
-
-import static org.forgerock.opendj.adapter.server3x.Converters.*;
-import static org.opends.messages.ProtocolMessages.*;
-import static org.opends.server.config.ConfigConstants.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.opends.server.util.StaticUtils.*;
 
 /**
  * This class defines a pseudo-connection object that can be used for
@@ -152,16 +153,16 @@ public final class InternalClientConnection
     try
     {
       LinkedHashMap<ObjectClass,String> objectClasses = new LinkedHashMap<>();
-      put(objectClasses, DirectoryServer.getTopObjectClass());
-      put(objectClasses, DirectoryServer.getObjectClass(OC_PERSON, true));
-      put(objectClasses, DirectoryServer.getObjectClass(OC_ROOT_DN, true));
+      put(objectClasses, getTopObjectClass());
+      put(objectClasses, getPersonObjectClass());
+      put(objectClasses, DirectoryServer.getSchema().getObjectClass(OC_ROOT_DN));
 
       LinkedHashMap<AttributeType,List<Attribute>> userAttrs = new LinkedHashMap<>();
       put(userAttrs, ATTR_COMMON_NAME, commonName);
       put(userAttrs, ATTR_SN, commonName);
       put(userAttrs, ATTR_ROOTDN_ALTERNATE_BIND_DN, shortDNString);
 
-      AttributeType privType = DirectoryServer.getAttributeType(OP_ATTR_PRIVILEGE_NAME);
+      AttributeType privType = DirectoryServer.getSchema().getAttributeType(OP_ATTR_PRIVILEGE_NAME);
       AttributeBuilder builder = new AttributeBuilder(privType);
       for (Privilege p : Privilege.getDefaultRootPrivileges())
       {
@@ -194,13 +195,13 @@ public final class InternalClientConnection
 
   private void put(Map<ObjectClass, String> objectClasses, ObjectClass oc)
   {
-    objectClasses.put(oc, oc.getPrimaryName());
+    objectClasses.put(oc, oc.getNameOrOID());
   }
 
   private void put(Map<AttributeType, List<Attribute>> Attrs, String attrName, String value)
   {
     List<Attribute> attrs = newLinkedList(Attributes.create(attrName, value));
-    Attrs.put(DirectoryServer.getAttributeType(attrName), attrs);
+    Attrs.put(DirectoryServer.getSchema().getAttributeType(attrName), attrs);
   }
 
   /**
@@ -597,7 +598,6 @@ public final class InternalClientConnection
     // time limit for internal client connections.
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConnectionValid()
   {
@@ -883,9 +883,7 @@ public final class InternalClientConnection
         for (ByteString v : a)
         {
           String ocName = v.toString();
-          String lowerName = toLowerCase(ocName);
-          ObjectClass oc = DirectoryServer.getObjectClass(lowerName, true);
-          objectClasses.put(oc, ocName);
+          objectClasses.put(DirectoryServer.getSchema().getObjectClass(ocName), ocName);
         }
       }
       else
@@ -917,32 +915,6 @@ public final class InternalClientConnection
     return processSimpleBind(ByteString.valueOfUtf8(rawBindDN),
         ByteString.valueOfUtf8(password), null);
   }
-
-
-
-  /**
-   * Processes an internal bind operation with the provided
-   * information.  Note that regardless of whether the bind is
-   * successful, the authentication state for this internal connection
-   * will not be altered in any way.
-   *
-   * @param  rawBindDN  The bind DN for the operation.
-   * @param  password   The bind password for the operation.
-   * @param  controls   The set of controls to include in the
-   *                    request.
-   *
-   * @return  A reference to the bind operation that was processed and
-   *          contains information about the result of the processing.
-   */
-  public BindOperation processSimpleBind(String rawBindDN,
-                                         String password,
-                                         List<Control> controls)
-  {
-    return processSimpleBind(ByteString.valueOfUtf8(rawBindDN),
-        ByteString.valueOfUtf8(password), controls);
-  }
-
-
 
   /**
    * Processes an internal bind operation with the provided
@@ -1208,37 +1180,6 @@ public final class InternalClientConnection
   }
 
   /**
-   * Processes an internal compare operation with the provided information.
-   *
-   * @param entryDN
-   *          The entry DN for the compare operation.
-   * @param attributeDescription
-   *          The attribute description for the compare operation.
-   * @param assertionValue
-   *          The assertion value for the compare operation.
-   * @param controls
-   *          The set of controls to include in the request.
-   * @return A reference to the compare operation that was processed and contains information about
-   *         the result of the processing.
-   */
-  public CompareOperation processCompare(DN entryDN,
-                                         AttributeDescription attributeDescription,
-                                         ByteString assertionValue,
-                                         List<Control> controls)
-  {
-    CompareOperationBasis compareOperation =
-         new CompareOperationBasis(this, nextOperationID(),
-                              nextMessageID(), controls, entryDN,
-                              attributeDescription, assertionValue);
-    compareOperation.setInternalOperation(true);
-
-    compareOperation.run();
-    return compareOperation;
-  }
-
-
-
-  /**
    * Processes an internal delete operation with the provided
    * information.
    *
@@ -1252,28 +1193,6 @@ public final class InternalClientConnection
   {
     return processDelete(ByteString.valueOfUtf8(rawEntryDN), null);
   }
-
-
-
-  /**
-   * Processes an internal delete operation with the provided
-   * information.
-   *
-   * @param  rawEntryDN  The entry DN for the delete operation.
-   * @param  controls    The set of controls to include in the
-   *                     request.
-   *
-   * @return  A reference to the delete operation that was processed
-   *          and contains information about the result of the
-   *          processing.
-   */
-  public DeleteOperation processDelete(String rawEntryDN,
-                                       List<Control> controls)
-  {
-    return processDelete(ByteString.valueOfUtf8(rawEntryDN), controls);
-  }
-
-
 
   /**
    * Processes an internal delete operation with the provided
@@ -1546,81 +1465,6 @@ public final class InternalClientConnection
         toRawModifications(modifyRequest.getModifications()), to(modifyRequest.getControls()));
   }
 
-
-  /**
-   * Processes an internal modify DN operation with the provided
-   * information.
-   *
-   * @param  rawEntryDN    The current DN of the entry to rename.
-   * @param  rawNewRDN     The new RDN to use for the entry.
-   * @param  deleteOldRDN  The flag indicating whether the old RDN
-   *                       value is to be removed from the entry.
-   *
-   * @return  A reference to the modify DN operation that was
-   *          processed and contains information about the result of
-   *          the processing.
-   */
-  public ModifyDNOperation processModifyDN(String rawEntryDN,
-                                           String rawNewRDN,
-                                           boolean deleteOldRDN)
-  {
-    return processModifyDN(ByteString.valueOfUtf8(rawEntryDN),
-        ByteString.valueOfUtf8(rawNewRDN),
-                           deleteOldRDN, null, null);
-  }
-
-
-
-  /**
-   * Processes an internal modify DN operation with the provided
-   * information.
-   *
-   * @param  rawEntryDN    The current DN of the entry to rename.
-   * @param  rawNewRDN     The new RDN to use for the entry.
-   * @param  deleteOldRDN  The flag indicating whether the old RDN
-   *                       value is to be removed from the entry.
-   * @param  controls      The set of controls to include in the
-   *                       request.
-   *
-   * @return  A reference to the modify DN operation that was
-   *          processed and contains information about the result of
-   *          the processing.
-   */
-  public ModifyDNOperation processModifyDN(String rawEntryDN,
-                                           String rawNewRDN,
-                                           boolean deleteOldRDN,
-                                           List<Control> controls)
-  {
-    return processModifyDN(ByteString.valueOfUtf8(rawEntryDN),
-        ByteString.valueOfUtf8(rawNewRDN),
-                           deleteOldRDN, null, controls);
-  }
-
-
-
-  /**
-   * Processes an internal modify DN operation with the provided
-   * information.
-   *
-   * @param  rawEntryDN    The current DN of the entry to rename.
-   * @param  rawNewRDN     The new RDN to use for the entry.
-   * @param  deleteOldRDN  The flag indicating whether the old RDN
-   *                       value is to be removed from the entry.
-   *
-   * @return  A reference to the modify DN operation that was
-   *          processed and contains information about the result of
-   *          the processing.
-   */
-  public ModifyDNOperation processModifyDN(ByteString rawEntryDN,
-                                           ByteString rawNewRDN,
-                                           boolean deleteOldRDN)
-  {
-    return processModifyDN(rawEntryDN, rawNewRDN, deleteOldRDN, null,
-                           null);
-  }
-
-
-
   /**
    * Processes an internal modify DN operation with the provided
    * information.
@@ -1646,66 +1490,6 @@ public final class InternalClientConnection
         ByteString.valueOfUtf8(rawNewRDN), deleteOldRDN,
         ByteString.valueOfUtf8(rawNewSuperior), null);
   }
-
-
-
-  /**
-   * Processes an internal modify DN operation with the provided
-   * information.
-   *
-   * @param  rawEntryDN      The current DN of the entry to rename.
-   * @param  rawNewRDN       The new RDN to use for the entry.
-   * @param  deleteOldRDN    The flag indicating whether the old RDN
-   *                         value is to be removed from the entry.
-   * @param  rawNewSuperior  The new superior for the modify DN
-   *                         operation, or <CODE>null</CODE> if the
-   *                         entry will remain below the same parent.
-   * @param  controls        The set of controls to include in the
-   *                         request.
-   *
-   * @return  A reference to the modify DN operation that was
-   *          processed and contains information about the result of
-   *          the processing.
-   */
-  public ModifyDNOperation processModifyDN(String rawEntryDN,
-                                           String rawNewRDN,
-                                           boolean deleteOldRDN,
-                                           String rawNewSuperior,
-                                           List<Control> controls)
-  {
-    return processModifyDN(ByteString.valueOfUtf8(rawEntryDN),
-        ByteString.valueOfUtf8(rawNewRDN), deleteOldRDN,
-        ByteString.valueOfUtf8(rawNewSuperior), controls);
-  }
-
-
-
-  /**
-   * Processes an internal modify DN operation with the provided
-   * information.
-   *
-   * @param  rawEntryDN      The current DN of the entry to rename.
-   * @param  rawNewRDN       The new RDN to use for the entry.
-   * @param  deleteOldRDN    The flag indicating whether the old RDN
-   *                         value is to be removed from the entry.
-   * @param  rawNewSuperior  The new superior for the modify DN
-   *                         operation, or <CODE>null</CODE> if the
-   *                         entry will remain below the same parent.
-   *
-   * @return  A reference to the modify DN operation that was
-   *          processed and contains information about the result of
-   *          the processing.
-   */
-  public ModifyDNOperation processModifyDN(ByteString rawEntryDN,
-                                           ByteString rawNewRDN,
-                                           boolean deleteOldRDN,
-                                           ByteString rawNewSuperior)
-  {
-    return processModifyDN(rawEntryDN, rawNewRDN, deleteOldRDN,
-                           rawNewSuperior, null);
-  }
-
-
 
   /**
    * Processes an internal modify DN operation with the provided
@@ -1852,26 +1636,25 @@ public final class InternalClientConnection
    * Processes an internal modify DN operation with the provided information.
    *
    * @param modifyDNRequest
-   *          The modify DN request with information about the processing to perform.
+   *          The modify DN requests with information about the processing to perform.
    * @return A reference to the modify DN operation that was processed and contains information about
    *         the result of the processing.
    */
   public ModifyDNOperation processModifyDN(ModifyDNRequest modifyDNRequest)
   {
-    return processModifyDN(modifyDNRequest.getName(),
-                           modifyDNRequest.getNewRDN(),
-                           modifyDNRequest.isDeleteOldRDN(),
-                           modifyDNRequest.getNewSuperior());
+    ModifyDNRequest r = modifyDNRequest;
+    ByteString rawNewSuperior = r.getNewSuperior() != null ? valueOfObject(r.getNewSuperior()) : null;
+    return processModifyDN(valueOfObject(r.getName()), valueOfObject(r.getNewRDN()), r.isDeleteOldRDN(),
+        rawNewSuperior, to(r.getControls()));
   }
 
   /**
-   * Processes an internal search operation with the provided
-   * information.
+   * Processes an internal search operation with the provided information.
    *
-   * @param  request         The search request.
-   * @return  A reference to the internal search operation that was
-   *          processed and contains information about the result of
-   *          the processing.
+   * @param request
+   *          The search request.
+   * @return A reference to the internal search operation that was processed and contains
+   *         information about the result of the processing.
    */
   public InternalSearchOperation processSearch(final SearchRequest request)
   {
@@ -2241,7 +2024,6 @@ public final class InternalClientConnection
     return 0;
   }
 
-  /** {@inheritDoc} */
   @Override
   public int getSSF() {
       //Always return strongest value.

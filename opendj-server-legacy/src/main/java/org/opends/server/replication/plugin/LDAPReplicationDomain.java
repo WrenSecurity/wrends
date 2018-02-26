@@ -19,6 +19,7 @@ package org.opends.server.replication.plugin;
 import static org.forgerock.opendj.ldap.ResultCode.*;
 import static org.opends.messages.ReplicationMessages.*;
 import static org.opends.messages.ToolMessages.*;
+import static org.opends.server.config.ConfigConstants.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
 import static org.opends.server.protocols.internal.Requests.*;
 import static org.opends.server.replication.plugin.EntryHistorical.*;
@@ -62,6 +63,7 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.adapter.server3x.Converters;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.AVA;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
@@ -71,7 +73,7 @@ import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.server.config.meta.ReplicationDomainCfgDefn.IsolationPolicy;
 import org.forgerock.opendj.server.config.server.ExternalChangelogDomainCfg;
 import org.forgerock.opendj.server.config.server.ReplicationDomainCfg;
@@ -85,9 +87,9 @@ import org.opends.server.api.ServerShutdownListener;
 import org.opends.server.api.SynchronizationProvider;
 import org.opends.server.backends.task.Task;
 import org.opends.server.config.ConfigConstants;
+import org.opends.server.config.ConfigurationHandler;
 import org.opends.server.controls.PagedResultsControl;
 import org.opends.server.core.AddOperation;
-import org.opends.server.core.ConfigurationHandler;
 import org.opends.server.core.DeleteOperation;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.LockFileManager;
@@ -137,7 +139,6 @@ import org.opends.server.types.LDAPException;
 import org.opends.server.types.LDIFExportConfig;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Operation;
 import org.opends.server.types.OperationType;
 import org.opends.server.types.RawModification;
@@ -333,7 +334,6 @@ public final class LDAPReplicationDomain extends ReplicationDomain
   private final InternalClientConnection conn = getRootConnection();
   private final AtomicBoolean shutdown = new AtomicBoolean();
   private volatile boolean disabled;
-  private volatile boolean stateSavingDisabled;
 
   /**
    * This list is used to temporary store operations that needs to be replayed
@@ -368,6 +368,8 @@ public final class LDAPReplicationDomain extends ReplicationDomain
     "objectClass",
     "2.5.4.0" // objectClass OID
   };
+
+  private static final DN SET_PERMISSIVE_MODIFY_FOR_DN = DN.valueOf(DN_DEFAULT_SCHEMA_ROOT);
 
   /**
    * When true, this flag is used to force the domain status to be put in bad
@@ -441,9 +443,8 @@ public final class LDAPReplicationDomain extends ReplicationDomain
           synchronized (this)
           {
             wait(1000);
-            if (!disabled && !stateSavingDisabled)
+            if (!disabled && !ieRunning())
             {
-              // save the ServerState
               state.save();
             }
           }
@@ -733,7 +734,7 @@ public final class LDAPReplicationDomain extends ReplicationDomain
         && search.getResultCode() != ResultCode.NO_SUCH_OBJECT)
     {
       String errorMsg = search.getResultCode().getName() + " " + search.getErrorMessage();
-      logger.error(ERR_SEARCHING_GENERATION_ID, errorMsg, getBaseDN());
+      logger.error(ERR_SEARCHING_GENERATION_ID, getBaseDN(), errorMsg);
       return false;
     }
 
@@ -762,7 +763,7 @@ public final class LDAPReplicationDomain extends ReplicationDomain
     final SearchResultEntry resultEntry = getFirstResult(searchOperation);
     if (resultEntry != null)
     {
-      AttributeType synchronizationGenIDType = DirectoryServer.getAttributeType(REPLICATION_GENERATION_ID);
+      AttributeType synchronizationGenIDType = DirectoryServer.getSchema().getAttributeType(REPLICATION_GENERATION_ID);
       List<Attribute> attrs = resultEntry.getAttribute(synchronizationGenIDType);
       if (!attrs.isEmpty())
       {
@@ -783,7 +784,7 @@ public final class LDAPReplicationDomain extends ReplicationDomain
 
   private Iterator<ByteString> getAttributeValueIterator(SearchResultEntry resultEntry, String attrName)
   {
-    AttributeType attrType = DirectoryServer.getAttributeType(attrName);
+    AttributeType attrType = DirectoryServer.getSchema().getAttributeType(attrName);
     List<Attribute> exclAttrs = resultEntry.getAttribute(attrType);
     if (!exclAttrs.isEmpty())
     {
@@ -968,16 +969,14 @@ public final class LDAPReplicationDomain extends ReplicationDomain
     for (String className : newFractionalSpecificClassesAttributes.keySet())
     {
       // Does the class exist ?
-      ObjectClass fractionalClass = schema.getObjectClass(
-        className.toLowerCase());
-      if (fractionalClass == null)
+      ObjectClass fractionalClass = schema.getObjectClass(className);
+      if (fractionalClass.isPlaceHolder())
       {
         throw new ConfigException(
           NOTE_ERR_FRACTIONAL_CONFIG_UNKNOWN_OBJECT_CLASS.get(className));
       }
 
-      boolean isExtensibleObjectClass =
-          "extensibleObject".equalsIgnoreCase(className);
+      boolean isExtensibleObjectClass = fractionalClass.isExtensible();
 
       Set<String> attributes =
         newFractionalSpecificClassesAttributes.get(className);
@@ -1364,7 +1363,7 @@ public final class LDAPReplicationDomain extends ReplicationDomain
     Set<AttributeType> results = new HashSet<>();
     for (String attrName : fractionalConcernedAttributes)
     {
-      results.add(DirectoryServer.getAttributeType(attrName));
+      results.add(DirectoryServer.getSchema().getAttributeType(attrName));
     }
     return results;
   }
@@ -2312,6 +2311,16 @@ public final class LDAPReplicationDomain extends ReplicationDomain
           // are processed locally.
           op.addRequestControl(new LDAPControl(OID_MANAGE_DSAIT_CONTROL));
 
+          // Warning: specific processing ahead. See OPENDJ-2792
+          if (op instanceof ModifyOperation)
+          {
+            ModifyOperation modifyOperation = (ModifyOperation) op;
+            if (modifyOperation.getEntryDN().equals(SET_PERMISSIVE_MODIFY_FOR_DN))
+            {
+              op.addRequestControl(new LDAPControl(OID_PERMISSIVE_MODIFY_CONTROL));
+            }
+          }
+
           csn = OperationContext.getCSN(op);
           op.run();
 
@@ -3225,7 +3234,7 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
 
       if (result != ResultCode.SUCCESS)
       {
-        logger.error(ERR_UPDATING_GENERATION_ID, result.getName(), getBaseDN());
+        logger.error(ERR_UPDATING_GENERATION_ID, getBaseDN(), result.getName());
       }
     }
     else
@@ -3269,7 +3278,7 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
       if (search.getResultCode() != ResultCode.NO_SUCH_OBJECT)
       {
         String errorMsg = search.getResultCode().getName() + " " + search.getErrorMessage();
-        logger.error(ERR_SEARCHING_GENERATION_ID, errorMsg, getBaseDN());
+        logger.error(ERR_SEARCHING_GENERATION_ID, getBaseDN(), errorMsg);
       }
     }
     else
@@ -3278,8 +3287,7 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
       SearchResultEntry resultEntry = result.get(0);
       if (resultEntry != null)
       {
-        AttributeType synchronizationGenIDType = DirectoryServer.getAttributeType(REPLICATION_GENERATION_ID);
-        List<Attribute> attrs = resultEntry.getAttribute(synchronizationGenIDType);
+        List<Attribute> attrs = resultEntry.getAttribute(REPLICATION_GENERATION_ID);
         if (!attrs.isEmpty())
         {
           Attribute attr = attrs.get(0);
@@ -3431,7 +3439,7 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
       Set<AttributeType> includeAttributes = new HashSet<>();
       for (String attrName : includeAttributeStrings)
       {
-        includeAttributes.add(DirectoryServer.getAttributeType(attrName));
+        includeAttributes.add(DirectoryServer.getSchema().getAttributeType(attrName));
       }
       exportConfig.setIncludeAttributes(includeAttributes);
     }
@@ -3503,9 +3511,6 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
    */
   private void preBackendImport(Backend<?> backend) throws DirectoryException
   {
-    // Stop saving state
-    stateSavingDisabled = true;
-
     // Prevent the processing of the backend finalisation event as the import will disable the attached backend
     ignoreBackendInitializationEvent = true;
 
@@ -3547,7 +3552,6 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
 
       importConfig = new LDIFImportConfig(input);
       importConfig.setIncludeBranches(newLinkedHashSet(getBaseDN()));
-      importConfig.setSkipDNValidation(true);
       // We should not validate schema for replication
       importConfig.setValidateSchema(false);
       // Allow fractional replication ldif import plugin to be called
@@ -3564,8 +3568,6 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
       // Process import
       preBackendImport(backend);
       backend.importLDIF(importConfig, DirectoryServer.getInstance().getServerContext());
-
-      stateSavingDisabled = false;
     }
     catch(Exception e)
     {
@@ -4426,15 +4428,14 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
       if (name.startsWith("@"))
       {
         String ocName = name.substring(1);
-        ObjectClass objectClass =
-            DirectoryServer.getObjectClass(toLowerCase(ocName));
-        if (objectClass != null)
+        ObjectClass objectClass = DirectoryServer.getSchema().getObjectClass(ocName);
+        if (!objectClass.isPlaceHolder())
         {
-          for (AttributeType at : objectClass.getRequiredAttributeChain())
+          for (AttributeType at : objectClass.getRequiredAttributes())
           {
             expandedNames.add(at.getNameOrOID());
           }
-          for (AttributeType at : objectClass.getOptionalAttributeChain())
+          for (AttributeType at : objectClass.getOptionalAttributes())
           {
             expandedNames.add(at.getNameOrOID());
           }
@@ -4829,7 +4830,7 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
       {
         // Get class from specificClassesAttributes1
         ObjectClass objectClass1 = schema.getObjectClass(className1);
-        if (objectClass1 == null)
+        if (objectClass1.isPlaceHolder())
         {
           throw new ConfigException(
             NOTE_ERR_FRACTIONAL_CONFIG_UNKNOWN_OBJECT_CLASS.get(className1));
@@ -4840,7 +4841,7 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
         for (String className2 : specificClassesAttrs2.keySet())
         {
           ObjectClass objectClass2 = schema.getObjectClass(className2);
-          if (objectClass2 == null)
+          if (objectClass2.isPlaceHolder())
           {
             throw new ConfigException(
               NOTE_ERR_FRACTIONAL_CONFIG_UNKNOWN_OBJECT_CLASS.get(className2));

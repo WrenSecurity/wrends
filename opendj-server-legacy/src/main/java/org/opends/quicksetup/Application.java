@@ -17,18 +17,20 @@
 
 package org.opends.quicksetup;
 
-import static org.opends.messages.QuickSetupMessages.*;
 import static com.forgerock.opendj.cli.Utils.*;
 
+import static org.opends.messages.QuickSetupMessages.*;
+
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Set;
 
 import javax.naming.NamingException;
+
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
+import org.forgerock.i18n.LocalizableMessageDescriptor.Arg2;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.admin.ads.ADSContext;
 import org.opends.admin.ads.ServerDescriptor;
@@ -68,10 +70,13 @@ public abstract class Application implements ProgressNotifier, Runnable {
   protected ProgressMessageFormatter formatter;
 
   /** Handler for listeners and event firing. */
-  protected ProgressUpdateListenerDelegate listenerDelegate;
+  private ProgressUpdateListenerDelegate listenerDelegate;
 
-  private ErrorPrintStream err = new ErrorPrintStream();
-  private OutputPrintStream out = new OutputPrintStream();
+  private final ErrorPrintStream err = new ErrorPrintStream();
+  private final OutputPrintStream out = new OutputPrintStream();
+
+  /** Temporary log file where messages will be logged. */
+  protected TempLogFile tempLogFile;
 
   /**
    * Creates an application by instantiating the Application class
@@ -84,7 +89,7 @@ public abstract class Application implements ProgressNotifier, Runnable {
   public static GuiApplication create() throws RuntimeException {
     GuiApplication app;
     String appClassName =
-            System.getProperty("org.opends.quicksetup.Application.class");
+        System.getProperty("org.opends.quicksetup.Application.class");
     if (appClassName != null) {
       Class<?> appClass = null;
       try {
@@ -104,13 +109,13 @@ public abstract class Application implements ProgressNotifier, Runnable {
         throw new RuntimeException(msg, e);
       } catch (ClassCastException e) {
         String msg = "The class indicated by the system property " +
-                  "'org.opends.quicksetup.Application.class' must " +
-                  " must be of type Application";
+            "'org.opends.quicksetup.Application.class' must " +
+            " must be of type Application";
         throw new RuntimeException(msg, e);
       }
     } else {
       String msg = "System property 'org.opends.quicksetup.Application.class'" +
-                " must specify class quicksetup application";
+          " must specify class quicksetup application";
       throw new RuntimeException(msg);
     }
     return app;
@@ -536,7 +541,7 @@ public abstract class Application implements ProgressNotifier, Runnable {
 
 
   /**
-   * Indicates whether or not this application is capable of cancelling
+   * Indicates whether this application is capable of cancelling
    * the operation performed in the run method.  A cancellable operation
    * should leave its environment in the same state as it was prior to
    * running the operation (files deleted, changes backed out etc.).
@@ -571,32 +576,7 @@ public abstract class Application implements ProgressNotifier, Runnable {
    */
   public void checkAbort() throws ApplicationException
   {
-  }
-
-  /**
-   * Conditionally notifies listeners of the log file if it
-   * has been initialized.
-   */
-  protected void notifyListenersOfLog() {
-    File logFile = QuickSetupLog.getLogFile();
-    if (logFile != null) {
-      notifyListeners(getFormattedProgress(
-          INFO_GENERAL_SEE_FOR_DETAILS.get(logFile.getPath())));
-      notifyListeners(getLineBreak());
-    }
-  }
-
-  /**
-   * Conditionally notifies listeners of the log file if it
-   * has been initialized.
-   */
-  protected void notifyListenersOfLogAfterError() {
-    File logFile = QuickSetupLog.getLogFile();
-    if (logFile != null) {
-      notifyListeners(getFormattedProgress(
-          INFO_GENERAL_PROVIDE_LOG_IN_ERROR.get(logFile.getPath())));
-      notifyListeners(getLineBreak());
-    }
+    // no-op
   }
 
   /**
@@ -614,8 +594,6 @@ public abstract class Application implements ProgressNotifier, Runnable {
    * provided ServerDescriptor object.  Note that the server is assumed to be
    * registered and that contains a Map with ADSContext.ServerProperty keys.
    * @param server the object describing the server.
-   * @param trustManager the trust manager to be used to establish the
-   * connection.
    * @param dn the dn to be used to authenticate.
    * @param pwd the pwd to be used to authenticate.
    * @param timeout the timeout to establish the connection in milliseconds.
@@ -625,19 +603,15 @@ public abstract class Application implements ProgressNotifier, Runnable {
    * @return the InitialLdapContext to the remote server.
    * @throws ApplicationException if something goes wrong.
    */
-  protected ConnectionWrapper getRemoteConnection(ServerDescriptor server,
-      String dn, String pwd, ApplicationTrustManager trustManager,
-      int timeout,
-      Set<PreferredConnection> cnx)
-  throws ApplicationException
+  protected ConnectionWrapper getRemoteConnection(ServerDescriptor server, String dn, String pwd, int timeout,
+      Set<PreferredConnection> cnx) throws ApplicationException
   {
     Map<ADSContext.ServerProperty, Object> adsProperties =
       server.getAdsProperties();
     TopologyCacheFilter filter = new TopologyCacheFilter();
     filter.setSearchMonitoringInformation(false);
     filter.setSearchBaseDNInformation(false);
-    ServerLoader loader = new ServerLoader(adsProperties, dn, pwd,
-        trustManager, timeout, cnx, filter);
+    ServerLoader loader = new ServerLoader(adsProperties, dn, pwd, getTrustManager(), timeout, cnx, filter);
 
     ConnectionWrapper connection;
     try
@@ -646,19 +620,11 @@ public abstract class Application implements ProgressNotifier, Runnable {
     }
     catch (NamingException ne)
     {
-      LocalizableMessage msg;
-      if (isCertificateException(ne))
-      {
-        msg = INFO_ERROR_READING_CONFIG_LDAP_CERTIFICATE_SERVER.get(
-            server.getHostPort(true), ne.toString(true));
-      }
-      else
-      {
-         msg = INFO_CANNOT_CONNECT_TO_REMOTE_GENERIC.get(
-             server.getHostPort(true), ne.toString(true));
-      }
-      throw new ApplicationException(ReturnCode.CONFIGURATION_ERROR, msg,
-          ne);
+      Arg2<Object, Object> arg2 = isCertificateException(ne)
+          ? INFO_ERROR_READING_CONFIG_LDAP_CERTIFICATE_SERVER
+          : INFO_CANNOT_CONNECT_TO_REMOTE_GENERIC;
+      LocalizableMessage msg = arg2.get(server.getHostPort(true), ne.toString(true));
+      throw new ApplicationException(ReturnCode.CONFIGURATION_ERROR, msg, ne);
     }
     return connection;
   }
@@ -716,73 +682,72 @@ public abstract class Application implements ProgressNotifier, Runnable {
    */
   protected void applicationPrintStreamReceived(String message)
   {
+    // no-op
+  }
+
+  /**
+   * Sets the temporary log file where messages will be logged.
+   *
+   * @param tempLogFile
+   *            temporary log file where messages will be logged.
+   */
+  public void setTempLogFile(final TempLogFile tempLogFile)
+  {
+    this.tempLogFile = tempLogFile;
   }
 
   /**
    * This class is used to notify the ProgressUpdateListeners of events
-   * that are written to the standard error.  It is used in OfflineInstaller.
+   * that are written to the standard error.  It is used in Installer.
    * These classes just create a ErrorPrintStream and
    * then they do a call to System.err with it.
    *
    * The class just reads what is written to the standard error, obtains an
    * formatted representation of it and then notifies the
    * ProgressUpdateListeners with the formatted messages.
-   *
    */
   public class ErrorPrintStream extends ApplicationPrintStream {
 
-    /**
-     * Default constructor.
-     *
-     */
+    /** Default constructor. */
     public ErrorPrintStream() {
       super();
     }
 
-    /** {@inheritDoc} */
     @Override
     protected LocalizableMessage formatString(String s) {
       return getFormattedLogError(LocalizableMessage.raw(s));
     }
-
   }
 
   /**
    * This class is used to notify the ProgressUpdateListeners of events
    * that are written to the standard output. It is used in WebStartInstaller
-   * and in OfflineInstaller. These classes just create a OutputPrintStream and
+   * and in Installer. These classes just create a OutputPrintStream and
    * then they do a call to System.out with it.
    *
    * The class just reads what is written to the standard output, obtains an
    * formatted representation of it and then notifies the
    * ProgressUpdateListeners with the formatted messages.
-   *
    */
   public class OutputPrintStream extends ApplicationPrintStream
   {
-
-    /**
-     * Default constructor.
-     *
-     */
+    /** Default constructor. */
     public OutputPrintStream() {
       super();
     }
 
-    /** {@inheritDoc} */
     @Override
     protected LocalizableMessage formatString(String s) {
       return getFormattedLog(LocalizableMessage.raw(s));
     }
-
   }
 
   /**
    * This class is used to notify the ProgressUpdateListeners of events
    * that are written to the standard streams.
    */
-  protected abstract class ApplicationPrintStream extends PrintStream {
-
+  private abstract class ApplicationPrintStream extends PrintStream
+  {
     private boolean isFirstLine;
 
     /**
@@ -792,17 +757,13 @@ public abstract class Application implements ProgressNotifier, Runnable {
      */
     protected abstract LocalizableMessage formatString(String string);
 
-    /**
-     * Default constructor.
-     *
-     */
+    /** Default constructor. */
     public ApplicationPrintStream()
     {
       super(new ByteArrayOutputStream(), true);
       isFirstLine = true;
     }
 
-    /** {@inheritDoc} */
     @Override
     public void println(String msg)
     {
@@ -819,7 +780,6 @@ public abstract class Application implements ProgressNotifier, Runnable {
       isFirstLine = false;
     }
 
-    /** {@inheritDoc} */
     @Override
     public void write(byte[] b, int off, int len)
     {
@@ -839,26 +799,19 @@ public abstract class Application implements ProgressNotifier, Runnable {
 
 
 
-  /**
-   * Class used to add points periodically to the end of the logs.
-   */
+  /** Class used to add points periodically to the end of the logs. */
   protected class PointAdder implements Runnable
   {
     private Thread t;
     private boolean stopPointAdder;
     private boolean pointAdderStopped;
 
-    /**
-     * Default constructor.
-     */
+    /** Default constructor. */
     public PointAdder()
     {
     }
 
-    /**
-     * Starts the PointAdder: points are added at the end of the logs
-     * periodically.
-     */
+    /** Starts the PointAdder: points are added at the end of the logs periodically. */
     public void start()
     {
       LocalizableMessageBuilder mb = new LocalizableMessageBuilder();
@@ -875,10 +828,7 @@ public abstract class Application implements ProgressNotifier, Runnable {
       t.start();
     }
 
-    /**
-     * Stops the PointAdder: points are no longer added at the end of the logs
-     * periodically.
-     */
+    /** Stops the PointAdder: points are no longer added at the end of the logs periodically. */
     public synchronized void stop()
     {
       stopPointAdder = true;
@@ -897,7 +847,6 @@ public abstract class Application implements ProgressNotifier, Runnable {
       }
     }
 
-    /** {@inheritDoc} */
     @Override
     public void run()
     {

@@ -12,36 +12,46 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
- * Portions Copyright 2011-2015 ForgeRock AS.
+ * Portions Copyright 2011-2016 ForgeRock AS.
  */
 package org.opends.quicksetup.ui;
 
-import org.opends.quicksetup.event.ButtonActionListener;
-import org.opends.quicksetup.event.ProgressUpdateListener;
-import org.opends.quicksetup.event.ButtonEvent;
-import org.opends.quicksetup.event.ProgressUpdateEvent;
-import org.opends.quicksetup.*;
-import org.opends.quicksetup.util.ProgressMessageFormatter;
-import org.opends.quicksetup.util.HtmlProgressMessageFormatter;
-import org.opends.quicksetup.util.BackgroundTask;
-import org.opends.server.util.SetupUtils;
+import static com.forgerock.opendj.cli.Utils.*;
+import static com.forgerock.opendj.util.OperatingSystem.*;
 
-import static org.opends.quicksetup.util.Utils.*;
-import org.forgerock.i18n.LocalizableMessageBuilder;
-import org.forgerock.i18n.LocalizableMessage;
 import static org.opends.messages.QuickSetupMessages.*;
-import static com.forgerock.opendj.util.OperatingSystem.isMacOS;
-import static com.forgerock.opendj.cli.Utils.getThrowableMsg;
-
-import javax.swing.*;
+import static org.opends.quicksetup.util.Utils.*;
 
 import java.awt.Cursor;
 import java.util.ArrayList;
 import java.util.List;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-
-import java.util.logging.Handler;
 import java.util.Map;
+import java.util.logging.Handler;
+
+import javax.swing.SwingUtilities;
+
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.LocalizableMessageBuilder;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.opends.quicksetup.Application;
+import org.opends.quicksetup.CurrentInstallStatus;
+import org.opends.quicksetup.Installation;
+import org.opends.quicksetup.ProgressDescriptor;
+import org.opends.quicksetup.ProgressStep;
+import org.opends.quicksetup.Step;
+import org.opends.quicksetup.TempLogFile;
+import org.opends.quicksetup.UserDataCertificateException;
+import org.opends.quicksetup.UserDataConfirmationException;
+import org.opends.quicksetup.UserDataException;
+import org.opends.quicksetup.WizardStep;
+import org.opends.quicksetup.event.ButtonActionListener;
+import org.opends.quicksetup.event.ButtonEvent;
+import org.opends.quicksetup.event.ProgressUpdateEvent;
+import org.opends.quicksetup.event.ProgressUpdateListener;
+import org.opends.quicksetup.util.BackgroundTask;
+import org.opends.quicksetup.util.HtmlProgressMessageFormatter;
+import org.opends.quicksetup.util.ProgressMessageFormatter;
+import org.opends.server.util.SetupUtils;
 
 /**
  * This class is responsible for doing the following:
@@ -56,23 +66,16 @@ import java.util.Map;
  */
 public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
 {
-
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
   private GuiApplication application;
-
   private CurrentInstallStatus installStatus;
-
   private WizardStep currentStep;
-
   private QuickSetupDialog dialog;
 
-  private LocalizableMessageBuilder progressDetails = new LocalizableMessageBuilder();
-
+  private final LocalizableMessageBuilder progressDetails = new LocalizableMessageBuilder();
   private ProgressDescriptor lastDescriptor;
-
   private ProgressDescriptor lastDisplayedDescriptor;
-
   private ProgressDescriptor descriptorToDisplay;
 
   /** Update period of the dialogs. */
@@ -87,11 +90,13 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
    * it can perform long operations which can make the user think that the UI is
    * blocked.
    *
+   * @param tempLogFile
+   *          temporary log file where messages will be logged.
    * @param args
    *          for the moment this parameter is not used but we keep it in order
    *          to (in case of need) pass parameters through the command line.
    */
-  public void initialize(String[] args)
+  public void initialize(final TempLogFile tempLogFile, String[] args)
   {
     ProgressMessageFormatter formatter = new HtmlProgressMessageFormatter();
 
@@ -100,6 +105,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
     application = Application.create();
     application.setProgressMessageFormatter(formatter);
     application.setCurrentInstallStatus(installStatus);
+    application.setTempLogFile(tempLogFile);
     if (args != null)
     {
       application.setUserArguments(args);
@@ -122,10 +128,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
     setCurrentStep(application.getFirstWizardStep());
   }
 
-  /**
-   * This method displays the setup dialog.
-   * This method must be called from the event thread.
-   */
+  /** This method displays the setup dialog. This method must be called from the event thread. */
   public void display()
   {
     getDialog().packAndShow();
@@ -138,6 +141,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
    * @param ev
    *          the ButtonEvent we receive.
    */
+  @Override
   public void buttonActionPerformed(ButtonEvent ev)
   {
     switch (ev.getButtonName())
@@ -180,6 +184,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
    *          the ProgressUpdateEvent we receive.
    * @see #runDisplayUpdater()
    */
+  @Override
   public void progressUpdate(ProgressUpdateEvent ev)
   {
     synchronized (this)
@@ -228,6 +233,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
 
             SwingUtilities.invokeLater(new Runnable()
             {
+              @Override
               public void run()
               {
                 if (application.isFinished() && !getCurrentStep().isFinishedStep())
@@ -258,6 +264,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
   {
     BackgroundTask<?> worker = new BackgroundTask<Object>()
     {
+      @Override
       public Object processBackgroundTask() throws UserDataException
       {
         try
@@ -275,6 +282,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
         return null;
       }
 
+      @Override
       public void backgroundTaskCompleted(Object returnValue, Throwable throwable)
       {
         getDialog().workerFinished();
@@ -361,6 +369,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
   {
     BackgroundTask<Object> worker = new BackgroundTask<Object>()
     {
+      @Override
       public Object processBackgroundTask() throws UserDataException
       {
         try
@@ -415,6 +424,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
         return null;
       }
 
+      @Override
       public void backgroundTaskCompleted(Object returnValue, Throwable throwable)
       {
         getDialog().getFrame().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -470,6 +480,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
     new Thread(application, "Application Thread").start();
     Thread t = new Thread(new Runnable()
     {
+      @Override
       public void run()
       {
         runDisplayUpdater();
@@ -639,10 +650,7 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
     return new ProgressDescriptor(status, ratio, newProgressLabel, LocalizableMessage.raw(progressDetails.toString()));
   }
 
-  /**
-   * This is a class used when the user clicks on next and that extends
-   * BackgroundTask.
-   */
+  /** This is a class used when the user clicks on next and that extends BackgroundTask. */
   private class NextClickedBackgroundTask extends BackgroundTask<Object>
   {
     private WizardStep cStep;
@@ -652,11 +660,13 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
       this.cStep = cStep;
     }
 
+    @Override
     public Object processBackgroundTask() throws UserDataException
     {
       try
       {
         application.updateUserData(cStep, QuickSetup.this);
+        return null;
       }
       catch (UserDataException uide)
       {
@@ -666,9 +676,9 @@ public class QuickSetup implements ButtonActionListener, ProgressUpdateListener
       {
         throw new UserDataException(cStep, getThrowableMsg(INFO_BUG_MSG.get(), t));
       }
-      return null;
     }
 
+    @Override
     public void backgroundTaskCompleted(Object returnValue, Throwable throwable)
     {
       getDialog().workerFinished();

@@ -12,163 +12,38 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2009 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.opends.server.types;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.opendj.ldap.ResultCode;
 
 import static org.forgerock.util.Reject.*;
 import static org.opends.messages.SchemaMessages.*;
 import static org.opends.server.util.CollectionUtils.*;
 import static org.opends.server.util.ServerConstants.*;
-import static org.opends.server.util.StaticUtils.*;
+
+import java.util.List;
+import java.util.Map;
+
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.schema.SchemaElement;
+import org.opends.server.util.RemoveOnceSDKSchemaIsUsed;
 
 /**
- * An abstract base class for LDAP schema definitions which contain an
- * OID, optional names, description, an obsolete flag, and an optional
- * set of extra properties.
+ * Utility class to retrieve information from a SchemaElement and to set extra property
+ * for a SchemaElement.
  * <p>
- * This class defines common properties and behaviour of the various
- * types of schema definitions (e.g. object class definitions, and
- * attribute type definitions).
- * <p>
- * Any methods which accesses the set of names associated with this
- * definition, will retrieve the primary name as the first name,
- * regardless of whether or not it was contained in the original set
- * of <code>names</code> passed to the constructor.
- * <p>
- * Where ordered sets of names, or extra properties are provided, the
- * ordering will be preserved when the associated fields are accessed
- * via their getters or via the {@link #toString()} methods.
- * <p>
- * Note that these schema elements are not completely immutable, as
- * the set of extra properties for the schema element may be altered
- * after the element is created.  Among other things, this allows the
- * associated schema file to be edited so that an element created over
- * protocol may be associated with a particular schema file.
+ * Note that {@code setSchemaFile()} method works ONLY for non-SDK classes, because SDK schema
+ * elements are immutable, so modifying the map for extra properties has no effect on the actual
+ * element.
  */
-@org.opends.server.types.PublicAPI(
-     stability=org.opends.server.types.StabilityLevel.VOLATILE,
-     mayInstantiate=false,
-     mayExtend=false,
-     mayInvoke=true)
-public abstract class CommonSchemaElements implements SchemaFileElement {
-  /** Indicates whether this definition is declared "obsolete". */
-  private final boolean isObsolete;
-
-  /** The hash code for this definition. */
-  private final int hashCode;
-
-  /** The set of additional name-value pairs associated with this definition. */
-  private final Map<String, List<String>> extraProperties;
-
-  /**
-   * The set of names for this definition, in a mapping between
-   * the all-lowercase form and the user-defined form.
-   */
-  private final Map<String, String> names;
-
-  /** The description for this definition. */
-  private final String description;
-
-  /** The OID that may be used to reference this definition. */
-  private final String oid;
-
-  /** The primary name to use for this definition. */
-  private final String primaryName;
-
-  /** The lower case name for this definition. */
-  private final String lowerName;
-
-  /**
-   * Creates a new definition with the provided information.
-   * <p>
-   * If no <code>primaryName</code> is specified, but a set of
-   * <code>names</code> is specified, then the first name retrieved
-   * from the set of <code>names</code> will be used as the primary
-   * name.
-   *
-   * @param primaryName
-   *          The primary name for this definition, or
-   *          <code>null</code> if there is no primary name.
-   * @param names
-   *          The full set of names for this definition, or
-   *          <code>null</code> if there are no names.
-   * @param oid
-   *          The OID for this definition (must not be
-   *          <code>null</code>).
-   * @param description
-   *          The description for the definition, or <code>null</code>
-   *          if there is no description.
-   * @param isObsolete
-   *          Indicates whether this definition is declared
-   *          "obsolete".
-   * @param extraProperties
-   *          A set of extra properties for this definition, or
-   *          <code>null</code> if there are no extra properties.
-   * @throws NullPointerException
-   *           If the provided OID was <code>null</code>.
-   */
-  protected CommonSchemaElements(String primaryName,
-      Collection<String> names, String oid, String description,
-      boolean isObsolete, Map<String, List<String>> extraProperties)
-      throws NullPointerException {
-    // Make sure mandatory parameters are specified.
-    if (oid == null) {
-      throw new NullPointerException(
-          "No oid specified in constructor");
-    }
-
-    this.oid = oid;
-    this.description = description;
-    this.isObsolete = isObsolete;
-
-    // Make sure we have a primary name if possible.
-    if (primaryName != null) {
-      this.primaryName = primaryName;
-    } else if (names != null && !names.isEmpty()) {
-      this.primaryName = names.iterator().next();
-    } else {
-      this.primaryName = null;
-    }
-    this.lowerName = this.primaryName != null ? toLowerCase(this.primaryName) : oid;
-
-    // OPENDJ-1645: oid changes during server bootstrap, so prefer using lowername if available
-    hashCode = this.lowerName.hashCode();
-
-    // Construct the normalized attribute name mapping.
-    if (names != null) {
-      this.names = new LinkedHashMap<>(names.size());
-
-      // Make sure the primary name is first (never null).
-      this.names.put(lowerName, this.primaryName);
-
-      // Add the remaining names in the order specified.
-      for (String name : names) {
-        this.names.put(toLowerCase(name), name);
-      }
-    } else if (this.primaryName != null) {
-      this.names = Collections.singletonMap(lowerName, this.primaryName);
-    } else {
-      this.names = Collections.emptyMap();
-    }
-
-    // FIXME: should really be a deep-copy.
-    if (extraProperties != null) {
-      this.extraProperties = new LinkedHashMap<>(extraProperties);
-    } else {
-      this.extraProperties = Collections.emptyMap();
-    }
+@RemoveOnceSDKSchemaIsUsed("All read methods can be provided by ServerSchemaElement class. Write method" +
+ " has to rebuild fully the schema element within the schema, which means specific code for each element")
+public final class CommonSchemaElements
+{
+  private CommonSchemaElements()
+  {
+    // private for utility classes
   }
 
   /**
@@ -198,101 +73,6 @@ public abstract class CommonSchemaElements implements SchemaFileElement {
   }
 
   /**
-   * Retrieves the primary name for this schema definition.
-   *
-   * @return The primary name for this schema definition, or
-   *         <code>null</code> if there is no primary name.
-   */
-  public final String getPrimaryName() {
-    return primaryName;
-  }
-
-  /**
-   * Retrieves an iterable over the set of normalized names that may
-   * be used to reference this schema definition. The normalized form
-   * of an attribute name is defined as the user-defined name
-   * converted to lower-case.
-   *
-   * @return Returns an iterable over the set of normalized names that
-   *         may be used to reference this schema definition.
-   */
-  public final Set<String> getNormalizedNames() {
-    return names.keySet();
-  }
-
-  /**
-   * Retrieves an iterable over the set of user-defined names that may
-   * be used to reference this schema definition.
-   *
-   * @return Returns an iterable over the set of user-defined names
-   *         that may be used to reference this schema definition.
-   */
-  public final Iterable<String> getUserDefinedNames() {
-    return names.values();
-  }
-
-  /**
-   * Indicates whether this schema definition has the specified name.
-   *
-   * @param lowerName
-   *          The lowercase name for which to make the determination.
-   * @return <code>true</code> if the specified name is assigned to
-   *         this schema definition, or <code>false</code> if not.
-   */
-  public final boolean hasName(String lowerName) {
-    return names.containsKey(lowerName);
-  }
-
-  /**
-   * Retrieves the OID for this schema definition.
-   *
-   * @return The OID for this schema definition.
-   */
-  public final String getOID() {
-    return oid;
-  }
-
-  /**
-   * Retrieves the name or OID for this schema definition. If it has
-   * one or more names, then the primary name will be returned. If it
-   * does not have any names, then the OID will be returned.
-   *
-   * @return The name or OID for this schema definition.
-   */
-  public final String getNameOrOID() {
-    if (primaryName != null) {
-      return primaryName;
-    }
-    // Guaranteed not to be null.
-    return oid;
-  }
-
-  /**
-   * Retrieves the normalized primary name or OID for this schema
-   * definition. If it does not have any names, then the OID will be
-   * returned.
-   *
-   * @return The name or OID for this schema definition.
-   */
-  public final String getNormalizedPrimaryNameOrOID() {
-    return lowerName;
-  }
-
-  /**
-   * Indicates whether this schema definition has the specified name
-   * or OID.
-   *
-   * @param lowerValue
-   *          The lowercase value for which to make the determination.
-   * @return <code>true</code> if the provided value matches the OID
-   *         or one of the names assigned to this schema definition,
-   *         or <code>false</code> if not.
-   */
-  public final boolean hasNameOrOID(String lowerValue) {
-    return names.containsKey(lowerValue) || oid.equals(lowerValue);
-  }
-
-  /**
    * Retrieves the name of the schema file that contains the
    * definition for this schema definition.
    *
@@ -301,7 +81,7 @@ public abstract class CommonSchemaElements implements SchemaFileElement {
    *         for this schema definition, or <code>null</code> if it
    *         is not known or if it is not stored in any schema file.
    */
-  public static String getSchemaFile(SchemaFileElement elem)
+  public static String getSchemaFile(SchemaElement elem)
   {
     return getSingleValueProperty(elem, SCHEMA_PROPERTY_FILENAME);
   }
@@ -314,7 +94,7 @@ public abstract class CommonSchemaElements implements SchemaFileElement {
    * @return The single value for this property, or <code>null</code> if it
    *         is this property is not set.
    */
-  public static String getSingleValueProperty(SchemaFileElement elem,
+  public static String getSingleValueProperty(SchemaElement elem,
       String propertyName)
   {
     List<String> values = elem.getExtraProperties().get(propertyName);
@@ -335,35 +115,9 @@ public abstract class CommonSchemaElements implements SchemaFileElement {
    * @param  schemaFile  The name of the schema file that contains the
    *                     definition for this schema element.
    */
-  public static void setSchemaFile(SchemaFileElement elem, String schemaFile)
+  public static void setSchemaFile(SchemaElement elem, String schemaFile)
   {
     setExtraProperty(elem, SCHEMA_PROPERTY_FILENAME, schemaFile);
-  }
-
-  /**
-   * Retrieves the description for this schema definition.
-   *
-   * @return The description for this schema definition, or
-   *         <code>null</code> if there is no description.
-   */
-  public final String getDescription() {
-    return description;
-  }
-
-  /**
-   * Indicates whether this schema definition is declared "obsolete".
-   *
-   * @return <code>true</code> if this schema definition is declared
-   *         "obsolete", or <code>false</code> if not.
-   */
-  public final boolean isObsolete() {
-    return isObsolete;
-  }
-
-  @Override
-  public final Map<String, List<String>> getExtraProperties()
-  {
-    return extraProperties;
   }
 
   /**
@@ -378,8 +132,7 @@ public abstract class CommonSchemaElements implements SchemaFileElement {
    * @param  value  The value for the "extra" property.  If it is
    *                {@code null}, then any existing definition will be removed.
    */
-  public static void setExtraProperty(SchemaFileElement elem,
-      String name, String value)
+  private static void setExtraProperty(SchemaElement elem, String name, String value)
   {
     ifNull(name);
 
@@ -394,68 +147,6 @@ public abstract class CommonSchemaElements implements SchemaFileElement {
   }
 
   /**
-   * Sets the values for an "extra" property for this schema element.
-   * If a property already exists with the specified name, then it
-   * will be overwritten.  If the set of values is {@code null} or
-   * empty, then any existing property with the given name will be
-   * removed.
-   *
-   * @param  name    The name for the "extra" property.  It must not
-   *                 be {@code null}.
-   * @param  values  The set of values for the "extra" property.  If
-   *                 it is {@code null} or empty, then any existing
-   *                 definition will be removed.
-   */
-  public final void setExtraProperty(String name,
-                                     List<String> values) {
-    ifNull(name);
-
-    if (values == null || values.isEmpty())
-    {
-      extraProperties.remove(name);
-    }
-    else
-    {
-      LinkedList<String> valuesCopy = new LinkedList<>(values);
-      extraProperties.put(name, valuesCopy);
-    }
-  }
-
-  /**
-   * Indicates whether the provided object is equal to this attribute
-   * type. The object will be considered equal if it is an attribute
-   * type with the same OID as the current type.
-   *
-   * @param o
-   *          The object for which to make the determination.
-   * @return <code>true</code> if the provided object is equal to
-   *         this schema definition, or <code>false</code> if not.
-   */
-  @Override
-  public final boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-
-    if (o instanceof CommonSchemaElements) {
-      CommonSchemaElements other = (CommonSchemaElements) o;
-      return lowerName.equals(other.lowerName);
-    }
-    return false;
-  }
-
-  /**
-   * Retrieves the hash code for this schema definition. It will be
-   * based on the sum of the bytes of the OID.
-   *
-   * @return The hash code for this schema definition.
-   */
-  @Override
-  public final int hashCode() {
-    return hashCode;
-  }
-
-  /**
    * Retrieves the definition string used to create this attribute
    * type and including the X-SCHEMA-FILE extension.
    *
@@ -463,16 +154,9 @@ public abstract class CommonSchemaElements implements SchemaFileElement {
    * @return  The definition string used to create this attribute
    *          type including the X-SCHEMA-FILE extension.
    */
-  public static String getDefinitionWithFileName(SchemaFileElement elem)
+  public static String getDefinitionWithFileName(SchemaElement elem)
   {
-    final String schemaFile = getSchemaFile(elem);
     final String definition = elem.toString();
-    if (schemaFile != null)
-    {
-      int pos = definition.lastIndexOf(')');
-      return definition.substring(0, pos).trim() + " "
-          + SCHEMA_PROPERTY_FILENAME + " '" + schemaFile + "' )";
-    }
-    return definition;
+    return Schema.addSchemaFileToElementDefinitionIfAbsent(definition, getSchemaFile(elem));
   }
 }

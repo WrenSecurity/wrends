@@ -14,7 +14,6 @@
  * Copyright 2009 Sun Microsystems, Inc.
  * Portions copyright 2015-2016 ForgeRock AS.
  */
-
 package org.forgerock.opendj.ldap.schema;
 
 import static java.util.Arrays.*;
@@ -40,7 +39,7 @@ import org.forgerock.util.Reject;
  * This class defines a DIT structure rule, which is used to indicate the types
  * of children that entries may have.
  */
-public final class DITStructureRule extends SchemaElement {
+public final class DITStructureRule extends AbstractSchemaElement {
 
     /** A fluent API for incrementally constructing DIT structure rules. */
     public static final class Builder extends SchemaElementBuilder<Builder> {
@@ -51,7 +50,7 @@ public final class DITStructureRule extends SchemaElement {
         private final Set<Integer> superiorRuleIDs = new LinkedHashSet<>();
 
         Builder(final DITStructureRule structureRule, final SchemaBuilder builder) {
-            super(builder);
+            super(builder, structureRule);
             this.ruleID = structureRule.ruleID;
             this.names.addAll(structureRule.names);
             this.isObsolete = structureRule.isObsolete;
@@ -252,7 +251,6 @@ public final class DITStructureRule extends SchemaElement {
             this.superiorRuleIDs.addAll(superiorRuleIDs);
             return this;
         }
-
     }
 
     /** The rule ID for this DIT structure rule. */
@@ -273,10 +271,10 @@ public final class DITStructureRule extends SchemaElement {
     private NameForm nameForm;
     private Set<DITStructureRule> superiorRules = Collections.emptySet();
 
-    /** Indicates whether or not validation has been performed. */
+    /** Indicates whether validation has been performed. */
     private boolean needsValidating = true;
 
-    /** The indicates whether or not validation failed. */
+    /** The indicates whether validation failed. */
     private boolean isValid;
 
     DITStructureRule(final Builder builder) {
@@ -348,7 +346,7 @@ public final class DITStructureRule extends SchemaElement {
     /**
      * Retrieves the rule ID for this DIT structure rule.
      *
-     * @return The rule ID for this DIT structure rule.
+     * @return The rule ID for this DIT structure rule (never {@code null}).
      */
     public Integer getRuleID() {
         return ruleID;
@@ -460,9 +458,8 @@ public final class DITStructureRule extends SchemaElement {
 
     boolean validate(final Schema schema, final List<DITStructureRule> invalidSchemaElements,
             final List<LocalizableMessage> warnings) {
-        // Avoid validating this schema element more than once. This may occur
-        // if
-        // multiple rules specify the same superior.
+        // Avoid validating this schema element more than once.
+        // This may occur if multiple rules specify the same superior.
         if (!needsValidating) {
             return isValid;
         }

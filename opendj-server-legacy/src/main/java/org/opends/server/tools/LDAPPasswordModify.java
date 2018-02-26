@@ -29,7 +29,6 @@ import static com.forgerock.opendj.cli.CommonArguments.*;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.forgerock.i18n.LocalizableMessage;
@@ -78,14 +77,9 @@ import com.forgerock.opendj.cli.StringArgument;
  */
 public class LDAPPasswordModify
 {
-  /**
-   * The fully-qualified name of this class.
-   */
+  /** The fully-qualified name of this class. */
   private static final String CLASS_NAME =
        "org.opends.server.tools.LDAPPasswordModify";
-
-
-
 
   /**
    * Parses the command-line arguments, establishes a connection to the
@@ -102,25 +96,6 @@ public class LDAPPasswordModify
       System.exit(filterExitCode(returnCode));
     }
   }
-
-
-
-  /**
-   * Parses the command-line arguments, establishes a connection to the
-   * Directory Server, sends the password modify request, and reads the
-   * response.
-   *
-   * @param  args  The command-line arguments provided to this program.
-   *
-   * @return  An integer value of zero if everything completed successfully, or
-   *          a nonzero value if an error occurred.
-   */
-  public static int mainPasswordModify(String[] args)
-  {
-    return mainPasswordModify(args, true, System.out, System.err);
-  }
-
-
 
   /**
    * Parses the command-line arguments, establishes a connection to the
@@ -142,7 +117,6 @@ public class LDAPPasswordModify
   {
     PrintStream out = NullOutputStream.wrapOrNullStream(outStream);
     PrintStream err = NullOutputStream.wrapOrNullStream(errStream);
-
 
     // Create the arguments that will be used by this program.
     BooleanArgument   provideDNForAuthzID;
@@ -171,7 +145,6 @@ public class LDAPPasswordModify
     IntegerArgument   connectTimeout;
     StringArgument    propertiesFileArgument;
     BooleanArgument   noPropertiesFileArgument;
-
 
     // Initialize the argument parser.
     LocalizableMessage toolDescription = INFO_LDAPPWMOD_TOOL_DESCRIPTION.get();
@@ -342,7 +315,6 @@ public class LDAPPasswordModify
       return CLIENT_SIDE_PARAM_ERROR;
     }
 
-
     // Parse the command-line arguments provided to this program.
     try
     {
@@ -354,14 +326,12 @@ public class LDAPPasswordModify
       return CLIENT_SIDE_PARAM_ERROR;
     }
 
-
     // If the usage or version argument was provided,
     // then we don't need to do anything else.
     if (argParser.usageOrVersionDisplayed())
     {
       return 0;
     }
-
 
     // Make sure that the user didn't specify any conflicting arguments.
     try
@@ -412,7 +382,6 @@ public class LDAPPasswordModify
       }
     }
 
-
     // Get the host and port.
     String host = ldapHost.getValue();
     int    port;
@@ -426,7 +395,6 @@ public class LDAPPasswordModify
       printWrappedText(err, e.toString());
       return CLIENT_SIDE_PARAM_ERROR;
     }
-
 
     // If a control string was provided, then decode the requested controls.
     ArrayList<Control> controls = new ArrayList<>();
@@ -444,13 +412,11 @@ public class LDAPPasswordModify
       }
     }
 
-
     // Perform a basic Directory Server bootstrap if appropriate.
     if (initializeServer)
     {
       EmbeddedUtils.initializeForClientUse();
     }
-
 
     // Establish a connection to the Directory Server.
     AtomicInteger nextMessageID = new AtomicInteger(1);
@@ -512,7 +478,7 @@ public class LDAPPasswordModify
     {
       dn = bindDN.getValue();
       pw = bindPW.getValue();
-      if(pw != null && pw.equals("-"))
+      if ("-".equals(pw))
       {
         // read the password from the stdin.
         try
@@ -566,7 +532,6 @@ public class LDAPPasswordModify
 
     LDAPReader reader = connection.getLDAPReader();
     LDAPWriter writer = connection.getLDAPWriter();
-
 
     // Construct the password modify request.
     ByteStringBuilder builder = new ByteStringBuilder();
@@ -625,7 +590,6 @@ public class LDAPPasswordModify
          new LDAPMessage(nextMessageID.getAndIncrement(), extendedRequest,
                          controls);
 
-
     // Send the request to the server and read the response.
     try
     {
@@ -638,7 +602,6 @@ public class LDAPPasswordModify
       close(reader, writer);
       return 1;
     }
-
 
     // Read the response from the server.
     LDAPMessage responseMessage = null;
@@ -653,7 +616,6 @@ public class LDAPPasswordModify
       close(reader, writer);
       return 1;
     }
-
 
     // Make sure that the response was acceptable.
     ExtendedResponseProtocolOp extendedResponse =
@@ -689,45 +651,37 @@ public class LDAPPasswordModify
       }
     }
 
-
     // See if the response included any controls that we recognize, and if so
     // then handle them.
-    List<Control> responseControls = responseMessage.getControls();
-    if (responseControls != null)
+    for (Control c : responseMessage.getControls())
     {
-      for (Control c : responseControls)
+      if (c.getOID().equals(OID_PASSWORD_POLICY_CONTROL))
       {
-        if (c.getOID().equals(OID_PASSWORD_POLICY_CONTROL))
+        try
         {
-          try
-          {
-            PasswordPolicyResponseControl pwPolicyControl =
-              PasswordPolicyResponseControl.DECODER
-                .decode(c.isCritical(), ((LDAPControl) c).getValue());
+          PasswordPolicyResponseControl pwPolicyControl =
+            PasswordPolicyResponseControl.DECODER
+              .decode(c.isCritical(), ((LDAPControl) c).getValue());
 
-            PasswordPolicyWarningType pwPolicyWarningType =
-                 pwPolicyControl.getWarningType();
-            if (pwPolicyWarningType != null)
-            {
-              printWrappedText(
-                      out, INFO_LDAPPWMOD_PWPOLICY_WARNING.get(pwPolicyWarningType, pwPolicyControl.getWarningValue()));
-            }
-
-            PasswordPolicyErrorType pwPolicyErrorType =
-                 pwPolicyControl.getErrorType();
-            if (pwPolicyErrorType != null)
-            {
-              printWrappedText(out, INFO_LDAPPWMOD_PWPOLICY_ERROR.get(pwPolicyErrorType));
-            }
-          }
-          catch (Exception e)
+          PasswordPolicyWarningType pwPolicyWarningType = pwPolicyControl.getWarningType();
+          if (pwPolicyWarningType != null)
           {
-            printWrappedText(err, ERR_LDAPPWMOD_CANNOT_DECODE_PWPOLICY_CONTROL.get(e));
+            printWrappedText(
+                    out, INFO_LDAPPWMOD_PWPOLICY_WARNING.get(pwPolicyWarningType, pwPolicyControl.getWarningValue()));
           }
+
+          PasswordPolicyErrorType pwPolicyErrorType = pwPolicyControl.getErrorType();
+          if (pwPolicyErrorType != null)
+          {
+            printWrappedText(out, INFO_LDAPPWMOD_PWPOLICY_ERROR.get(pwPolicyErrorType));
+          }
+        }
+        catch (Exception e)
+        {
+          printWrappedText(err, ERR_LDAPPWMOD_CANNOT_DECODE_PWPOLICY_CONTROL.get(e));
         }
       }
     }
-
 
     // See if the response included a generated password.
     ByteString responseValue = extendedResponse.getValue();
@@ -759,7 +713,6 @@ public class LDAPPasswordModify
       }
     }
 
-
     // Unbind from the server and close the connection.
     unbind(nextMessageID, writer);
     close(reader, writer);
@@ -777,4 +730,3 @@ public class LDAPPasswordModify
     catch (Exception e) {}
   }
 }
-

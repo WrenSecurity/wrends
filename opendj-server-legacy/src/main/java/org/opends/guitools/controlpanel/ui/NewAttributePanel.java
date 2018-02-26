@@ -17,6 +17,7 @@
 package org.opends.guitools.controlpanel.ui;
 
 import static org.opends.messages.AdminToolMessages.*;
+import static org.opends.server.util.CollectionUtils.*;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -26,8 +27,8 @@ import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +50,7 @@ import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.AttributeUsage;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.ldap.schema.SchemaBuilder;
 import org.forgerock.opendj.ldap.schema.Syntax;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
@@ -61,7 +63,6 @@ import org.opends.guitools.controlpanel.ui.renderer.SchemaElementComboBoxCellRen
 import org.opends.guitools.controlpanel.util.LowerCaseComparator;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.server.config.ConfigConstants;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 import org.opends.server.util.ServerConstants;
 import org.opends.server.util.StaticUtils;
@@ -97,18 +98,18 @@ public class NewAttributePanel extends StatusGenericPanel
     lApproximate, lEquality, lOrdering, lSubstring, lType };
 
   private final JTextField name = Utilities.createMediumTextField();
-  private final JComboBox parent = Utilities.createComboBox();
+  private final JComboBox<AttributeType> parent = Utilities.createComboBox();
   private final JTextField oid = Utilities.createMediumTextField();
   private final JTextField aliases = Utilities.createLongTextField();
   private final JTextField description = Utilities.createLongTextField();
   private final JTextField origin = Utilities.createLongTextField();
   private final JTextField file = Utilities.createLongTextField();
   private final JComboBox<AttributeUsage> usage = Utilities.createComboBox();
-  private final JComboBox syntax = Utilities.createComboBox();
-  private final JComboBox approximate = Utilities.createComboBox();
-  private final JComboBox equality = Utilities.createComboBox();
-  private final JComboBox ordering = Utilities.createComboBox();
-  private final JComboBox substring = Utilities.createComboBox();
+  private final JComboBox<Syntax> syntax = Utilities.createComboBox();
+  private final JComboBox<MatchingRule> approximate = Utilities.createComboBox();
+  private final JComboBox<MatchingRule> equality = Utilities.createComboBox();
+  private final JComboBox<MatchingRule> ordering = Utilities.createComboBox();
+  private final JComboBox<MatchingRule> substring = Utilities.createComboBox();
   private final JCheckBox nonModifiable = Utilities.createCheckBox(
       INFO_CTRL_PANEL_ATTRIBUTE_NON_MODIFIABLE_LABEL.get());
   private final JCheckBox singleValued = Utilities.createCheckBox(INFO_CTRL_PANEL_ATTRIBUTE_SINGLE_VALUED_LABEL.get());
@@ -155,24 +156,7 @@ public class NewAttributePanel extends StatusGenericPanel
     final boolean[] repack = { firstSchema };
     final boolean[] error = { false };
 
-    boolean schemaChanged;
-    if (schema != null && s != null)
-    {
-      schemaChanged = !ServerDescriptor.areSchemasEqual(s, schema);
-    }
-    else if (schema == null && s != null)
-    {
-      schemaChanged = true;
-    }
-    else if (s == null && schema != null)
-    {
-      schemaChanged = false;
-    }
-    else
-    {
-      schemaChanged = false;
-    }
-    if (schemaChanged)
+    if (hasSchemaChanged(s))
     {
       schema = s;
       Map<String, Syntax> syntaxNameMap = new HashMap<>();
@@ -193,7 +177,7 @@ public class NewAttributePanel extends StatusGenericPanel
       {
         newSyntaxes.add(syntaxNameMap.get(key));
       }
-      updateComboBoxModel(newSyntaxes, (DefaultComboBoxModel) syntax.getModel());
+      updateComboBoxModel(newSyntaxes, (DefaultComboBoxModel<Syntax>) syntax.getModel());
 
       Map<String, AttributeType> attributeNameMap = new HashMap<>();
       for (AttributeType attr : schema.getAttributeTypes())
@@ -208,7 +192,7 @@ public class NewAttributePanel extends StatusGenericPanel
         newParents.add(attributeNameMap.get(key));
       }
       newParents.add(0, NO_PARENT);
-      updateComboBoxModel(newParents, (DefaultComboBoxModel) parent.getModel());
+      updateComboBoxModel(newParents, (DefaultComboBoxModel<AttributeType>) parent.getModel());
 
       final List<MatchingRule> availableMatchingRules = new ArrayList<>();
       final Map<String, MatchingRule> matchingRuleNameMap = new HashMap<>();
@@ -254,7 +238,7 @@ public class NewAttributePanel extends StatusGenericPanel
         {
           for (int i = 0; i < syntax.getModel().getSize(); i++)
           {
-            Syntax syn = (Syntax) syntax.getModel().getElementAt(i);
+            Syntax syn = syntax.getModel().getElementAt(i);
             if ("DirectoryString".equals(syn.getName()))
             {
               syntax.setSelectedIndex(i);
@@ -283,6 +267,15 @@ public class NewAttributePanel extends StatusGenericPanel
           isLocal() ? INFO_CTRL_PANEL_AUTHENTICATION_REQUIRED_TO_CREATE_ATTRIBUTE_SUMMARY.get()
                     : INFO_CTRL_PANEL_CANNOT_CONNECT_TO_REMOTE_DETAILS.get(desc.getHostname()));
     }
+  }
+
+  private boolean hasSchemaChanged(Schema s)
+  {
+    if (s != null)
+    {
+      return schema == null || !ServerDescriptor.areSchemasEqual(s, schema);
+    }
+    return false;
   }
 
   @Override
@@ -373,10 +366,8 @@ public class NewAttributePanel extends StatusGenericPanel
     NewSchemaElementsTask newTask = null;
     if (errors.isEmpty())
     {
-      Set<AttributeType> attributes = new LinkedHashSet<>();
-      attributes.add(getAttribute());
-      Set<ObjectClass> ocs = new LinkedHashSet<>(0);
-      newTask = new NewSchemaElementsTask(getInfo(), dlg, ocs, attributes);
+      Set<ObjectClass> ocs = Collections.emptySet();
+      newTask = new NewSchemaElementsTask(getInfo(), dlg, ocs, newHashSet(getAttribute()));
       for (Task task : getInfo().getTasks())
       {
         task.canLaunch(newTask, errors);
@@ -422,20 +413,19 @@ public class NewAttributePanel extends StatusGenericPanel
    */
   static LocalizableMessage getSchemaElementType(String name, Schema schema)
   {
-    final String lowerCase = name.toLowerCase();
-    if (schema.hasAttributeType(lowerCase))
+    if (schema.hasAttributeType(name))
     {
       return INFO_CTRL_PANEL_TYPE_ATTRIBUTE.get();
     }
-    else if (schema.hasObjectClass(lowerCase))
+    else if (schema.hasObjectClass(name))
     {
       return INFO_CTRL_PANEL_TYPE_OBJECT_CLASS.get();
     }
-    else if (schema.hasSyntax(lowerCase))
+    else if (schema.hasSyntax(name))
     {
       return INFO_CTRL_PANEL_TYPE_ATTRIBUTE_SYNTAX.get();
     }
-    else if (schema.hasMatchingRule(lowerCase))
+    else if (schema.hasMatchingRule(name))
     {
       return INFO_CTRL_PANEL_TYPE_MATCHING_RULE.get();
     }
@@ -485,7 +475,7 @@ public class NewAttributePanel extends StatusGenericPanel
     gbc.anchor = GridBagConstraints.WEST;
     gbc.insets.bottom = 0;
 
-    JComboBox[] comboBoxes = { parent, syntax, approximate, equality, ordering, substring };
+    JComboBox<?>[] comboBoxes = { parent, syntax, approximate, equality, ordering, substring };
     LocalizableMessage[] defaultValues =
         { NO_PARENT, LocalizableMessage.EMPTY, NO_MATCHING_RULE, NO_MATCHING_RULE, NO_MATCHING_RULE, NO_MATCHING_RULE };
     SchemaElementComboBoxCellRenderer renderer = new SchemaElementComboBoxCellRenderer(syntax);
@@ -590,7 +580,7 @@ public class NewAttributePanel extends StatusGenericPanel
     {
       MatchingRule[] rules = { syn.getApproximateMatchingRule(), syn.getSubstringMatchingRule(),
         syn.getEqualityMatchingRule(), syn.getOrderingMatchingRule() };
-      JComboBox[] combos = { approximate, substring, equality, ordering };
+      JComboBox<?>[] combos = { approximate, substring, equality, ordering };
       for (int i = 0; i < rules.length; i++)
       {
         DefaultComboBoxModel model = (DefaultComboBoxModel) combos[i].getModel();
@@ -657,31 +647,11 @@ public class NewAttributePanel extends StatusGenericPanel
     return (AttributeType) o;
   }
 
-  private MatchingRule getApproximateMatchingRule()
-  {
-    return getMatchingRule(approximate);
-  }
-
-  private MatchingRule getEqualityMatchingRule()
-  {
-    return getMatchingRule(equality);
-  }
-
-  private MatchingRule getSubstringMatchingRule()
-  {
-    return getMatchingRule(substring);
-  }
-
-  private MatchingRule getOrderingMatchingRule()
-  {
-    return getMatchingRule(ordering);
-  }
-
-  private MatchingRule getMatchingRule(JComboBox comboBox)
+  private String getMatchingRuleOID(JComboBox<MatchingRule> comboBox)
   {
     if (comboBox.getSelectedIndex() != 0)
     {
-      return (MatchingRule) comboBox.getSelectedItem();
+      return ((MatchingRule) comboBox.getSelectedItem()).getOID();
     }
     return null;
   }
@@ -711,16 +681,18 @@ public class NewAttributePanel extends StatusGenericPanel
 
   private AttributeType getAttribute()
   {
-    return new SchemaBuilder().buildAttributeType(getOID())
+    AttributeType superior = getSuperior();
+    Syntax selectedSyntax = (Syntax) syntax.getSelectedItem();
+    return new SchemaBuilder(schema.getSchemaNG()).buildAttributeType(getOID())
       .names(getAllNames())
       .description(getDescription())
-      .superiorType(getSuperior().getNameOrOID())
-      .syntax(((Syntax) syntax.getSelectedItem()).getOID())
-      .approximateMatchingRule(getApproximateMatchingRule().getOID())
-      .equalityMatchingRule(getEqualityMatchingRule().getOID())
-      .orderingMatchingRule(getOrderingMatchingRule().getOID())
-      .substringMatchingRule(getSubstringMatchingRule().getOID())
-      .usage((AttributeUsage)usage.getSelectedItem())
+      .superiorType(superior != null ? superior.getNameOrOID() : null)
+      .syntax(selectedSyntax != null ? selectedSyntax.getOID() : null)
+      .approximateMatchingRule(getMatchingRuleOID(approximate))
+      .equalityMatchingRule(getMatchingRuleOID(equality))
+      .orderingMatchingRule(getMatchingRuleOID(ordering))
+      .substringMatchingRule(getMatchingRuleOID(substring))
+      .usage((AttributeUsage) usage.getSelectedItem())
       .collective(collective.isSelected())
       .obsolete(obsolete.isSelected())
       .noUserModification(nonModifiable.isSelected())

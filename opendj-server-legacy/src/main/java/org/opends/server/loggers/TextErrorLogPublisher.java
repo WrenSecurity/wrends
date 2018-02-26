@@ -448,23 +448,25 @@ public class TextErrorLogPublisher
   }
 
   @Override
-  public void log(String category, Severity severity, LocalizableMessage message, Throwable exception)
+  public void log(String source, Severity severity, LocalizableMessage message, Throwable exception)
   {
+    String category = LoggingCategoryNames.getCategoryName(message.resourceName(), source);
     if (isEnabledFor(category, severity))
     {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
-      sb.append(TimeThread.getLocalTime());
-      sb.append("] category=").append(category).
-      append(" severity=").append(severity).
-      append(" msgID=").append(message.resourceName())
-                       .append('.')
-                       .append(message.ordinal()).
-      append(" msg=").append(message);
+      StringBuilder sb = new StringBuilder()
+          .append("[")
+          .append(TimeThread.getLocalTime())
+          .append("] category=")
+          .append(category)
+          .append(" severity=")
+          .append(severity)
+          .append(" msgID=")
+          .append(message.ordinal())
+          .append(" msg=")
+          .append(message.toString());
       if (exception != null)
       {
-        sb.append(" exception=").append(
-            StaticUtils.stackTraceToSingleLineString(exception));
+        sb.append(" exception=").append(StaticUtils.stackTraceToSingleLineString(exception));
       }
 
       writer.writeRecord(sb.toString());

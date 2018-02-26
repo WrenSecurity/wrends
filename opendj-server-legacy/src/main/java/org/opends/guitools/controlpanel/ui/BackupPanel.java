@@ -12,9 +12,8 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
-
 package org.opends.guitools.controlpanel.ui;
 
 import static org.opends.messages.AdminToolMessages.*;
@@ -32,9 +31,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
@@ -48,6 +44,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.guitools.controlpanel.datamodel.BackendDescriptor;
 import org.opends.guitools.controlpanel.datamodel.BackupDescriptor;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
@@ -63,10 +61,7 @@ import org.opends.server.types.BackupDirectory;
 import org.opends.server.types.BackupInfo;
 import org.opends.server.util.ServerConstants;
 
-/**
- * The panel that appears when the user clicks on 'Backup...'.
- *
- */
+/** The panel that appears when the user clicks on 'Backup...'. */
 public class BackupPanel extends BackupListPanel
 {
   private static final long serialVersionUID = -1626301350756394814L;
@@ -97,38 +92,32 @@ public class BackupPanel extends BackupListPanel
 
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-  /**
-   * Default constructor.
-   *
-   */
+  /** Default constructor. */
   public BackupPanel()
   {
     super();
     createLayout();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_BACKUP_TITLE.get();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getPreferredFocusComponent()
   {
     return backupID;
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected void verifyBackupClicked()
   {
     // Nothing to do: the button is not visible.
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   *
-   */
+  /** Creates the layout of the panel (but the contents are not populated here). */
   private void createLayout()
   {
     GridBagConstraints gbc = new GridBagConstraints();
@@ -283,7 +272,7 @@ public class BackupPanel extends BackupListPanel
 
     changeListener = new ChangeListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void stateChanged(ChangeEvent ev)
       {
         backends.setEnabled(!allBackends.isSelected());
@@ -310,7 +299,7 @@ public class BackupPanel extends BackupListPanel
   }
 
   /**
-   * Check status of incremental backup radio/checkbox
+   * Check status of incremental backup radio/checkbox.
    *
    * @return boolean true if both incremental and parent base ID
    *                  are selected
@@ -321,14 +310,14 @@ public class BackupPanel extends BackupListPanel
             incrementalBackup.isSelected();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
     final ServerDescriptor desc = ev.getNewDescriptor();
     updateSimpleBackendComboBoxModel(backends, lNoBackendsFound, desc);
     SwingUtilities.invokeLater(new Runnable()
     {
-      /** {@inheritDoc} */
+      @Override
       public void run()
       {
         allBackends.setVisible(backends.getModel().getSize() > 0);
@@ -351,7 +340,7 @@ public class BackupPanel extends BackupListPanel
       INFO_CTRL_PANEL_CANNOT_CONNECT_TO_REMOTE_DETAILS.get(desc.getHostname()));
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void okClicked()
   {
     setPrimaryValid(lBackend);
@@ -452,15 +441,15 @@ public class BackupPanel extends BackupListPanel
     };
     setEnabledOK(false);
     setEnabledCancel(false);
-    for (int i=0; i<components.length; i++)
+    for (JComponent component : components)
     {
-      components[i].setEnabled(false);
+      component.setEnabled(false);
     }
     final String id = backupID.getText();
     final String path = parentDirectory.getText();
     BackgroundTask<Void> worker = new BackgroundTask<Void>()
     {
-      /** {@inheritDoc} */
+      @Override
       public Void processBackgroundTask() throws Throwable
       {
         // Open the backup directory and make sure it is valid.
@@ -509,7 +498,7 @@ public class BackupPanel extends BackupListPanel
             errors.add(ERR_CTRL_PANEL_BACKUP_ID_ALREADY_EXIST.get(id, path));
             SwingUtilities.invokeLater(new Runnable()
             {
-              /** {@inheritDoc} */
+              @Override
               public void run()
               {
                 setPrimaryInvalid(lBackupID);
@@ -520,13 +509,12 @@ public class BackupPanel extends BackupListPanel
         }
         return null;
       }
-      /** {@inheritDoc} */
-      public void backgroundTaskCompleted(Void returnValue,
-          Throwable t)
+      @Override
+      public void backgroundTaskCompleted(Void returnValue, Throwable t)
       {
-        for (int i=0; i<components.length; i++)
+        for (JComponent component : components)
         {
-          components[i].setEnabled(true);
+          component.setEnabled(true);
         }
         setEnabledOK(true);
         setEnabledCancel(true);
@@ -587,7 +575,7 @@ public class BackupPanel extends BackupListPanel
     return schedulePanel.getSchedule();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void cancelClicked()
   {
     setPrimaryValid(lBackend);
@@ -598,7 +586,7 @@ public class BackupPanel extends BackupListPanel
     super.cancelClicked();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void toBeDisplayed(boolean visible)
   {
     super.toBeDisplayed(visible);
@@ -612,10 +600,7 @@ public class BackupPanel extends BackupListPanel
     }
   }
 
-  /**
-   * Initialize the backup ID field with a value.
-   *
-   */
+  /** Initialize the backup ID field with a value. */
   private void initializeBackupID()
   {
     SimpleDateFormat dateFormat = new SimpleDateFormat(
@@ -624,11 +609,8 @@ public class BackupPanel extends BackupListPanel
     backupID.setText(id);
   }
 
-  /**
-   * Class that launches the backup.
-   *
-   */
-  protected class BackupTask extends Task
+  /** Class that launches the backup. */
+  private class BackupTask extends Task
   {
     private Set<String> backendSet;
     private String dir;
@@ -637,7 +619,7 @@ public class BackupPanel extends BackupListPanel
      * @param info the control panel info.
      * @param dlg the progress dialog that shows the progress of the task.
      */
-    public BackupTask(ControlPanelInfo info, ProgressDialog dlg)
+    private BackupTask(ControlPanelInfo info, ProgressDialog dlg)
     {
       super(info, dlg);
       backendSet = new HashSet<>();
@@ -674,20 +656,20 @@ public class BackupPanel extends BackupListPanel
       }
     }
 
-    /** {@inheritDoc} */
+    @Override
     public Type getType()
     {
       return Type.BACKUP;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public LocalizableMessage getTaskDescription()
     {
       return INFO_CTRL_PANEL_BACKUP_TASK_DESCRIPTION.get(
       Utilities.getStringFromCollection(backendSet, ", "), dir);
     }
 
-    /** {@inheritDoc} */
+    @Override
     public boolean canLaunch(Task taskToBeLaunched,
         Collection<LocalizableMessage> incompatibilityReasons)
     {
@@ -706,7 +688,7 @@ public class BackupPanel extends BackupListPanel
       return canLaunch;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public void runTask()
     {
       state = State.RUNNING;
@@ -750,13 +732,13 @@ public class BackupPanel extends BackupListPanel
       }
     }
 
-    /** {@inheritDoc} */
+    @Override
     public Set<String> getBackends()
     {
       return backendSet;
     }
 
-    /** {@inheritDoc} */
+    @Override
     protected ArrayList<String> getCommandLineArguments()
     {
       ArrayList<String> args = new ArrayList<>();
@@ -830,7 +812,7 @@ public class BackupPanel extends BackupListPanel
       return args;
     }
 
-    /** {@inheritDoc} */
+    @Override
     protected String getCommandLinePath()
     {
       return getCommandLinePath("backup");

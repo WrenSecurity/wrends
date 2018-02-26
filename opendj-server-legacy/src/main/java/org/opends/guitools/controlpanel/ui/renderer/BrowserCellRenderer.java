@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.controlpanel.ui.renderer;
@@ -22,22 +22,18 @@ import java.awt.Font;
 
 import javax.swing.JTree;
 
-import org.opends.guitools.controlpanel.browser.BrowserController;
 import org.opends.guitools.controlpanel.ui.ColorAndFontConstants;
 import org.opends.guitools.controlpanel.ui.nodes.BasicNode;
 
-/**
- * The renderer used to render the nodes in the LDAP entry browser.
- *
- */
+/** The renderer used to render the nodes in the LDAP entry browser. */
 public class BrowserCellRenderer extends TreeCellRenderer {
 
   private static final long serialVersionUID = 6756291700611741513L;
-  Font defaultFont = ColorAndFontConstants.treeFont;
-  Font italicFont = defaultFont.deriveFont(Font.ITALIC);
-  Font boldFont = defaultFont.deriveFont(Font.BOLD);
-  Font italicBoldFont = defaultFont.deriveFont(Font.ITALIC|Font.BOLD);
-  BasicNode inspectedNode;
+  private final Font defaultFont = ColorAndFontConstants.treeFont;
+  private final Font italicFont = defaultFont.deriveFont(Font.ITALIC);
+  private final Font boldFont = defaultFont.deriveFont(Font.BOLD);
+  private final Font italicBoldFont = defaultFont.deriveFont(Font.ITALIC | Font.BOLD);
+  private BasicNode inspectedNode;
 
   /**
    * Sets which is the inspected node.  This method simply marks the selected
@@ -52,7 +48,7 @@ public class BrowserCellRenderer extends TreeCellRenderer {
     inspectedNode = node;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getTreeCellRendererComponent(
       JTree tree,
       Object value,
@@ -89,15 +85,5 @@ public class BrowserCellRenderer extends TreeCellRenderer {
     }
     setFont(newFont);
     return this;
-  }
-
-
-  /**
-   * Returns the row height for the provided browser controller.
-   * @param controller the browser controller.
-   * @return the row height for the provided browser controller.
-   */
-  public static int calculateRowHeight(BrowserController controller) {
-    return 16;
   }
 }

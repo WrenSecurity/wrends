@@ -46,7 +46,6 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.admin.ads.util.ConnectionUtils;
 import org.opends.quicksetup.Constants;
 import org.opends.server.config.ConfigConstants;
-import org.opends.server.schema.SchemaConstants;
 import org.opends.server.types.HostPort;
 
 /** The object of this class represent an OpenDS server. */
@@ -603,7 +602,7 @@ public class ServerDescriptor
       startTLSEnabled = Boolean.TRUE.equals(array.get(array.size() -1));
     }
     adsProperties.put(ADSContext.ServerProperty.STARTTLS_ENABLED, Boolean.toString(startTLSEnabled));
-    adsProperties.put(ADSContext.ServerProperty.ID, getHostPort(true));
+    adsProperties.put(ADSContext.ServerProperty.ID, getHostPort(true).toString());
     adsProperties.put(ADSContext.ServerProperty.INSTANCE_PUBLIC_KEY_CERTIFICATE,
                       getInstancePublicKeyCertificate());
   }
@@ -1281,48 +1280,6 @@ public class ServerDescriptor
   }
 
   /**
-   * Cleans up the contents of the ads truststore.
-   *
-   * @param ctx the bound instance.
-   * @throws NamingException in case an error occurs while updating the
-   * instance's ads-truststore via LDAP.
-   */
-  public static void cleanAdsTrustStore(InitialLdapContext ctx)
-  throws NamingException
-  {
-    try
-    {
-      SearchControls sc = new SearchControls();
-      sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
-      sc.setReturningAttributes(new String[] { SchemaConstants.NO_ATTRIBUTES });
-      NamingEnumeration<SearchResult> ne = ctx.search(TRUSTSTORE_DN,
-          "(objectclass=ds-cfg-instance-key)", sc);
-      ArrayList<String> dnsToDelete = new ArrayList<>();
-      try
-      {
-        while (ne.hasMore())
-        {
-          SearchResult sr = ne.next();
-          dnsToDelete.add(sr.getName()+","+TRUSTSTORE_DN);
-        }
-      }
-      finally
-      {
-        ne.close();
-      }
-      for (String dn : dnsToDelete)
-      {
-        ctx.destroySubcontext(dn);
-      }
-    }
-    catch (NameNotFoundException nnfe)
-    {
-      // Ignore
-      logger.warn(LocalizableMessage.raw("Error cleaning truststore: "+nnfe, nnfe));
-    }
-  }
-
-  /**
    * Returns the values of the ds-base-dn-entry count attributes for the given
    * backend monitor entry using the provided InitialLdapContext.
    * @param ctx the InitialLdapContext to use to update the configuration.
@@ -1401,7 +1358,7 @@ public class ServerDescriptor
    */
   public static String getReplicationServer(String hostName, int replicationPort)
   {
-    return new HostPort(hostName, replicationPort).toString();
+    return HostPort.toString(hostName, replicationPort);
   }
 
   /**

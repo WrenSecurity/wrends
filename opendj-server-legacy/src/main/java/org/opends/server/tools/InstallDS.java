@@ -17,19 +17,18 @@
  */
 package org.opends.server.tools;
 
+import static com.forgerock.opendj.cli.Utils.*;
+import static com.forgerock.opendj.util.OperatingSystem.*;
+
 import static org.forgerock.util.Utils.*;
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.messages.QuickSetupMessages.*;
 import static org.opends.messages.ToolMessages.*;
 import static org.opends.messages.UtilityMessages.*;
 
-import static com.forgerock.opendj.cli.Utils.*;
-import static com.forgerock.opendj.util.OperatingSystem.*;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -41,13 +40,13 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.naming.ldap.LdapName;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageDescriptor.Arg0;
 import org.forgerock.i18n.LocalizableMessageDescriptor.Arg1;
+import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.ManagedObjectDefinition;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.server.config.client.BackendCfgClient;
 import org.forgerock.opendj.server.config.server.BackendCfg;
 import org.opends.messages.QuickSetupMessages;
@@ -57,15 +56,14 @@ import org.opends.quicksetup.Constants;
 import org.opends.quicksetup.CurrentInstallStatus;
 import org.opends.quicksetup.Installation;
 import org.opends.quicksetup.LicenseFile;
-import org.opends.quicksetup.QuickSetupLog;
 import org.opends.quicksetup.SecurityOptions;
+import org.opends.quicksetup.TempLogFile;
 import org.opends.quicksetup.UserData;
 import org.opends.quicksetup.UserDataException;
 import org.opends.quicksetup.event.ProgressUpdateEvent;
 import org.opends.quicksetup.event.ProgressUpdateListener;
+import org.opends.quicksetup.installer.Installer;
 import org.opends.quicksetup.installer.NewSuffixOptions;
-import org.opends.quicksetup.installer.offline.OfflineInstaller;
-import org.opends.quicksetup.util.IncompatibleVersionException;
 import org.opends.quicksetup.util.PlainTextProgressMessageFormatter;
 import org.opends.quicksetup.util.Utils;
 import org.opends.server.types.InitializationException;
@@ -101,49 +99,28 @@ import com.forgerock.opendj.cli.StringArgument;
  */
 public class InstallDS extends ConsoleApplication
 {
-
   private final PlainTextProgressMessageFormatter formatter = new PlainTextProgressMessageFormatter();
 
-  /** Prefix for log files. */
-  public static final String TMP_FILE_PREFIX = "opendj-setup-";
-
-  /** Suffix for log files. */
-  public static final String LOG_FILE_SUFFIX = ".log";
-
-  /**
-   * The enumeration containing the different return codes that the command-line
-   * can have.
-   */
+  /** The enumeration containing the different return codes that the command-line can have. */
   private enum InstallReturnCode
   {
     SUCCESSFUL(0),
-
     /** We did no have an error but the setup was not executed (displayed version or usage). */
     SUCCESSFUL_NOP(0),
-
     /** Unexpected error (potential bug). */
     ERROR_UNEXPECTED(1),
-
     /** Cannot parse arguments or data provided by user is not valid. */
     ERROR_USER_DATA(2),
-
     /** Error server already installed. */
     ERROR_SERVER_ALREADY_INSTALLED(3),
-
     /** Error initializing server. */
     ERROR_INITIALIZING_SERVER(4),
-
     /** The user failed providing password (for the keystore for instance). */
     ERROR_PASSWORD_LIMIT(5),
-
     /** The user cancelled the setup. */
     ERROR_USER_CANCELLED(6),
-
     /** The user doesn't accept the license. */
-    ERROR_LICENSE_NOT_ACCEPTED(7),
-
-    /** Incompatible java version. */
-    JAVA_VERSION_INCOMPATIBLE(8);
+    ERROR_LICENSE_NOT_ACCEPTED(7);
 
     private int returnCode;
     private InstallReturnCode(int returnCode)
@@ -196,7 +173,7 @@ public class InstallDS extends ConsoleApplication
    * The maximum number of times that we should ask the user to provide the
    * password to access to a keystore.
    */
-  public static final int LIMIT_KEYSTORE_PASSWORD_PROMPT = 7;
+  private static final int LIMIT_KEYSTORE_PASSWORD_PROMPT = 7;
 
   private final BackendTypeHelper backendTypeHelper = new BackendTypeHelper();
 
@@ -223,9 +200,9 @@ public class InstallDS extends ConsoleApplication
   private Integer lastResetAdminConnectorPort;
   private Integer lastResetJmxPort;
 
+  private final TempLogFile tempLogFile;
 
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
-
 
   /**
    * Constructor for the InstallDS object.
@@ -234,25 +211,13 @@ public class InstallDS extends ConsoleApplication
    *          the print stream to use for standard output.
    * @param err
    *          the print stream to use for standard error.
-   * @param in
-   *          the input stream to use for standard input.
+   * @param tempLogFile
+   *          the temporary log file where messages will be logged.
    */
-  public InstallDS(PrintStream out, PrintStream err, InputStream in)
+  private InstallDS(PrintStream out, PrintStream err, TempLogFile tempLogFile)
   {
     super(out, err);
-  }
-
-  /**
-   * The main method for the InstallDS CLI tool.
-   *
-   * @param args
-   *          the command-line arguments provided to this program.
-   */
-  public static void main(String[] args)
-  {
-    final int retCode = mainCLI(args, System.out, System.err, System.in);
-
-    System.exit(retCode);
+    this.tempLogFile = tempLogFile;
   }
 
   /**
@@ -261,11 +226,13 @@ public class InstallDS extends ConsoleApplication
    *
    * @param args
    *          the command-line arguments provided to this program.
+   * @param tempLogFile
+   *          the temporary log file where messages will be logged.
    * @return The error code.
    */
-  public static int mainCLI(String[] args)
+  public static int mainCLI(String[] args, final TempLogFile tempLogFile)
   {
-    return mainCLI(args, System.out, System.err, System.in);
+    return mainCLI(args, System.out, System.err, tempLogFile);
   }
 
   /**
@@ -280,35 +247,25 @@ public class InstallDS extends ConsoleApplication
    * @param errStream
    *          The output stream to use for standard error, or <CODE>null</CODE>
    *          if standard error is not needed.
-   * @param inStream
-   *          The input stream to use for standard input.
+   * @param tempLogFile
+   *          the temporary log file where messages will be logged.
    * @return The error code.
    */
-  public static int mainCLI(String[] args, OutputStream outStream, OutputStream errStream, InputStream inStream)
+  public static int mainCLI(
+      String[] args, OutputStream outStream, OutputStream errStream, TempLogFile tempLogFile)
   {
+    //
+    // *NOTE* this method has been kept public because it is used by OpenAM.
+    //
+
     final PrintStream out = NullOutputStream.wrapOrNullStream(outStream);
 
     System.setProperty(Constants.CLI_JAVA_PROPERTY, "true");
 
     final PrintStream err = NullOutputStream.wrapOrNullStream(errStream);
+    final InstallDS install = new InstallDS(out, err, tempLogFile);
 
-    try {
-      QuickSetupLog.initLogFileHandler(
-              QuickSetupLog.isInitialized() ? null :
-                File.createTempFile(TMP_FILE_PREFIX, LOG_FILE_SUFFIX));
-    } catch (final Throwable t) {
-      System.err.println("Unable to initialize log");
-      t.printStackTrace();
-    }
-
-    final InstallDS install = new InstallDS(out, err, inStream);
-
-    int retCode = install.execute(args);
-    if (retCode == 0)
-    {
-      QuickSetupLog.closeAndDeleteLogFile();
-    }
-    return retCode;
+    return install.execute(args);
   }
 
   /**
@@ -319,7 +276,7 @@ public class InstallDS extends ConsoleApplication
    *          the command-line arguments provided to this program.
    * @return the return code (SUCCESSFUL, USER_DATA_ERROR or BUG).
    */
-  public int execute(String[] args)
+  private int execute(String[] args)
   {
     argParser = new InstallDSArgumentParser(InstallDS.class.getName());
     try
@@ -349,12 +306,7 @@ public class InstallDS extends ConsoleApplication
       return InstallReturnCode.ERROR_USER_DATA.getReturnCode();
     }
 
-    if (argParser.testOnlyArg.isPresent() && !testJVM())
-    {
-        return InstallReturnCode.JAVA_VERSION_INCOMPATIBLE.getReturnCode();
-    }
-
-    if (argParser.usageOrVersionDisplayed() || argParser.testOnlyArg.isPresent())
+    if (argParser.usageOrVersionDisplayed())
     {
       return InstallReturnCode.SUCCESSFUL_NOP.getReturnCode();
     }
@@ -389,9 +341,9 @@ public class InstallDS extends ConsoleApplication
       return printAndReturnErrorCode(e.getMessageObject()).getReturnCode();
     }
 
-
     System.setProperty(Constants.CLI_JAVA_PROPERTY, "true");
-    final OfflineInstaller installer = new OfflineInstaller();
+    final Installer installer = new Installer();
+    installer.setTempLogFile(tempLogFile);
     installer.setUserData(uData);
     installer.setProgressMessageFormatter(formatter);
     installer.addProgressUpdateListener(
@@ -409,7 +361,7 @@ public class InstallDS extends ConsoleApplication
     installer.run();
     printStatusCommand();
 
-    final ApplicationException ue = installer.getRunError();
+    final ApplicationException ue = installer.getApplicationException();
     if (ue != null)
     {
       return ue.getType().getReturnCode();
@@ -476,32 +428,6 @@ public class InstallDS extends ConsoleApplication
     }
 
     return InstallReturnCode.SUCCESSFUL;
-  }
-
-  private boolean testJVM()
-  {
-    // Delete the log file that does not contain any information.  The test only
-    // mode is called several times by the setup script and if we do not remove
-    // it we have a lot of empty log files.
-    try
-    {
-      QuickSetupLog.getLogFile().deleteOnExit();
-    }
-    catch (final Throwable t)
-    {
-      logger.warn(LocalizableMessage.raw("Error while trying to update the contents of "
-          + "the set-java-home file in test only mode: " + t, t));
-    }
-    try
-    {
-      Utils.checkJavaVersion();
-      return true;
-    }
-    catch (final IncompatibleVersionException ive)
-    {
-      println(ive.getMessageObject());
-      return false;
-    }
   }
 
   private boolean checkLicense()
@@ -582,7 +508,6 @@ public class InstallDS extends ConsoleApplication
     println();
   }
 
-
   private InstallReturnCode printAndReturnErrorCode(LocalizableMessage message)
   {
     println(message);
@@ -633,40 +558,33 @@ public class InstallDS extends ConsoleApplication
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isQuiet()
   {
     return argParser.quietArg.isPresent();
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isInteractive()
   {
     return !argParser.noPromptArg.isPresent();
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isMenuDrivenMode() {
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isScriptFriendly() {
     return false;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isAdvancedMode() {
     return false;
   }
 
-
-  /** {@inheritDoc} */
   @Override
   public boolean isVerbose() {
     return argParser.verboseArg.isPresent();
@@ -756,9 +674,9 @@ public class InstallDS extends ConsoleApplication
   {
     try
     {
-      new LdapName(baseDN);
+      DN.valueOf(baseDN);
     }
-    catch (final Exception e)
+    catch (final LocalizedIllegalArgumentException | NullPointerException e)
     {
       errorMessages.add(ERR_INSTALLDS_CANNOT_PARSE_DN.get(baseDN, e.getMessage()));
     }
@@ -1081,7 +999,7 @@ public class InstallDS extends ConsoleApplication
       {
         try
         {
-          new LdapName(dn);
+          DN.valueOf(dn);
           if (dn.trim().length() == 0)
           {
             toRemove.add(dn);
@@ -1270,7 +1188,6 @@ public class InstallDS extends ConsoleApplication
     final List<String> baseDNs = promptIfRequiredForDNs(
             argParser.baseDNArg, lastResetBaseDN, INFO_INSTALLDS_PROMPT_BASEDN.get(), true);
     return promptIfRequiredForDataOptions(baseDNs);
-
   }
 
   private ManagedObjectDefinition<? extends BackendCfgClient, ? extends BackendCfg> getOrPromptForBackendType()
@@ -1683,7 +1600,6 @@ public class InstallDS extends ConsoleApplication
           INFO_INSTALLDS_CERT_OPTION_PKCS11.get()
       };
 
-
       final MenuBuilder<Integer> builder = new MenuBuilder<>(this);
       builder.setPrompt(INFO_INSTALLDS_HEADER_CERT_TYPE.get());
 
@@ -1869,7 +1785,7 @@ public class InstallDS extends ConsoleApplication
    *          the list that will be updated with the nicknames found in the key
    *          store.
    */
-  public static void checkCertificateInKeystore(SecurityOptions.CertificateType type, String path, String pwd,
+  private static void checkCertificateInKeystore(SecurityOptions.CertificateType type, String path, String pwd,
       Collection<String> certNicknames, Collection<LocalizableMessage> errorMessages, Collection<String> nicknameList)
   {
     boolean errorWithPath = false;
@@ -2026,7 +1942,6 @@ public class InstallDS extends ConsoleApplication
   private SecurityOptions createSecurityOptionsPrompting(SecurityOptions.CertificateType type, boolean enableSSL,
       boolean enableStartTLS, int ldapsPort) throws UserDataException, ClientException
   {
-    SecurityOptions securityOptions;
     String path;
     Collection<String> certNicknames = argParser.certNicknameArg.getValues();
     String pwd = argParser.getKeyStorePassword();
@@ -2181,7 +2096,7 @@ public class InstallDS extends ConsoleApplication
    *         to a problem with the key store path and <CODE>false</CODE>
    *         otherwise.
    */
-  public static boolean containsKeyStorePathErrorMessage(Collection<LocalizableMessage> msgs)
+  private static boolean containsKeyStorePathErrorMessage(Collection<LocalizableMessage> msgs)
   {
     for (final LocalizableMessage msg : msgs)
     {
@@ -2212,7 +2127,7 @@ public class InstallDS extends ConsoleApplication
    *         to a problem with the key store password and <CODE>false</CODE>
    *         otherwise.
    */
-  public static boolean containsKeyStorePasswordErrorMessage(Collection<LocalizableMessage> msgs)
+  private static boolean containsKeyStorePasswordErrorMessage(Collection<LocalizableMessage> msgs)
   {
     for (final LocalizableMessage msg : msgs)
     {
@@ -2242,20 +2157,17 @@ public class InstallDS extends ConsoleApplication
    *         to a problem with the certificate nickname and <CODE>false</CODE>
    *         otherwise.
    */
-  public static boolean containsCertNicknameErrorMessage(
-      Collection<LocalizableMessage> msgs)
+  private static boolean containsCertNicknameErrorMessage(Collection<LocalizableMessage> msgs)
   {
-    boolean found = false;
     for (final LocalizableMessage msg : msgs)
     {
       if (StaticUtils.hasDescriptor(msg, ERR_INSTALLDS_CERTNICKNAME_NOT_FOUND) ||
           StaticUtils.hasDescriptor(msg, ERR_INSTALLDS_MUST_PROVIDE_CERTNICKNAME))
       {
-        found = true;
-        break;
+        return true;
       }
     }
-    return found;
+    return false;
   }
 
   /**
@@ -2630,5 +2542,4 @@ public class InstallDS extends ConsoleApplication
   {
     return argParser.getConnectTimeout();
   }
-
 }

@@ -41,6 +41,7 @@ import org.forgerock.opendj.ldap.ConditionResult;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
 import org.forgerock.util.Reject;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -158,7 +159,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     for (Map.Entry<String, IndexType[]> index : backendIndexes.entrySet())
     {
       final String attributeName = index.getKey();
-      final AttributeType attribute = DirectoryServer.getAttributeType(attributeName);
+      final AttributeType attribute = DirectoryServer.getSchema().getAttributeType(attributeName);
       Reject.ifNull(attribute, "Attribute type '" + attributeName + "' doesn't exists.");
 
       BackendIndexCfg indexCfg = mock(BackendIndexCfg.class);
@@ -167,6 +168,10 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
       when(indexCfg.getIndexEntryLimit()).thenReturn(4000);
       when(indexCfg.getSubstringLength()).thenReturn(6);
       when(backendCfg.getBackendIndex(index.getKey())).thenReturn(indexCfg);
+      if (backendCfg.isConfidentialityEnabled())
+      {
+        when(indexCfg.isConfidentialityEnabled()).thenReturn(true);
+      }
     }
 
     BackendVLVIndexCfg vlvIndexCfg = mock(BackendVLVIndexCfg.class);
@@ -616,7 +621,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     {
       for (IndexType type : index.getValue())
       {
-        final AttributeType attributeType = DirectoryServer.getAttributeType(index.getKey());
+        final AttributeType attributeType = DirectoryServer.getSchema().getAttributeType(index.getKey());
         assertTrue(backend.isIndexed(attributeType,
             org.opends.server.types.IndexType.valueOf(type.toString().toUpperCase())));
       }
@@ -667,7 +672,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     Entry oldEntry = workEntries.get(0);
     Entry newEntry = oldEntry.duplicate(false);
 
-    modifyAttribute = DirectoryServer.getAttributeType("jpegphoto");
+    modifyAttribute = DirectoryServer.getSchema().getAttributeType("jpegphoto");
     List<Modification> mods = Arrays.asList(
         // unindexed
         new Modification(ADD, create(modifyAttribute, modifyValue)),
@@ -858,7 +863,8 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     searchOperation = new InternalSearchOperation(connection, 1, 1, request, null);
     searchOperation.run();
     assertThat(searchOperation.getResultCode()).isEqualTo(ResultCode.INSUFFICIENT_ACCESS_RIGHTS);
-    assertThat(searchOperation.getErrorMessage().toString()).contains("not have sufficient privileges", "unindexed search");
+    assertThat(searchOperation.getErrorMessage().toString())
+    .contains("not have sufficient privileges", "unindexed search");
     assertThat(searchOperation.getEntriesSent()).isEqualTo(0);
   }
 
@@ -912,8 +918,8 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
       Entry actual = new Entry(dbEntry.getName(), dbEntry.getObjectClasses(), dbEntry.getUserAttributes(), null);
 
       // Remove the userPassword because it will have been encoded.
-      expected.removeAttribute(DirectoryServer.getAttributeType("userpassword"));
-      actual.removeAttribute(DirectoryServer.getAttributeType("userpassword"));
+      expected.removeAttribute(CoreSchema.getUserPasswordAttributeType());
+      actual.removeAttribute(CoreSchema.getUserPasswordAttributeType());
 
       assertThat(actual).isEqualTo(expected);
     }
@@ -947,9 +953,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
       importConf.setClearBackend(true);
       importConf.writeRejectedEntries(rejectedEntries);
       importConf.setIncludeBranches(Collections.singleton(testBaseDN));
-      importConf.setSkipDNValidation(true);
       importConf.setThreadCount(0);
-      importConf.setOffHeapSize(0); // Force heap buffer for automatic buffer scaling.
       backend.importLDIF(importConf, DirectoryServer.getInstance().getServerContext());
     }
     assertEquals(rejectedEntries.size(), 0,
@@ -963,7 +967,8 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     assertEquals(backend.getNumberOfChildren(testBaseDN), 1,
                  "Not enough entries in DIT.");
     /** -2 for baseDn and People entry */
-    assertEquals(backend.getNumberOfChildren(testBaseDN.child(DN.valueOf("ou=People"))), getTotalNumberOfLDIFEntries() - 2,
+    assertEquals(backend.getNumberOfChildren(testBaseDN.child(DN.valueOf("ou=People"))),
+                 getTotalNumberOfLDIFEntries() - 2,
                  "Not enough entries in DIT.");
 
     VerifyConfig config = new VerifyConfig();
@@ -1048,7 +1053,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
   {
     final EntryContainer entryContainer =  backend.getRootContainer().getEntryContainers().iterator().next();
 
-    final Set<String> dirtyIndexes = new HashSet<>(Arrays.asList(new String[] { "sn", "uid", "telephoneNumber" }));
+    final Set<String> dirtyIndexes = new HashSet<>(Arrays.asList("sn", "uid", "telephoneNumber"));
     assertThat(backendIndexes.keySet()).containsAll(dirtyIndexes);
 
     // Delete all the indexes
@@ -1100,7 +1105,8 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
   {
     final Storage storage = backend.getRootContainer().getStorage();
     final DN2ID dn2ID = backend.getRootContainer().getEntryContainer(testBaseDN).getDN2ID();
-    final ID2ChildrenCount id2ChildrenCount = backend.getRootContainer().getEntryContainer(testBaseDN).getID2ChildrenCount();
+    final ID2ChildrenCount id2ChildrenCount =
+        backend.getRootContainer().getEntryContainer(testBaseDN).getID2ChildrenCount();
 
     final VerifyConfig config = new VerifyConfig();
     config.setBaseDN(DN.valueOf("dc=test,dc=com"));
@@ -1171,7 +1177,9 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
         @Override
         public void run(WriteableTransaction txn) throws Exception
         {
-          txn.put(new TreeName("dc=test,dc=com", "id2entry"), ByteString.valueOfUtf8("key"), ByteString.valueOfUtf8("value"));
+          txn.put(new TreeName("dc=test,dc=com", "id2entry"),
+                  ByteString.valueOfUtf8("key"),
+                  ByteString.valueOfUtf8("value"));
         }
       });
     }

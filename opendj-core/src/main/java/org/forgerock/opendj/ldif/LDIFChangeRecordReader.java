@@ -13,6 +13,7 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions copyright 2011-2016 ForgeRock AS.
+ * Portions copyright 2016 Matthew Stevenson
  */
 package org.forgerock.opendj.ldif;
 
@@ -221,7 +222,7 @@ public final class LDIFChangeRecordReader extends AbstractLDIFReader implements 
     }
 
     /**
-     * Specifies whether or not all operational attributes should be excluded
+     * Specifies whether all operational attributes should be excluded
      * from any change records that are read from LDIF. The default is
      * {@code false}.
      *
@@ -237,7 +238,7 @@ public final class LDIFChangeRecordReader extends AbstractLDIFReader implements 
     }
 
     /**
-     * Specifies whether or not all user attributes should be excluded from any
+     * Specifies whether all user attributes should be excluded from any
      * change records that are read from LDIF. The default is {@code false}.
      *
      * @param excludeUserAttributes
@@ -719,7 +720,7 @@ public final class LDIFChangeRecordReader extends AbstractLDIFReader implements 
         // Parse the newsuperior if present.
         if (record.iterator.hasNext()) {
             ldifLine = readLDIFRecordKeyValuePair(record, pair, true);
-            if (pair.key == null || !"newsuperior".equals(toLowerCase(pair.key))) {
+            if (pair.key == null || !"newsuperior".equals(toLowerCase(pair.key)) || "".equals(pair.value)) {
                 throw DecodeException.error(
                         ERR_LDIF_MALFORMED_NEW_SUPERIOR.get(record.lineNumber, entryDN, ldifLine));
             }

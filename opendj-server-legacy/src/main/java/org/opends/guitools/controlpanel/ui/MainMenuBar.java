@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.controlpanel.ui;
@@ -32,15 +32,12 @@ import java.util.Set;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
+import org.forgerock.i18n.LocalizableMessage;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
 import org.opends.guitools.controlpanel.task.Task;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.i18n.LocalizableMessage;
 
-/**
- * The menu bar that appears on the main panel.
- *
- */
+/** The menu bar that appears on the main panel. */
 public class MainMenuBar extends GenericMenuBar
 {
   private static final long serialVersionUID = 6441273044772077947L;
@@ -64,10 +61,7 @@ public class MainMenuBar extends GenericMenuBar
     }
   }
 
-  /**
-   * Method that can be overwritten to set specific menus.
-   *
-   */
+  /** Method that can be overwritten to set specific menus. */
   protected void addMenus()
   {
     add(createFileMenuBar());
@@ -79,7 +73,6 @@ public class MainMenuBar extends GenericMenuBar
    * The method called when the user clicks on quick.  It will check that there
    * are not ongoing tasks.  If there are tasks, it will ask the user for
    * confirmation to quit.
-   *
    */
   public void quitClicked()
   {
@@ -111,7 +104,7 @@ public class MainMenuBar extends GenericMenuBar
    * Creates the File menu bar.
    * @return the File menu bar.
    */
-  protected JMenu createFileMenuBar()
+  private JMenu createFileMenuBar()
   {
     JMenu menu = Utilities.createMenu(INFO_CTRL_PANEL_FILE_MENU.get(),
         INFO_CTRL_PANEL_FILE_MENU_DESCRIPTION.get());
@@ -120,6 +113,7 @@ public class MainMenuBar extends GenericMenuBar
         INFO_CTRL_PANEL_CONNECT_TO_SERVER_MENU.get());
     menuItem.addActionListener(new ActionListener()
     {
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         connectToServerClicked();
@@ -132,7 +126,7 @@ public class MainMenuBar extends GenericMenuBar
       menuItem = Utilities.createMenuItem(INFO_CTRL_PANEL_EXIT_MENU.get());
       menuItem.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           quitClicked();
@@ -156,6 +150,7 @@ public class MainMenuBar extends GenericMenuBar
         INFO_CTRL_PANEL_REFRESH_MENU.get());
     menuItem.addActionListener(new ActionListener()
     {
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         refreshOptionsClicked();
@@ -165,11 +160,7 @@ public class MainMenuBar extends GenericMenuBar
     return menu;
   }
 
-  /**
-   * Specific method to be able to handle the Quit events sent from the COCOA
-   * menu of Mac OS.
-   *
-   */
+  /** Specific method to be able to handle the Quit events sent from the COCOA menu of Mac OS. */
   private void setMacOSQuitHandler()
   {
     try
@@ -182,6 +173,7 @@ public class MainMenuBar extends GenericMenuBar
           (Class[])null).newInstance((Object[])null);
       InvocationHandler adapter = new InvocationHandler()
       {
+        @Override
         public Object invoke (Object proxy, Method method, Object[] args)
         throws Throwable
         {
@@ -209,11 +201,8 @@ public class MainMenuBar extends GenericMenuBar
     }
   }
 
-  /**
-   * The method called when the user clicks on 'Refresh Options'.
-   *
-   */
-  protected void refreshOptionsClicked()
+  /** The method called when the user clicks on 'Refresh Options'. */
+  private void refreshOptionsClicked()
   {
     if (panel == null)
     {
@@ -235,10 +224,8 @@ public class MainMenuBar extends GenericMenuBar
     }
   }
 
-  /**
-   * The method called when the user clicks on 'Connect to Server...'.
-   */
-  protected void connectToServerClicked()
+  /** The method called when the user clicks on 'Connect to Server...'. */
+  private void connectToServerClicked()
   {
     Set<String> runningTasks = new HashSet<>();
     for (Task task : getInfo().getTasks())

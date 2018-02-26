@@ -18,6 +18,7 @@
 package org.opends.guitools.controlpanel.ui;
 
 import static org.opends.messages.AdminToolMessages.*;
+import static org.opends.server.util.StaticUtils.*;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -39,21 +40,18 @@ import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JList;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.LocalizableMessageBuilder;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.opends.guitools.controlpanel.datamodel.SomeSchemaElement;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.ui.components.TitlePanel;
 import org.opends.guitools.controlpanel.util.LowerCaseComparator;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.i18n.LocalizableMessageBuilder;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.opends.server.schema.SomeSchemaElement;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 
-/**
- * The panel that displays a standard object class definition.
- *
- */
+/** The panel that displays a standard object class definition. */
 public class StandardObjectClassPanel extends SchemaElementPanel
 {
   private static final long serialVersionUID = 5561268287795223026L;
@@ -88,36 +86,30 @@ public class StandardObjectClassPanel extends SchemaElementPanel
     createLayout();
   }
 
-  /** {@inheritDoc} */
   @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_STANDARD_OBJECTCLASS_TITLE.get();
   }
 
-  /** {@inheritDoc} */
   @Override
   public Component getPreferredFocusComponent()
   {
     return requiredAttributes;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
   }
 
-  /** {@inheritDoc} */
   @Override
   public void okClicked()
   {
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   */
-  protected void createLayout()
+  /** Creates the layout of the panel (but the contents are not populated here). */
+  private void createLayout()
   {
     createBasicLayout(this, new GridBagConstraints());
     setBorder(PANEL_BORDER);
@@ -128,7 +120,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
    * @param c the container where all the components will be layed out.
    * @param gbc the grid bag constraints.
    */
-  protected void createBasicLayout(Container c, GridBagConstraints gbc)
+  private void createBasicLayout(Container c, GridBagConstraints gbc)
   {
 
     requiredAttributes.setVisibleRowCount(5);
@@ -215,7 +207,6 @@ public class StandardObjectClassPanel extends SchemaElementPanel
       final JList list = lists[i];
       MouseAdapter clickListener = new MouseAdapter()
       {
-        /** {@inheritDoc} */
         @Override
         public void mouseClicked(MouseEvent ev)
         {
@@ -229,7 +220,6 @@ public class StandardObjectClassPanel extends SchemaElementPanel
 
       KeyAdapter keyListener = new KeyAdapter()
       {
-        /** {@inheritDoc} */
         @Override
         public void keyTyped(KeyEvent ev)
         {
@@ -253,7 +243,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
   {
     LocalizableMessageBuilder returnValue = new LocalizableMessageBuilder();
     String fileName = element.getSchemaFile();
-    String xOrigin = Utilities.getOrigin(element);
+    String xOrigin = element.getOrigin();
     if (xOrigin != null)
     {
       returnValue.append(xOrigin);
@@ -288,7 +278,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
       return;
     }
     hmAttrs.clear();
-    String n = oc.getPrimaryName();
+    String n = oc.getNameOrOID();
     if (n == null)
     {
       n = NOT_APPLICABLE.toString();
@@ -305,8 +295,8 @@ public class StandardObjectClassPanel extends SchemaElementPanel
     }
     description.setText(n);
     ArrayList<String> otherNames = new ArrayList<>();
-    Iterable<String> ocNames = oc.getNormalizedNames();
-    String primaryName = oc.getPrimaryName();
+    Iterable<String> ocNames = oc.getNames();
+    String primaryName = oc.getNameOrOID();
     if (primaryName == null)
     {
       primaryName = "";
@@ -315,7 +305,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
     {
       if (!name.equalsIgnoreCase(primaryName))
       {
-        otherNames.add(name);
+        otherNames.add(toLowerCase(name));
       }
     }
     if (!otherNames.isEmpty())
@@ -333,7 +323,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
     Comparator<String> lowerCaseComparator = new LowerCaseComparator();
     SortedSet<String> requiredAttrs = new TreeSet<>(lowerCaseComparator);
     Set<String> inheritedAttrs = new HashSet<>();
-    for (AttributeType attr : oc.getRequiredAttributeChain())
+    for (AttributeType attr : oc.getRequiredAttributes())
     {
       requiredAttrs.add(attr.getNameOrOID());
     }
@@ -352,7 +342,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
       }
       for (ObjectClass parent : parents)
       {
-        for (AttributeType attr : parent.getRequiredAttributeChain())
+        for (AttributeType attr : parent.getRequiredAttributes())
         {
           inheritedAttrs.add(attr.getNameOrOID());
         }
@@ -383,7 +373,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
 
     SortedSet<String> optionalAttrs = new TreeSet<>(lowerCaseComparator);
     inheritedAttrs = new HashSet<>();
-    for (AttributeType attr : oc.getOptionalAttributeChain())
+    for (AttributeType attr : oc.getOptionalAttributes())
     {
       optionalAttrs.add(attr.getNameOrOID());
     }
@@ -391,7 +381,7 @@ public class StandardObjectClassPanel extends SchemaElementPanel
     {
       for (ObjectClass parent : parents)
       {
-        for (AttributeType attr : parent.getOptionalAttributeChain())
+        for (AttributeType attr : parent.getOptionalAttributes())
         {
           inheritedAttrs.add(attr.getNameOrOID());
         }
@@ -431,14 +421,14 @@ public class StandardObjectClassPanel extends SchemaElementPanel
       }
       else if (superiors.size() == 1)
       {
-        n = superiors.iterator().next().getPrimaryName();
+        n = superiors.iterator().next().getNameOrOID();
       }
       else
       {
         SortedSet<String> names = new TreeSet<>();
         for (ObjectClass superior : superiors)
         {
-          names.add(superior.getPrimaryName());
+          names.add(superior.getNameOrOID());
         }
         n = Utilities.getStringFromCollection(names, ", ");
       }

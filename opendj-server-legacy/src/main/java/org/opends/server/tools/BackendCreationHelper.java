@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
- * Copyright 2015 ForgeRock AS.
+ * Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.server.tools;
 
@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.forgerock.opendj.config.LDAPProfile;
 import org.forgerock.opendj.config.ManagedObjectDefinition;
 import org.forgerock.opendj.config.client.ManagementContext;
 import org.forgerock.opendj.config.client.ldap.LDAPManagementContext;
@@ -42,12 +41,12 @@ public class BackendCreationHelper
   /** Describes an attribute index which should be created during installation. */
   public static final class DefaultIndex
   {
-    static DefaultIndex withEqualityAndSubstring(final String name)
+    private static DefaultIndex withEqualityAndSubstring(final String name)
     {
       return new DefaultIndex(name, true);
     }
 
-    static DefaultIndex withEquality(final String name)
+    private static DefaultIndex withEquality(final String name)
     {
       return new DefaultIndex(name, false);
     }
@@ -113,8 +112,7 @@ public class BackendCreationHelper
   {
     Utilities.initializeConfigurationFramework();
     final File configFile = Installation.getLocal().getCurrentConfigurationFile();
-    final LDAPProfile ldapProfile = LDAPProfile.getInstance();
-    try (ManagementContext context = LDAPManagementContext.newLDIFManagementContext(configFile, ldapProfile))
+    try (ManagementContext context = LDAPManagementContext.newLDIFManagementContext(configFile))
     {
       createBackend(context.getRootConfiguration(), backendName, baseDNs, backendType);
     }
@@ -135,7 +133,7 @@ public class BackendCreationHelper
    * @throws Exception
    *           If any problems occurred
    */
-  public static void createBackend(RootCfgClient rootConfiguration, String backendName, Collection<DN> baseDNs,
+  private static void createBackend(RootCfgClient rootConfiguration, String backendName, Collection<DN> baseDNs,
       ManagedObjectDefinition<? extends BackendCfgClient, ? extends BackendCfg> backendType) throws Exception
   {
       final BackendCfgClient backendCfgClient = rootConfiguration.createBackend(backendType, backendName, null);

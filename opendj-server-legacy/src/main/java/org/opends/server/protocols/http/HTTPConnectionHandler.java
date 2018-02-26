@@ -15,22 +15,17 @@
  */
 package org.opends.server.protocols.http;
 
-import static org.opends.messages.ConfigMessages.WARN_CONFIG_LOGGER_NO_ACTIVE_HTTP_ACCESS_LOGGERS;
+import static org.opends.messages.ConfigMessages.*;
 import static org.opends.messages.ProtocolMessages.*;
-import static org.opends.server.util.ServerConstants.ALERT_DESCRIPTION_HTTP_CONNECTION_HANDLER_CONSECUTIVE_FAILURES;
-import static org.opends.server.util.ServerConstants.ALERT_TYPE_HTTP_CONNECTION_HANDLER_CONSECUTIVE_FAILURES;
-import static org.opends.server.util.StaticUtils.getExceptionMessage;
-import static org.opends.server.util.StaticUtils.isAddressInUse;
-import static org.opends.server.util.StaticUtils.stackTraceToSingleLineString;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
+import static org.opends.server.util.ServerConstants.*;
+import static org.opends.server.util.StaticUtils.*;
+import static org.forgerock.http.grizzly.GrizzlySupport.newGrizzlyHttpHandler;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -43,25 +38,43 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.forgerock.http.servlet.HttpFrameworkServlet;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
+import org.forgerock.http.Filter;
+import org.forgerock.http.Handler;
+import org.forgerock.http.HttpApplication;
+import org.forgerock.http.HttpApplicationException;
+import org.forgerock.http.handler.Handlers;
+import org.forgerock.http.io.Buffer;
+import org.forgerock.http.protocol.Request;
+import org.forgerock.http.protocol.Response;
+import org.forgerock.http.protocol.Status;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.rest2ldap.ErrorLoggerFilter;
+import org.forgerock.opendj.server.config.server.ConnectionHandlerCfg;
+import org.forgerock.opendj.server.config.server.HTTPConnectionHandlerCfg;
+import org.forgerock.services.context.Context;
+import org.forgerock.util.promise.NeverThrowsException;
+import org.forgerock.util.promise.Promise;
+import org.forgerock.util.promise.PromiseImpl;
+import org.forgerock.util.time.TimeService;
 import org.glassfish.grizzly.http.HttpProbe;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.http.server.ServerConfiguration;
 import org.glassfish.grizzly.monitoring.MonitoringConfig;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
 import org.glassfish.grizzly.utils.Charsets;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
-import org.forgerock.opendj.server.config.server.ConnectionHandlerCfg;
-import org.forgerock.opendj.server.config.server.HTTPConnectionHandlerCfg;
 import org.opends.server.api.AlertGenerator;
 import org.opends.server.api.ClientConnection;
 import org.opends.server.api.ConnectionHandler;
@@ -74,10 +87,13 @@ import org.opends.server.extensions.NullKeyManagerProvider;
 import org.opends.server.extensions.NullTrustManagerProvider;
 import org.opends.server.loggers.HTTPAccessLogger;
 import org.opends.server.monitors.ClientConnectionMonitorProvider;
-import org.forgerock.opendj.ldap.DN;
+import org.opends.server.protocols.internal.InternalClientConnection;
+import org.opends.server.types.AbstractOperation;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.HostPort;
 import org.opends.server.types.InitializationException;
+import org.opends.server.types.OperationType;
+import org.opends.server.util.DynamicConstants;
 import org.opends.server.util.SelectableCertificateKeyManager;
 import org.opends.server.util.StaticUtils;
 
@@ -113,7 +129,7 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
   private boolean enabled;
 
   /** The set of listeners for this connection handler. */
-  private List<HostPort> listeners = new LinkedList<>();
+  private final List<HostPort> listeners = new LinkedList<>();
 
   /** The HTTP server embedded in OpenDJ. */
   private HttpServer httpServer;
@@ -126,7 +142,7 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
    * ensure no concurrent reads/writes can happen and adds/removes are fast. We
    * only use the keys, so it does not matter what value is put there.
    */
-  private Map<ClientConnection, ClientConnection> clientConnections = new ConcurrentHashMap<>();
+  private final Map<ClientConnection, ClientConnection> clientConnections = new ConcurrentHashMap<>();
 
   /** The set of statistics collected for this connection handler. */
   private HTTPStatistics statTracker;
@@ -158,19 +174,6 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
   public HTTPConnectionHandler()
   {
     super(DEFAULT_FRIENDLY_NAME);
-  }
-
-  /**
-   * Returns whether unauthenticated HTTP requests are allowed. The server
-   * checks whether unauthenticated requests are allowed server-wide first then
-   * for the HTTP Connection Handler second.
-   *
-   * @return true if unauthenticated requests are allowed, false otherwise.
-   */
-  public boolean acceptUnauthenticatedRequests()
-  {
-    // The global setting overrides the more specific setting here.
-    return !DirectoryServer.rejectUnauthenticatedRequests() && !this.currentConfig.isAuthenticationRequired();
   }
 
   /**
@@ -381,17 +384,6 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
   public String getProtocol()
   {
     return protocol;
-  }
-
-  /**
-   * Returns the SSL engine configured for this connection handler if SSL is
-   * enabled, null otherwise.
-   *
-   * @return the SSL engine if SSL is enabled, null otherwise
-   */
-  SSLEngine getSSLEngine()
-  {
-    return sslEngineConfigurator.createSSLEngine();
   }
 
   @Override
@@ -701,10 +693,7 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
     }
 
     this.httpServer = createHttpServer();
-
-    // Register servlet as default servlet and also able to serve REST requests
-    createAndRegisterServlet("OpenDJ Rest2LDAP servlet", "", "/*");
-
+    this.httpServer.getServerConfiguration().addHttpHandler(newGrizzlyHttpHandler(new RootHttpApplication()));
     logger.trace("Starting HTTP server...");
     this.httpServer.start();
     logger.trace("HTTP server started");
@@ -728,7 +717,7 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
 
     // Configure the network listener
     final NetworkListener listener = new NetworkListener(
-        "Rest2LDAP", NetworkListener.DEFAULT_NETWORK_HOST, initConfig.getListenPort());
+        "OpenDJ-HTTP", NetworkListener.DEFAULT_NETWORK_HOST, initConfig.getListenPort());
     server.addListener(listener);
 
     // Configure the network transport
@@ -766,15 +755,6 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
   private MonitoringConfig<HttpProbe> getHttpConfig(HttpServer server)
   {
     return server.getServerConfiguration().getMonitoringConfig().getHttpConfig();
-  }
-
-  private void createAndRegisterServlet(final String servletName, final String... urlPatterns) throws Exception
-  {
-    // Create and deploy the Web app context
-    final WebappContext ctx = new WebappContext(servletName);
-    ctx.addServlet(servletName,
-        new HttpFrameworkServlet(new LdapHttpApplication(serverContext, this))).addMapping(urlPatterns);
-    ctx.deploy(this.httpServer);
   }
 
   private void stopHttpServer()
@@ -916,5 +896,132 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
     SSLContext sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE_NAME);
     sslContext.init(keyManagers, trustManagerProvider.getTrustManagers(), null);
     return sslContext;
+  }
+
+  /**
+   * This is the root {@link HttpApplication} handling all the requests from the
+   * {@link HTTPConnectionHandler}. If accepted, requests are audited and then
+   * forwarded to the global {@link ServerContext#getHTTPRouter()}.
+   */
+  private final class RootHttpApplication implements HttpApplication
+  {
+    @Override
+    public Handler start() throws HttpApplicationException
+    {
+      return Handlers.chainOf(
+          serverContext.getHTTPRouter(),
+          new HttpAccessLogFilter(serverContext),
+          new ErrorLoggerFilter(),
+          new ExecuteInWorkerThreadFilter(),
+          new AllowDenyFilter(currentConfig.getDeniedClient(), currentConfig.getAllowedClient()),
+          new CommonAuditTransactionIdFilter(serverContext),
+          new CommonAuditHttpAccessCheckEnabledFilter(serverContext,
+              new CommonAuditHttpAccessAuditFilter(
+                  DynamicConstants.PRODUCT_NAME,
+                  serverContext.getCommonAudit().getAuditServiceForHttpAccessLog(),
+                  TimeService.SYSTEM)),
+          new LDAPContextInjectionFilter(serverContext, HTTPConnectionHandler.this));
+    }
+
+    @Override
+    public void stop()
+    {
+      // Nothing to do
+    }
+
+    @Override
+    public org.forgerock.util.Factory<Buffer> getBufferFactory()
+    {
+      return null;
+    }
+  }
+
+  /** Moves the processing of the request in this Directory Server's worker thread. */
+  private static final class ExecuteInWorkerThreadFilter implements Filter
+  {
+    @Override
+    public Promise<Response, NeverThrowsException> filter(final Context context, final Request request,
+        final Handler next)
+    {
+      final PromiseImpl<Response, NeverThrowsException> promise = PromiseImpl.create();
+      try
+      {
+        DirectoryServer.getWorkQueue().submitOperation(new AsyncOperation<>(
+            InternalClientConnection.getRootConnection(),
+            new Runnable()
+            {
+              @Override
+              public void run()
+              {
+                // Trap and forward runtime exceptions.
+                next.handle(context, request).thenOnResult(promise).thenOnRuntimeException(promise);
+              }
+            }));
+      }
+      catch (Exception e)
+      {
+        promise.handleResult(new Response(Status.INTERNAL_SERVER_ERROR).setCause(e));
+      }
+      return promise;
+    }
+
+    /** This operation is hack to be able to execute a {@link Runnable} in a Directory Server's worker thread. */
+    private static final class AsyncOperation<V> extends AbstractOperation
+    {
+      private final Runnable runnable;
+
+      AsyncOperation(InternalClientConnection icc, Runnable runnable)
+      {
+        super(icc, icc.nextOperationID(), icc.nextMessageID(),
+            Collections.<org.opends.server.types.Control> emptyList());
+        this.setInternalOperation(true);
+        this.runnable = runnable;
+      }
+
+      @Override
+      public void run()
+      {
+        runnable.run();
+      }
+
+      @Override
+      public OperationType getOperationType()
+      {
+        return null;
+      }
+
+      @Override
+      public List<org.opends.server.types.Control> getResponseControls()
+      {
+        return Collections.emptyList();
+      }
+
+      @Override
+      public void addResponseControl(org.opends.server.types.Control control)
+      {
+      }
+
+      @Override
+      public void removeResponseControl(org.opends.server.types.Control control)
+      {
+      }
+
+      @Override
+      public DN getProxiedAuthorizationDN()
+      {
+        return null;
+      }
+
+      @Override
+      public void setProxiedAuthorizationDN(DN proxiedAuthorizationDN)
+      {
+      }
+
+      @Override
+      public void toString(StringBuilder buffer)
+      {
+        buffer.append(AsyncOperation.class.getSimpleName());
+      }
+    }
   }
 }

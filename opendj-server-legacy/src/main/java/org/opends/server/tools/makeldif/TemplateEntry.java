@@ -17,7 +17,6 @@
 package org.opends.server.tools.makeldif;
 
 import static org.opends.server.util.LDIFWriter.*;
-import static org.opends.server.util.StaticUtils.*;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -30,11 +29,11 @@ import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.LDIFExportConfig;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.util.LDIFException;
 
 /**
@@ -44,11 +43,11 @@ import org.opends.server.util.LDIFException;
 public class TemplateEntry
 {
   /** The branch used to generate this entry (if it is associated with a branch). */
-  private Branch branch;
+  private final Branch branch;
   /** The DN for this template entry, if it is known. */
   private DN dn;
   /** The DN of the parent entry for this template entry, if it is available. */
-  private DN parentDN;
+  private final DN parentDN;
 
   /**
    * The set of attributes associated with this template entry, mapped from the
@@ -57,7 +56,7 @@ public class TemplateEntry
   private final LinkedHashMap<AttributeType, ArrayList<TemplateValue>> attributes = new LinkedHashMap<>();
 
   /** The template used to generate this entry (if it is associated with a template). */
-  private Template template;
+  private final Template template;
 
 
   /**
@@ -69,8 +68,9 @@ public class TemplateEntry
   public TemplateEntry(Branch branch)
   {
     this.branch = branch;
-
     dn         = branch.getBranchDN();
+    template = null;
+    parentDN = null;
   }
 
 
@@ -84,6 +84,8 @@ public class TemplateEntry
    */
   public TemplateEntry(Template template, DN parentDN)
   {
+    this.branch = null;
+    dn = null;
     this.template = template;
     this.parentDN = parentDN;
   }
@@ -157,25 +159,6 @@ public class TemplateEntry
 
     return dn;
   }
-
-
-
-  /**
-   * Indicates whether this entry contains one or more values for the specified
-   * attribute type.
-   *
-   * @param  attributeType  The attribute type for which to make the
-   *                        determination.
-   *
-   * @return  <CODE>true</CODE> if this entry contains one or more values for
-   *          the specified attribute type, or <CODE>false</CODE> if not.
-   */
-  public boolean hasAttribute(AttributeType attributeType)
-  {
-    return attributes.containsKey(attributeType);
-  }
-
-
 
   /**
    * Retrieves the value for the specified attribute, if defined.  If the
@@ -264,14 +247,13 @@ public class TemplateEntry
       {
         for (TemplateValue v : valueList)
         {
-          String ocName = toLowerCase(v.getValue().toString());
-          ObjectClass oc = DirectoryServer.getObjectClass(ocName, true);
-          objectClasses.put(oc, ocName);
+          String ocName = v.getValue().toString();
+          objectClasses.put(DirectoryServer.getSchema().getObjectClass(ocName), ocName);
         }
       }
       else if (t.isOperational())
       {
-        AttributeBuilder builder = new AttributeBuilder(t, t.getNameOrOID());
+        AttributeBuilder builder = new AttributeBuilder(t);
         for (TemplateValue v : valueList)
         {
           builder.add(v.getValue().toString());
@@ -281,7 +263,7 @@ public class TemplateEntry
       }
       else
       {
-        AttributeBuilder builder = new AttributeBuilder(t, t.getNameOrOID());
+        AttributeBuilder builder = new AttributeBuilder(t);
         AttributeBuilder urlBuilder = null;
         AttributeBuilder base64Builder = null;
         for (TemplateValue v : valueList)
@@ -292,7 +274,7 @@ public class TemplateEntry
           {
             if (urlBuilder == null)
             {
-              urlBuilder = new AttributeBuilder(t, t.getNameOrOID());
+              urlBuilder = new AttributeBuilder(t);
             }
             urlBuilder.add(value);
           }
@@ -300,7 +282,7 @@ public class TemplateEntry
           {
             if (base64Builder == null)
             {
-              base64Builder = new AttributeBuilder(t, t.getNameOrOID());
+              base64Builder = new AttributeBuilder(t);
             }
             base64Builder.add(value);
           }

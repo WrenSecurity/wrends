@@ -24,18 +24,18 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.opendj.config.server.ConfigException;
-import org.forgerock.util.Utils;
 import org.forgerock.opendj.config.ClassPropertyDefinition;
+import org.forgerock.opendj.config.server.ConfigChangeResult;
+import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.config.server.ConfigurationAddListener;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.config.server.ConfigurationDeleteListener;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.server.config.meta.AccountStatusNotificationHandlerCfgDefn;
 import org.forgerock.opendj.server.config.server.AccountStatusNotificationHandlerCfg;
 import org.forgerock.opendj.server.config.server.RootCfg;
+import org.forgerock.util.Utils;
 import org.opends.server.api.AccountStatusNotificationHandler;
-import org.forgerock.opendj.config.server.ConfigChangeResult;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.InitializationException;
 
 /**
@@ -51,12 +51,8 @@ public class AccountStatusNotificationHandlerConfigManager
           ConfigurationAddListener    <AccountStatusNotificationHandlerCfg>,
           ConfigurationDeleteListener <AccountStatusNotificationHandlerCfg>
 {
-
-  /**
-   * A mapping between the DNs of the config entries and the associated
-   * notification handlers.
-   */
-  private final ConcurrentHashMap<DN,AccountStatusNotificationHandler> notificationHandlers;
+  /** A mapping between the DNs of the config entries and the associated notification handlers. */
+  private final ConcurrentHashMap<DN, AccountStatusNotificationHandler<?>> notificationHandlers;
 
   private final ServerContext serverContext;
 
@@ -71,8 +67,6 @@ public class AccountStatusNotificationHandlerConfigManager
     this.serverContext = serverContext;
     notificationHandlers = new ConcurrentHashMap<>();
   }
-
-
 
   /**
    * Initializes all account status notification handlers currently defined in
@@ -118,9 +112,6 @@ public class AccountStatusNotificationHandlerConfigManager
     }
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(
       AccountStatusNotificationHandlerCfg configuration,
@@ -138,7 +129,7 @@ public class AccountStatusNotificationHandlerConfigManager
       try
       {
         // Load the class but don't initialize it.
-        loadNotificationHandler(className, configuration, true);
+        loadNotificationHandler(className, configuration, false);
       }
       catch (InitializationException ie)
       {
@@ -150,9 +141,6 @@ public class AccountStatusNotificationHandlerConfigManager
     return status;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
       AccountStatusNotificationHandlerCfg configuration
@@ -162,7 +150,7 @@ public class AccountStatusNotificationHandlerConfigManager
 
     // Get the configuration entry DN and the associated handler class.
     DN configEntryDN = configuration.dn();
-    AccountStatusNotificationHandler handler = notificationHandlers.get(configEntryDN);
+    AccountStatusNotificationHandler<?> handler = notificationHandlers.get(configEntryDN);
 
     // If the new configuration has the notification handler disabled,
     // then remove it from the mapping list and clean it.
@@ -208,9 +196,6 @@ public class AccountStatusNotificationHandlerConfigManager
     return changeResult;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAddAcceptable(
       AccountStatusNotificationHandlerCfg configuration,
@@ -249,9 +234,6 @@ public class AccountStatusNotificationHandlerConfigManager
     return status;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationAdd(
       AccountStatusNotificationHandlerCfg configuration
@@ -282,9 +264,6 @@ public class AccountStatusNotificationHandlerConfigManager
     return changeResult;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationDeleteAcceptable(
       AccountStatusNotificationHandlerCfg configuration,
@@ -295,9 +274,6 @@ public class AccountStatusNotificationHandlerConfigManager
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationDelete(
       AccountStatusNotificationHandlerCfg configuration
@@ -306,7 +282,6 @@ public class AccountStatusNotificationHandlerConfigManager
     uninstallNotificationHandler (configuration.dn());
     return new ConfigChangeResult();
   }
-
 
   /**
    * Loads the specified class, instantiates it as a notification handler,
@@ -341,7 +316,6 @@ public class AccountStatusNotificationHandlerConfigManager
         handlerClass
         );
   }
-
 
   /**
    * Loads the specified class, instantiates it as a notification handler,
@@ -402,26 +376,19 @@ public class AccountStatusNotificationHandlerConfigManager
     }
   }
 
-
   /**
    * Remove a notification handler that has been installed in the server.
    *
    * @param configEntryDN  the DN of the configuration entry associated to
    *                       the notification handler to remove
    */
-  private void uninstallNotificationHandler(
-      DN configEntryDN
-      )
+  private void uninstallNotificationHandler(DN configEntryDN)
   {
-    AccountStatusNotificationHandler handler =
-        notificationHandlers.remove (configEntryDN);
+    AccountStatusNotificationHandler<?> handler = notificationHandlers.remove(configEntryDN);
     if (handler != null)
     {
-      DirectoryServer.deregisterAccountStatusNotificationHandler (
-          configEntryDN
-          );
+      DirectoryServer.deregisterAccountStatusNotificationHandler(configEntryDN);
       handler.finalizeStatusNotificationHandler();
     }
   }
 }
-

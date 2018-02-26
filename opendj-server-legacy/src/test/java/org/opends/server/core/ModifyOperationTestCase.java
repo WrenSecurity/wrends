@@ -16,6 +16,19 @@
  */
 package org.opends.server.core;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.forgerock.opendj.ldap.ModificationType.*;
+import static org.forgerock.opendj.ldap.controls.GenericControl.*;
+import static org.forgerock.opendj.ldap.requests.Requests.*;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
+import static org.opends.server.TestCaseUtils.*;
+import static org.opends.server.protocols.internal.InternalClientConnection.*;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.opends.server.protocols.ldap.LDAPConstants.*;
+import static org.opends.server.util.CollectionUtils.*;
+import static org.opends.server.util.ServerConstants.*;
+import static org.testng.Assert.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +41,7 @@ import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.requests.ModifyRequest;
 import org.forgerock.opendj.ldap.requests.Requests;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.api.Backend;
 import org.opends.server.plugins.DisconnectClientPlugin;
@@ -61,18 +75,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.controls.GenericControl.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.opends.server.protocols.ldap.LDAPConstants.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
 
 /**
  * A set of test cases for modify operations.
@@ -405,7 +407,7 @@ public class ModifyOperationTestCase
   public void testGetAndAddModifications() throws Exception
   {
     Entry e = DirectoryServer.getEntry(DN.valueOf("o=test"));
-    assertThat(e.getAttribute(DirectoryServer.getAttributeType("description"))).isEmpty();
+    assertThat(e.getAttribute(getDescriptionAttributeType())).isEmpty();
 
     UpdatePreOpPlugin.reset();
     UpdatePreOpPlugin.addModification(
@@ -420,7 +422,7 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     e = DirectoryServer.getEntry(DN.valueOf("o=test"));
-    assertThat(e.getAttribute(DirectoryServer.getAttributeType("description"))).isNotEmpty();
+    assertThat(e.getAttribute(getDescriptionAttributeType())).isNotEmpty();
 
     UpdatePreOpPlugin.reset();
   }
@@ -517,7 +519,7 @@ public class ModifyOperationTestCase
   public void testSuccessAddAttribute() throws Exception
   {
     Entry e = DirectoryServer.getEntry(DN.valueOf("o=test"));
-    assertThat(e.getAttribute(DirectoryServer.getAttributeType("description"))).isEmpty();
+    assertThat(e.getAttribute(getDescriptionAttributeType())).isEmpty();
 
     RawModification mod = newRawModification(REPLACE, "description", "foo");
     ModifyOperation modifyOperation = processModify("o=test", mod);
@@ -525,7 +527,7 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     e = DirectoryServer.getEntry(DN.valueOf("o=test"));
-    assertThat(e.getAttribute(DirectoryServer.getAttributeType("description"))).isNotEmpty();
+    assertThat(e.getAttribute(getDescriptionAttributeType())).isNotEmpty();
   }
 
 
@@ -541,7 +543,7 @@ public class ModifyOperationTestCase
   {
     Entry e = DirectoryServer.getEntry(DN.valueOf("o=test"));
 
-    List<Attribute> attrList = e.getAttribute(DirectoryServer.getAttributeType("o"));
+    List<Attribute> attrList = e.getAttribute(getOAttributeType());
     assertEquals(countValues(attrList), 1);
 
     ModifyOperation modifyOperation = processModify("o=test", newRawModification(ADD, "o", "test2"));
@@ -549,7 +551,7 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     e = DirectoryServer.getEntry(DN.valueOf("o=test"));
-    attrList = e.getAttribute(DirectoryServer.getAttributeType("o"));
+    attrList = e.getAttribute(getOAttributeType());
     assertEquals(countValues(attrList), 2);
   }
 
@@ -567,7 +569,7 @@ public class ModifyOperationTestCase
   {
     Entry e = DirectoryServer.getEntry(DN.valueOf(baseDN));
 
-    List<Attribute> attrList = e.getAttribute(DirectoryServer.getAttributeType("o"));
+    List<Attribute> attrList = e.getAttribute(getOAttributeType());
     assertEquals(countValues(attrList), 1);
 
     RawModification mod = newRawModification(ADD, "o;lang-en-us", "test");
@@ -576,7 +578,7 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     e = DirectoryServer.getEntry(DN.valueOf(baseDN));
-    attrList = e.getAttribute(DirectoryServer.getAttributeType("o"));
+    attrList = e.getAttribute(getOAttributeType());
     assertEquals(countValues(attrList), 2);
   }
 
@@ -1803,8 +1805,7 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     Entry e = DirectoryServer.getEntry(DN.valueOf("uid=test.user," + baseDN));
-    List<Attribute> attrList =
-         e.getAttribute(DirectoryServer.getAttributeType("employeenumber"));
+    List<Attribute> attrList = e.getAttribute(getEmployeeNumberAttributeType());
     assertIntegerValueExists(attrList, 2);
   }
 
@@ -1841,11 +1842,9 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     Entry e = DirectoryServer.getEntry(DN.valueOf("uid=test.user," + baseDN));
-    List<Attribute> attrList =
-         e.getAttribute(DirectoryServer.getAttributeType("employeenumber"));
+    List<Attribute> attrList = e.getAttribute(getEmployeeNumberAttributeType());
     assertIntegerValueExists(attrList, 11);
   }
-
 
 
   /**
@@ -1879,9 +1878,13 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     Entry e = DirectoryServer.getEntry(DN.valueOf("uid=test.user," + baseDN));
-    List<Attribute> attrList =
-         e.getAttribute(DirectoryServer.getAttributeType("employeenumber"));
+    List<Attribute> attrList = e.getAttribute(getEmployeeNumberAttributeType());
     assertIntegerValueExists(attrList, 0);
+  }
+
+  private AttributeType getEmployeeNumberAttributeType()
+  {
+    return DirectoryServer.getSchema().getAttributeType("employeenumber");
   }
 
   private void assertIntegerValueExists(List<Attribute> attrList, int expectedValue)
@@ -2123,8 +2126,7 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     Entry e = DirectoryServer.getEntry(DN.valueOf("uid=test.user," + baseDN));
-    assertFalse(e.hasObjectClass(
-         DirectoryServer.getObjectClass("extensibleobject", true)));
+    assertFalse(e.hasObjectClass(getExtensibleObjectObjectClass()));
   }
 
 
@@ -2160,11 +2162,11 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     Entry e = DirectoryServer.getEntry(DN.valueOf("uid=test.user," + baseDN));
-    assertTrue(e.hasObjectClass(DirectoryServer.getObjectClass("extensibleobject", true)));
-    assertTrue(e.hasObjectClass(DirectoryServer.getObjectClass("inetOrgPerson", true)));
-    assertTrue(e.hasObjectClass(DirectoryServer.getObjectClass("organizationalPerson", true)));
-    assertTrue(e.hasObjectClass(DirectoryServer.getObjectClass("person", true)));
-    assertTrue(e.hasObjectClass(DirectoryServer.getObjectClass("top", true)));
+    assertTrue(e.hasObjectClass(getExtensibleObjectObjectClass()));
+    assertTrue(e.hasObjectClass(DirectoryServer.getSchema().getObjectClass("inetOrgPerson")));
+    assertTrue(e.hasObjectClass(getOrganizationalPersonObjectClass()));
+    assertTrue(e.hasObjectClass(getPersonObjectClass()));
+    assertTrue(e.hasObjectClass(getTopObjectClass()));
     assertEquals(e.getUserAttributes().size(), 8, "Incorrect number of user attributes");
   }
 
@@ -2952,8 +2954,7 @@ public class ModifyOperationTestCase
     modifyOperation.run();
     assertEquals(modifyOperation.getResultCode(), ResultCode.SUCCESS);
     assertTrue(DirectoryServer.entryExists(DN.valueOf("o=test")));
-    assertFalse(DirectoryServer.getEntry(DN.valueOf("o=test")).hasAttribute(
-                     DirectoryServer.getAttributeType("description")));
+    assertFalse(DirectoryServer.getEntry(DN.valueOf("o=test")).hasAttribute(getDescriptionAttributeType()));
   }
 
 
@@ -3172,9 +3173,7 @@ public class ModifyOperationTestCase
          "displayName: Test User",
          "userPassword: password");
 
-    List<Attribute> attrList =
-         e.getAttribute(DirectoryServer.getAttributeType("userpassword"));
-    String passwd = firstValue(attrList);
+    String passwd = firstValue(e.getAttribute(getUserPasswordAttributeType()));
     assertNotNull(passwd);
 
     String path = TestCaseUtils.createTempFile(
@@ -3410,7 +3409,7 @@ public class ModifyOperationTestCase
     retrieveSuccessfulOperationElements(modifyOperation);
 
     Entry e = DirectoryServer.getEntry(DN.valueOf("uid=test.user," + baseDN));
-    List<Attribute> attrList = e.getAttribute(DirectoryServer.getAttributeType("usercertificate"));
+    List<Attribute> attrList = e.getAttribute(getUserCertificateAttributeType());
     assertThat(attrList).hasSize(1);
     Attribute a = attrList.get(0);
     assertTrue(a.getAttributeDescription().hasOption("binary"));

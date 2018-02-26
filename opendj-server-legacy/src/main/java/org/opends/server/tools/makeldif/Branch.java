@@ -26,10 +26,10 @@ import java.util.Map;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.ByteString;
-import org.opends.server.core.DirectoryServer;
-import org.opends.server.types.Attribute;
-import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.opends.server.types.Attribute;
 import org.opends.server.types.Entry;
 
 /**
@@ -39,23 +39,18 @@ import org.opends.server.types.Entry;
 public class Branch
 {
   /** The DN for this branch entry. */
-  private DN branchDN;
-
+  private final DN branchDN;
   /**
    * The number of entries that should be created below this branch for each
    * subordinate template.
    */
   private int[] numEntriesPerTemplate;
-
   /** The names of the subordinate templates for this branch. */
   private String[] subordinateTemplateNames;
-
   /** The set of subordinate templates for this branch. */
   private Template[] subordinateTemplates;
-
   /** The set of template lines that correspond to the RDN components. */
-  private TemplateLine[] rdnLines;
-
+  private final TemplateLine[] rdnLines;
   /** The set of extra lines that should be included in this branch entry. */
   private TemplateLine[] extraLines;
 
@@ -90,7 +85,7 @@ public class Branch
    * @param  extraLines                The set of extra lines that should be
    *                                   included in this branch entry.
    */
-  public Branch(TemplateFile templateFile, DN branchDN,
+  private Branch(TemplateFile templateFile, DN branchDN,
                 String[] subordinateTemplateNames, int[] numEntriesPerTemplate,
                 TemplateLine[] extraLines)
   {
@@ -115,13 +110,9 @@ public class Branch
         String[] valueStrings = new String[] { ocName };
         Tag[] tags = new Tag[1];
         tags[0] = new StaticTextTag();
-        tags[0].initializeForBranch(templateFile, this, valueStrings, 0,
-                                    warnings);
+        tags[0].initializeForBranch(templateFile, this, valueStrings, 0, warnings);
 
-        TemplateLine l =
-             new TemplateLine(DirectoryServer.getObjectClassAttributeType(), 0,
-                              tags);
-        lineList.add(l);
+        lineList.add(new TemplateLine(CoreSchema.getObjectClassAttributeType(), 0, tags));
       }
       catch (Exception e)
       {

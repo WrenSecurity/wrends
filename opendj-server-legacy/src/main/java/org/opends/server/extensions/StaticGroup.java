@@ -16,11 +16,17 @@
  */
 package org.opends.server.extensions;
 
+import static com.forgerock.opendj.util.StaticUtils.getBytes;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -30,24 +36,24 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
-import org.forgerock.opendj.ldap.DN.CompactDn;
 import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.util.Reject;
 import org.forgerock.opendj.server.config.server.GroupImplementationCfg;
 import org.forgerock.opendj.server.config.server.StaticGroupImplementationCfg;
+import org.forgerock.util.Reject;
+import org.forgerock.util.annotations.VisibleForTesting;
 import org.opends.server.api.Group;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.core.ModifyOperationBasis;
 import org.opends.server.core.ServerContext;
 import org.opends.server.protocols.ldap.LDAPControl;
+import org.opends.server.types.AcceptRejectWarn;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.Control;
-import org.opends.server.types.DirectoryConfig;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.InitializationException;
@@ -56,6 +62,7 @@ import org.opends.server.types.MembershipException;
 import org.opends.server.types.Modification;
 import org.opends.server.types.SearchFilter;
 
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 import static org.opends.messages.ExtensionMessages.*;
 import static org.opends.server.core.DirectoryServer.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
@@ -87,7 +94,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
   private DN groupEntryDN;
 
   /** The set of the DNs of the members for this group. */
-  private LinkedHashSet<CompactDn> memberDNs;
+  private HashSet<CompactDn> memberDNs;
 
   /** The list of nested group DNs for this group. */
   private LinkedList<DN> nestedGroups = new LinkedList<>();
@@ -131,7 +138,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     this.memberDNs           = memberDNs;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void initializeGroupImplementation(StaticGroupImplementationCfg configuration)
          throws ConfigException, InitializationException
@@ -139,7 +145,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     // No additional initialization is required.
   }
 
-  /** {@inheritDoc} */
   @Override
   public StaticGroup newInstance(ServerContext serverContext, Entry groupEntry) throws DirectoryException
   {
@@ -166,7 +171,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
         throw new DirectoryException(ResultCode.OBJECTCLASS_VIOLATION, message);
       }
 
-      someMemberAttributeType = DirectoryServer.getAttributeType(ATTR_MEMBER);
+      someMemberAttributeType = getMemberAttributeType();
     }
     else if (hasGroupOfNamesClass)
     {
@@ -177,11 +182,11 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
         throw new DirectoryException(ResultCode.OBJECTCLASS_VIOLATION, message);
       }
 
-      someMemberAttributeType = DirectoryServer.getAttributeType(ATTR_MEMBER);
+      someMemberAttributeType = getMemberAttributeType();
     }
     else if (hasGroupOfUniqueNamesClass)
     {
-      someMemberAttributeType = DirectoryServer.getAttributeType(ATTR_UNIQUE_MEMBER_LC);
+      someMemberAttributeType = getUniqueMemberAttributeType();
     }
     else
     {
@@ -203,20 +208,23 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
       {
         try
         {
-          someMemberDNs.add(DN.valueOf(v.toString()).compact());
+          someMemberDNs.add(new CompactDn(DN.valueOf(v.toString())));
         }
         catch (LocalizedIllegalArgumentException e)
         {
           logger.traceException(e);
-          logger.error(ERR_STATICGROUP_CANNOT_DECODE_MEMBER_VALUE_AS_DN,
+          if (DirectoryServer.getSyntaxEnforcementPolicy() == AcceptRejectWarn.REJECT)
+          {
+            logger.error(ERR_STATICGROUP_CANNOT_DECODE_MEMBER_VALUE_AS_DN,
               v, someMemberAttributeType.getNameOrOID(), groupEntry.getName(), e.getMessageObject());
+          }
+          // else just ignore this value (issue OPENDJ-2833)
         }
       }
     }
     return new StaticGroup(serverContext, groupEntry.getName(), someMemberAttributeType, someMemberDNs);
   }
 
-  /** {@inheritDoc} */
   @Override
   public SearchFilter getGroupDefinitionFilter()
          throws DirectoryException
@@ -229,7 +237,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     return SearchFilter.createFilterFromString(filterString);
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isGroupDefinition(Entry entry)
   {
@@ -261,31 +268,27 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
 
   private boolean hasObjectClass(Entry entry, String ocName)
   {
-    return entry.hasObjectClass(DirectoryConfig.getObjectClass(ocName, true));
+    return entry.hasObjectClass(DirectoryServer.getSchema().getObjectClass(ocName));
   }
 
-  /** {@inheritDoc} */
   @Override
   public DN getGroupDN()
   {
     return groupEntryDN;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void setGroupDN(DN groupDN)
   {
     groupEntryDN = groupDN;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean supportsNestedGroups()
   {
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public List<DN> getNestedGroupDNs()
   {
@@ -308,7 +311,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void addNestedGroup(DN nestedGroupDN)
          throws UnsupportedOperationException, DirectoryException
@@ -337,8 +339,8 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
       newNestedGroups.add(nestedGroupDN);
       nestedGroups = newNestedGroups;
       //Add it to the member DN list.
-      LinkedHashSet<CompactDn> newMemberDNs = new LinkedHashSet<>(memberDNs);
-      newMemberDNs.add(toCompactDn(nestedGroupDN));
+      HashSet<CompactDn> newMemberDNs = new HashSet<>(memberDNs);
+      newMemberDNs.add(new CompactDn(nestedGroupDN));
       memberDNs = newMemberDNs;
     }
     finally
@@ -347,7 +349,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void removeNestedGroup(DN nestedGroupDN)
          throws UnsupportedOperationException, DirectoryException
@@ -377,7 +378,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
       nestedGroups = newNestedGroups;
       //Remove it from the member DN list.
       LinkedHashSet<CompactDn> newMemberDNs = new LinkedHashSet<>(memberDNs);
-      newMemberDNs.remove(toCompactDn(nestedGroupDN));
+      newMemberDNs.remove(new CompactDn(nestedGroupDN));
       memberDNs = newMemberDNs;
     }
     finally
@@ -386,12 +387,11 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
-  public boolean isMember(DN userDN, Set<DN> examinedGroups) throws DirectoryException
+  public boolean isMember(DN userDN, AtomicReference<Set<DN>> examinedGroups) throws DirectoryException
   {
     reloadIfNeeded();
-    CompactDn compactUserDN = toCompactDn(userDN);
+    CompactDn compactUserDN = new CompactDn(userDN);
     lock.readLock().lock();
     try
     {
@@ -399,19 +399,22 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
       {
         return true;
       }
-      else if (!examinedGroups.add(getGroupDN()))
+      if (nestedGroups.isEmpty()) {
+        return false;
+      }
+
+      // there are nested groups
+      Set<DN> groups = getExaminedGroups(examinedGroups);
+      if (!groups.add(getGroupDN()))
       {
         return false;
       }
-      else
+      for (DN nestedGroupDN : nestedGroups)
       {
-        for (DN nestedGroupDN : nestedGroups)
+        Group<? extends GroupImplementationCfg> group = getGroupManager().getGroupInstance(nestedGroupDN);
+        if (group != null && group.isMember(userDN, examinedGroups))
         {
-          Group<? extends GroupImplementationCfg> group = getGroupManager().getGroupInstance(nestedGroupDN);
-          if (group != null && group.isMember(userDN, examinedGroups))
-          {
-            return true;
-          }
+          return true;
         }
       }
     }
@@ -422,9 +425,19 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     return false;
   }
 
-  /** {@inheritDoc} */
+  private Set<DN> getExaminedGroups(AtomicReference<Set<DN>> examinedGroups)
+  {
+    Set<DN> groups = examinedGroups.get();
+    if (groups == null)
+    {
+      groups = new HashSet<DN>();
+      examinedGroups.set(groups);
+    }
+    return groups;
+  }
+
   @Override
-  public boolean isMember(Entry userEntry, Set<DN> examinedGroups)
+  public boolean isMember(Entry userEntry, AtomicReference<Set<DN>> examinedGroups)
          throws DirectoryException
   {
     return isMember(userEntry.getName(), examinedGroups);
@@ -448,7 +461,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
         if (thisGroup == null)
         {
           throw new DirectoryException(ResultCode.NO_SUCH_ATTRIBUTE,
-                  ERR_STATICGROUP_GROUP_INSTANCE_INVALID.get(groupEntryDN));
+              ERR_STATICGROUP_GROUP_INSTANCE_INVALID.get(groupEntryDN));
         }
         else if (thisGroup != this)
         {
@@ -458,7 +471,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
           {
             try
             {
-              newMemberDNs.add(toCompactDn(memberList.nextMemberDN()));
+              newMemberDNs.add(new CompactDn(memberList.nextMemberDN()));
             }
             catch (MembershipException ex)
             {
@@ -470,7 +483,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
         nestedGroups.clear();
         for (CompactDn compactDn : memberDNs)
         {
-          DN dn = fromCompactDn(compactDn);
+          DN dn = compactDn.toDn(serverContext);
           Group<?> group = DirectoryServer.getGroupManager().getGroupInstance(dn);
           if (group != null)
           {
@@ -486,7 +499,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public MemberList getMembers() throws DirectoryException
   {
@@ -494,7 +506,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     lock.readLock().lock();
     try
     {
-      return new SimpleStaticGroupMemberList(groupEntryDN, memberDNs);
+      return new SimpleStaticGroupMemberList(serverContext, groupEntryDN, memberDNs);
     }
     finally
     {
@@ -502,7 +514,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public MemberList getMembers(DN baseDN, SearchScope scope, SearchFilter filter) throws DirectoryException
   {
@@ -512,9 +523,9 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     {
       if (baseDN == null && filter == null)
       {
-        return new SimpleStaticGroupMemberList(groupEntryDN, memberDNs);
+        return new SimpleStaticGroupMemberList(serverContext, groupEntryDN, memberDNs);
       }
-      return new FilteredStaticGroupMemberList(groupEntryDN, memberDNs, baseDN, scope, filter);
+      return new FilteredStaticGroupMemberList(serverContext, groupEntryDN, memberDNs, baseDN, scope, filter);
     }
     finally
     {
@@ -522,14 +533,12 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean mayAlterMemberList()
   {
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void updateMembers(List<Modification> modifications)
          throws UnsupportedOperationException, DirectoryException
@@ -552,7 +561,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
               for (ByteString v : attribute)
               {
                 DN member = DN.valueOf(v);
-                memberDNs.add(toCompactDn(member));
+                memberDNs.add(new CompactDn(member));
                 if (DirectoryServer.getGroupManager().getGroupInstance(member) != null)
                 {
                   nestedGroups.add(member);
@@ -570,7 +579,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
                 for (ByteString v : attribute)
                 {
                   DN member = DN.valueOf(v);
-                  memberDNs.remove(toCompactDn(member));
+                  memberDNs.remove(new CompactDn(member));
                   nestedGroups.remove(member);
                 }
               }
@@ -581,7 +590,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
               for (ByteString v : attribute)
               {
                 DN member = DN.valueOf(v);
-                memberDNs.add(toCompactDn(member));
+                memberDNs.add(new CompactDn(member));
                 if (DirectoryServer.getGroupManager().getGroupInstance(member) != null)
                 {
                   nestedGroups.add(member);
@@ -597,7 +606,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void addMember(Entry userEntry) throws UnsupportedOperationException, DirectoryException
   {
@@ -607,7 +615,7 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     try
     {
       DN userDN = userEntry.getName();
-      CompactDn compactUserDN = toCompactDn(userDN);
+      CompactDn compactUserDN = new CompactDn(userDN);
 
       if (memberDNs.contains(compactUserDN))
       {
@@ -633,13 +641,12 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void removeMember(DN userDN) throws UnsupportedOperationException, DirectoryException
   {
     Reject.ifNull(userDN);
 
-    CompactDn compactUserDN = toCompactDn(userDN);
+    CompactDn compactUserDN = new CompactDn(userDN);
     lock.writeLock().lock();
     try
     {
@@ -684,7 +691,6 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
         newLinkedList(control), groupEntryDN, mods);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void toString(StringBuilder buffer)
   {
@@ -694,27 +700,99 @@ public class StaticGroup extends Group<StaticGroupImplementationCfg>
   }
 
   /**
-   * Convert the provided DN to a compact DN.
-   *
-   * @param dn
-   *            The DN
-   * @return the compact representation of the DN
+   * A compact representation of a DN, suitable for equality and comparisons, and providing a natural hierarchical
+   * ordering.
+   * <p>
+   * The memory consumption compared to a regular DN object is minimal.
    */
-  private CompactDn toCompactDn(DN dn)
+  static final class CompactDn implements Comparable<CompactDn>
   {
-    return dn.compact();
-  }
+    /** Original string corresponding to the DN. */
+    private final byte[] originalValue;
 
-  /**
-   * Convert the provided compact DN to a DN.
-   *
-   * @param compactDn
-   *            Compact representation of a DN
-   * @return the regular DN
-   */
-  static DN fromCompactDn(CompactDn compactDn)
-  {
-    return compactDn.toDn();
+    /**
+     * Normalized byte string, suitable for equality and comparisons, and providing a natural
+     * hierarchical ordering, but not usable as a valid DN.
+     */
+    private final byte[] normalizedValue;
+
+    @VisibleForTesting
+    CompactDn(DN dn)
+    {
+      this.originalValue = getBytes(dn.toString());
+      this.normalizedValue = dn.toNormalizedByteString().toByteArray();
+    }
+
+    @Override
+    public int compareTo(final CompactDn other)
+    {
+      final int length1 = normalizedValue.length;
+      final int length2 = other.normalizedValue.length;
+      int count = Math.min(length1, length2);
+      int i = 0;
+      int j = 0;
+      while (count-- != 0)
+      {
+        final int firstByte = 0xFF & normalizedValue[i++];
+        final int secondByte = 0xFF & other.normalizedValue[j++];
+        if (firstByte != secondByte)
+        {
+          return firstByte - secondByte;
+        }
+      }
+      return length1 - length2;
+    }
+
+    /**
+     * Returns the DN corresponding to this compact representation.
+     *
+     * @param serverContext
+     *          The server context.
+     *
+     * @return the DN
+     */
+    public DN toDn(ServerContext serverContext)
+    {
+      return DN.valueOf(toString(), serverContext.getSchemaNG());
+    }
+
+    @Override
+    public int hashCode()
+    {
+      return Arrays.hashCode(normalizedValue);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+      if (this == obj)
+      {
+        return true;
+      }
+      else if (obj instanceof CompactDn)
+      {
+        final CompactDn other = (CompactDn) obj;
+        return Arrays.equals(normalizedValue, other.normalizedValue);
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    @Override
+    public String toString()
+    {
+      final int length = originalValue.length;
+      if (length == 0) {
+          return "";
+      }
+      try {
+          return new String(originalValue, 0, length, "UTF-8");
+      } catch (final UnsupportedEncodingException e) {
+          // TODO: I18N
+          throw new RuntimeException("Unable to decode bytes as UTF-8 string", e);
+      }
+    }
   }
 }
-

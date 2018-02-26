@@ -40,7 +40,7 @@ import org.forgerock.i18n.LocalizableMessageDescriptor.Arg2;
  * form, which defines the attribute type(s) that must and/or may be used in the
  * RDN of an entry with a given structural objectclass.
  */
-public final class NameForm extends SchemaElement {
+public final class NameForm extends AbstractSchemaElement {
 
     /** A fluent API for incrementally constructing name forms. */
     public static final class Builder extends SchemaElementBuilder<Builder> {
@@ -141,7 +141,7 @@ public final class NameForm extends SchemaElement {
         }
 
         /**
-         * Specifies whether or not this schema element is obsolete.
+         * Specifies whether this schema element is obsolete.
          *
          * @param isObsolete
          *            {@code true} if this schema element is obsolete (default

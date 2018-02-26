@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.ui.components;
 
@@ -36,6 +36,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
@@ -54,53 +55,41 @@ import org.opends.guitools.controlpanel.util.Utilities;
 public class DoubleAddRemovePanel<T> extends JPanel
 {
   private static final long serialVersionUID = 6881453848780359594L;
-  private SortableListModel<T> availableListModel;
-  private SortableListModel<T> selectedListModel1;
-  private SortableListModel<T> selectedListModel2;
-  private JLabel selectedLabel1;
-  private JLabel selectedLabel2;
-  private JLabel availableLabel;
-  private JButton add1;
-  private JButton remove1;
-  private JButton add2;
-  private JButton remove2;
-  private JButton addAll1;
-  private JButton removeAll1;
-  private JButton addAll2;
-  private JButton removeAll2;
-  private JScrollPane availableScroll;
-  private JScrollPane selectedScroll1;
-  private JScrollPane selectedScroll2;
-  private JList availableList;
-  private JList<T> selectedList1;
-  private JList<T> selectedList2;
-  private Class<T> theClass;
-  private Collection<T> unmovableItems = new ArrayList<>();
+  private final SortableListModel<T> availableListModel;
+  private final SortableListModel<T> selectedListModel1;
+  private final SortableListModel<T> selectedListModel2;
+  private final JLabel selectedLabel1;
+  private final JLabel selectedLabel2;
+  private final JLabel availableLabel;
+  private final JButton add1;
+  private final JButton remove1;
+  private final JButton add2;
+  private final JButton remove2;
+  private final JButton addAll1;
+  private final JButton removeAll1;
+  private final JButton addAll2;
+  private final JButton removeAll2;
+  private final JScrollPane availableScroll;
+  private final JScrollPane selectedScroll1;
+  private final JScrollPane selectedScroll2;
+  private final JList availableList;
+  private final JList<T> selectedList1;
+  private final JList<T> selectedList2;
+  private final Class<T> theClass;
+  private final Collection<T> unmovableItems = new ArrayList<>();
   private boolean ignoreListEvents;
 
   /**
    * Mask used as display option.  If the provided display options contain
    * this mask, the panel will display the remove all button.
    */
-  public static final int DISPLAY_REMOVE_ALL = 0x001;
+  private static final int DISPLAY_REMOVE_ALL = 0x001;
 
   /**
    * Mask used as display option.  If the provided display options contain
    * this mask, the panel will display the add all button.
    */
-  public static final int DISPLAY_ADD_ALL = 0x010;
-
-
-  /**
-   * Constructor of the default double add remove panel (including 'Add All' and
-   * 'Remove All' buttons).
-   * The class is required to avoid warnings in compilation.
-   * @param theClass the class of the objects in the panel.
-   */
-  public DoubleAddRemovePanel(Class<T> theClass)
-  {
-    this(DISPLAY_REMOVE_ALL | DISPLAY_ADD_ALL, theClass);
-  }
+  private static final int DISPLAY_ADD_ALL = 0x010;
 
   /**
    * Constructor of the double add remove panel allowing the user to provide
@@ -135,19 +124,19 @@ public class DoubleAddRemovePanel<T> extends JPanel
 
     ListDataListener listDataListener = new ListDataListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void intervalRemoved(ListDataEvent ev)
       {
         listSelectionChanged();
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void intervalAdded(ListDataEvent ev)
       {
         listSelectionChanged();
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void contentsChanged(ListDataEvent ev)
       {
         listSelectionChanged();
@@ -155,7 +144,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
     };
     MouseAdapter doubleClickListener = new MouseAdapter()
     {
-      /** {@inheritDoc} */
+      @Override
       public void mouseClicked(MouseEvent e) {
         if (isEnabled() && e.getClickCount() == 2)
         {
@@ -234,7 +223,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
     add1.setOpaque(false);
     add1.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         addClicked(selectedListModel1);
@@ -251,6 +240,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
       addAll1.setOpaque(false);
       addAll1.addActionListener(new ActionListener()
       {
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           moveAll(availableListModel, selectedListModel1);
@@ -259,12 +249,17 @@ public class DoubleAddRemovePanel<T> extends JPanel
       gbc.gridy ++;
       add(addAll1, gbc);
     }
+    else
+    {
+      addAll1 = null;
+    }
 
     remove1 = Utilities.createButton(
         INFO_CTRL_PANEL_ADDREMOVE_REMOVE_BUTTON.get());
     remove1.setOpaque(false);
     remove1.addActionListener(new ActionListener()
     {
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         remove1Clicked();
@@ -282,7 +277,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
       removeAll1.setOpaque(false);
       removeAll1.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           moveAll(selectedListModel1, availableListModel);
@@ -291,6 +286,10 @@ public class DoubleAddRemovePanel<T> extends JPanel
       gbc.gridy ++;
       gbc.insets.top = 5;
       add(removeAll1, gbc);
+    }
+    else
+    {
+      removeAll1 = null;
     }
 
 
@@ -311,7 +310,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
     add2.setOpaque(false);
     add2.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         addClicked(selectedListModel2);
@@ -328,7 +327,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
       addAll2.setOpaque(false);
       addAll2.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           moveAll(availableListModel, selectedListModel2);
@@ -337,13 +336,17 @@ public class DoubleAddRemovePanel<T> extends JPanel
       gbc.gridy ++;
       add(addAll2, gbc);
     }
+    else
+    {
+      addAll2 = null;
+    }
 
     remove2 = Utilities.createButton(
         INFO_CTRL_PANEL_ADDREMOVE_REMOVE_BUTTON.get());
     remove2.setOpaque(false);
     remove2.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         remove2Clicked();
@@ -361,7 +364,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
       removeAll2.setOpaque(false);
       removeAll2.addActionListener(new ActionListener()
       {
-        /** {@inheritDoc} */
+        @Override
         public void actionPerformed(ActionEvent ev)
         {
           moveAll(selectedListModel2, availableListModel);
@@ -370,6 +373,10 @@ public class DoubleAddRemovePanel<T> extends JPanel
       gbc.gridy ++;
       gbc.insets.top = 5;
       add(removeAll2, gbc);
+    }
+    else
+    {
+      removeAll2 = null;
     }
 
 
@@ -433,6 +440,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
         ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     ListSelectionListener listener = new ListSelectionListener()
     {
+      @Override
       public void valueChanged(ListSelectionEvent ev)
       {
         listSelectionChanged();
@@ -466,10 +474,7 @@ public class DoubleAddRemovePanel<T> extends JPanel
     selectedScroll2.setPreferredSize(d);
   }
 
-  /**
-   * Enables the state of the components in the panel.
-   * @param enable whether to enable the components in the panel or not.
-   */
+  @Override
   public void setEnabled(boolean enable)
   {
     super.setEnabled(enable);
@@ -557,15 +562,13 @@ public class DoubleAddRemovePanel<T> extends JPanel
         int[] indexes = list.getSelectedIndices();
         if (indexes != null)
         {
-          for (int i=0; i<indexes.length; i++)
+          for (int index : indexes)
           {
             // This check is necessary since the selection model might not
             // be in sync with the list model.
-            if (indexes[i] < list.getModel().getSize() &&
-                list.getModel().getElementAt(indexes[i]).equals(element))
+            if (selectionAndListModelAreInSync(list, element, index))
             {
-              list.getSelectionModel().removeIndexInterval(indexes[i],
-                  indexes[i]);
+              list.getSelectionModel().removeIndexInterval(index, index);
             }
           }
         }
@@ -591,6 +594,13 @@ public class DoubleAddRemovePanel<T> extends JPanel
     {
       removeAll2.setEnabled(isEnabled(selectedListModel2));
     }
+  }
+
+  private boolean selectionAndListModelAreInSync(JList<T> list, T element, int index)
+  {
+    final ListModel<T> listModel = list.getModel();
+    return index < listModel.getSize()
+        && listModel.getElementAt(index).equals(element);
   }
 
   private boolean isEnabled(JList<T> list, SortableListModel<T> model)

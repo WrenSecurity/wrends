@@ -16,8 +16,6 @@
  */
 package org.opends.guitools.controlpanel.datamodel;
 
-import static org.opends.server.util.StaticUtils.*;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +40,7 @@ import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Entry;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.types.OpenDsException;
 import org.opends.server.util.LDIFReader;
 
@@ -54,7 +52,7 @@ import org.opends.server.util.LDIFReader;
  */
 public class CustomSearchResult implements Comparable<CustomSearchResult>
 {
-  private String dn;
+  private final String dn;
   private Map<String, List<Object>> attributes;
   private SortedSet<String> attrNames;
   private String toString;
@@ -190,21 +188,6 @@ public class CustomSearchResult implements Comparable<CustomSearchResult>
     return toString().compareTo(o.toString());
   }
 
-  /**
-   * Return a new object, copy of the current object.
-   *
-   * @return a new object, copy of the current object
-   */
-  public CustomSearchResult duplicate()
-  {
-    CustomSearchResult sr = new CustomSearchResult(dn);
-    sr.attributes = new HashMap<>(attributes);
-    sr.attrNames = new TreeSet<>(attrNames);
-    sr.toString = toString;
-    sr.hashCode = hashCode;
-    return sr;
-  }
-
   @Override
   public boolean equals(Object o)
   {
@@ -294,16 +277,7 @@ public class CustomSearchResult implements Comparable<CustomSearchResult>
         for (Object value : getAttributeValues(attrType.getNameOrOID()))
         {
           String ocName = value.toString().trim();
-          String lowerOCName = toLowerCase(ocName);
-
-          ObjectClass objectClass =
-            DirectoryServer.getObjectClass(lowerOCName);
-          if (objectClass == null)
-          {
-            objectClass = DirectoryServer.getDefaultObjectClass(ocName);
-          }
-
-          objectClasses.put(objectClass, ocName);
+          objectClasses.put(DirectoryServer.getSchema().getObjectClass(ocName), ocName);
         }
       }
       else

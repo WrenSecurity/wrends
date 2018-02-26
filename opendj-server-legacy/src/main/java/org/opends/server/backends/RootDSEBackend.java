@@ -16,6 +16,7 @@
  */
 package org.opends.server.backends;
 
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 import static org.forgerock.util.Reject.*;
 import static org.opends.messages.BackendMessages.*;
 import static org.opends.messages.ConfigMessages.*;
@@ -42,16 +43,17 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.ConditionResult;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.forgerock.opendj.server.config.server.RootDSEBackendCfg;
 import org.forgerock.util.Reject;
 import org.forgerock.util.Utils;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
-import org.forgerock.opendj.server.config.server.RootDSEBackendCfg;
 import org.opends.server.api.Backend;
 import org.opends.server.api.ClientConnection;
-import org.opends.server.types.Entry;
 import org.opends.server.core.AddOperation;
 import org.opends.server.core.DeleteOperation;
 import org.opends.server.core.DirectoryServer;
@@ -59,8 +61,21 @@ import org.opends.server.core.ModifyDNOperation;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.core.SearchOperation;
 import org.opends.server.core.ServerContext;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.opends.server.types.*;
+import org.opends.server.types.Attribute;
+import org.opends.server.types.AttributeBuilder;
+import org.opends.server.types.Attributes;
+import org.opends.server.types.BackupConfig;
+import org.opends.server.types.BackupDirectory;
+import org.opends.server.types.CanceledOperationException;
+import org.opends.server.types.DirectoryException;
+import org.opends.server.types.Entry;
+import org.opends.server.types.IndexType;
+import org.opends.server.types.InitializationException;
+import org.opends.server.types.LDIFExportConfig;
+import org.opends.server.types.LDIFImportConfig;
+import org.opends.server.types.LDIFImportResult;
+import org.opends.server.types.RestoreConfig;
+import org.opends.server.types.SearchFilter;
 import org.opends.server.util.BuildVersion;
 import org.opends.server.util.LDIFWriter;
 
@@ -94,6 +109,10 @@ public class RootDSEBackend
    * as user attributes even if they are defined as operational in the schema.
    */
   private boolean showAllAttributes;
+  /**
+   * Indicates whether sub-suffixes should also be included in the list of public naming contexts.
+   */
+  private boolean showSubordinatesNamingContexts;
 
   /** The set of objectclasses that will be used in the root DSE entry. */
   private Map<ObjectClass, String> dseObjectClasses;
@@ -106,14 +125,12 @@ public class RootDSEBackend
   /** The DN for the root DSE. */
   private DN rootDSEDN;
   /** The set of base DNs for this backend. */
-  private DN[] baseDNs;
+  private Set<DN> baseDNs;
   /**
    * The set of subordinate base DNs and their associated backends that will be
    * used for non-base searches.
    */
   private ConcurrentHashMap<DN, Backend<?>> subordinateBaseDNs;
-
-
 
   /**
    * Creates a new backend with the provided information.  All backend
@@ -151,12 +168,10 @@ public class RootDSEBackend
     userDefinedAttributes = new ArrayList<>();
     addAllUserDefinedAttrs(userDefinedAttributes, configEntry);
 
-
     // Create the set of base DNs that we will handle.  In this case, it's just
     // the root DSE.
     rootDSEDN    = DN.rootDN();
-    this.baseDNs = new DN[] { rootDSEDN };
-
+    baseDNs = Collections.singleton(rootDSEDN);
 
     // Create the set of subordinate base DNs.  If this is specified in the
     // configuration, then use that set.  Otherwise, use the set of non-private
@@ -175,13 +190,13 @@ public class RootDSEBackend
         for (DN baseDN : subDNs)
         {
           Backend<?> backend = DirectoryServer.getBackend(baseDN);
-          if (backend == null)
+          if (backend != null)
           {
-            logger.warn(WARN_ROOTDSE_NO_BACKEND_FOR_SUBORDINATE_BASE, baseDN);
+            subordinateBaseDNs.put(baseDN, backend);
           }
           else
           {
-            subordinateBaseDNs.put(baseDN, backend);
+            logger.warn(WARN_ROOTDSE_NO_BACKEND_FOR_SUBORDINATE_BASE, baseDN);
           }
         }
       }
@@ -195,11 +210,10 @@ public class RootDSEBackend
       throw new InitializationException(message, e);
     }
 
-
     // Determine whether all root DSE attributes should be treated as user
     // attributes.
     showAllAttributes = currentConfig.isShowAllAttributes();
-
+    showSubordinatesNamingContexts = currentConfig.isShowSubordinateNamingContexts();
 
     // Construct the set of "static" attributes that will always be present in
     // the root DSE.
@@ -212,25 +226,12 @@ public class RootDSEBackend
 
     // Construct the set of objectclasses to include in the root DSE entry.
     dseObjectClasses = new HashMap<>(2);
-    ObjectClass topOC = DirectoryServer.getObjectClass(OC_TOP);
-    if (topOC == null)
-    {
-      topOC = DirectoryServer.getDefaultObjectClass(OC_TOP);
-    }
-    dseObjectClasses.put(topOC, OC_TOP);
-
-    ObjectClass rootDSEOC = DirectoryServer.getObjectClass(OC_ROOT_DSE);
-    if (rootDSEOC == null)
-    {
-      rootDSEOC = DirectoryServer.getDefaultObjectClass(OC_ROOT_DSE);
-    }
-    dseObjectClasses.put(rootDSEOC, OC_ROOT_DSE);
-
+    dseObjectClasses.put(getTopObjectClass(), OC_TOP);
+    dseObjectClasses.put(DirectoryServer.getSchema().getObjectClass(OC_ROOT_DSE), OC_ROOT_DSE);
 
     // Set the backend ID for this backend. The identifier needs to be
     // specific enough to avoid conflict with user backend identifiers.
     setBackendID("__root.dse__");
-
 
     // Register as a change listener.
     currentConfig.addChangeListener(this);
@@ -270,8 +271,6 @@ public class RootDSEBackend
     currentConfig.removeChangeListener(this);
   }
 
-
-
   /**
    * Indicates whether the provided attribute is one that is used in the
    * configuration of this backend.
@@ -290,7 +289,7 @@ public class RootDSEBackend
   }
 
   @Override
-  public DN[] getBaseDNs()
+  public Set<DN> getBaseDNs()
   {
     return baseDNs;
   }
@@ -378,11 +377,9 @@ public class RootDSEBackend
       return getRootDSE();
     }
 
-
     // This method should never be used to get anything other than the root DSE.
     // If we got here, then that appears to be the case, so log a message.
     logger.warn(WARN_ROOTDSE_GET_ENTRY_NONROOT, entryDN);
-
 
     // Go ahead and check the subordinate backends to see if we can find the
     // entry there.  Note that in order to avoid potential loop conditions, this
@@ -399,12 +396,9 @@ public class RootDSEBackend
       }
     }
 
-
     // If we've gotten here, then we couldn't find the entry so return null.
     return null;
   }
-
-
 
   /**
    * Retrieves the root DSE entry for the Directory Server.
@@ -415,8 +409,6 @@ public class RootDSEBackend
   {
     return getRootDSE(null);
   }
-
-
 
   /**
    * Retrieves the root DSE entry for the Directory Server.
@@ -431,8 +423,10 @@ public class RootDSEBackend
     Map<AttributeType, List<Attribute>> dseUserAttrs = new HashMap<>();
     Map<AttributeType, List<Attribute>> dseOperationalAttrs = new HashMap<>();
 
-    Attribute publicNamingContextAttr = createAttribute(
-        ATTR_NAMING_CONTEXTS, DirectoryServer.getPublicNamingContexts().keySet());
+    Map<DN, Backend<?>> publicNamingContexts = showSubordinatesNamingContexts ?
+        DirectoryServer.getAllPublicNamingContexts() :
+        DirectoryServer.getPublicNamingContexts();
+    Attribute publicNamingContextAttr = createAttribute(ATTR_NAMING_CONTEXTS, publicNamingContexts.keySet());
     addAttribute(publicNamingContextAttr, dseUserAttrs, dseOperationalAttrs);
 
     // Add the "ds-private-naming-contexts" attribute.
@@ -447,7 +441,7 @@ public class RootDSEBackend
 
     // Add the "supportedExtension" attribute.
     Attribute supportedExtensionAttr = createAttribute(
-        ATTR_SUPPORTED_EXTENSION, DirectoryServer.getSupportedExtensions().keySet());
+        ATTR_SUPPORTED_EXTENSION, DirectoryServer.getSupportedExtensions());
     addAttribute(supportedExtensionAttr, dseUserAttrs, dseOperationalAttrs);
 
     // Add the "supportedFeature" attribute.
@@ -457,7 +451,7 @@ public class RootDSEBackend
 
     // Add the "supportedSASLMechanisms" attribute.
     Attribute supportedSASLMechAttr = createAttribute(
-        ATTR_SUPPORTED_SASL_MECHANISMS, DirectoryServer.getSupportedSASLMechanisms().keySet());
+        ATTR_SUPPORTED_SASL_MECHANISMS, DirectoryServer.getSupportedSASLMechanisms());
     addAttribute(supportedSASLMechAttr, dseUserAttrs, dseOperationalAttrs);
 
     // Add the "supportedLDAPVersions" attribute.
@@ -474,7 +468,6 @@ public class RootDSEBackend
     Attribute supportedAuthPWSchemesAttr = createAttribute(
         ATTR_SUPPORTED_AUTH_PW_SCHEMES, DirectoryServer.getAuthPasswordStorageSchemes().keySet());
     addAttribute(supportedAuthPWSchemesAttr, dseUserAttrs, dseOperationalAttrs);
-
 
     // Obtain TLS protocol and cipher support.
     Collection<String> supportedTlsProtocols;
@@ -574,9 +567,7 @@ public class RootDSEBackend
    */
   private Attribute createAttribute(String name, Collection<? extends Object> values)
   {
-    AttributeType type = DirectoryServer.getAttributeType(name);
-
-    AttributeBuilder builder = new AttributeBuilder(type, name);
+    AttributeBuilder builder = new AttributeBuilder(name);
     builder.addAllStrings(values);
     return builder.toAttribute();
   }
@@ -589,7 +580,6 @@ public class RootDSEBackend
     {
       return true;
     }
-
 
     // If it was not the null DN, then iterate through the associated
     // subordinate backends to make the determination.
@@ -650,7 +640,6 @@ public class RootDSEBackend
       throw new DirectoryException(ResultCode.UNWILLING_TO_PERFORM, message);
     }
 
-
     SearchFilter filter = searchOperation.getFilter();
     switch (searchOperation.getScope().asEnum())
     {
@@ -661,7 +650,6 @@ public class RootDSEBackend
           searchOperation.returnEntry(dseEntry, null);
         }
         break;
-
 
       case SINGLE_LEVEL:
         for (Map.Entry<DN, Backend<?>> entry : getSubordinateBaseDNs().entrySet())
@@ -677,7 +665,6 @@ public class RootDSEBackend
           }
         }
         break;
-
 
       case WHOLE_SUBTREE:
       case SUBORDINATES:
@@ -752,7 +739,7 @@ public class RootDSEBackend
     {
       return subordinateBaseDNs;
     }
-    return (Map) DirectoryServer.getPublicNamingContexts();
+    return DirectoryServer.getPublicNamingContexts();
   }
 
   @Override
@@ -771,7 +758,7 @@ public class RootDSEBackend
   public boolean supports(BackendOperation backendOperation)
   {
     // We will only export the DSE entry itself.
-    return backendOperation.equals(BackendOperation.LDIF_EXPORT);
+    return BackendOperation.LDIF_EXPORT.equals(backendOperation);
   }
 
   @Override
@@ -793,7 +780,6 @@ public class RootDSEBackend
       throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
                                    message);
     }
-
 
     // Write the root DSE entry itself to it.  Make sure to close the LDIF
     // writer when we're done.
@@ -858,7 +844,6 @@ public class RootDSEBackend
   {
     boolean configIsAcceptable = true;
 
-
     try
     {
       Set<DN> subDNs = cfg.getSubordinateBaseDN();
@@ -888,7 +873,6 @@ public class RootDSEBackend
       configIsAcceptable = false;
     }
 
-
     return configIsAcceptable;
   }
 
@@ -896,7 +880,6 @@ public class RootDSEBackend
   public ConfigChangeResult applyConfigurationChange(RootDSEBackendCfg cfg)
   {
     final ConfigChangeResult ccr = new ConfigChangeResult();
-
 
     // Check to see if we should apply a new set of base DNs.
     ConcurrentHashMap<DN, Backend<?>> subBases;
@@ -938,9 +921,7 @@ public class RootDSEBackend
       subBases = null;
     }
 
-
     boolean newShowAll = cfg.isShowAllAttributes();
-
 
     // Check to see if there is a new set of user-defined attributes.
     ArrayList<Attribute> userAttrs = new ArrayList<>();
@@ -958,7 +939,6 @@ public class RootDSEBackend
       ccr.setResultCode(DirectoryServer.getServerErrorResultCode());
     }
 
-
     if (ccr.getResultCode() == ResultCode.SUCCESS)
     {
       subordinateBaseDNs = subBases;
@@ -973,19 +953,16 @@ public class RootDSEBackend
         ccr.addMessage(INFO_ROOTDSE_USING_NEW_SUBORDINATE_BASE_DNS.get(basesStr));
       }
 
-
       if (showAllAttributes != newShowAll)
       {
         showAllAttributes = newShowAll;
         ccr.addMessage(INFO_ROOTDSE_UPDATED_SHOW_ALL_ATTRS.get(
                 ATTR_ROOTDSE_SHOW_ALL_ATTRIBUTES, showAllAttributes));
       }
-
-
+      showSubordinatesNamingContexts = cfg.isShowSubordinateNamingContexts();
       userDefinedAttributes = userAttrs;
       ccr.addMessage(INFO_ROOTDSE_USING_NEW_USER_ATTRS.get());
     }
-
 
     return ccr;
   }

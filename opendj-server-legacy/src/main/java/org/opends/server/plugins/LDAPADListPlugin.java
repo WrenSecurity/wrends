@@ -16,33 +16,29 @@
  */
 package org.opends.server.plugins;
 
-
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.config.server.ConfigChangeResult;
+import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.server.config.meta.PluginCfgDefn;
 import org.forgerock.opendj.server.config.server.LDAPAttributeDescriptionListPluginCfg;
 import org.forgerock.opendj.server.config.server.PluginCfg;
 import org.opends.server.api.plugin.DirectoryServerPlugin;
-import org.opends.server.api.plugin.PluginType;
 import org.opends.server.api.plugin.PluginResult;
-import org.forgerock.opendj.config.server.ConfigException;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.config.server.ConfigChangeResult;
+import org.opends.server.api.plugin.PluginType;
 import org.opends.server.types.DirectoryConfig;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.operation.PreParseSearchOperation;
 
-import org.forgerock.i18n.slf4j.LocalizedLogger;
 import static org.opends.messages.PluginMessages.*;
-
-import static org.opends.server.types.DirectoryConfig.getObjectClass;
+import static org.opends.server.core.DirectoryServer.*;
 import static org.opends.server.util.ServerConstants.*;
-import static org.opends.server.util.StaticUtils.*;
-
 
 /**
  * This pre-parse plugin modifies the operation to allow an object class
@@ -92,29 +88,22 @@ public final class LDAPADListPlugin
       {
         if (attrName.startsWith("@"))
         {
-          final String lowerName = toLowerCase(attrName.substring(1));
-          final ObjectClass oc = getObjectClass(lowerName, false);
-          if (oc == null)
+          final String ocName = attrName.substring(1);
+          final ObjectClass oc = getSchema().getObjectClass(ocName);
+          if (oc.isPlaceHolder())
           {
-            if (logger.isTraceEnabled())
-            {
-              logger.trace("Cannot replace unknown objectclass %s",
-                                  lowerName);
-            }
+            logger.trace("Cannot replace unknown objectclass %s", ocName);
           }
           else
           {
-            if (logger.isTraceEnabled())
-            {
-              logger.trace("Replacing objectclass %s", lowerName);
-            }
+            logger.trace("Replacing objectclass %s", ocName);
 
-            for (final AttributeType at : oc.getRequiredAttributeChain())
+            for (final AttributeType at : oc.getRequiredAttributes())
             {
               newAttrs.add(at.getNameOrOID());
             }
 
-            for (final AttributeType at : oc.getOptionalAttributeChain())
+            for (final AttributeType at : oc.getOptionalAttributes())
             {
               newAttrs.add(at.getNameOrOID());
             }
@@ -151,7 +140,6 @@ public final class LDAPADListPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final void initializePlugin(Set<PluginType> pluginTypes,
                          LDAPAttributeDescriptionListPluginCfg configuration)
@@ -183,7 +171,6 @@ public final class LDAPADListPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final void finalizePlugin()
   {
@@ -192,7 +179,6 @@ public final class LDAPADListPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final PluginResult.PreParse doPreParse(
       PreParseSearchOperation searchOperation)
@@ -204,7 +190,6 @@ public final class LDAPADListPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAcceptable(PluginCfg configuration,
                                            List<LocalizableMessage> unacceptableReasons)
@@ -216,7 +201,7 @@ public final class LDAPADListPlugin
 
 
 
-  /** {@inheritDoc} */
+  @Override
   public boolean isConfigurationChangeAcceptable(
                       LDAPAttributeDescriptionListPluginCfg configuration,
                       List<LocalizableMessage> unacceptableReasons)
@@ -244,7 +229,7 @@ public final class LDAPADListPlugin
 
 
 
-  /** {@inheritDoc} */
+  @Override
   public ConfigChangeResult applyConfigurationChange(
                                  LDAPAttributeDescriptionListPluginCfg
                                       configuration)

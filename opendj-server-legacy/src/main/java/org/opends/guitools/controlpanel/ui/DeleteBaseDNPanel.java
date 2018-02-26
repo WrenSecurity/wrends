@@ -46,6 +46,7 @@ import javax.swing.event.ListSelectionListener;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
+import org.forgerock.opendj.ldap.DN;
 import org.opends.guitools.controlpanel.datamodel.BackendDescriptor;
 import org.opends.guitools.controlpanel.datamodel.BaseDNDescriptor;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
@@ -54,22 +55,21 @@ import org.opends.guitools.controlpanel.task.DeleteBaseDNAndBackendTask;
 import org.opends.guitools.controlpanel.task.Task;
 import org.opends.guitools.controlpanel.ui.renderer.CustomListCellRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.opendj.ldap.DN;
 
 /**
  * The panel displayed when the user clicks on 'Delete Base DN...' in the
  * browse entries dialog.
  */
-public class DeleteBaseDNPanel extends StatusGenericPanel
+class DeleteBaseDNPanel extends StatusGenericPanel
 {
   private static final long serialVersionUID = 2182662824496761087L;
 
   /** The list containing the base DNs. */
   protected JList list;
   /** Label indicating that no element was found. */
-  protected JLabel lNoElementsFound;
+  private JLabel lNoElementsFound;
   /** The main panel. */
-  protected JPanel mainPanel;
+  private JPanel mainPanel;
 
   /** Default constructor. */
   public DeleteBaseDNPanel()
@@ -78,19 +78,19 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
     createLayout();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_DELETE_BASE_DN_TITLE.get();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getPreferredFocusComponent()
   {
     return list;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public boolean requiresScroll()
   {
     return false;
@@ -139,7 +139,7 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
     {
       SwingUtilities.invokeLater(new Runnable()
       {
-        /** {@inheritDoc} */
+        @Override
         public void run()
         {
           @SuppressWarnings("deprecation")
@@ -240,7 +240,7 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
         INFO_CTRL_PANEL_SELECT_ALL_BUTTON.get());
     selectAllButton.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         int[] indices = new int[list.getModel().getSize()];
@@ -264,7 +264,7 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
         INFO_CTRL_PANEL_CLEAR_SELECTION_BUTTON.get());
     unselectAllButton.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         list.clearSelection();
@@ -274,7 +274,7 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
 
     list.addListSelectionListener(new ListSelectionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void valueChanged(ListSelectionEvent ev)
       {
         checkOKButtonEnable();
@@ -288,7 +288,7 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
     mainPanel.add(Box.createVerticalGlue(), gbc);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void toBeDisplayed(boolean visible)
   {
     if (visible)
@@ -298,13 +298,13 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected void checkOKButtonEnable()
   {
     setEnabledOK(!list.isSelectionEmpty() && mainPanel.isVisible());
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
     ServerDescriptor desc = ev.getNewDescriptor();
@@ -326,7 +326,7 @@ public class DeleteBaseDNPanel extends StatusGenericPanel
       INFO_CTRL_PANEL_CANNOT_CONNECT_TO_REMOTE_DETAILS.get(desc.getHostname()));
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void okClicked()
   {
     final LinkedHashSet<LocalizableMessage> errors = new LinkedHashSet<>();

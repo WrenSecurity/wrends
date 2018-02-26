@@ -917,9 +917,8 @@ public class TaskScheduler
 
   /**
    * Determines whether the specified task should start running.  This is based
-   * on the start time, the set of dependencies, and whether or not the
-   * scheduler is active.  Note that the caller to this method must hold the
-   * scheduler lock.
+   * on the start time, the set of dependencies, and whether the scheduler is active.
+   * Note that the caller to this method must hold the scheduler lock.
    *
    * @param  task  The task for which to make the determination.
    *
@@ -1809,7 +1808,7 @@ public class TaskScheduler
          throws DirectoryException
   {
     // Get the name of the class that implements the task logic.
-    AttributeType attrType = DirectoryServer.getAttributeType(ATTR_TASK_CLASS);
+    AttributeType attrType = DirectoryServer.getSchema().getAttributeType(ATTR_TASK_CLASS);
     List<Attribute> attrList = entry.getAttribute(attrType);
     if (attrList.isEmpty())
     {

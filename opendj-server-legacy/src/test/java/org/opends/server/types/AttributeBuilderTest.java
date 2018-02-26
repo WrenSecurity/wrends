@@ -21,7 +21,6 @@ import static org.opends.server.util.CollectionUtils.*;
 import static org.testng.Assert.*;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -32,8 +31,9 @@ import java.util.Set;
 import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.MatchingRule;
 import org.opends.server.TestCaseUtils;
-import org.opends.server.core.DirectoryServer;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -527,10 +527,8 @@ public class AttributeBuilderTest extends TypesTestCase
     TestCaseUtils.startServer();
 
     // Initialize the CN attribute type used in all tests.
-    cnType = DirectoryServer.getAttributeType("cn");
-    Assert.assertNotNull(cnType);
-
-    cnValue = ByteString.valueOfUtf8("john doe");
+    cnType = CoreSchema.getCNAttributeType();
+    cnValue = bs("john doe");
   }
 
 
@@ -554,8 +552,8 @@ public class AttributeBuilderTest extends TypesTestCase
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value1")));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
+    Assert.assertTrue(a.contains(bs("value1")));
+    Assert.assertTrue(a.contains(bs("value2")));
   }
 
 
@@ -569,17 +567,17 @@ public class AttributeBuilderTest extends TypesTestCase
     AttributeBuilder builder = new AttributeBuilder(cnType);
 
     // Note duplicate values.
-    Assert.assertTrue(builder.addAll(Arrays.asList(ByteString.valueOfUtf8("value1"), ByteString.valueOfUtf8("value1"), ByteString.valueOfUtf8("value2"))));
+    Assert.assertTrue(builder.addAll(Arrays.asList(bs("value1"), bs("value1"), bs("value2"))));
     Assert.assertEquals(builder.size(), 2);
 
     // Add same values.
-    Assert.assertFalse(builder.addAll(Arrays.asList(ByteString.valueOfUtf8("value1"), ByteString.valueOfUtf8("value1"), ByteString.valueOfUtf8("value2"))));
+    Assert.assertFalse(builder.addAll(Arrays.asList(bs("value1"), bs("value1"), bs("value2"))));
     Assert.assertEquals(builder.size(), 2);
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value1")));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
+    Assert.assertTrue(a.contains(bs("value1")));
+    Assert.assertTrue(a.contains(bs("value2")));
   }
 
 
@@ -598,13 +596,13 @@ public class AttributeBuilderTest extends TypesTestCase
     Assert.assertFalse(builder.add(cnValue));
     Assert.assertEquals(builder.size(), 1);
 
-    Assert.assertTrue(builder.add(ByteString.valueOfUtf8("jane doe")));
+    Assert.assertTrue(builder.add(bs("jane doe")));
     Assert.assertEquals(builder.size(), 2);
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
     Assert.assertTrue(a.contains(cnValue));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("jane doe")));
+    Assert.assertTrue(a.contains(bs("jane doe")));
   }
 
 
@@ -628,8 +626,8 @@ public class AttributeBuilderTest extends TypesTestCase
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value1")));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
+    Assert.assertTrue(a.contains(bs("value1")));
+    Assert.assertTrue(a.contains(bs("value2")));
   }
 
 
@@ -642,19 +640,19 @@ public class AttributeBuilderTest extends TypesTestCase
   {
     AttributeBuilder builder = new AttributeBuilder(cnType);
 
-    assertTrue(builder.add(ByteString.valueOfUtf8("value1")));
+    assertTrue(builder.add(bs("value1")));
     assertEquals(builder.size(), 1);
 
-    assertFalse(builder.add(ByteString.valueOfUtf8("value1")));
+    assertFalse(builder.add(bs("value1")));
     assertEquals(builder.size(), 1);
 
-    assertTrue(builder.add(ByteString.valueOfUtf8("value2")));
+    assertTrue(builder.add(bs("value2")));
     assertEquals(builder.size(), 2);
 
     Attribute a = builder.toAttribute();
     assertEquals(a.size(), 2);
-    assertTrue(a.contains(ByteString.valueOfUtf8("value1")));
-    assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
+    assertTrue(a.contains(bs("value1")));
+    assertTrue(a.contains(bs("value2")));
   }
 
 
@@ -688,9 +686,9 @@ public class AttributeBuilderTest extends TypesTestCase
 
     builder.addAll(createAttribute(cnType, "cn", noOptions, twoValues));
 
-    Assert.assertTrue(builder.contains(ByteString.valueOfUtf8("value1")));
-    Assert.assertTrue(builder.contains(ByteString.valueOfUtf8("value2")));
-    Assert.assertFalse(builder.contains(ByteString.valueOfUtf8("value3")));
+    Assert.assertTrue(builder.contains(bs("value1")));
+    Assert.assertTrue(builder.contains(bs("value2")));
+    Assert.assertFalse(builder.contains(bs("value3")));
   }
 
 
@@ -705,9 +703,9 @@ public class AttributeBuilderTest extends TypesTestCase
 
     builder.addAll(createAttribute(cnType, "cn", noOptions, twoValues));
 
-    ByteString av1 = ByteString.valueOfUtf8("value1");
-    ByteString av2 = ByteString.valueOfUtf8("value2");
-    ByteString av3 = ByteString.valueOfUtf8("value3");
+    ByteString av1 = bs("value1");
+    ByteString av2 = bs("value2");
+    ByteString av3 = bs("value3");
 
     Assert.assertTrue(builder.containsAll(Collections.<ByteString> emptySet()));
 
@@ -799,7 +797,7 @@ public class AttributeBuilderTest extends TypesTestCase
 
     builder.add("value1");
     Assert.assertTrue(builder.iterator().hasNext());
-    Assert.assertEquals(builder.iterator().next(), ByteString.valueOfUtf8("value1"));
+    Assert.assertEquals(builder.iterator().next(), bs("value1"));
   }
 
 
@@ -835,7 +833,7 @@ public class AttributeBuilderTest extends TypesTestCase
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 1);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value3")));
+    Assert.assertTrue(a.contains(bs("value3")));
   }
 
 
@@ -851,11 +849,11 @@ public class AttributeBuilderTest extends TypesTestCase
     builder.addAll(createAttribute(cnType, "cn", noOptions, threeValues));
 
     // Remove existing values.
-    Assert.assertTrue(builder.removeAll(Arrays.asList(ByteString.valueOfUtf8("value1"), ByteString.valueOfUtf8("value2"))));
+    Assert.assertTrue(builder.removeAll(Arrays.asList(bs("value1"), bs("value2"))));
     Assert.assertEquals(builder.size(), 1);
 
     // Remove removed values.
-    Assert.assertFalse(builder.removeAll(Arrays.asList(ByteString.valueOfUtf8("value1"), ByteString.valueOfUtf8("value2"))));
+    Assert.assertFalse(builder.removeAll(Arrays.asList(bs("value1"), bs("value2"))));
     Assert.assertEquals(builder.size(), 1);
 
     // Remove nothing.
@@ -864,12 +862,12 @@ public class AttributeBuilderTest extends TypesTestCase
 
     // Remove non existent value.
     Assert.assertFalse(builder.removeAll(Collections
-        .singleton(ByteString.valueOfUtf8("value4"))));
+        .singleton(bs("value4"))));
     Assert.assertEquals(builder.size(), 1);
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 1);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value3")));
+    Assert.assertTrue(a.contains(bs("value3")));
   }
 
 
@@ -884,21 +882,21 @@ public class AttributeBuilderTest extends TypesTestCase
 
     builder.addAll(createAttribute(cnType, "cn", noOptions, threeValues));
 
-    Assert.assertTrue(builder.remove(ByteString.valueOfUtf8("value1")));
+    Assert.assertTrue(builder.remove(bs("value1")));
     Assert.assertEquals(builder.size(), 2);
 
     // Already removed.
-    Assert.assertFalse(builder.remove(ByteString.valueOfUtf8("value1")));
+    Assert.assertFalse(builder.remove(bs("value1")));
     Assert.assertEquals(builder.size(), 2);
 
     // Non existent.
-    Assert.assertFalse(builder.remove(ByteString.valueOfUtf8("value4")));
+    Assert.assertFalse(builder.remove(bs("value4")));
     Assert.assertEquals(builder.size(), 2);
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value3")));
+    Assert.assertTrue(a.contains(bs("value2")));
+    Assert.assertTrue(a.contains(bs("value3")));
   }
 
 
@@ -926,8 +924,8 @@ public class AttributeBuilderTest extends TypesTestCase
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value3")));
+    Assert.assertTrue(a.contains(bs("value2")));
+    Assert.assertTrue(a.contains(bs("value3")));
   }
 
 
@@ -946,8 +944,8 @@ public class AttributeBuilderTest extends TypesTestCase
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value4")));
+    Assert.assertTrue(a.contains(bs("value2")));
+    Assert.assertTrue(a.contains(bs("value4")));
   }
 
 
@@ -962,14 +960,14 @@ public class AttributeBuilderTest extends TypesTestCase
     builder.addAll(createAttribute(cnType, "cn", noOptions, threeValues));
 
     // Note duplicate values.
-    builder.replaceAll(Arrays.asList(ByteString.valueOfUtf8("value2"),
-        ByteString.valueOfUtf8("value2"), ByteString.valueOfUtf8("value4")));
+    builder.replaceAll(Arrays.asList(bs("value2"),
+        bs("value2"), bs("value4")));
     Assert.assertEquals(builder.size(), 2);
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 2);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value2")));
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value4")));
+    Assert.assertTrue(a.contains(bs("value2")));
+    Assert.assertTrue(a.contains(bs("value4")));
   }
 
 
@@ -983,12 +981,12 @@ public class AttributeBuilderTest extends TypesTestCase
     AttributeBuilder builder = new AttributeBuilder(cnType);
     builder.addAll(createAttribute(cnType, "cn", noOptions, threeValues));
 
-    builder.replace(ByteString.valueOfUtf8("value4"));
+    builder.replace(bs("value4"));
     Assert.assertEquals(builder.size(), 1);
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 1);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value4")));
+    Assert.assertTrue(a.contains(bs("value4")));
   }
 
 
@@ -1007,7 +1005,7 @@ public class AttributeBuilderTest extends TypesTestCase
 
     Attribute a = builder.toAttribute();
     Assert.assertEquals(a.size(), 1);
-    Assert.assertTrue(a.contains(ByteString.valueOfUtf8("value4")));
+    Assert.assertTrue(a.contains(bs("value4")));
   }
 
   /**
@@ -1071,13 +1069,13 @@ public class AttributeBuilderTest extends TypesTestCase
     // Check contains().
     for (String value : values)
     {
-      Assert.assertTrue(a.contains(ByteString.valueOfUtf8(value)));
+      Assert.assertTrue(a.contains(bs(value)));
 
       // Assumes internal normalization to lower-case.
-      Assert.assertTrue(a.contains(ByteString.valueOfUtf8(value.toUpperCase())));
+      Assert.assertTrue(a.contains(bs(value.toUpperCase())));
     }
 
-    Assert.assertFalse(a.contains(ByteString.valueOfUtf8("xxxx")));
+    Assert.assertFalse(a.contains(bs("xxxx")));
   }
 
 
@@ -1107,7 +1105,7 @@ public class AttributeBuilderTest extends TypesTestCase
     Set<ByteString> expectedValues = new HashSet<>();
     for (String value : values)
     {
-      expectedValues.add(ByteString.valueOfUtf8(value));
+      expectedValues.add(bs(value));
     }
 
     Assert.assertTrue(a.containsAll(Collections.<ByteString> emptySet()));
@@ -1121,14 +1119,14 @@ public class AttributeBuilderTest extends TypesTestCase
     }
 
     Set<ByteString> bigSet = new HashSet<>(expectedValues);
-    bigSet.add(ByteString.valueOfUtf8("xxxx"));
+    bigSet.add(bs("xxxx"));
     Assert.assertFalse(a.containsAll(bigSet));
 
     expectedValues.clear();
     for (String value : values)
     {
       // Assumes internal normalization to lower-case.
-      expectedValues.add(ByteString.valueOfUtf8(value.toUpperCase()));
+      expectedValues.add(bs(value.toUpperCase()));
     }
     Assert.assertTrue(a.containsAll(expectedValues));
   }
@@ -1281,7 +1279,7 @@ public class AttributeBuilderTest extends TypesTestCase
 
 
   /**
-   * Tests {@link Attribute#hasAllOptions(Collection)}.
+   * Tests {@link Attribute#hasAllOptions(java.util.Collection)}.
    *
    * @param testCase
    *          Test case index (useful for debugging).
@@ -1515,8 +1513,9 @@ public class AttributeBuilderTest extends TypesTestCase
         Assert.assertTrue(i.hasNext());
 
         ByteString v = i.next();
-        ByteString nv = a.getAttributeDescription().getAttributeType().getEqualityMatchingRule().normalizeAttributeValue(v);
-        Assert.assertEquals(nv, ByteString.valueOfUtf8(value));
+        MatchingRule equalityMatchingRule = a.getAttributeDescription().getAttributeType().getEqualityMatchingRule();
+        ByteString nv = equalityMatchingRule.normalizeAttributeValue(v);
+        Assert.assertEquals(nv, bs(value));
 
         try
         {
@@ -1660,11 +1659,11 @@ public class AttributeBuilderTest extends TypesTestCase
     assertThat(a3.isNormalized()).isTrue();
 
     // no normalization on contains for 0-element and 1-element set
-    a1.contains(ByteString.valueOfUtf8("one"));
+    a1.contains(bs("one"));
     assertThat(a1.isNormalized()).isFalse();
 
     // normalization on contains for 1-element set
-    a2.contains(ByteString.valueOfUtf8("one"));
+    a2.contains(bs("one"));
     assertThat(a2.isNormalized()).isTrue();
   }
 
@@ -1676,5 +1675,10 @@ public class AttributeBuilderTest extends TypesTestCase
     builder.setOptions(Arrays.asList(options));
     builder.addAllStrings(Arrays.asList(values));
     return builder.toAttribute();
+  }
+
+  private ByteString bs(String s)
+  {
+    return ByteString.valueOfUtf8(s);
   }
 }

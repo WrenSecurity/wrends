@@ -17,10 +17,12 @@
 package org.opends.server.tools;
 
 import static com.forgerock.opendj.cli.CliMessages.INFO_FILE_PLACEHOLDER;
-import static com.forgerock.opendj.cli.Utils.*;
 import static com.forgerock.opendj.cli.CommonArguments.*;
+import static com.forgerock.opendj.cli.Utils.*;
 
 import static org.opends.messages.ToolMessages.*;
+import static org.opends.messages.ToolMessages.INFO_CONFIGFILE_PLACEHOLDER;
+import static org.opends.messages.ToolMessages.INFO_DESCRIPTION_CONFIG_FILE;
 import static org.opends.server.protocols.ldap.LDAPResultCode.*;
 import static org.opends.server.util.StaticUtils.*;
 
@@ -29,8 +31,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.ByteString;
@@ -40,7 +42,9 @@ import org.opends.server.core.DirectoryServer.DirectoryServerVersionHandler;
 import org.opends.server.loggers.JDKLogging;
 import org.opends.server.schema.AuthPasswordSyntax;
 import org.opends.server.schema.UserPasswordSyntax;
-import org.opends.server.types.*;
+import org.opends.server.types.DirectoryException;
+import org.opends.server.types.InitializationException;
+import org.opends.server.types.NullOutputStream;
 import org.opends.server.util.BuildVersion;
 
 import com.forgerock.opendj.cli.ArgumentException;
@@ -73,8 +77,6 @@ public class EncodePassword
     }
   }
 
-
-
   /**
    * Processes the command-line arguments and performs the requested action.
    *
@@ -86,8 +88,6 @@ public class EncodePassword
   {
     return encodePassword(args, true, System.out, System.err);
   }
-
-
 
   /**
    * Processes the command-line arguments and performs the requested action.
@@ -124,7 +124,6 @@ public class EncodePassword
     FileBasedArgument encodedPasswordFile  = null;
     StringArgument    configFile           = null;
     StringArgument    schemeName           = null;
-
 
     // Create the command-line argument parser for use with this program.
     LocalizableMessage toolDescription = INFO_ENCPW_TOOL_DESCRIPTION.get();
@@ -206,7 +205,6 @@ public class EncodePassword
       return OPERATIONS_ERROR;
     }
 
-
     // Parse the command-line arguments provided to this program.
     try
     {
@@ -217,7 +215,6 @@ public class EncodePassword
       argParser.displayMessageAndUsageReference(err, ERR_ERROR_PARSING_ARGS.get(ae.getMessage()));
       return OPERATIONS_ERROR;
     }
-
 
     // If we should just display usage or version information,
     // then we've already done it so just return without doing anything else.
@@ -263,7 +260,6 @@ public class EncodePassword
       return OPERATIONS_ERROR;
     }
 
-
     // Determine whether we're encoding the clear-text password or comparing it
     // against an already-encoded password.
     boolean compareMode;
@@ -283,7 +279,6 @@ public class EncodePassword
       compareMode = false;
     }
 
-
     if (initializeServer)
     {
       try
@@ -299,13 +294,12 @@ public class EncodePassword
       }
     }
 
-
     // If we are only trying to list the available schemes, then do so and exit.
     if (listSchemes.isPresent())
     {
       if (authPasswordSyntax.isPresent())
       {
-        listPasswordStorageSchemes(out, err, DirectoryServer.getAuthPasswordStorageSchemes(), true);
+        listPasswordStorageSchemes(out, err, DirectoryServer.getAuthPasswordStorageSchemes().values(), true);
       }
       else
       {
@@ -313,7 +307,6 @@ public class EncodePassword
       }
       return SUCCESS;
     }
-
 
     // Either encode the clear-text password using the provided scheme, or
     // compare the clear-text password against the encoded password.
@@ -355,8 +348,7 @@ public class EncodePassword
 
         if (clearPW == null)
         {
-          clearPW = getClearPW(out, err, argParser, clearPassword,
-              clearPasswordFile, interactivePassword);
+          clearPW = getClearPW(err, argParser, clearPassword, clearPasswordFile, interactivePassword);
           if (clearPW == null)
           {
             return OPERATIONS_ERROR;
@@ -424,8 +416,7 @@ public class EncodePassword
 
         if (clearPW == null)
         {
-          clearPW = getClearPW(out, err, argParser, clearPassword,
-              clearPasswordFile, interactivePassword);
+          clearPW = getClearPW(err, argParser, clearPassword, clearPasswordFile, interactivePassword);
           if (clearPW == null)
           {
             return OPERATIONS_ERROR;
@@ -473,8 +464,7 @@ public class EncodePassword
         {
           if (clearPW == null)
           {
-            clearPW = getClearPW(out, err, argParser, clearPassword,
-                clearPasswordFile, interactivePassword);
+            clearPW = getClearPW(err, argParser, clearPassword, clearPasswordFile, interactivePassword);
             if (clearPW == null)
             {
               return OPERATIONS_ERROR;
@@ -502,8 +492,7 @@ public class EncodePassword
         {
           if (clearPW == null)
           {
-            clearPW = getClearPW(out, err, argParser, clearPassword,
-                clearPasswordFile, interactivePassword);
+            clearPW = getClearPW(err, argParser, clearPassword, clearPasswordFile, interactivePassword);
             if (clearPW == null)
             {
               return OPERATIONS_ERROR;
@@ -531,7 +520,7 @@ public class EncodePassword
   }
 
   private static void listPasswordStorageSchemes(PrintStream out, PrintStream err,
-      ConcurrentHashMap<String, PasswordStorageScheme> storageSchemes, boolean authPasswordSchemeName)
+      Collection<PasswordStorageScheme<?>> storageSchemes, boolean authPasswordSchemeName)
   {
     if (storageSchemes.isEmpty())
     {
@@ -540,7 +529,7 @@ public class EncodePassword
     else
     {
       ArrayList<String> nameList = new ArrayList<>(storageSchemes.size());
-      for (PasswordStorageScheme<?> s : storageSchemes.values())
+      for (PasswordStorageScheme<?> s : storageSchemes)
       {
         if (authPasswordSchemeName)
         {
@@ -571,7 +560,6 @@ public class EncodePassword
 
   /**
    * Get the clear password.
-   * @param out The output to ask password.
    * @param err The error output.
    * @param argParser The argument parser.
    * @param clearPassword the clear password
@@ -580,7 +568,7 @@ public class EncodePassword
    *        interactively.
    * @return the password or null if an error occurs.
    */
-  private static ByteString getClearPW(PrintStream out, PrintStream err,
+  private static ByteString getClearPW(PrintStream err,
       ArgumentParser argParser, StringArgument clearPassword,
       FileBasedArgument clearPasswordFile, BooleanArgument interactivePassword)
   {
@@ -679,13 +667,9 @@ public class EncodePassword
     return password;
   }
 
-
-  /**
-   * Thread that mask user input.
-   */
+  /** Thread that mask user input. */
   private class ErasingThread extends Thread
   {
-
     private boolean stop;
     private String prompt;
 
@@ -699,9 +683,7 @@ public class EncodePassword
       this.prompt = prompt;
     }
 
-    /**
-     * Begin masking until asked to stop.
-     */
+    /** Begin masking until asked to stop. */
     @Override
     public void run()
     {
@@ -724,14 +706,10 @@ public class EncodePassword
       }
     }
 
-    /**
-     * Instruct the thread to stop masking.
-     */
+    /** Instruct the thread to stop masking. */
     public void stopMasking()
     {
       this.stop = true;
     }
   }
-
 }
-

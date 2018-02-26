@@ -21,8 +21,20 @@ import static org.opends.messages.ReplicationMessages.*;
 import static org.opends.server.util.StaticUtils.*;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,15 +42,18 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.server.config.meta.VirtualAttributeCfgDefn.ConflictBehavior;
 import org.forgerock.opendj.server.config.server.ReplicationServerCfg;
 import org.forgerock.opendj.server.config.server.UserDefinedVirtualAttributeCfg;
 import org.opends.server.api.VirtualAttributeProvider;
 import org.opends.server.backends.ChangelogBackend;
 import org.opends.server.core.DirectoryServer;
+import org.opends.server.crypto.CryptoSuite;
 import org.opends.server.replication.common.CSN;
 import org.opends.server.replication.common.MultiDomainServerState;
 import org.opends.server.replication.common.ServerState;
@@ -55,8 +70,6 @@ import org.opends.server.replication.server.changelog.api.ChangelogException;
 import org.opends.server.replication.server.changelog.file.ECLEnabledDomainPredicate;
 import org.opends.server.replication.server.changelog.file.FileChangelogDB;
 import org.opends.server.replication.service.DSRSShutdownSync;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.HostPort;
 import org.opends.server.types.SearchFilter;
@@ -82,10 +95,7 @@ public class ReplicationServer
   private ReplicationServerCfg config;
   private final DSRSShutdownSync dsrsShutdownSync;
 
-  /**
-   * This table is used to store the list of dn for which we are currently
-   * handling servers.
-   */
+  /** This table is used to store the list of dn for which we are currently handling servers. */
   private final Map<DN, ReplicationServerDomain> baseDNs = new HashMap<>();
 
   /** The database storing the changes. */
@@ -119,6 +129,8 @@ public class ReplicationServer
    * This allows to perform clean up of the RS databases in unit tests.
    */
   private static final List<ReplicationServer> allInstances = new ArrayList<>();
+
+  private final CryptoSuite cryptoSuite;
 
   /**
    * Creates a new Replication server using the provided configuration entry.
@@ -161,7 +173,10 @@ public class ReplicationServer
     this.domainPredicate = predicate;
 
     enableExternalChangeLog();
-    this.changelogDB = new FileChangelogDB(this, config.getReplicationDBDirectory());
+    cryptoSuite = DirectoryServer.getInstance().getServerContext().getCryptoManager().
+        newCryptoSuite(cfg.getCipherTransformation(), cfg.getCipherKeyLength(), cfg.isConfidentialityEnabled());
+
+    this.changelogDB = new FileChangelogDB(this, config.getReplicationDBDirectory(), cryptoSuite);
 
     replSessionSecurity = new ReplSessionSecurity();
     initialize();
@@ -221,8 +236,7 @@ public class ReplicationServer
           newSocket.setTcpNoDelay(true);
           newSocket.setKeepAlive(true);
           int timeoutMS = MultimasterReplication.getConnectionTimeoutMS();
-          session = replSessionSecurity.createServerSession(newSocket,
-              timeoutMS);
+          session = replSessionSecurity.createServerSession(newSocket, timeoutMS);
           if (session == null) // Error, go back to accept
           {
             continue;
@@ -260,8 +274,10 @@ public class ReplicationServer
           // We did not recognize the message, close session as what
           // can happen after is undetermined and we do not want the server to
           // be disturbed
+          logger.error(ERR_REPLICATION_UNEXPECTED_MESSAGE,
+                  session.getRemoteAddress().toString(),
+                  (msg == null) ? "(null)" : msg.getClass().getSimpleName());
           session.close();
-          return;
         }
       }
       catch (Exception e)
@@ -539,7 +555,7 @@ public class ReplicationServer
       // create a rule and register it into the DirectoryServer
       provider.initializeVirtualAttributeProvider(null);
 
-      AttributeType attributeType = DirectoryServer.getAttributeType(attrName);
+      AttributeType attributeType = DirectoryServer.getSchema().getAttributeType(attrName);
       return new VirtualAttributeRule(attributeType, provider,
             baseDNs, SearchScope.BASE_OBJECT,
             groupDNs, filters, conflictBehavior);
@@ -704,9 +720,7 @@ public class ReplicationServer
     }
   }
 
-  /**
-   * Waits for connections to this ReplicationServer.
-   */
+  /** Waits for connections to this ReplicationServer. */
   void waitConnections()
   {
     // Acquire a domain ticket and wait for a complete cycle of the connect
@@ -745,9 +759,7 @@ public class ReplicationServer
     }
   }
 
-  /**
-   * Shutdown the Replication Server service and all its connections.
-   */
+  /** Shutdown the Replication Server service and all its connections. */
   public void shutdown()
   {
     localPorts.remove(getReplicationPort());
@@ -833,7 +845,6 @@ public class ReplicationServer
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
       ReplicationServerCfg configuration)
@@ -868,6 +879,9 @@ public class ReplicationServer
       }
     }
 
+    cryptoSuite.newParameters(config.getCipherTransformation(), config.getCipherKeyLength(),
+        config.isConfidentialityEnabled());
+
     // changing the listen port requires to stop the listen thread
     // and restart it.
     if (getReplicationPort() != oldConfig.getReplicationPort())
@@ -875,8 +889,11 @@ public class ReplicationServer
       stopListen = true;
       try
       {
-        listenSocket.close();
-        listenThread.join();
+        close(listenSocket);
+        if (listenThread != null)
+        {
+          listenThread.join();
+        }
         stopListen = false;
 
         setServerURL();
@@ -950,10 +967,7 @@ public class ReplicationServer
      */
     for (HostPort rsAddress : getConfiguredRSAddresses())
     {
-      /*
-       * No need validate the string format because the admin framework has
-       * already done it.
-       */
+      /* No need validate the string format because the admin framework has already done it. */
       if (rsAddress.getPort() == getReplicationPort()
           && rsAddress.isLocalAddress())
       {
@@ -980,7 +994,6 @@ public class ReplicationServer
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(
       ReplicationServerCfg configuration, List<LocalizableMessage> unacceptableReasons)
@@ -1005,7 +1018,6 @@ public class ReplicationServer
    * Get the serverId for this replication server.
    *
    * @return The value of the serverId.
-   *
    */
   public int getServerId()
   {
@@ -1160,7 +1172,6 @@ public class ReplicationServer
    * WARNING : only use this methods for tests purpose.
    *
    * Clear the list of local Replication Servers
-   *
    */
   public static void onlyForTestsClearLocalReplicationServerList()
   {
@@ -1337,12 +1348,18 @@ public class ReplicationServer
     return MultimasterReplication.isECLEnabled();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * Return whether change-log records should be encrypted.
+   * @return trus if change-log records should be encrypted
+   */
+  public boolean isEncrypted()
+  {
+    return config.isConfidentialityEnabled();
+  }
+
   @Override
   public String toString()
   {
-    return "RS(" + getServerId() + ") on " + serverURL + ", domains="
-        + baseDNs.keySet();
+    return "RS(" + getServerId() + ") on " + serverURL + ", domains=" + baseDNs.keySet();
   }
-
 }

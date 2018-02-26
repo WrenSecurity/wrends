@@ -16,9 +16,10 @@
  */
 package org.opends.guitools.controlpanel.ui;
 
+import static com.forgerock.opendj.cli.Utils.*;
+
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.messages.QuickSetupMessages.*;
-import static com.forgerock.opendj.cli.Utils.*;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -70,6 +71,8 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.admin.ads.util.ApplicationTrustManager;
 import org.opends.admin.ads.util.ConnectionUtils;
 import org.opends.guitools.controlpanel.browser.BrowserController;
@@ -94,8 +97,6 @@ import org.opends.quicksetup.UserDataCertificateException;
 import org.opends.quicksetup.ui.CertificateDialog;
 import org.opends.quicksetup.util.UIKeyStore;
 import org.opends.server.protocols.ldap.LDAPFilter;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.LDAPException;
 import org.opends.server.types.SearchFilter;
@@ -107,7 +108,7 @@ import org.opends.server.util.ServerConstants;
  * when the user can choose a set of entries (for instance when the user adds a
  * member to a group in the 'New Group' dialog).
  */
-public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel implements BackendPopulatedListener
+abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel implements BackendPopulatedListener
 {
   private static final long serialVersionUID = -6063927039968115236L;
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
@@ -158,11 +159,9 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
   private Object lastSelectedBaseDN;
   private boolean ignoreBaseDNEvents;
 
-  private List<DN> otherBaseDns = new ArrayList<>();
+  private final List<DN> otherBaseDns = new ArrayList<>();
 
-  /**
-   * Default constructor.
-   */
+  /** Default constructor. */
   public AbstractBrowseEntriesPanel()
   {
     super();
@@ -571,14 +570,12 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
     return buttonsPanel;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Component getPreferredFocusComponent()
   {
     return baseDNs;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void cancelClicked()
   {
@@ -781,7 +778,6 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
    */
   protected abstract Component createMainPanel();
 
-  /** {@inheritDoc} */
   @Override
   public void backendPopulated(BackendPopulatedEvent ev)
   {
@@ -937,7 +933,6 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
     controller.setMaxChildren(MAX_NUMBER_ENTRIES);
     controller.addBrowserEventListener(new BrowserEventListener()
     {
-      /** {@inheritDoc} */
       @Override
       public void processBrowserEvent(BrowserEvent ev)
       {
@@ -953,6 +948,7 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
       @Override
       public void treeNodesChanged(TreeModelEvent e)
       {
+        // no-op
       }
 
       @Override
@@ -1010,7 +1006,6 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
       }
     }
 
-    @SuppressWarnings("unchecked")
     final DefaultComboBoxModel<CharSequence> model = (DefaultComboBoxModel<CharSequence>) filterAttribute.getModel();
     if (hasChanged(newElements, model))
     {
@@ -1214,9 +1209,9 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
               {
                 try
                 {
+                  ControlPanelInfo info = getInfo();
                   controller.setConnections(
-                      getInfo().getServerDescriptor(), getInfo().getConnection().getLdapContext(),
-                      getInfo().getUserDataDirContext());
+                      info.getServerDescriptor(), info.getConnection(), info.getUserDataDirContext());
                   applyButtonClicked();
                 }
                 catch (NamingException ne)
@@ -1583,9 +1578,9 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
    * left. The class simply handles this particular case to not to have that
    * inset for the 'All Base DNs' item.
    */
-  class CustomComboBoxCellRenderer extends CustomListCellRenderer
+  private class CustomComboBoxCellRenderer extends CustomListCellRenderer
   {
-    private LocalizableMessage ALL_BASE_DNS_STRING = INFO_CTRL_PANEL_ALL_BASE_DNS.get();
+    private final LocalizableMessage ALL_BASE_DNS_STRING = INFO_CTRL_PANEL_ALL_BASE_DNS.get();
 
     /**
      * The constructor.
@@ -1593,7 +1588,7 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
      * @param combo
      *          the combo box to be rendered.
      */
-    CustomComboBoxCellRenderer(JComboBox<?> combo)
+    private CustomComboBoxCellRenderer(JComboBox<?> combo)
     {
       super(combo);
     }
@@ -1691,12 +1686,12 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
    * before updating the number of entries and with this approach there is
    * hardly no impact on the reactivity of the UI.
    */
-  protected class NumberOfEntriesUpdater extends Thread
+  private class NumberOfEntriesUpdater extends Thread
   {
     private boolean recalculate;
 
     /** Notifies that the number of entries in the browser has changed. */
-    public void recalculate()
+    private void recalculate()
     {
       recalculate = true;
     }
@@ -1713,6 +1708,7 @@ public abstract class AbstractBrowseEntriesPanel extends StatusGenericPanel impl
         }
         catch (Throwable t)
         {
+          // ignore
         }
         if (recalculate)
         {

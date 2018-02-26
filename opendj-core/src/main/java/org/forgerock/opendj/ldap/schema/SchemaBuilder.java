@@ -122,6 +122,73 @@ public final class SchemaBuilder {
         return subschemaDN;
     }
 
+    /** Allows to perform modifications on element's builders before adding the result to this schema builder. */
+    public interface SchemaBuilderHook {
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddSyntax(Syntax.Builder builder);
+
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddAttribute(AttributeType.Builder builder);
+
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddObjectClass(ObjectClass.Builder builder);
+
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddMatchingRuleUse(MatchingRuleUse.Builder builder);
+
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddMatchingRule(MatchingRule.Builder builder);
+
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddDitContentRule(DITContentRule.Builder builder);
+
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddDitStructureRule(DITStructureRule.Builder builder);
+
+        /**
+         * Allow to modify the builder before its inclusion in schema.
+         *
+         * @param builder
+         *            Schema's element builder.
+         */
+        public void beforeAddNameForm(NameForm.Builder builder);
+    }
+
     private Map<Integer, DITStructureRule> id2StructureRules;
     private Map<String, List<AttributeType>> name2AttributeTypes;
     private Map<String, List<DITContentRule>> name2ContentRules;
@@ -139,7 +206,6 @@ public final class SchemaBuilder {
     private Map<String, ObjectClass> numericOID2ObjectClasses;
     private Map<String, Syntax> numericOID2Syntaxes;
     private Map<String, List<NameForm>> objectClass2NameForms;
-    private Map<String, String> name2OIDs;
     private String schemaName;
     private List<LocalizableMessage> warnings;
     private Options options;
@@ -168,7 +234,7 @@ public final class SchemaBuilder {
      */
     public SchemaBuilder(final Entry entry) {
         preLazyInitBuilder(entry.getName().toString(), null);
-        addSchema(entry, true);
+        addSchema(entry, true, null);
     }
 
     /**
@@ -219,6 +285,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addAttributeType(final String definition, final boolean overwrite) {
+        return addAttributeType(definition, overwrite, null);
+    }
+
+    SchemaBuilder addAttributeType(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -372,6 +442,9 @@ public final class SchemaBuilder {
             atBuilder.superiorType(superiorType)
                      .syntax(syntax);
 
+            if (hook != null) {
+                hook.beforeAddAttribute(atBuilder);
+            }
             return atBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_ATTRTYPE_INVALID1.get(definition, e.getMessageObject());
@@ -398,6 +471,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addDITContentRule(final String definition, final boolean overwrite) {
+        return addDITContentRule(definition, overwrite, null);
+    }
+
+    SchemaBuilder addDITContentRule(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -479,6 +556,9 @@ public final class SchemaBuilder {
                 }
             }
 
+            if (hook != null) {
+                hook.beforeAddDitContentRule(contentRuleBuilder);
+            }
             return contentRuleBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_DCR_INVALID1.get(definition, e.getMessageObject());
@@ -505,6 +585,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addDITStructureRule(final String definition, final boolean overwrite) {
+        return addDITStructureRule(definition, overwrite, null);
+    }
+
+    SchemaBuilder addDITStructureRule(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -586,6 +670,9 @@ public final class SchemaBuilder {
             }
             ruleBuilder.nameForm(nameForm);
 
+            if (hook != null) {
+                hook.beforeAddDitStructureRule(ruleBuilder);
+            }
             return ruleBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_DSR_INVALID1.get(definition, e.getMessageObject());
@@ -638,6 +725,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addMatchingRule(final String definition, final boolean overwrite) {
+        return addMatchingRule(definition, overwrite, null);
+    }
+
+    SchemaBuilder addMatchingRule(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -721,6 +812,9 @@ public final class SchemaBuilder {
             if (syntax == null) {
                 throw new LocalizedIllegalArgumentException(ERR_ATTR_SYNTAX_MR_NO_SYNTAX.get(definition));
             }
+            if (hook != null) {
+                hook.beforeAddMatchingRule(matchingRuleBuilder);
+            }
             matchingRuleBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg =
@@ -749,6 +843,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addMatchingRuleUse(final String definition, final boolean overwrite) {
+        return addMatchingRuleUse(definition, overwrite, null);
+    }
+
+    SchemaBuilder addMatchingRuleUse(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -830,6 +928,9 @@ public final class SchemaBuilder {
             }
             useBuilder.attributes(attributes);
 
+            if (hook != null) {
+                hook.beforeAddMatchingRuleUse(useBuilder);
+            }
             return useBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_MRUSE_INVALID1.get(definition, e.getMessageObject());
@@ -930,6 +1031,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addNameForm(final String definition, final boolean overwrite) {
+        return addNameForm(definition, overwrite, null);
+    }
+
+    SchemaBuilder addNameForm(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -1028,6 +1133,9 @@ public final class SchemaBuilder {
                 throw new LocalizedIllegalArgumentException(ERR_ATTR_SYNTAX_NAME_FORM_NO_REQUIRED_ATTR.get(definition));
             }
 
+            if (hook != null) {
+                hook.beforeAddNameForm(nameFormBuilder);
+            }
             nameFormBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg =
@@ -1247,6 +1355,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addObjectClass(final String definition, final boolean overwrite) {
+        return addObjectClass(definition, overwrite, null);
+    }
+
+    SchemaBuilder addObjectClass(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -1336,19 +1448,20 @@ public final class SchemaBuilder {
                         ERR_ATTR_SYNTAX_OBJECTCLASS_ILLEGAL_TOKEN1.get(definition, tokenName));
                 }
             }
+            if (hook != null) {
+                hook.beforeAddObjectClass(ocBuilder);
+            }
 
             if (EXTENSIBLE_OBJECT_OBJECTCLASS_OID.equals(oid)) {
                 addObjectClass(newExtensibleObjectObjectClass(
                     ocBuilder.getDescription(), ocBuilder.getExtraProperties(), this), overwrite);
                 return this;
-            } else {
-                if (ocType == STRUCTURAL && superiorClasses.isEmpty()) {
-                    superiorClasses = singleton(TOP_OBJECTCLASS_NAME);
-                }
-                ocBuilder.superiorObjectClasses(superiorClasses)
-                         .type(ocType);
-                return ocBuilder.addToSchema(overwrite);
             }
+
+            ocType = ocType != null ? ocType : STRUCTURAL;
+            ocBuilder.superiorObjectClasses(superiorClasses)
+                     .type(ocType);
+            return ocBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             throw new LocalizedIllegalArgumentException(
                 ERR_ATTR_SYNTAX_OBJECTCLASS_INVALID1.get(definition, e.getMessageObject()), e.getCause());
@@ -1414,7 +1527,7 @@ public final class SchemaBuilder {
         // The call to addSchema will perform copyOnWrite.
         final SearchRequest request = getReadSchemaSearchRequest(name);
         final Entry entry = connection.searchSingleEntry(request);
-        return addSchema(entry, overwrite);
+        return addSchema(entry, overwrite, null);
     }
 
     /**
@@ -1433,6 +1546,27 @@ public final class SchemaBuilder {
      *             If {@code entry} was {@code null}.
      */
     public SchemaBuilder addSchema(final Entry entry, final boolean overwrite) {
+        return addSchema(entry, overwrite, null);
+    }
+
+    /**
+     * Adds all of the schema elements contained in the provided subschema
+     * subentry to this schema builder. Any problems encountered while parsing
+     * the entry can be retrieved using the returned schema's
+     * {@link Schema#getWarnings()} method.
+     *
+     * @param entry
+     *            The subschema subentry to be parsed.
+     * @param overwrite
+     *            {@code true} if existing schema elements with the same
+     *            conflicting OIDs should be overwritten.
+     * @param hook
+     *            Allows to perform modifications on element's builders before adding the result to this schema builder.
+     * @return A reference to this schema builder.
+     * @throws NullPointerException
+     *             If {@code entry} was {@code null}.
+     */
+    public SchemaBuilder addSchema(final Entry entry, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(entry);
 
         lazyInitBuilder();
@@ -1441,7 +1575,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addSyntax(def.toString(), overwrite);
+                    addSyntax(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1452,7 +1586,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addAttributeType(def.toString(), overwrite);
+                    addAttributeType(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1463,7 +1597,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addObjectClass(def.toString(), overwrite);
+                    addObjectClass(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1474,7 +1608,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addMatchingRuleUse(def.toString(), overwrite);
+                    addMatchingRuleUse(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1485,7 +1619,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addMatchingRule(def.toString(), overwrite);
+                    addMatchingRule(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1496,7 +1630,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addDITContentRule(def.toString(), overwrite);
+                    addDITContentRule(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1507,7 +1641,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addDITStructureRule(def.toString(), overwrite);
+                    addDITStructureRule(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1518,7 +1652,7 @@ public final class SchemaBuilder {
         if (attr != null) {
             for (final ByteString def : attr) {
                 try {
-                    addNameForm(def.toString(), overwrite);
+                    addNameForm(def.toString(), overwrite, hook);
                 } catch (final LocalizedIllegalArgumentException e) {
                     warnings.add(e.getMessageObject());
                 }
@@ -1585,7 +1719,7 @@ public final class SchemaBuilder {
                 new Function<SearchResultEntry, SchemaBuilder, LdapException>() {
                     @Override
                     public SchemaBuilder apply(SearchResultEntry result) throws LdapException {
-                        addSchema(result, overwrite);
+                        addSchema(result, overwrite, null);
                         return SchemaBuilder.this;
                     }
                 });
@@ -1721,6 +1855,10 @@ public final class SchemaBuilder {
      *             If {@code definition} was {@code null}.
      */
     public SchemaBuilder addSyntax(final String definition, final boolean overwrite) {
+        return addSyntax(definition, overwrite, null);
+    }
+
+    SchemaBuilder addSyntax(final String definition, final boolean overwrite, SchemaBuilderHook hook) {
         Reject.ifNull(definition);
 
         lazyInitBuilder();
@@ -1787,6 +1925,9 @@ public final class SchemaBuilder {
                 }
             }
 
+            if (hook != null) {
+                hook.beforeAddSyntax(syntaxBuilder);
+            }
             syntaxBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg =
@@ -2054,19 +2195,13 @@ public final class SchemaBuilder {
                         numericOID2ContentRules, id2StructureRules, name2MatchingRules,
                         name2MatchingRuleUses, name2AttributeTypes, name2ObjectClasses,
                         name2NameForms, name2ContentRules, name2StructureRules,
-                        objectClass2NameForms, nameForm2StructureRules, name2OIDs, warnings).asStrictSchema();
+                        objectClass2NameForms, nameForm2StructureRules, warnings).asStrictSchema();
         validate(schema);
 
         // Re-init this builder so that it can continue to be used afterwards.
         preLazyInitBuilder(schemaName, schema);
 
         return schema;
-    }
-
-    private void registerNameToOIDMapping(String name, String anOID) {
-        if (name2OIDs.put(name, anOID) != null) {
-            name2OIDs.put(name, AMBIGUOUS_OID);
-        }
     }
 
     SchemaBuilder addAttributeType(final AttributeType attribute, final boolean overwrite) {
@@ -2365,7 +2500,6 @@ public final class SchemaBuilder {
 
             objectClass2NameForms = new HashMap<>();
             nameForm2StructureRules = new HashMap<>();
-            name2OIDs = new HashMap<>();
             warnings = new LinkedList<>();
 
             if (copyOnWriteSchema != null) {
@@ -2528,7 +2662,6 @@ public final class SchemaBuilder {
                 new Syntax[numericOID2Syntaxes.values().size()])) {
             try {
                 syntax.validate(schema, warnings);
-                registerNameToOIDMapping(syntax.getName(), syntax.getOID());
             } catch (final SchemaException e) {
                 removeSyntax(syntax);
                 warnings.add(ERR_SYNTAX_VALIDATION_FAIL
@@ -2540,9 +2673,6 @@ public final class SchemaBuilder {
                 new MatchingRule[numericOID2MatchingRules.values().size()])) {
             try {
                 rule.validate(schema, warnings);
-                for (final String name : rule.getNames()) {
-                    registerNameToOIDMapping(StaticUtils.toLowerCase(name), rule.getOID());
-                }
             } catch (final SchemaException e) {
                 removeMatchingRule(rule);
                 warnings.add(ERR_MR_VALIDATION_FAIL.get(rule.toString(), e.getMessageObject()));
@@ -2560,12 +2690,6 @@ public final class SchemaBuilder {
             removeAttributeType(attributeType);
         }
 
-        for (final AttributeType attributeType : numericOID2AttributeTypes.values()) {
-            for (final String name : attributeType.getNames()) {
-                registerNameToOIDMapping(StaticUtils.toLowerCase(name), attributeType.getOID());
-            }
-        }
-
         // Object classes need special processing because they have hierarchical
         // dependencies.
         final List<ObjectClass> invalidObjectClasses = new LinkedList<>();
@@ -2577,18 +2701,10 @@ public final class SchemaBuilder {
             removeObjectClass(objectClass);
         }
 
-        for (final ObjectClass objectClass : numericOID2ObjectClasses.values()) {
-            for (final String name : objectClass.getNames()) {
-                registerNameToOIDMapping(StaticUtils.toLowerCase(name), objectClass.getOID());
-            }
-        }
         for (final MatchingRuleUse use : numericOID2MatchingRuleUses.values().toArray(
                 new MatchingRuleUse[numericOID2MatchingRuleUses.values().size()])) {
             try {
                 use.validate(schema);
-                for (final String name : use.getNames()) {
-                    registerNameToOIDMapping(StaticUtils.toLowerCase(name), use.getMatchingRuleOID());
-                }
             } catch (final SchemaException e) {
                 removeMatchingRuleUse(use);
                 warnings.add(ERR_MRU_VALIDATION_FAIL.get(use.toString(), e.getMessageObject()));
@@ -2612,9 +2728,6 @@ public final class SchemaBuilder {
                 } else {
                     forms.add(form);
                 }
-                for (final String name : form.getNames()) {
-                    registerNameToOIDMapping(StaticUtils.toLowerCase(name), form.getOID());
-                }
             } catch (final SchemaException e) {
                 removeNameForm(form);
                 warnings.add(ERR_NAMEFORM_VALIDATION_FAIL
@@ -2626,9 +2739,6 @@ public final class SchemaBuilder {
                 new DITContentRule[numericOID2ContentRules.values().size()])) {
             try {
                 rule.validate(schema, warnings);
-                for (final String name : rule.getNames()) {
-                    registerNameToOIDMapping(StaticUtils.toLowerCase(name), rule.getStructuralClassOID());
-                }
             } catch (final SchemaException e) {
                 removeDITContentRule(rule);
                 warnings.add(ERR_DCR_VALIDATION_FAIL.get(rule.toString(), e.getMessageObject()));

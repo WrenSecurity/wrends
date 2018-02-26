@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.controlpanel.ui;
@@ -36,10 +36,7 @@ import org.opends.quicksetup.util.WebBrowserException;
 import org.opends.quicksetup.util.WebBrowserLauncher;
 import org.opends.server.util.DynamicConstants;
 
-/**
- * An abstract class that the different menu bars in the Control Panel extend.
- *
- */
+/** An abstract class that the different menu bars in the Control Panel extend. */
 
 public abstract class GenericMenuBar extends JMenuBar
 {
@@ -47,17 +44,13 @@ public abstract class GenericMenuBar extends JMenuBar
 
   private ControlPanelInfo info;
 
-  /**
-   * The URL to the administration guide.
-   */
-  protected final String ADMINISTRATION_GUIDE_URL =
+  /** The URL to the administration guide. */
+  private final String ADMINISTRATION_GUIDE_URL =
     Utils.getCustomizedObject("ADMINISTRATION_GUIDE_URL",
         DynamicConstants.ADMINISTRATION_GUIDE_URL, String.class);
 
-  /**
-   * The URL to the wiki main page.
-   */
-  protected final String DOC_REFERENCE_WIKI =
+  /** The URL to the wiki main page. */
+  private final String DOC_REFERENCE_WIKI =
     Utils.getCustomizedObject("DOC_REFERENCE_WIKI",
         DynamicConstants.DOC_REFERENCE_WIKI, String.class);
 
@@ -92,6 +85,7 @@ public abstract class GenericMenuBar extends JMenuBar
         INFO_CTRL_PANEL_ADMINISTRATION_GUIDE_MENU.get());
     menuItem.addActionListener(new ActionListener()
     {
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         displayURL(ADMINISTRATION_GUIDE_URL);
@@ -102,6 +96,7 @@ public abstract class GenericMenuBar extends JMenuBar
         INFO_CTRL_PANEL_DOCUMENTATION_WIKI_MENU.get());
     menuItem.addActionListener(new ActionListener()
     {
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         displayURL(DOC_REFERENCE_WIKI);
@@ -115,11 +110,11 @@ public abstract class GenericMenuBar extends JMenuBar
    * Tries to display a URL in the systems default WEB browser.
    * @param url the URL to be displayed.
    */
-  protected void displayURL(final String url)
+  private void displayURL(final String url)
   {
     BackgroundTask<Void> worker = new BackgroundTask<Void>()
     {
-      /** {@inheritDoc} */
+      @Override
       public Void processBackgroundTask() throws WebBrowserException
       {
         try
@@ -133,7 +128,7 @@ public abstract class GenericMenuBar extends JMenuBar
         }
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void backgroundTaskCompleted(Void returnValue, Throwable throwable)
       {
         WebBrowserException ex = (WebBrowserException) throwable;

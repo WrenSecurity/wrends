@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-packages</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>3.5.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-msi</artifactId>
@@ -32,7 +32,12 @@
         This module contains configuration and generic plugin call to build OpenDJ MSI packages.
     </description>
 
-    <modules>
-        <module>opendj-msi-standard</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>packages</id>
+            <modules>
+                <module>opendj-msi-standard</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

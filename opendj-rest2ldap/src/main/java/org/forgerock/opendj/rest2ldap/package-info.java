@@ -11,11 +11,16 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
- * Copyright 2012 ForgeRock AS.
+ * Copyright 2012-2016 ForgeRock AS.
  */
 
 /**
- * APIs for implementing REST to LDAP gateways.
+ * APIs for implementing REST to LDAP gateways. The API is implemented by
+ * {@link org.forgerock.opendj.rest2ldap.SubResourceImpl} which is using a pre-established
+ * {@link org.forgerock.opendj.ldap.Connection} encapsulated in the
+ * {@link org.forgerock.opendj.rest2ldap.AuthenticatedConnectionContext}. This context is injected by the
+ * {@link org.forgerock.opendj.rest2ldap.authz.ProxiedAuthV2Filter} depending on the
+ * {@link org.forgerock.services.context.SecurityContext} injected by one of the configured authorization filters.
  */
 package org.forgerock.opendj.rest2ldap;
 

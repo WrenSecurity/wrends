@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2007-2010 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.forgerock.opendj.config;
 
@@ -617,7 +617,7 @@ public abstract class AbstractManagedObjectDefinition<C extends ConfigurationCli
     }
 
     /**
-     * Determines whether or not this managed object definition has the
+     * Determines whether this managed object definition has the
      * specified option.
      *
      * @param option
@@ -630,7 +630,7 @@ public abstract class AbstractManagedObjectDefinition<C extends ConfigurationCli
     }
 
     /**
-     * Determines whether or not this managed object definition has the
+     * Determines whether this managed object definition has the
      * specified tag.
      *
      * @param t
@@ -643,7 +643,7 @@ public abstract class AbstractManagedObjectDefinition<C extends ConfigurationCli
     }
 
     /**
-     * Determines whether or not this managed object definition is a sub-type of
+     * Determines whether this managed object definition is a sub-type of
      * the provided managed object definition. This managed object definition is
      * a sub-type of the provided managed object definition if they are both the
      * same or if the provided managed object definition can be obtained by
@@ -665,7 +665,7 @@ public abstract class AbstractManagedObjectDefinition<C extends ConfigurationCli
     }
 
     /**
-     * Determines whether or not this managed object definition is a super-type
+     * Determines whether this managed object definition is a super-type
      * of the provided managed object definition. This managed object definition
      * is a super-type of the provided managed object definition if they are
      * both the same or if the provided managed object definition is a member of
@@ -681,8 +681,7 @@ public abstract class AbstractManagedObjectDefinition<C extends ConfigurationCli
     }
 
     /**
-     * Determines whether or not this managed object definition is the
-     * {@link TopCfgDefn}.
+     * Determines whether this managed object definition is the {@link TopCfgDefn}.
      *
      * @return Returns <code>true</code> if this managed object definition is
      *         the {@link TopCfgDefn}.
@@ -720,7 +719,6 @@ public abstract class AbstractManagedObjectDefinition<C extends ConfigurationCli
         }
     }
 
-    /** {@inheritDoc} */
     @Override
     public final String toString() {
         StringBuilder builder = new StringBuilder();
@@ -920,10 +918,7 @@ public abstract class AbstractManagedObjectDefinition<C extends ConfigurationCli
         apd.getRelationDefinition().getChildDefinition().reverseAggregationPropertyDefinitions.add(apd);
     }
 
-    /**
-     * Recursively descend definition hierarchy to find the best match
-     * definition.
-     */
+    /** Recursively descend definition hierarchy to find the best match definition. */
     private AbstractManagedObjectDefinition<? extends C, ? extends S> resolveManagedObjectDefinitionAux(
         AbstractManagedObjectDefinition<? extends C, ? extends S> d, DefinitionResolver r) {
         if (!r.matches(d)) {

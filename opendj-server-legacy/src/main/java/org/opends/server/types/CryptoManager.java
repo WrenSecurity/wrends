@@ -12,11 +12,12 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2009 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.server.types;
 
 import org.forgerock.opendj.config.server.ConfigException;
+import org.opends.server.crypto.CryptoSuite;
 
 import javax.crypto.Mac;
 import javax.crypto.CipherOutputStream;
@@ -422,4 +423,27 @@ import java.util.SortedSet;
    * @return The set of enabled SSL cipher suites.
    */
   SortedSet<String> getSslCipherSuites();
+
+  /**
+   * Return a new {@link CryptoSuite} for the cipher and key.
+   *
+   * @return a new {@link CryptoSuite} for the cipher and key
+   * @param cipherTransformation cipher transformation string specification
+   * @param cipherKeyLength length of key in bits
+   * @param encrypt true if the user of the crypto suite needs encryption
+   */
+  CryptoSuite newCryptoSuite(String cipherTransformation, int cipherKeyLength, boolean encrypt);
+
+  /**
+   * Ensures that a key exists for the provided cipher transformation and key length.
+   * If none exists, a new one will be created.
+   *<p>
+   * Newly created keys will be published and propagated to the replication topology.
+   *
+   * @param cipherTransformation cipher transformation string specification
+   * @param cipherKeyLength length of key in bits
+   * @throws CryptoManagerException  If a problem occurs managing the encryption key
+   */
+  void ensureCipherKeyIsAvailable(String cipherTransformation, int cipherKeyLength) throws CryptoManagerException;
+
 }

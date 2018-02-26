@@ -34,6 +34,7 @@ import org.forgerock.i18n.LocalizableMessageDescriptor.Arg2;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.messages.Severity;
@@ -42,7 +43,6 @@ import org.opends.server.core.ServerContext;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Attributes;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.InitializationException;
@@ -311,7 +311,7 @@ public abstract class Task implements Comparable<Task>
   private String getAttributeValue(String attributeName, boolean isRequired)
           throws InitializationException
   {
-    List<Attribute> attrList = taskEntry.getAttribute(attributeName.toLowerCase());
+    List<Attribute> attrList = taskEntry.getAttribute(attributeName);
     if (attrList.isEmpty())
     {
       if (isRequired)
@@ -360,7 +360,7 @@ public abstract class Task implements Comparable<Task>
   private LinkedList<String> getAttributeValues(String attributeName) throws InitializationException
   {
     LinkedList<String> valueStrings = new LinkedList<>();
-    List<Attribute> attrList = taskEntry.getAttribute(attributeName.toLowerCase());
+    List<Attribute> attrList = taskEntry.getAttribute(attributeName);
     if (attrList.isEmpty())
     {
       return valueStrings;
@@ -458,8 +458,7 @@ public abstract class Task implements Comparable<Task>
   }
 
   /**
-   * Indicates whether or not this task is an iteration of
-   * some recurring task.
+   * Indicates whether this task is an iteration of some recurring task.
    *
    * @return boolean where true indicates that this task is
    *         recurring, false otherwise.
@@ -470,7 +469,7 @@ public abstract class Task implements Comparable<Task>
   }
 
   /**
-   * Indicates whether or not this task has been cancelled.
+   * Indicates whether this task has been cancelled.
    *
    * @return boolean where true indicates that this task was
    *         cancelled either before or during execution
@@ -824,7 +823,7 @@ public abstract class Task implements Comparable<Task>
       String messageString = buildLogMessage(severity, message, exception);
       logMessages.add(messageString);
 
-      final AttributeType type = DirectoryServer.getAttributeType(ATTR_TASK_LOG_MESSAGES);
+      final AttributeType type = DirectoryServer.getSchema().getAttributeType(ATTR_TASK_LOG_MESSAGES);
       final Attribute attr = taskEntry.getExactAttribute(AttributeDescription.create(type));
       final AttributeBuilder builder = attr != null ? new AttributeBuilder(attr) : new AttributeBuilder(type);
       builder.add(messageString);
@@ -1071,7 +1070,7 @@ public abstract class Task implements Comparable<Task>
   }
 
   /**
-   * Indicates whether or not this task is interruptible or not.
+   * Indicates whether this task is interruptible or not.
    *
    * @return boolean where true indicates that this task can be interrupted.
    */

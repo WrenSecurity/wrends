@@ -24,16 +24,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.guitools.controlpanel.util.ConfigFromDirContext;
 import org.opends.quicksetup.UserData;
-import org.opends.server.schema.SomeSchemaElement;
 import org.opends.server.tools.tasks.TaskEntry;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.DN;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 
 import com.forgerock.opendj.util.OperatingSystem;
@@ -305,7 +303,6 @@ public class ServerDescriptor
     this.taskEntries = Collections.unmodifiableSet(taskEntries);
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean equals(Object o)
   {
@@ -337,7 +334,6 @@ public class ServerDescriptor
         && desc.getTaskEntries().equals(getTaskEntries());
   }
 
-  /** {@inheritDoc} */
   @Override
   public int hashCode()
   {
@@ -575,17 +571,16 @@ public class ServerDescriptor
 
   private static boolean areObjectClassesEqual(Schema schema1, Schema schema2)
   {
-    final Map<String, ObjectClass> ocs1 = schema1.getObjectClasses();
-    final Map<String, ObjectClass> ocs2 = schema2.getObjectClasses();
+    final Collection<ObjectClass> ocs1 = schema1.getObjectClasses();
+    final Collection<ObjectClass> ocs2 = schema2.getObjectClasses();
     if (ocs1.size() != ocs2.size())
     {
       return false;
     }
-    for (String name : ocs1.keySet())
+    for (ObjectClass oc1 : ocs1)
     {
-      ObjectClass oc1 = ocs1.get(name);
-      ObjectClass oc2 = ocs2.get(name);
-      if (oc2 == null || !areObjectClassesEqual(oc1, oc2))
+      ObjectClass oc2 = schema2.getObjectClass(oc1.getNameOrOID());
+      if (oc2.isPlaceHolder() || !areObjectClassesEqual(oc1, oc2))
       {
         return false;
       }
@@ -637,16 +632,14 @@ public class ServerDescriptor
   private static boolean areObjectClassesEqual(ObjectClass oc1, ObjectClass oc2)
   {
     return oc1.getOID().equals(oc2.getOID())
-        && oc1.isExtensibleObject() == oc2.isExtensibleObject()
         && areEqual(getDefinitionWithFileName(oc1), getDefinitionWithFileName(oc2))
         && areEqual(oc1.getDescription(), oc2.getDescription())
         && areEqual(oc1.getObjectClassType(), oc2.getObjectClassType())
-        && areEqual(oc1.getOptionalAttributes(), oc2.getOptionalAttributes())
-        && areEqual(oc1.getRequiredAttributes(), oc2.getRequiredAttributes())
+        && areEqual(oc1.getDeclaredOptionalAttributes(), oc2.getDeclaredOptionalAttributes())
+        && areEqual(oc1.getDeclaredRequiredAttributes(), oc2.getDeclaredRequiredAttributes())
         && areEqual(oc1.getSuperiorClasses(), oc2.getSuperiorClasses())
         && areEqual(oc1.getExtraProperties().keySet(), oc2.getExtraProperties().keySet())
-        && areEqual(toSet(oc1.getNormalizedNames()), toSet(oc2.getNormalizedNames()))
-        && areEqual(toSet(oc1.getUserDefinedNames()), toSet(oc2.getUserDefinedNames()));
+        && areEqual(toSet(oc1.getNames()), toSet(oc2.getNames()));
   }
 
   private static Set<Object> toSet(Iterable<?> iterable)

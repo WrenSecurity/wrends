@@ -99,7 +99,7 @@ public final class BuildVersion implements Comparable<BuildVersion>
    */
   public static void checkVersionMismatch() throws InitializationException
   {
-    if (!BuildVersion.binaryVersion().toString().equals(BuildVersion.instanceVersion().toString()))
+    if (!BuildVersion.binaryVersion().equals(BuildVersion.instanceVersion()))
     {
       throw new InitializationException(
           ERR_BUILDVERSION_MISMATCH.get(BuildVersion.binaryVersion(), BuildVersion.instanceVersion()));
@@ -152,7 +152,7 @@ public final class BuildVersion implements Comparable<BuildVersion>
    * @param point
    *          Point release version number.
    */
-  public BuildVersion(final int major, final int minor, final int point)
+  private BuildVersion(final int major, final int minor, final int point)
   {
     this(major, minor, point, "");
   }
@@ -169,7 +169,7 @@ public final class BuildVersion implements Comparable<BuildVersion>
    * @param rev
    *          VCS revision.
    */
-  public BuildVersion(final int major, final int minor, final int point, final String rev)
+  private BuildVersion(final int major, final int minor, final int point, final String rev)
   {
     this.major = major;
     this.minor = minor;
@@ -277,5 +277,29 @@ public final class BuildVersion implements Comparable<BuildVersion>
       return Utils.joinAsString(".", major, minor, point, rev);
     }
     return Utils.joinAsString(".", major, minor, point);
+  }
+
+  /**
+   * Returns {@code true} if the version is newer than the provided version.
+   *
+   * @param version
+   *          The version to be compared
+   * @return {@code true} if the version is newer than the provided version.
+   */
+  public boolean isNewerThan(final BuildVersion version)
+  {
+    return this.compareTo(version) >= 0;
+  }
+
+  /**
+   * Returns {@code true} if the version is older than the provided version.
+   *
+   * @param version
+   *          The version to be compared
+   * @return {@code true} if the version is older than the provided version.
+   */
+  public boolean isOlderThan(final BuildVersion version)
+  {
+    return this.compareTo(version) <= 0;
   }
 }

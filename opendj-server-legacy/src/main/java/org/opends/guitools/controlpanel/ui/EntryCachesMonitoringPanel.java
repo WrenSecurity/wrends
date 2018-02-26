@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2009 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 package org.opends.guitools.controlpanel.ui;
 
@@ -33,24 +33,23 @@ import org.opends.server.util.CollectionUtils;
 import static org.opends.guitools.controlpanel.datamodel.BasicMonitoringAttributes.*;
 import static org.opends.guitools.controlpanel.util.Utilities.*;
 import static org.opends.messages.AdminToolMessages.*;
-/**
- * The panel displaying the entry caches monitor panel.
- */
-public class EntryCachesMonitoringPanel extends GeneralMonitoringPanel
+
+/** The panel displaying the entry caches monitor panel. */
+class EntryCachesMonitoringPanel extends GeneralMonitoringPanel
 {
   private static final long serialVersionUID = 9031734563700069830L;
-  private static List<MonitoringAttributes> ngOperations = CollectionUtils.<MonitoringAttributes> newArrayList(
+  private static final List<MonitoringAttributes> ngOperations = CollectionUtils.<MonitoringAttributes> newArrayList(
       ENTRY_CACHE_TRIES, ENTRY_CACHE_HITS, ENTRY_CACHE_HIT_RATIO, CURRENT_ENTRY_CACHE_SIZE, MAX_ENTRY_CACHE_SIZE,
       CURRENT_ENTRY_CACHE_COUNT, MAX_ENTRY_CACHE_COUNT);
 
-  private ArrayList<JLabel> monitoringLabels = new ArrayList<>();
+  private final List<JLabel> monitoringLabels = new ArrayList<>();
   {
     for (int i=0; i<ngOperations.size(); i++)
     {
       monitoringLabels.add(Utilities.createDefaultLabel());
     }
   }
-  private ArrayList<JLabel> labels = new ArrayList<>();
+  private final List<JLabel> labels = new ArrayList<>();
   {
     for (int i=0; i<ngOperations.size(); i++)
     {
@@ -58,25 +57,20 @@ public class EntryCachesMonitoringPanel extends GeneralMonitoringPanel
     }
   }
 
-  /**
-   * Default constructor.
-   */
+  /** Default constructor. */
   public EntryCachesMonitoringPanel()
   {
     super();
     createLayout();
   }
 
-  /** {@inheritDoc} */
   @Override
   public Component getPreferredFocusComponent()
   {
     return monitoringLabels.get(0);
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   */
+  /** Creates the layout of the panel (but the contents are not populated here). */
   private void createLayout()
   {
     GridBagConstraints gbc = new GridBagConstraints();
@@ -121,10 +115,7 @@ public class EntryCachesMonitoringPanel extends GeneralMonitoringPanel
     setBorder(PANEL_BORDER);
   }
 
-  /**
-   * Updates the contents of the panel.
-   *
-   */
+  @Override
   public void updateContents()
   {
     ServerDescriptor server = null;

@@ -15,10 +15,12 @@
  */
 package org.opends.server.core;
 
+import org.forgerock.http.routing.Router;
 import org.forgerock.opendj.config.server.ServerManagementContext;
 import org.forgerock.opendj.server.config.server.RootCfg;
 import org.opends.server.extensions.DiskSpaceMonitor;
 import org.opends.server.loggers.CommonAudit;
+import org.opends.server.types.CryptoManager;
 import org.opends.server.types.DirectoryEnvironmentConfig;
 import org.opends.server.types.Schema;
 
@@ -98,6 +100,13 @@ public interface ServerContext
   DiskSpaceMonitor getDiskSpaceMonitor();
 
   /**
+   * Returns the HTTP request router.
+   *
+   * @return the HTTP Router service
+   */
+  Router getHTTPRouter();
+
+  /**
    * Returns the common audit manager.
    *
    * @return the common audit manager
@@ -110,4 +119,11 @@ public interface ServerContext
    * @return the logger config manager
    */
   LoggerConfigManager getLoggerConfigManager();
+
+  /**
+   * Returns the Crypto Manager for the instance.
+   *
+   * @return the Crypto Manager for the instance
+   */
+  CryptoManager getCryptoManager();
 }

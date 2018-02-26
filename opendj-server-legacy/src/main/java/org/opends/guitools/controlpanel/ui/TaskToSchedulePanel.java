@@ -12,9 +12,8 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
-
 package org.opends.guitools.controlpanel.ui;
 
 import static org.opends.messages.AdminToolMessages.*;
@@ -42,34 +41,29 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.text.PlainDocument;
 
+import org.forgerock.i18n.LocalizableMessage;
 import org.opends.guitools.controlpanel.datamodel.CategorizedComboBoxElement;
 import org.opends.guitools.controlpanel.datamodel.ScheduleType;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
-import org.opends.guitools.controlpanel.ui.components.
- NumericLimitedSizeDocumentFilter;
+import org.opends.guitools.controlpanel.ui.components.NumericLimitedSizeDocumentFilter;
 import org.opends.guitools.controlpanel.ui.components.TimeDocumentFilter;
-import org.opends.guitools.controlpanel.ui.renderer.
- NoLeftInsetCategoryComboBoxRenderer;
+import org.opends.guitools.controlpanel.ui.renderer.NoLeftInsetCategoryComboBoxRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.i18n.LocalizableMessage;
 import org.opends.server.backends.task.RecurringTask;
 
-/**
- * The panel that allows the user to specify when a task will be launched.
- *
- */
+/** The panel that allows the user to specify when a task will be launched. */
 public class TaskToSchedulePanel extends StatusGenericPanel
 {
   private static final long serialVersionUID = 6855081932432566784L;
 
-  private String taskName;
+  private final String taskName;
 
   private JComboBox scheduleType;
 
   private JTextField time;
   private JTextField day;
-  private JComboBox month;
-  private JComboBox year;
+  private JComboBox<String> month;
+  private JComboBox<String> year;
 
   private JLabel lTime;
   private JLabel lDay;
@@ -82,8 +76,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
   private JLabel lWeeklyTime;
   private JLabel lWeeklyDays;
   private JTextField weeklyTime;
-  private JCheckBox sunday, monday, tuesday, wednesday, thursday, friday,
-  saturday;
+  private final JCheckBox sunday, monday, tuesday, wednesday, thursday, friday, saturday;
   {
     sunday =
       Utilities.createCheckBox(INFO_CTRL_PANEL_TASK_TO_SCHEDULE_SUNDAY.get());
@@ -102,7 +95,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
       Utilities.createCheckBox(INFO_CTRL_PANEL_TASK_TO_SCHEDULE_SATURDAY.get());
   }
 
-  JCheckBox[] weekDays =
+  private final JCheckBox[] weekDays =
   {
       sunday, monday, tuesday, wednesday, thursday, friday, saturday
   };
@@ -110,7 +103,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
   private JLabel lMonthlyTime;
   private JLabel lMonthlyDays;
   private JTextField monthlyTime;
-  private JCheckBox[] monthDays = new JCheckBox[31];
+  private final JCheckBox[] monthDays = new JCheckBox[31];
 
   private JLabel lCronMinute;
   private JLabel lCronHour;
@@ -130,13 +123,13 @@ public class TaskToSchedulePanel extends StatusGenericPanel
   private Component monthlyPanel;
   private Component cronPanel;
 
-  private LocalizableMessage LAUNCH_NOW = INFO_CTRL_PANEL_LAUNCH_NOW.get();
-  private LocalizableMessage LAUNCH_LATER = INFO_CTRL_PANEL_LAUNCH_LATER.get();
-  private LocalizableMessage LAUNCH_DAILY = INFO_CTRL_PANEL_TASK_TO_SCHEDULE_DAILY.get();
-  private LocalizableMessage LAUNCH_WEEKLY = INFO_CTRL_PANEL_TASK_TO_SCHEDULE_WEEKLY.get();
-  private LocalizableMessage LAUNCH_MONTHLY =
+  private final LocalizableMessage LAUNCH_NOW = INFO_CTRL_PANEL_LAUNCH_NOW.get();
+  private final LocalizableMessage LAUNCH_LATER = INFO_CTRL_PANEL_LAUNCH_LATER.get();
+  private final LocalizableMessage LAUNCH_DAILY = INFO_CTRL_PANEL_TASK_TO_SCHEDULE_DAILY.get();
+  private final LocalizableMessage LAUNCH_WEEKLY = INFO_CTRL_PANEL_TASK_TO_SCHEDULE_WEEKLY.get();
+  private final LocalizableMessage LAUNCH_MONTHLY =
     INFO_CTRL_PANEL_TASK_TO_SCHEDULE_MONTHLY.get();
-  private LocalizableMessage CRON = INFO_CTRL_PANEL_TASK_TO_SCHEDULE_CRON.get();
+  private final LocalizableMessage CRON = INFO_CTRL_PANEL_TASK_TO_SCHEDULE_CRON.get();
 
   private ScheduleType schedule;
 
@@ -151,9 +144,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
     createLayout();
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   */
+  /** Creates the layout of the panel (but the contents are not populated here). */
   private void createLayout()
   {
     GridBagConstraints gbc = new GridBagConstraints();
@@ -204,6 +195,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
 
     scheduleType.addItemListener(new ItemListener()
     {
+      @Override
       public void itemStateChanged(ItemEvent ev)
       {
         Object element = scheduleType.getSelectedItem();
@@ -265,7 +257,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
     add(Box.createVerticalGlue(), gbc);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void toBeDisplayed(boolean visible)
   {
     // Reset the schedule and the labels
@@ -288,13 +280,13 @@ public class TaskToSchedulePanel extends StatusGenericPanel
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_TASK_TO_SCHEDULE_TITLE.get(taskName);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void okClicked()
   {
     schedule = null;
@@ -715,12 +707,13 @@ public class TaskToSchedulePanel extends StatusGenericPanel
     return schedule == null;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
+    // no-op
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getPreferredFocusComponent()
   {
     return scheduleType;
@@ -774,10 +767,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
         {currentYear, currentYear + 5}
     };
 
-    JComboBox[] numericBoxes =
-    {
-        year
-    };
+    JComboBox[] numericBoxes = { year };
 
     int[] currentValues =
     {
@@ -789,7 +779,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
       int min = maxMin[i][0];
       int max = maxMin[i][1];
 
-      DefaultComboBoxModel model = new DefaultComboBoxModel();
+      DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
 
       int selectedIndex = 0;
 
@@ -822,7 +812,7 @@ public class TaskToSchedulePanel extends StatusGenericPanel
       }
     }
 
-    DefaultComboBoxModel model = new DefaultComboBoxModel();
+    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
     month.setModel(model);
 
     LocalizableMessage[] monthMessages =

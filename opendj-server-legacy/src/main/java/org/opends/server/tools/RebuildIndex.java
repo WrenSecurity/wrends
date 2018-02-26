@@ -19,8 +19,8 @@ package org.opends.server.tools;
 import static org.opends.messages.ToolMessages.*;
 import static org.opends.server.config.ConfigConstants.*;
 import static org.opends.server.util.StaticUtils.*;
-import static com.forgerock.opendj.cli.Utils.*;
 import static com.forgerock.opendj.cli.CommonArguments.*;
+import static com.forgerock.opendj.cli.Utils.*;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -29,9 +29,9 @@ import java.util.Collection;
 import java.util.List;
 
 import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.i18n.LocalizableMessageDescriptor.Arg1;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.server.config.server.BackendCfg;
 import org.opends.server.api.Backend;
 import org.opends.server.api.Backend.BackendOperation;
@@ -39,16 +39,10 @@ import org.opends.server.backends.RebuildConfig;
 import org.opends.server.backends.RebuildConfig.RebuildMode;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.LockFileManager;
-import org.opends.server.loggers.DebugLogger;
-import org.opends.server.loggers.ErrorLogPublisher;
-import org.opends.server.loggers.ErrorLogger;
 import org.opends.server.loggers.JDKLogging;
-import org.opends.server.loggers.TextErrorLogPublisher;
-import org.opends.server.loggers.TextWriter;
 import org.opends.server.protocols.ldap.LDAPAttribute;
 import org.opends.server.tasks.RebuildTask;
 import org.opends.server.tools.tasks.TaskTool;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.NullOutputStream;
 import org.opends.server.types.RawAttribute;
@@ -288,7 +282,6 @@ public class RebuildIndex extends TaskTool
       {
         return init;
       }
-      setErrorAndDebugLogPublisher(out, err);
     }
 
     if (!configureRebuildProcess(baseDNString.getValue()))
@@ -297,6 +290,12 @@ public class RebuildIndex extends TaskTool
     }
 
     return rebuildIndex(currentBackend, rebuildConfig);
+  }
+
+  @Override
+  protected void cleanup()
+  {
+    DirectoryServer.shutdownBackends();
   }
 
   /**
@@ -338,39 +337,9 @@ public class RebuildIndex extends TaskTool
   }
 
   /**
-   * Defines the error and the debug log publisher used in this tool.
-   *
-   * @param out
-   *          The output stream to use for standard output, or {@code null} if
-   *          standard output is not needed.
-   * @param err
-   *          The output stream to use for standard error, or {@code null} if
-   *          standard error is not needed.
-   */
-  private void setErrorAndDebugLogPublisher(final PrintStream out,
-      final PrintStream err)
-  {
-    try
-    {
-      final ErrorLogPublisher errorLogPublisher =
-          TextErrorLogPublisher
-              .getToolStartupTextErrorPublisher(new TextWriter.STREAM(out));
-      ErrorLogger.getInstance().addLogPublisher(errorLogPublisher);
-      DebugLogger.getInstance().addPublisherIfRequired(new TextWriter.STREAM(out));
-    }
-    catch (Exception e)
-    {
-      err.println("Error installing the custom error logger: "
-          + stackTraceToSingleLineString(e));
-    }
-  }
-
-  /**
    * Initializes the directory server.
    *
-   * @param out
-   *          The output stream to use for standard output, or {@code null} if
-   *          standard output is not needed.
+   * @param out stream to write messages; may be null
    * @param err
    *          The output stream to use for standard error, or {@code null} if
    *          standard error is not needed.
@@ -382,6 +351,7 @@ public class RebuildIndex extends TaskTool
     {
       new DirectoryServer.InitializationBuilder(configFile.getValue())
           .requireCryptoServices()
+          .requireErrorAndDebugLogPublisher(out, err)
           .initialize();
       return 0;
     }
@@ -390,21 +360,6 @@ public class RebuildIndex extends TaskTool
       printWrappedText(err, ERR_CANNOT_INITIALIZE_SERVER_COMPONENTS.get(ie.getLocalizedMessage()));
       return 1;
     }
-  }
-
-  private String toErrorMsg(Arg1<Object> errorMsg, Exception ex)
-  {
-    final LocalizableMessage message = getErrorMsg(ex, errorMsg);
-    return wrapText(message, MAX_LINE_WIDTH);
-  }
-
-  private LocalizableMessage getErrorMsg(Exception ex, Arg1<Object> errorMsg)
-  {
-    if (ex instanceof ConfigException || ex instanceof InitializationException)
-    {
-      return errorMsg.get(ex.getMessage());
-    }
-    return errorMsg.get(getExceptionMessage(ex));
   }
 
   /**
@@ -526,9 +481,9 @@ public class RebuildIndex extends TaskTool
    */
   private Backend<?> retrieveBackend(final DN selectedDN) throws ConfigException, Exception
   {
-    final ArrayList<Backend> backendList = new ArrayList<>();
-    final ArrayList<BackendCfg> entryList = new ArrayList<>();
-    final ArrayList<List<DN>> dnList = new ArrayList<>();
+    final List<Backend<?>> backendList = new ArrayList<>();
+    final List<BackendCfg> entryList = new ArrayList<>();
+    final List<List<DN>> dnList = new ArrayList<>();
     BackendToolUtils.getBackends(backendList, entryList, dnList);
 
     Backend<?> backend = null;
@@ -576,8 +531,6 @@ public class RebuildIndex extends TaskTool
   {
     try
     {
-      setErrorAndDebugLogPublisher(out, out);
-
       try
       {
         initializeArguments(true);

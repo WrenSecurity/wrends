@@ -42,6 +42,7 @@ import org.opends.server.core.DirectoryServer.DirectoryServerVersionHandler;
 import org.opends.server.loggers.JDKLogging;
 import org.opends.server.protocols.ldap.LDAPResultCode;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.types.*;
 import org.opends.server.util.BuildVersion;
 import org.opends.server.util.LDIFException;
@@ -471,7 +472,7 @@ public class LDIFSearch
     LinkedHashSet<AttributeType> operationalAttributeTypes = new LinkedHashSet<>();
     for (String attributeName : attributeNames)
     {
-      AttributeType t = DirectoryServer.getAttributeType(attributeName);
+      AttributeType t = DirectoryServer.getSchema().getAttributeType(attributeName);
       if (t.isOperational())
       {
         operationalAttributeTypes.add(t);
@@ -484,8 +485,8 @@ public class LDIFSearch
 
     for (String objectClassName : objectClassNames)
     {
-      ObjectClass c = DirectoryServer.getObjectClass(objectClassName, true);
-      for (AttributeType t : c.getRequiredAttributeChain())
+      ObjectClass c = DirectoryServer.getSchema().getObjectClass(objectClassName);
+      for (AttributeType t : c.getRequiredAttributes())
       {
         if (t.isOperational())
         {
@@ -497,7 +498,7 @@ public class LDIFSearch
         }
       }
 
-      for (AttributeType t : c.getOptionalAttributeChain())
+      for (AttributeType t : c.getOptionalAttributes())
       {
         if (t.isOperational())
         {

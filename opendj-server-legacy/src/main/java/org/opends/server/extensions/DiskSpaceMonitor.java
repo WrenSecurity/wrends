@@ -39,8 +39,6 @@ import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.ldap.DN;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.schema.Syntax;
 import org.forgerock.opendj.server.config.server.MonitorProviderCfg;
 import org.opends.server.api.AlertGenerator;
 import org.opends.server.api.DiskSpaceMonitorHandler;
@@ -48,8 +46,6 @@ import org.opends.server.api.MonitorData;
 import org.opends.server.api.MonitorProvider;
 import org.opends.server.api.ServerShutdownListener;
 import org.opends.server.core.DirectoryServer;
-import org.opends.server.types.Attribute;
-import org.opends.server.types.Attributes;
 import org.opends.server.types.InitializationException;
 
 /**
@@ -84,13 +80,11 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
       this.handler = handler;
     }
 
-    /** {@inheritDoc} */
     @Override
     public String getMonitorInstanceName() {
       return instanceName + "," + "cn=" + baseName;
     }
 
-    /** {@inheritDoc} */
     @Override
     public void initializeMonitorProvider(MonitorProviderCfg configuration)
         throws ConfigException, InitializationException {
@@ -130,12 +124,6 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
       this.lowThreshold = lowThreshold;
     }
 
-    private Attribute attr(String name, Syntax syntax, Object value)
-    {
-      AttributeType attrType = DirectoryServer.getAttributeType(name, syntax);
-      return Attributes.create(attrType, String.valueOf(value));
-    }
-
     private String getState()
     {
       switch(lastState)
@@ -159,7 +147,7 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
   private class HandlerNotifier {
     private File directory;
     private int state;
-    /** printable list of handlers names, for reporting backend names in alert messages */
+    /** Printable list of handlers names, for reporting backend names in alert messages. */
     private final StringBuilder diskNames = new StringBuilder();
     private final List<MonitoredDirectory> allHandlers = new ArrayList<>();
 
@@ -231,9 +219,7 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
   {
   }
 
-  /**
-   * Starts periodic monitoring of all registered directories.
-   */
+  /** Starts periodic monitoring of all registered directories. */
   public void startDiskSpaceMonitor()
   {
     DirectoryServer.registerMonitorProvider(this);
@@ -324,7 +310,6 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
   {
     synchronized (monitoredDirs)
     {
-
       List<MonitoredDirectory> directories = monitoredDirs.get(directory);
       if (directories != null)
       {
@@ -346,7 +331,6 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void initializeMonitorProvider(MonitorProviderCfg configuration)
       throws ConfigException, InitializationException {
@@ -466,7 +450,6 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
     return DiskSpaceMonitor.class.getName();
   }
 
-  /** {@inheritDoc} */
   @Override
   public Map<String, String> getAlerts()
   {
@@ -476,14 +459,12 @@ public class DiskSpaceMonitor extends MonitorProvider<MonitorProviderCfg> implem
     return alerts;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getShutdownListenerName()
   {
     return INSTANCENAME;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void processServerShutdown(LocalizableMessage reason)
   {

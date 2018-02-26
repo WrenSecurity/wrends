@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-bom</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>3.5.1</version>
         <relativePath>opendj-bom/pom.xml</relativePath>
     </parent>
 
@@ -38,6 +38,7 @@
     <properties>
         <product.name>OpenDJ</product.name>
         <product.name.lowercase>opendj</product.name.lowercase>
+        <product.locales>ca_ES,es,de,fr,ja,ko,pl,zh_CN,zh_TW</product.locales>
         <localized.jars.classifier>i18n</localized.jars.classifier>
 
         <site.distribution.url>
@@ -46,7 +47,7 @@
 
         <forgerock-build-tools.version>1.0.2</forgerock-build-tools.version>
         <forgerock-doc-plugin.version>3.2.0</forgerock-doc-plugin.version>
-        <grizzly-framework.version>2.3.23</grizzly-framework.version>
+        <grizzly-framework.version>2.3.24</grizzly-framework.version>
         <metrics-core.version>3.1.2</metrics-core.version>
 
         <!-- OSGi bundles properties -->
@@ -59,7 +60,7 @@
             ${opendj.osgi.import.additional},
             *
         </opendj.osgi.import>
-        <opendj-copyright-maven-plugin.version>1.0.0</opendj-copyright-maven-plugin.version>
+        <opendj-copyright-maven-plugin.version>1.0.1</opendj-copyright-maven-plugin.version>
     </properties>
 
     <inceptionYear>2011</inceptionYear>
@@ -101,10 +102,10 @@
     </issueManagement>
 
     <scm>
-        <url>https://stash.forgerock.org/projects/OPENDJ/repos/opendj/browse</url>
-        <connection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj.git</connection>
-        <developerConnection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj.git</developerConnection>
-        <tag>HEAD</tag>
+        <url>https://stash.forgerock.org/projects/OPENDJ/repos/opendj-sustaining/browse</url>
+        <connection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj-sustaining.git</connection>
+        <developerConnection>scm:git:ssh://git@stash.forgerock.org:7999/opendj/opendj-sustaining.git</developerConnection>
+        <tag>3.5.1</tag>
     </scm>
 
     <distributionManagement>
@@ -227,6 +228,8 @@
         <module>opendj-legacy</module>
         <module>opendj-server-legacy</module>
         <module>opendj-dsml-servlet</module>
+        <module>opendj-openidm-account-change-notification-handler</module>
+        <module>opendj-doc-generated-ref</module>
     </modules>
 
     <build>
@@ -387,9 +390,11 @@
                             <disabledFile>**/README</disabledFile>
                             <disabledFile>README.txt</disabledFile>
                             <disabledFile>**/README.txt</disabledFile>
+                            <disabledFile>**/THIRD-PARTY.properties</disabledFile>
                             <disabledFile>**/THIRDPARTYREADME.txt</disabledFile>
                             <disabledFile>legal-notices/CDDLv1_0.txt</disabledFile>
                             <disabledFile>**/tests/unit-tests-testng/resource/config-changes.ldif</disabledFile>
+                            <disabledFile>opendj-rest2ldap-servlet/src/main/webapp/WEB-INF/classes/logging.properties</disabledFile>
                         </disabledFiles>
                     </configuration>
                 </plugin>
@@ -411,6 +416,44 @@
                     <groupId>org.forgerock.opendj</groupId>
                     <artifactId>opendj-maven-plugin</artifactId>
                     <version>${project.version}</version>
+                    <!-- bootstrap and bootstrap-clinet MANIFEST.MF files generation. -->
+                    <configuration>
+                        <productJarName>${product.name.lowercase}</productJarName>
+                        <supportedLocales>${product.locales}</supportedLocales>
+                    </configuration>
+
+                    <executions>
+                        <execution>
+                            <id>generate-bootstrap-manifest</id>
+                            <goals>
+                                <goal>generate-manifest</goal>
+                            </goals>
+                            <configuration>
+                                <classPathProperty>classpath.bootstrap</classPathProperty>
+                                <excludes>
+                                    <exclude>org.slf4j:slf4j-jdk14</exclude>
+                                    <exclude>org.forgerock.opendj:opendj-server-legacy</exclude>
+                                </excludes>
+                                <additionalJars>
+                                    <additionalJar>opendj-slf4j-adapter.jar</additionalJar>
+                                </additionalJars>
+                            </configuration>
+                        </execution>
+
+                        <execution>
+                            <id>generate-bootstrap-client-manifest</id>
+                            <goals>
+                                <goal>generate-manifest</goal>
+                            </goals>
+                            <configuration>
+                                <classPathProperty>classpath.bootstrap-client</classPathProperty>
+                                <excludes>
+                                    <exclude>org.slf4j:jul-to-slf4j</exclude>
+                                    <exclude>org.forgerock.opendj:opendj-server-legacy</exclude>
+                                </excludes>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <plugin>
@@ -498,13 +541,6 @@
 
     <profiles>
         <profile>
-            <id>docs</id>
-            <modules>
-                <module>opendj-man-pages</module>
-            </modules>
-        </profile>
-
-        <profile>
             <id>packages</id>
             <modules>
                 <module>opendj-packages</module>
@@ -512,7 +548,17 @@
         </profile>
 
         <profile>
+            <id>packages-oem</id>
+            <modules>
+                <module>opendj-packages</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>precommit</id>
+            <properties>
+        		<checkCopyrightDiffReferenceBranchName>origin/sustaining/3.5</checkCopyrightDiffReferenceBranchName>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -553,6 +599,23 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>disable-doclint-for-java-8</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

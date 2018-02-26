@@ -16,23 +16,22 @@
  */
 package org.opends.server.api;
 
-import org.forgerock.i18n.LocalizableMessage;
-
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.server.config.server.GroupImplementationCfg;
 import org.opends.server.core.ServerContext;
-import org.forgerock.opendj.config.server.ConfigException;
 import org.opends.server.types.DirectoryException;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.Entry;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.MemberList;
 import org.opends.server.types.Modification;
 import org.opends.server.types.SearchFilter;
-import org.forgerock.opendj.ldap.SearchScope;
 
 /**
  * This class defines the set of methods that must be implemented by a
@@ -82,8 +81,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   public abstract void initializeGroupImplementation(T configuration)
          throws ConfigException, InitializationException;
 
-
-
   /**
    * Indicates whether the provided configuration is acceptable for
    * this group implementation.  It should be possible to call this
@@ -115,8 +112,6 @@ public abstract class Group<T extends GroupImplementationCfg>
     return true;
   }
 
-
-
   /**
    * Performs any necessary finalization that may be needed whenever
    * this group implementation is taken out of service within the
@@ -127,8 +122,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   {
     // No implementation is required by default.
   }
-
-
 
   /**
    * Creates a new group of this type based on the definition
@@ -151,8 +144,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   public abstract Group<T> newInstance(ServerContext serverContext, Entry groupEntry)
          throws DirectoryException;
 
-
-
   /**
    * Retrieves a search filter that may be used to identify entries
    * containing definitions for groups of this type in the Directory
@@ -172,8 +163,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   public abstract SearchFilter getGroupDefinitionFilter()
          throws DirectoryException;
 
-
-
   /**
    * Indicates whether the provided entry contains a valid definition
    * for this type of group.
@@ -186,8 +175,6 @@ public abstract class Group<T extends GroupImplementationCfg>
    */
   public abstract boolean isGroupDefinition(Entry entry);
 
-
-
   /**
    * Retrieves the DN of the entry that contains the definition for
    * this group.
@@ -197,8 +184,6 @@ public abstract class Group<T extends GroupImplementationCfg>
    */
   public abstract DN getGroupDN();
 
-
-
   /**
    * Sets the DN of the entry that contains the definition for
    * this group.
@@ -207,8 +192,6 @@ public abstract class Group<T extends GroupImplementationCfg>
    *                  definition for this group.
    */
   public abstract void setGroupDN(DN groupDN);
-
-
 
   /**
    * Indicates whether this group supports nesting other groups, such
@@ -220,8 +203,6 @@ public abstract class Group<T extends GroupImplementationCfg>
    */
   public abstract boolean supportsNestedGroups();
 
-
-
   /**
    * Retrieves a list of the DNs of any nested groups whose members
    * should be considered members of this group.
@@ -230,8 +211,6 @@ public abstract class Group<T extends GroupImplementationCfg>
    *          should be considered members of this group.
    */
   public abstract List<DN> getNestedGroupDNs();
-
-
 
   /**
    * Attempts to add the provided group DN as a nested group within
@@ -251,8 +230,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   public abstract void addNestedGroup(DN nestedGroupDN)
          throws UnsupportedOperationException, DirectoryException;
 
-
-
   /**
    * Attempts to remove the provided group as a nested group within
    * this group.  The change should be committed to persistent storage
@@ -271,8 +248,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   public abstract void removeNestedGroup(DN nestedGroupDN)
          throws UnsupportedOperationException, DirectoryException;
 
-
-
   /**
    * Indicates whether the user with the specified DN is a member of
    * this group.  Note that this is a point-in-time determination and
@@ -289,10 +264,8 @@ public abstract class Group<T extends GroupImplementationCfg>
    */
   public boolean isMember(DN userDN) throws DirectoryException
   {
-    return userDN != null && isMember(userDN, new HashSet<DN>());
+    return userDN != null && isMember(userDN, new AtomicReference<Set<DN>>());
   }
-
-
 
   /**
    * Indicates whether the user with the specified DN is a member of
@@ -315,6 +288,9 @@ public abstract class Group<T extends GroupImplementationCfg>
    *                         its DN should be added to the list, and
    *                         any DN already contained in the list
    *                         should be skipped.
+   *                         The use of an atomic reference allow to
+   *                         lazily create the Set to optimize memory
+   *                         when there is no nested groups.
    *
    * @return  {@code true} if the specified user is currently a member
    *          of this group, or {@code false} if not.
@@ -322,10 +298,8 @@ public abstract class Group<T extends GroupImplementationCfg>
    * @throws  DirectoryException  If a problem occurs while attempting
    *                              to make the determination.
    */
-  public abstract boolean isMember(DN userDN, Set<DN> examinedGroups)
+  public abstract boolean isMember(DN userDN, AtomicReference<Set<DN>> examinedGroups)
          throws DirectoryException;
-
-
 
   /**
    * Indicates whether the user described by the provided user entry
@@ -344,10 +318,8 @@ public abstract class Group<T extends GroupImplementationCfg>
   public boolean isMember(Entry userEntry)
          throws DirectoryException
   {
-    return isMember(userEntry, new HashSet<DN>());
+    return isMember(userEntry, new AtomicReference<Set<DN>>());
   }
-
-
 
   /**
    * Indicates whether the user described by the provided user entry
@@ -370,6 +342,9 @@ public abstract class Group<T extends GroupImplementationCfg>
    *                         its DN should be added to the list, and
    *                         any DN already contained in the list
    *                         should be skipped.
+   *                         The use of an atomic reference allow to
+   *                         lazily create the Set to optimize memory
+   *                         when there is no nested groups.
    *
    * @return  {@code true} if the specified user is currently a member
    *          of this group, or {@code false} if not.
@@ -377,11 +352,8 @@ public abstract class Group<T extends GroupImplementationCfg>
    * @throws  DirectoryException  If a problem occurs while attempting
    *                              to make the determination.
    */
-  public abstract boolean isMember(Entry userEntry,
-                                   Set<DN> examinedGroups)
+  public abstract boolean isMember(Entry userEntry, AtomicReference<Set<DN>> examinedGroups)
          throws DirectoryException;
-
-
 
   /**
    * Retrieves an iterator that may be used to cursor through the
@@ -401,8 +373,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   {
     return getMembers(null, null, null);
   }
-
-
 
   /**
    * Retrieves an iterator that may be used to cursor through the
@@ -435,8 +405,6 @@ public abstract class Group<T extends GroupImplementationCfg>
                                         SearchFilter filter)
          throws DirectoryException;
 
-
-
   /**
    * Indicates whether it is possible to alter the member list for
    * this group (e.g., in order to add members to the group or remove
@@ -446,8 +414,6 @@ public abstract class Group<T extends GroupImplementationCfg>
    *          group, or {@code false} if not.
    */
   public abstract boolean mayAlterMemberList();
-
-
 
   /**
    * Attempt to make multiple changes to the group's member list.
@@ -461,8 +427,6 @@ public abstract class Group<T extends GroupImplementationCfg>
    */
   public abstract void updateMembers(List<Modification> modifications)
          throws UnsupportedOperationException, DirectoryException;
-
-
 
   /**
    * Attempts to add the provided user as a member of this group.  The
@@ -483,8 +447,6 @@ public abstract class Group<T extends GroupImplementationCfg>
   public abstract void addMember(Entry userEntry)
          throws UnsupportedOperationException, DirectoryException;
 
-
-
   /**
    * Attempts to remove the specified user as a member of this group.
    * The change should be committed to persistent storage through an
@@ -504,21 +466,18 @@ public abstract class Group<T extends GroupImplementationCfg>
   public abstract void removeMember(DN userDN)
          throws UnsupportedOperationException, DirectoryException;
 
-
-
   /**
    * Retrieves a string representation of this group.
    *
    * @return  A string representation of this group.
    */
+  @Override
   public String toString()
   {
     StringBuilder buffer = new StringBuilder();
     toString(buffer);
     return buffer.toString();
   }
-
-
 
   /**
    * Appends a string representation of this group to the provided
@@ -529,4 +488,3 @@ public abstract class Group<T extends GroupImplementationCfg>
    */
   public abstract void toString(StringBuilder buffer);
 }
-

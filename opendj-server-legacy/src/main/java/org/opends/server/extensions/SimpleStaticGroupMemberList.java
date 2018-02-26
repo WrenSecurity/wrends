@@ -16,16 +16,13 @@
  */
 package org.opends.server.extensions;
 import org.forgerock.i18n.LocalizableMessage;
-
-
-
-
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 
 import java.util.Iterator;
 import java.util.Set;
 
-import org.forgerock.opendj.ldap.DN.CompactDn;
+import org.opends.server.core.ServerContext;
+import org.opends.server.extensions.StaticGroup.CompactDn;
 import org.opends.server.types.DirectoryConfig;
 import org.opends.server.types.DirectoryException;
 import org.forgerock.opendj.ldap.DN;
@@ -35,10 +32,7 @@ import org.opends.server.types.MembershipException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 
 import static org.opends.messages.ExtensionMessages.*;
-import static org.opends.server.extensions.StaticGroup.*;
 import static org.forgerock.util.Reject.*;
-
-
 
 /**
  * This class provides an implementation of the {@code MemberList} class that
@@ -55,30 +49,33 @@ public class SimpleStaticGroupMemberList extends MemberList
   /** The iterator used to traverse the set of member DNs. */
   private Iterator<CompactDn> memberDNIterator;
 
+  private final ServerContext serverContext;
+
   /**
    * Creates a new simple static group member list with the provided set of
    * member DNs.
    *
+   * @param serverContext
+   *            The server context.
    * @param  groupDN    The DN of the static group with which this member list
    *                    is associated.
    * @param  memberDNs  The set of DNs for the users that are members of the
    *                    associated static group.
    */
-  public SimpleStaticGroupMemberList(DN groupDN, Set<CompactDn> memberDNs)
+  public SimpleStaticGroupMemberList(ServerContext serverContext, DN groupDN, Set<CompactDn> memberDNs)
   {
     ifNull(groupDN, memberDNs);
+    this.serverContext = serverContext;
     this.groupDN   = groupDN;
     this.memberDNIterator = memberDNs.iterator();
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean hasMoreMembers()
   {
     return memberDNIterator.hasNext();
   }
 
-  /** {@inheritDoc} */
   @Override
   public DN nextMemberDN()
          throws MembershipException
@@ -88,7 +85,7 @@ public class SimpleStaticGroupMemberList extends MemberList
     {
       try
       {
-        dn = fromCompactDn(memberDNIterator.next());
+        dn = memberDNIterator.next().toDn(serverContext);
       }
       catch (LocalizedIllegalArgumentException e)
       {
@@ -102,7 +99,6 @@ public class SimpleStaticGroupMemberList extends MemberList
     return dn;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Entry nextMemberEntry() throws MembershipException
   {
@@ -112,7 +108,7 @@ public class SimpleStaticGroupMemberList extends MemberList
 
       try
       {
-        Entry memberEntry = DirectoryConfig.getEntry(fromCompactDn(memberDN));
+        Entry memberEntry = DirectoryConfig.getEntry(memberDN.toDn(serverContext));
         if (memberEntry == null)
         {
           LocalizableMessage message = ERR_STATICMEMBERS_NO_SUCH_ENTRY.get(memberDN, groupDN);
@@ -132,11 +128,9 @@ public class SimpleStaticGroupMemberList extends MemberList
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void close()
   {
     // No implementation is required.
   }
 }
-

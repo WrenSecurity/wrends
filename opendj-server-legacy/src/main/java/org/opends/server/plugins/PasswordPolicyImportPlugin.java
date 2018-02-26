@@ -59,7 +59,6 @@ import org.opends.server.types.Entry;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.SubEntry;
 import org.opends.server.util.SchemaUtils;
-import org.opends.server.util.SchemaUtils.PasswordType;
 
 /**
  * This class implements a Directory Server plugin that performs various
@@ -107,7 +106,7 @@ public final class PasswordPolicyImportPlugin
   {
     configuration.addPasswordPolicyImportChangeListener(this);
 
-    customPolicyAttribute = DirectoryServer.getAttributeType(OP_ATTR_PWPOLICY_POLICY_DN);
+    customPolicyAttribute = DirectoryServer.getSchema().getAttributeType(OP_ATTR_PWPOLICY_POLICY_DN);
 
     // Make sure that the plugin has been enabled for the appropriate types.
     for (PluginType t : pluginTypes)
@@ -222,22 +221,23 @@ public final class PasswordPolicyImportPlugin
   }
 
   @Override
-  public void processImportBegin(Backend backend, LDIFImportConfig config)
+  public void processImportBegin(Backend<?> backend, LDIFImportConfig config)
   {
     // Find the set of attribute types with the auth password and user password
     // syntax defined in the schema.
     HashSet<AttributeType> authPWTypes = new HashSet<>();
     HashSet<AttributeType> userPWTypes = new HashSet<>();
-    for (AttributeType t : DirectoryServer.getAttributeTypes())
+    for (AttributeType t : DirectoryServer.getSchema().getAttributeTypes())
     {
-      final PasswordType passwordType = SchemaUtils.checkPasswordType(t);
-      if (passwordType.equals(PasswordType.AUTH_PASSWORD))
+      switch (SchemaUtils.checkPasswordType(t))
       {
+      case AUTH_PASSWORD:
         authPWTypes.add(t);
-      }
-      else if (passwordType.equals(PasswordType.USER_PASSWORD))
-      {
+        break;
+
+      case USER_PASSWORD:
         userPWTypes.add(t);
+        break;
       }
     }
 
@@ -269,8 +269,7 @@ public final class PasswordPolicyImportPlugin
   }
 
   @Override
-  public void processImportEnd(Backend backend, LDIFImportConfig config,
-                               boolean successful)
+  public void processImportEnd(Backend<?> backend, LDIFImportConfig config, boolean successful)
   {
     // No implementation is required.
   }
@@ -280,7 +279,7 @@ public final class PasswordPolicyImportPlugin
                doLDIFImport(LDIFImportConfig importConfig, Entry entry)
   {
     // Check if this entry is a password policy subentry
-    // and if so evaluate whether or not its acceptable.
+    // and if so evaluate whether it is acceptable.
     if ((entry.isSubentry() || entry.isLDAPSubentry()) &&
             entry.isPasswordPolicySubentry())
     {

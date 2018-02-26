@@ -24,9 +24,11 @@ import java.util.UUID;
 
 import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.opends.server.core.DirectoryServer;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.core.ModifyOperationBasis;
 import org.opends.server.replication.ReplicationTestCase;
 import org.opends.server.replication.common.CSN;
@@ -36,16 +38,15 @@ import org.opends.server.replication.protocol.ReplicationMsg;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Attributes;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.workflowelement.localbackend.LocalBackendModifyOperation;
 import org.testng.annotations.Test;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.ldap.ModificationType.*;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 import static org.opends.server.TestCaseUtils.*;
 import static org.opends.server.core.DirectoryServer.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
@@ -824,7 +825,9 @@ public class ModifyConflictTest extends ReplicationTestCase
     List<Modification> mods2 = new LinkedList<>(mods);
     replayModifies(entry, hist, 12, mods);
     assertEquals(hist.encodeAndPurge(), attrDel);
-    assertThat(mods).as("DEL one value, del by Replace of the same attribute was not correct").containsExactly(mod1, mod2);
+    assertThat(mods)
+      .as("DEL one value, del by Replace of the same attribute was not correct")
+      .containsExactly(mod1, mod2);
 
     // Replay the same modifs again
     replayModifies(entry, hist, 12, mods2);
@@ -1064,8 +1067,7 @@ public class ModifyConflictTest extends ReplicationTestCase
      */
     DN dn = DN.valueOf(TEST_ROOT_DN_STRING);
     Map<ObjectClass, String> objectClasses = new HashMap<>();
-    ObjectClass org = DirectoryServer.getObjectClass(ORGANIZATION);
-    objectClasses.put(org, ORGANIZATION);
+    objectClasses.put(CoreSchema.getOrganizationObjectClass(), ORGANIZATION);
 
     // start with a new entry with an empty attribute
     Entry entry = new Entry(dn, objectClasses, null, null);
@@ -1074,7 +1076,7 @@ public class ModifyConflictTest extends ReplicationTestCase
     UUID uuid = UUID.randomUUID();
 
     // Create the att values list
-    AttributeType entryuuidAttrType = getAttributeType(ENTRYUUID_ATTRIBUTE_NAME);
+    AttributeType entryuuidAttrType = getEntryUUIDAttributeType();
     List<Attribute> uuidList = Attributes.createAsList(entryuuidAttrType, uuid.toString());
 
     // Add the uuid in the entry
@@ -1093,8 +1095,7 @@ public class ModifyConflictTest extends ReplicationTestCase
     if (fks.iterator().hasNext())
     {
       FakeOperation fk = fks.iterator().next();
-      assertEquals(new FakeOperationComparator().compare(fk, fk), 0);
-      assertTrue(new FakeOperationComparator().compare(null, fk) < 0);
+      assertEquals(fk.getCSN().compareTo(fk.getCSN()), 0);
       ReplicationMsg generatedMsg = fk.generateMessage();
       if (generatedMsg instanceof LDAPUpdateMsg)
       {
@@ -1162,7 +1163,7 @@ public class ModifyConflictTest extends ReplicationTestCase
    */
   private void assertEntryHistoricalEncodingDecoding(Entry entry, EntryHistorical hist)
   {
-    entry.removeAttribute(getAttributeType(HISTORICAL_ATTRIBUTE_NAME));
+    entry.removeAttribute(getSchema().getAttributeType(HISTORICAL_ATTRIBUTE_NAME));
     entry.addAttribute(hist.encodeAndPurge(), null);
     EntryHistorical hist2 = EntryHistorical.newInstanceFromEntry(entry);
     assertEquals(hist2.encodeAndPurge(), hist.encodeAndPurge());
@@ -1194,7 +1195,7 @@ public class ModifyConflictTest extends ReplicationTestCase
 
   private void assertContainsOnlyValues(Entry entry, String attrName, String... expectedValues)
   {
-    Attribute attr = entry.getExactAttribute(AttributeDescription.create(getAttributeType(attrName)));
+    Attribute attr = entry.getExactAttribute(AttributeDescription.create(getSchema().getAttributeType(attrName)));
     assertThat(attr).hasSize(expectedValues.length);
     for (String value : expectedValues)
     {
@@ -1215,8 +1216,7 @@ public class ModifyConflictTest extends ReplicationTestCase
 
   private String getEntryUUID(Entry entry)
   {
-    AttributeType entryuuidAttrType = getAttributeType(ENTRYUUID_ATTRIBUTE_NAME);
-    List<Attribute> uuidAttrs = entry.getOperationalAttributes().get(entryuuidAttrType);
+    List<Attribute> uuidAttrs = entry.getAttribute(getEntryUUIDAttributeType());
     return uuidAttrs.get(0).iterator().next().toString();
   }
 

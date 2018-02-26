@@ -16,12 +16,15 @@
  */
 package org.opends.server.extensions;
 
-import org.forgerock.i18n.LocalizableMessage;
+import static org.opends.messages.ConfigMessages.*;
+import static org.opends.messages.ExtensionMessages.*;
+import static org.opends.server.util.ServerConstants.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
@@ -38,22 +41,20 @@ import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.config.server.ConfigChangeResult;
+import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.server.config.server.AlertHandlerCfg;
 import org.forgerock.opendj.server.config.server.JMXAlertHandlerCfg;
 import org.opends.server.api.AlertGenerator;
 import org.opends.server.api.AlertHandler;
 import org.opends.server.api.DirectoryServerMBean;
-import org.forgerock.opendj.config.server.ConfigException;
 import org.opends.server.config.JMXMBean;
 import org.opends.server.core.DirectoryServer;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.forgerock.opendj.config.server.ConfigChangeResult;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.InitializationException;
-import static org.opends.messages.ConfigMessages.*;
-import static org.opends.messages.ExtensionMessages.*;
-import static org.opends.server.util.ServerConstants.*;
 
 /**
  * This class provides an implementation of a Directory Server alert handler
@@ -71,24 +72,17 @@ public class JMXAlertHandler
   private static final String CLASS_NAME =
        "org.opends.server.extensions.JMXAlertHandler";
 
-
-
   /** The current configuration for this alert handler. */
   private AlertHandlerCfg currentConfig;
 
   /** The sequence number generator used for this alert handler. */
   private AtomicLong sequenceNumber;
 
-  /**
-   * The DN of the configuration entry with which this alert handler is
-   * associated.
-   */
+  /** The DN of the configuration entry with which this alert handler is associated. */
   private DN configEntryDN;
 
   /** The JMX object name used for this JMX alert handler. */
   private ObjectName objectName;
-
-
 
   /**
    * Creates a new instance of this JMX alert handler.  No initialization should
@@ -100,9 +94,7 @@ public class JMXAlertHandler
     super();
   }
 
-
-
-  /** {@inheritDoc} */
+  @Override
   public void initializeAlertHandler(JMXAlertHandlerCfg configuration)
        throws ConfigException, InitializationException
   {
@@ -147,17 +139,13 @@ public class JMXAlertHandler
     }
   }
 
-
-
-  /** {@inheritDoc} */
+  @Override
   public AlertHandlerCfg getAlertHandlerConfiguration()
   {
     return currentConfig;
   }
 
-
-
-  /** {@inheritDoc} */
+  @Override
   public boolean isConfigurationAcceptable(AlertHandlerCfg configuration,
                                            List<LocalizableMessage> unacceptableReasons)
   {
@@ -165,29 +153,24 @@ public class JMXAlertHandler
     return isConfigurationChangeAcceptable(cfg, unacceptableReasons);
   }
 
-
-
-  /** {@inheritDoc} */
+  @Override
   public void finalizeAlertHandler()
   {
     // No action is required.
   }
-
-
 
   /**
    * Retrieves the JMX object name for this JMX alert handler.
    *
    * @return  The JMX object name for this JMX alert handler.
    */
+  @Override
   public ObjectName getObjectName()
   {
     return objectName;
   }
 
-
-
-  /** {@inheritDoc} */
+  @Override
   public void sendAlertNotification(AlertGenerator generator, String alertType,
                                     LocalizableMessage alertMessage)
   {
@@ -197,8 +180,6 @@ public class JMXAlertHandler
                                       alertMessage.toString()));
   }
 
-
-
   /**
    * Retrieves information about the types of JMX notifications that may be
    * generated.
@@ -206,11 +187,11 @@ public class JMXAlertHandler
    * @return  Information about the types of JMX notifications that may be
    *          generated.
    */
+  @Override
   public MBeanNotificationInfo[] getNotificationInfo()
   {
-    ArrayList<MBeanNotificationInfo> notifications = new ArrayList<>();
-    ConcurrentHashMap<DN,JMXMBean> mBeans = DirectoryServer.getJMXMBeans();
-    for (JMXMBean mBean : mBeans.values())
+    List<MBeanNotificationInfo> notifications = new ArrayList<>();
+    for (JMXMBean mBean : DirectoryServer.getJMXMBeans())
     {
       MBeanInfo mBeanInfo = mBean.getMBeanInfo();
       Collections.addAll(notifications, mBeanInfo.getNotifications());
@@ -218,8 +199,6 @@ public class JMXAlertHandler
 
     return notifications.toArray(new MBeanNotificationInfo[notifications.size()]);
   }
-
-
 
   /**
    * Obtain the value of a specific attribute of the Dynamic MBean.
@@ -231,6 +210,7 @@ public class JMXAlertHandler
    * @throws  AttributeNotFoundException  If the specified attribute is not
    *                                      associated with this MBean.
    */
+  @Override
   public Attribute getAttribute(String attribute)
          throws AttributeNotFoundException
   {
@@ -238,8 +218,6 @@ public class JMXAlertHandler
     LocalizableMessage message = ERR_CONFIG_JMX_ATTR_NO_ATTR.get(configEntryDN, attribute);
     throw new AttributeNotFoundException(message.toString());
   }
-
-
 
   /**
    * Set the value of a specific attribute of the Dynamic MBean.
@@ -253,6 +231,7 @@ public class JMXAlertHandler
    * @throws  InvalidAttributeValueException  If the provided value is not
    *                                          acceptable for this MBean.
    */
+  @Override
   public void setAttribute(Attribute attribute)
          throws AttributeNotFoundException, InvalidAttributeValueException
   {
@@ -261,8 +240,6 @@ public class JMXAlertHandler
     throw new AttributeNotFoundException(message.toString());
   }
 
-
-
   /**
    * Get the values of several attributes of the Dynamic MBean.
    *
@@ -270,13 +247,12 @@ public class JMXAlertHandler
    *
    * @return  The list of attributes retrieved.
    */
+  @Override
   public AttributeList getAttributes(String[] attributes)
   {
     // There are no attributes for this MBean.
     return new AttributeList();
   }
-
-
 
   /**
    * Sets the values of several attributes of the Dynamic MBean.
@@ -287,13 +263,12 @@ public class JMXAlertHandler
    *
    * @return  The list of attributes that were set with their new values.
    */
+  @Override
   public AttributeList setAttributes(AttributeList attributes)
   {
     // There are no attributes for this MBean.
     return new AttributeList();
   }
-
-
 
   /**
    * Allows an action to be invoked on the Dynamic MBean.
@@ -312,6 +287,7 @@ public class JMXAlertHandler
    * @throws  MBeanException  If a problem is encountered while invoking the
    *                          method.
    */
+  @Override
   public Object invoke(String actionName, Object[] params, String[] signature)
          throws MBeanException
   {
@@ -337,8 +313,6 @@ public class JMXAlertHandler
     throw new MBeanException(new ConfigException(message));
   }
 
-
-
   /**
    * Provides the exposed attributes and actions of the Dynamic MBean using an
    * MBeanInfo object.
@@ -346,6 +320,7 @@ public class JMXAlertHandler
    * @return  An instance of <CODE>MBeanInfo</CODE> allowing all attributes and
    *          actions exposed by this Dynamic MBean to be retrieved.
    */
+  @Override
   public MBeanInfo getMBeanInfo()
   {
     return new MBeanInfo(CLASS_NAME, "JMX Alert Handler",
@@ -353,9 +328,7 @@ public class JMXAlertHandler
                          new MBeanOperationInfo[0], getNotificationInfo());
   }
 
-
-
-  /** {@inheritDoc} */
+  @Override
   public boolean isConfigurationChangeAcceptable(
                       JMXAlertHandlerCfg configuration,
                       List<LocalizableMessage> unacceptableReasons)
@@ -363,9 +336,7 @@ public class JMXAlertHandler
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
+  @Override
   public ConfigChangeResult applyConfigurationChange(
                                         JMXAlertHandlerCfg configuration)
   {

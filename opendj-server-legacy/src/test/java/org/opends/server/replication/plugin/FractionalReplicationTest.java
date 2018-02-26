@@ -16,6 +16,12 @@
  */
 package org.opends.server.replication.plugin;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.opends.server.TestCaseUtils.*;
+import static org.opends.server.util.CollectionUtils.*;
+import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -29,6 +35,7 @@ import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.backends.task.Task;
 import org.opends.server.core.DirectoryServer;
@@ -47,16 +54,9 @@ import org.opends.server.types.Attributes;
 import org.opends.server.types.Entry;
 import org.opends.server.types.HostPort;
 import org.opends.server.types.Modification;
-import org.opends.server.types.ObjectClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.testng.Assert.fail;
-import static org.assertj.core.api.Assertions.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.testng.Assert.*;
 
 /** Various tests around fractional replication */
 @SuppressWarnings("javadoc")
@@ -547,7 +547,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       debugInfo("Entry found <" + rootDn + ">");
 
       AttributeType synchronizationGenIDType =
-          DirectoryServer.getAttributeType(REPLICATION_GENERATION_ID);
+          DirectoryServer.getSchema().getAttributeType(REPLICATION_GENERATION_ID);
       List<Attribute> attrs = resultEntry.getAttribute(synchronizationGenIDType);
       if (!attrs.isEmpty())
       {
@@ -655,8 +655,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       String objectClassStr = fractionalConf[0];
       if (!objectClassStr.equals("*"))
       {
-        ObjectClass objectClass = DirectoryServer.getObjectClass(objectClassStr.toLowerCase());
-
+        ObjectClass objectClass = DirectoryServer.getSchema().getObjectClass(objectClassStr);
         assertTrue(newEntry.hasObjectClass(objectClass));
       }
 
@@ -671,7 +670,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
           {
             if (!first)
             {
-              assertFalse(newEntry.hasAttribute(DirectoryServer.getAttributeType(fracAttr)));
+              assertFalse(newEntry.hasAttribute(DirectoryServer.getSchema().getAttributeType(fracAttr)));
             }
             first = false;
           }
@@ -688,7 +687,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
             }
             first = false;
           }
-          assertFalse(newEntry.hasAttribute(DirectoryServer.getAttributeType(OPTIONAL_ATTR)));
+          assertFalse(newEntry.hasAttribute(DirectoryServer.getSchema().getAttributeType(OPTIONAL_ATTR)));
           break;
         default:
           fail("Unexpected fractional mode.");
@@ -709,8 +708,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       String objectClassStr = fractionalConf[0];
       if (!objectClassStr.equals("*"))
       {
-        ObjectClass objectClass = DirectoryServer.getObjectClass(objectClassStr.toLowerCase());
-
+        ObjectClass objectClass = DirectoryServer.getSchema().getObjectClass(objectClassStr);
         assertTrue(entry.hasObjectClass(objectClass));
       }
 
@@ -726,7 +724,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
           {
             if (!first)
             {
-              assertFalse(entry.hasAttribute(DirectoryServer.getAttributeType(fracAttr)));
+              assertFalse(entry.hasAttribute(DirectoryServer.getSchema().getAttributeType(fracAttr)));
             }
             first = false;
           }
@@ -743,7 +741,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
             }
             first = false;
           }
-          assertFalse(entry.hasAttribute(DirectoryServer.getAttributeType(OPTIONAL_ATTR)));
+          assertFalse(entry.hasAttribute(DirectoryServer.getSchema().getAttributeType(OPTIONAL_ATTR)));
           break;
         default:
           fail("Unexpected fractional mode.");
@@ -759,7 +757,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
    */
   private static void checkEntryAttributeValue(Entry entry, String attributeName, String attributeValue)
   {
-    List<Attribute> attrs = entry.getAttribute(attributeName.toLowerCase());
+    List<Attribute> attrs = entry.getAttribute(attributeName);
     assertThat(attrs).as("Was expecting attribute " + attributeName + "=" + attributeValue).hasSize(1);
     Attribute attr = attrs.get(0);
     Iterator<ByteString> attrValues = attr.iterator();
@@ -962,7 +960,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
   private Entry waitTillEntryHasSynchroAttribute(String entryDN)
       throws Exception
   {
-    AttributeType synchroAttrType = DirectoryServer.getAttributeType(SYNCHRO_OPTIONAL_ATTR);
+    AttributeType synchroAttrType = DirectoryServer.getSchema().getAttributeType(SYNCHRO_OPTIONAL_ATTR);
     DN dn = DN.valueOf(entryDN);
 
     Entry entry = null;
@@ -1207,7 +1205,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
     {
       createReplicationServer(testcase);
       createFractionalDomain(true, EXCLUDE_FRAC_MODE, "inetOrgPerson",
-          "displayName", "description");
+          "displayName", "givenName");
 
       // create fake domain to send operations
       createFakeReplicationDomain(true, readGenIdFromSuffixRootEntry(TEST_ROOT_DN_STRING));
@@ -1237,8 +1235,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(entry.getName(), newEntry.getName());
-      ObjectClass objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
 
       /**
@@ -1248,7 +1245,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       // Perform add operation with forbidden attribute in RDN
       // @formatter:off
       entry = TestCaseUtils.makeEntry(
-          "dn: displayName=ValueToBeKept+description=ValueToBeKeptToo," + TEST_ROOT_DN_STRING,
+          "dn: displayName=ValueToBeKept+givenName=ValueToBeKeptToo," + TEST_ROOT_DN_STRING,
           "objectClass: top",
           "objectClass: person",
           "objectClass: organizationalPerson",
@@ -1258,8 +1255,8 @@ public class FractionalReplicationTest extends ReplicationTestCase {
           "cn: cnValue",
           "displayName: ValueToBeKept",
           "displayName: displayNameValue",
-          "description: descriptionValue",
-          "description: ValueToBeKeptToo");
+          "givenName: descriptionValue",
+          "givenName: ValueToBeKeptToo");
       // @formatter:on
 
       // Create an update message to add an entry.
@@ -1272,10 +1269,9 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(entry.getName(), newEntry.getName());
-      objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
-      checkEntryAttributeValue(newEntry, "description", "ValueToBeKeptToo");
+      checkEntryAttributeValue(newEntry, "givenName", "ValueToBeKeptToo");
     }
     finally
     {
@@ -1328,8 +1324,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(entry.getName(), newEntry.getName());
-      ObjectClass objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "carLicense", "cirLicenseValue");
 
@@ -1365,8 +1360,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(entry.getName(), newEntry.getName());
-      objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "description", "ValueToBeKeptToo");
       checkEntryAttributeValue(newEntry, "carLicense", "cirLicenseValue");
@@ -1392,13 +1386,13 @@ public class FractionalReplicationTest extends ReplicationTestCase {
     {
       createReplicationServer(testcase);
       createFractionalDomain(true, EXCLUDE_FRAC_MODE, "inetOrgPerson",
-          "displayName", "description");
+          "displayName", "givenName");
 
       // create fake domain to send operations
       createFakeReplicationDomain(true, readGenIdFromSuffixRootEntry(TEST_ROOT_DN_STRING));
 
       // Perform add operation with forbidden attribute in RDN
-      String entryName = "displayName=ValueToBeKept+description=ValueToBeRemoved," + TEST_ROOT_DN_STRING ;
+      String entryName = "displayName=ValueToBeKept+givenName=ValueToBeRemoved," + TEST_ROOT_DN_STRING ;
       // @formatter:off
       Entry entry = TestCaseUtils.makeEntry(
           "dn: " + entryName,
@@ -1410,7 +1404,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
           "cn: cnValue",
           "entryUUID: " + ENTRY_UUID,
           "displayName: ValueToBeKept",
-          "description: ValueToBeRemoved");
+          "givenName: ValueToBeRemoved");
       // @formatter:on
 
       // Create an update message to add an entry.
@@ -1420,10 +1414,9 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(entry.getName(), newEntry.getName());
-      ObjectClass objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
-      checkEntryAttributeValue(newEntry, "description", "ValueToBeRemoved");
+      checkEntryAttributeValue(newEntry, "givenName", "ValueToBeRemoved");
 
       /*
        * Perform modify dn operation by renaming the entry keeping only one of
@@ -1443,10 +1436,9 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       newEntry = getEntry(newEntryDn, TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(newEntryDn, newEntry.getName());
-      objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
-      assertThat(newEntry.getAttribute("description")).isEmpty();
+      assertThat(newEntry.getAttribute("givenName")).isEmpty();
     }
     finally
     {
@@ -1502,8 +1494,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(entry.getName(), newEntry.getName());
-      ObjectClass objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "description", "ValueToBeRemoved");
 
@@ -1525,8 +1516,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       newEntry = getEntry(newEntryDn, TIMEOUT, true);
       assertNotNull(newEntry);
       assertEquals(newEntryDn, newEntry.getName());
-      objectClass = DirectoryServer.getObjectClass("inetOrgPerson".toLowerCase());
-      assertTrue(newEntry.hasObjectClass(objectClass));
+      assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       assertThat(newEntry.getAttribute("description")).isEmpty();
     }
@@ -1534,5 +1524,10 @@ public class FractionalReplicationTest extends ReplicationTestCase {
     {
       endTest();
     }
+  }
+
+  private ObjectClass getInetOrgPersonObjectClass()
+  {
+    return DirectoryServer.getSchema().getObjectClass("inetOrgPerson");
   }
 }

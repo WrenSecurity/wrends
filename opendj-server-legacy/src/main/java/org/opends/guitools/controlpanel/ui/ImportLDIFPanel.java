@@ -16,10 +16,10 @@
  */
 package org.opends.guitools.controlpanel.ui;
 
-import static org.opends.admin.ads.util.ConnectionUtils.getHostPort;
+import static com.forgerock.opendj.cli.Utils.OBFUSCATED_VALUE;
+
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.messages.QuickSetupMessages.*;
-import static com.forgerock.opendj.cli.Utils.OBFUSCATED_VALUE;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -31,7 +31,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.naming.ldap.InitialLdapContext;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -44,7 +43,9 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import org.opends.admin.ads.util.ConnectionUtils;
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.opendj.ldap.DN;
+import org.opends.admin.ads.util.ConnectionWrapper;
 import org.opends.guitools.controlpanel.datamodel.BackendDescriptor;
 import org.opends.guitools.controlpanel.datamodel.BaseDNDescriptor;
 import org.opends.guitools.controlpanel.datamodel.ControlPanelInfo;
@@ -53,19 +54,14 @@ import org.opends.guitools.controlpanel.event.BrowseActionListener;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.task.Task;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.i18n.LocalizableMessage;
 import org.opends.quicksetup.ui.UIFactory;
 import org.opends.quicksetup.util.Utils;
 import org.opends.server.tools.ImportLDIF;
 import org.opends.server.tools.dsreplication.ReplicationCliArgumentParser;
 import org.opends.server.tools.dsreplication.ReplicationCliException;
 import org.opends.server.tools.dsreplication.ReplicationCliMain;
-import org.forgerock.opendj.ldap.DN;
 
-/**
- * The panel where the user can import the contents of an LDIF file to the
- * server.
- */
+/** The panel where the user can import the contents of an LDIF file to the server. */
 public class ImportLDIFPanel extends InclusionExclusionPanel
 {
   private static final long serialVersionUID = 1143246529610229229L;
@@ -73,7 +69,6 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
   private JTextField file;
   private JCheckBox dataCompressed;
   private JCheckBox rejectNotSchemaCompliant;
-  private JCheckBox doDNValidationAfter;
   private JCheckBox writeRejects;
   private JCheckBox writeSkips;
   private JTextField threads;
@@ -99,10 +94,7 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
 
   private DocumentListener documentListener;
 
-  /**
-   * Default constructor.
-   *
-   */
+  /** Default constructor. */
   public ImportLDIFPanel()
   {
     super();
@@ -130,9 +122,7 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
     }
   }
 
-  /**
-   * Creates the layout of the panel (but the contents are not populated here).
-   */
+  /** Creates the layout of the panel (but the contents are not populated here). */
   private void createLayout()
   {
     GridBagConstraints gbc = new GridBagConstraints();
@@ -238,19 +228,6 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
     gbc.insets.left = 10;
     add(rejectNotSchemaCompliant, gbc);
     lSchemaValidation.setLabelFor(rejectNotSchemaCompliant);
-
-    gbc.gridx = 0;
-    gbc.gridy ++;
-    gbc.insets.left = 0;
-    lDNValidation = Utilities.createPrimaryLabel(INFO_CTRL_PANEL_DN_VALIDATION_LABEL.get());
-    add(lDNValidation, gbc);
-
-    gbc.gridx = 1;
-    doDNValidationAfter = Utilities.createCheckBox(INFO_CTRL_PANEL_DO_DN_VALIDATION_LATER_LABEL.get());
-    doDNValidationAfter.setSelected(false);
-    gbc.insets.left = 10;
-    add(doDNValidationAfter, gbc);
-    lDNValidation.setLabelFor(doDNValidationAfter);
 
     gbc.gridx = 0;
     gbc.gridy ++;
@@ -618,11 +595,8 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
     return baseDNs;
   }
 
-  /**
-   * The class that performs the import.
-   *
-   */
-  protected class ImportTask extends InclusionExclusionTask
+  /** The class that performs the import. */
+  private class ImportTask extends InclusionExclusionTask
   {
     private Set<String> backendSet;
     private String fileName;
@@ -634,7 +608,7 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
      * @param info the control panel info.
      * @param dlg the progress dialog that shows the progress of the task.
      */
-    public ImportTask(ControlPanelInfo info, ProgressDialog dlg)
+    private ImportTask(ControlPanelInfo info, ProgressDialog dlg)
     {
       super(info, dlg);
       backendSet = new HashSet<>();
@@ -693,10 +667,6 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
       if (!rejectNotSchemaCompliant.isSelected())
       {
         args.add("--skipSchemaValidation");
-      }
-      if (doDNValidationAfter.isSelected())
-      {
-        args.add("--skipDNValidation");
       }
 
       String sThread = threads.getText().trim();
@@ -818,12 +788,12 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
           INFO_CTRL_PANEL_EQUIVALENT_CMD_TO_INITIALIZE_ALL.get()+ "<br><b>"+cmd+"</b><br><br>",
           ColorAndFontConstants.progressFont));
 
-      InitialLdapContext ctx = getInfo().getConnection().getLdapContext();
+      ConnectionWrapper conn = getInfo().getConnection();
       for (DN baseDN : replicatedBaseDNs)
       {
-        LocalizableMessage msg = INFO_PROGRESS_INITIALIZING_SUFFIX.get(baseDN, getHostPort(ctx));
+        LocalizableMessage msg = INFO_PROGRESS_INITIALIZING_SUFFIX.get(baseDN, conn.getHostPort());
         getProgressDialog().appendProgressHtml(Utilities.applyFont(msg + "<br>", ColorAndFontConstants.progressFont));
-        repl.initializeAllSuffix(baseDN.toString(), ctx, true);
+        repl.initializeAllSuffix(baseDN.toString(), conn, true);
       }
     }
 
@@ -835,7 +805,7 @@ public class ImportLDIFPanel extends InclusionExclusionPanel
       args.add("--hostName");
       args.add(getInfo().getServerDescriptor().getHostname());
       args.add("--port");
-      args.add(String.valueOf(ConnectionUtils.getPort(getInfo().getConnection().getLdapContext())));
+      args.add(String.valueOf(getInfo().getConnection().getHostPort().getPort()));
       for (DN baseDN : replicatedBaseDNs)
       {
         args.add("--baseDN");

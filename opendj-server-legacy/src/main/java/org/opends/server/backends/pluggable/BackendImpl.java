@@ -24,21 +24,25 @@ import static org.opends.server.util.StaticUtils.*;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.forgerock.i18n.LocalizableException;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
-import org.forgerock.opendj.ldap.ConditionResult;
-import org.forgerock.opendj.ldap.ResultCode;
-import org.forgerock.util.Reject;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.ConditionResult;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.server.config.server.PluggableBackendCfg;
+import org.forgerock.util.Reject;
 import org.opends.server.api.Backend;
 import org.opends.server.api.MonitorProvider;
 import org.opends.server.backends.RebuildConfig;
@@ -56,11 +60,9 @@ import org.opends.server.core.ModifyDNOperation;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.core.SearchOperation;
 import org.opends.server.core.ServerContext;
-import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.types.BackupConfig;
 import org.opends.server.types.BackupDirectory;
 import org.opends.server.types.CanceledOperationException;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.IndexType;
@@ -68,14 +70,11 @@ import org.opends.server.types.InitializationException;
 import org.opends.server.types.LDIFExportConfig;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.LDIFImportResult;
-import org.opends.server.types.OpenDsException;
 import org.opends.server.types.Operation;
 import org.opends.server.types.RestoreConfig;
 import org.opends.server.util.CollectionUtils;
 import org.opends.server.util.LDIFException;
 import org.opends.server.util.RuntimeInformation;
-
-import com.forgerock.opendj.util.StaticUtils;
 
 /**
  * This is an implementation of a Directory Server Backend which stores entries locally
@@ -98,7 +97,7 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
   /** A count of the total operation threads currently in the backend. */
   private final AtomicInteger threadTotalCount = new AtomicInteger(0);
   /** The base DNs defined for this backend instance. */
-  private DN[] baseDNs;
+  private Set<DN> baseDNs;
 
   private MonitorProvider<?> rootContainerMonitor;
 
@@ -162,7 +161,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void configureBackend(C cfg, ServerContext serverContext) throws ConfigException
   {
@@ -170,11 +168,10 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
 
     this.cfg = cfg;
     this.serverContext = serverContext;
-    baseDNs = this.cfg.getBaseDN().toArray(new DN[0]);
+    baseDNs = new HashSet<>(cfg.getBaseDN());
     storage = new TracedStorage(configureStorage(cfg, serverContext), cfg.getBackendId());
   }
 
-  /** {@inheritDoc} */
   @Override
   public void openBackend() throws ConfigException, InitializationException
   {
@@ -217,7 +214,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     cfg.addPluggableChangeListener(this);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void closeBackend()
   {
@@ -262,13 +258,12 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     logger.info(NOTE_BACKEND_OFFLINE, cfg.getBackendId());
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isIndexed(AttributeType attributeType, IndexType indexType)
   {
     try
     {
-      EntryContainer ec = rootContainer.getEntryContainer(baseDNs[0]);
+      EntryContainer ec = rootContainer.getEntryContainer(baseDNs.iterator().next());
       AttributeIndex ai = ec.getAttributeIndex(attributeType);
       return ai != null ? ai.isIndexed(indexType) : false;
     }
@@ -279,7 +274,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean supports(BackendOperation backendOperation)
   {
@@ -295,28 +289,24 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getSupportedFeatures()
   {
     return Collections.emptySet();
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getSupportedControls()
   {
     return supportedControls;
   }
 
-  /** {@inheritDoc} */
   @Override
-  public DN[] getBaseDNs()
+  public Set<DN> getBaseDNs()
   {
     return baseDNs;
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getEntryCount()
   {
@@ -334,7 +324,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     return -1;
   }
 
-  /** {@inheritDoc} */
   @Override
   public ConditionResult hasSubordinates(DN entryDN) throws DirectoryException
   {
@@ -367,7 +356,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getNumberOfEntriesInBaseDN(DN baseDN) throws DirectoryException
   {
@@ -390,7 +378,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getNumberOfChildren(DN parentDN) throws DirectoryException
   {
@@ -429,7 +416,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean entryExists(final DN entryDN) throws DirectoryException
   {
@@ -450,7 +436,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public Entry getEntry(DN entryDN) throws DirectoryException
   {
@@ -471,7 +456,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void addEntry(Entry entry, AddOperation addOperation) throws DirectoryException, CanceledOperationException
   {
@@ -493,7 +477,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void deleteEntry(DN entryDN, DeleteOperation deleteOperation)
       throws DirectoryException, CanceledOperationException
@@ -516,7 +499,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void replaceEntry(Entry oldEntry, Entry newEntry, ModifyOperation modifyOperation)
       throws DirectoryException, CanceledOperationException
@@ -540,7 +522,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void renameEntry(DN currentDN, Entry entry, ModifyDNOperation modifyDNOperation)
       throws DirectoryException, CanceledOperationException
@@ -572,7 +553,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void search(SearchOperation searchOperation) throws DirectoryException, CanceledOperationException
   {
@@ -604,7 +584,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void exportLDIF(LDIFExportConfig exportConfig)
       throws DirectoryException
@@ -645,7 +624,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     return rootContainer == null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public LDIFImportResult importLDIF(LDIFImportConfig importConfig, ServerContext serverContext)
       throws DirectoryException
@@ -675,24 +653,11 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
       }
       rootContainer = newRootContainer(AccessMode.READ_WRITE);
       rootContainer.getStorage().close();
-      return getImportStrategy(serverContext, rootContainer).importLDIF(importConfig);
-    }
-    catch (StorageRuntimeException e)
-    {
-      throw createDirectoryException(e);
-    }
-    catch (DirectoryException e)
-    {
-      throw e;
-    }
-    catch (OpenDsException | ConfigException e)
-    {
-      throw new DirectoryException(getServerErrorResultCode(), e.getMessageObject(), e);
+      return getImportStrategy(rootContainer).importLDIF(importConfig);
     }
     catch (Exception e)
     {
-      throw new DirectoryException(getServerErrorResultCode(), LocalizableMessage.raw(StaticUtils
-          .stackTraceToSingleLineString(e, false)), e);
+      throw createDirectoryException(e);
     }
     finally
     {
@@ -717,12 +682,11 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  private ImportStrategy getImportStrategy(ServerContext serverContext, RootContainer rootContainer)
+  private ImportStrategy getImportStrategy(final RootContainer rootContainer)
   {
     return new OnDiskMergeImporter.StrategyImpl(serverContext, rootContainer, cfg);
   }
 
-  /** {@inheritDoc} */
   @Override
   public long verifyBackend(VerifyConfig verifyConfig)
       throws InitializationException, ConfigException, DirectoryException
@@ -768,7 +732,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void rebuildBackend(RebuildConfig rebuildConfig, ServerContext serverContext)
       throws InitializationException, ConfigException, DirectoryException
@@ -792,32 +755,15 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
       {
         rootContainer = newRootContainer(AccessMode.READ_WRITE);
       }
-      getImportStrategy(serverContext, rootContainer).rebuildIndex(rebuildConfig);
+      getImportStrategy(rootContainer).rebuildIndex(rebuildConfig);
     }
-    catch (ExecutionException execEx)
-    {
-      throw new DirectoryException(getServerErrorResultCode(), ERR_EXECUTION_ERROR.get(execEx.getMessage()), execEx);
-    }
-    catch (InterruptedException intEx)
-    {
-      throw new DirectoryException(getServerErrorResultCode(), ERR_INTERRUPTED_ERROR.get(intEx.getMessage()), intEx);
-    }
-    catch (ConfigException ce)
-    {
-      throw new DirectoryException(getServerErrorResultCode(), ce.getMessageObject(), ce);
-    }
-    catch (StorageRuntimeException e)
-    {
-      throw createDirectoryException(e);
-    }
-    catch (InitializationException e)
+    catch (InitializationException | ConfigException e)
     {
       throw e;
     }
-    catch (Exception ex)
+    catch (Exception e)
     {
-      throw new DirectoryException(getServerErrorResultCode(), LocalizableMessage.raw(stackTraceToSingleLineString(ex)),
-          ex);
+      throw createDirectoryException(e);
     }
     finally
     {
@@ -825,14 +771,12 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void createBackup(BackupConfig backupConfig) throws DirectoryException
   {
     storage.createBackup(backupConfig);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void removeBackup(BackupDirectory backupDirectory, String backupID)
       throws DirectoryException
@@ -840,7 +784,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     storage.removeBackup(backupDirectory, backupID);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void restoreBackup(RestoreConfig restoreConfig) throws DirectoryException
   {
@@ -861,7 +804,6 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
    */
   protected abstract Storage configureStorage(C cfg, ServerContext serverContext) throws ConfigException;
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAcceptable(C config, List<LocalizableMessage> unacceptableReasons,
       ServerContext serverContext)
@@ -869,14 +811,12 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     return isConfigurationChangeAcceptable(config, unacceptableReasons);
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(PluggableBackendCfg cfg, List<LocalizableMessage> unacceptableReasons)
   {
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(final PluggableBackendCfg newCfg)
   {
@@ -891,16 +831,15 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
           public void run(WriteableTransaction txn) throws Exception
           {
             SortedSet<DN> newBaseDNs = newCfg.getBaseDN();
-            DN[] newBaseDNsArray = newBaseDNs.toArray(new DN[newBaseDNs.size()]);
 
             // Check for changes to the base DNs.
             removeDeletedBaseDNs(newBaseDNs, txn);
-            if (!createNewBaseDNs(newBaseDNsArray, ccr, txn))
+            if (!createNewBaseDNs(newBaseDNs, ccr, txn))
             {
               return;
             }
 
-            baseDNs = newBaseDNsArray;
+            baseDNs = new HashSet<>(newBaseDNs);
 
             // Put the new configuration in place.
             cfg = newCfg;
@@ -931,9 +870,9 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
     }
   }
 
-  private boolean createNewBaseDNs(DN[] newBaseDNsArray, ConfigChangeResult ccr, WriteableTransaction txn)
+  private boolean createNewBaseDNs(Set<DN> newBaseDNs, ConfigChangeResult ccr, WriteableTransaction txn)
   {
-    for (DN baseDN : newBaseDNsArray)
+    for (DN baseDN : newBaseDNs)
     {
       if (!rootContainer.getBaseDNs().contains(baseDN))
       {
@@ -993,17 +932,21 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
    *          The StorageRuntimeException to be converted.
    * @return DirectoryException created from exception.
    */
-  private DirectoryException createDirectoryException(StorageRuntimeException e)
+  private DirectoryException createDirectoryException(Throwable e)
   {
-    Throwable cause = e.getCause();
-    if (cause instanceof OpenDsException)
+    if (e instanceof DirectoryException)
     {
-      return new DirectoryException(getServerErrorResultCode(), (OpenDsException) cause);
+      return (DirectoryException) e;
     }
-    else
+    if (e instanceof ExecutionException)
     {
-      return new DirectoryException(getServerErrorResultCode(), LocalizableMessage.raw(e.getMessage()), e);
+      return createDirectoryException(e.getCause());
     }
+    if (e instanceof LocalizableException)
+    {
+      return new DirectoryException(getServerErrorResultCode(), ((LocalizableException) e).getMessageObject());
+    }
+    return new DirectoryException(getServerErrorResultCode(), LocalizableMessage.raw(e.getMessage()), e);
   }
 
   private RootContainer newRootContainer(AccessMode accessMode)
@@ -1022,5 +965,4 @@ public abstract class BackendImpl<C extends PluggableBackendCfg> extends Backend
       throw new InitializationException(ERR_OPEN_ENV_FAIL.get(e.getMessage()), e);
     }
   }
-
 }

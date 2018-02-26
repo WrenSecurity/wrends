@@ -11,17 +11,13 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2013 ForgeRock AS.
+ * Copyright 2013-2016 ForgeRock AS.
  */
-
 package org.forgerock.opendj.rest2ldap;
 
 import org.forgerock.opendj.ldap.AttributeDescription;
 
-/**
- * The writability policy determines whether or not an attribute supports
- * updates.
- */
+/** The writability policy determines whether an attribute supports updates. */
 public enum WritabilityPolicy {
     // @formatter:off
     /**
@@ -29,39 +25,41 @@ public enum WritabilityPolicy {
      * modified afterwards. Attempts to update the attribute will result in an
      * error.
      */
-    READ_ONLY(false),
+    READ_ONLY("readOnly", false),
 
     /**
      * The attribute cannot be provided when creating a new resource, nor
      * modified afterwards. Attempts to update the attribute will not result in
      * an error (the new values will be ignored).
      */
-    READ_ONLY_DISCARD_WRITES(true),
+    READ_ONLY_DISCARD_WRITES("readOnlyDiscardWrites", true),
 
     /**
      * The attribute may be provided when creating a new resource, but cannot be
      * modified afterwards. Attempts to update the attribute will result in an
      * error.
      */
-    CREATE_ONLY(false),
+    CREATE_ONLY("createOnly", false),
 
     /**
      * The attribute may be provided when creating a new resource, but cannot be
      * modified afterwards. Attempts to update the attribute will not result in
      * an error (the new values will be ignored).
      */
-    CREATE_ONLY_DISCARD_WRITES(true),
+    CREATE_ONLY_DISCARD_WRITES("createOnlyDiscardWrites", true),
 
     /**
      * The attribute may be provided when creating a new resource, and modified
      * afterwards.
      */
-    READ_WRITE(false);
+    READ_WRITE("readWrite", false);
     // @formatter:on
 
+    private final String name;
     private final boolean discardWrites;
 
-    private WritabilityPolicy(final boolean discardWrites) {
+    WritabilityPolicy(final String name, final boolean discardWrites) {
+        this.name = name;
         this.discardWrites = discardWrites;
     }
 
@@ -75,5 +73,10 @@ public enum WritabilityPolicy {
 
     boolean discardWrites() {
         return discardWrites;
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

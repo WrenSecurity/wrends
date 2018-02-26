@@ -17,7 +17,9 @@ package org.forgerock.opendj.adapter.server3x;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.adapter.server3x.Converters.*;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 import static org.mockito.Mockito.*;
+import static org.opends.server.core.DirectoryServer.*;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -50,12 +52,12 @@ import org.forgerock.opendj.ldap.responses.GenericExtendedResult;
 import org.forgerock.opendj.ldap.responses.PasswordModifyExtendedResult;
 import org.forgerock.opendj.ldap.responses.Responses;
 import org.forgerock.opendj.ldap.responses.Result;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.forgerock.opendj.server.config.meta.VirtualAttributeCfgDefn.Scope;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
-import org.forgerock.opendj.server.config.meta.VirtualAttributeCfgDefn.Scope;
 import org.opends.server.core.BindOperation;
 import org.opends.server.core.CompareOperation;
-import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ExtendedOperation;
 import org.opends.server.core.SearchOperation;
 import org.opends.server.protocols.ldap.LDAPControl;
@@ -65,7 +67,6 @@ import org.opends.server.types.Attributes;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.FilterType;
 import org.opends.server.types.LDAPException;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Operation;
 import org.opends.server.types.SearchResultEntry;
 import org.opends.server.types.SearchResultReference;
@@ -146,7 +147,7 @@ public class ConvertersTestCase extends DirectoryServerTestCase {
         assertThat(result.getName().toString()).isEqualTo(entry.getName().toString());
         List<ObjectClass> ocs = new ArrayList<>(result.getObjectClasses().keySet());
         assertThat(ocs).hasSize(2);
-        assertThat(ocs.get(0).getOID()).isEqualTo(DirectoryServer.getObjectClass("ds-cfg-backend").getOID());
+        assertThat(ocs.get(0).getOID()).isEqualTo(getSchema().getObjectClass("ds-cfg-backend").getOID());
         assertThat(ocs.get(1).getOID()).as("This should be a placeholder").endsWith("-oid");
     }
 
@@ -350,9 +351,10 @@ public class ConvertersTestCase extends DirectoryServerTestCase {
         Modification mod = new Modification(ModificationType.ADD, attribute);
 
         org.opends.server.types.Modification srvModification = toModification(mod);
+        Attribute attr = srvModification.getAttribute();
         assertThat(srvModification.getModificationType()).isEqualTo(ModificationType.ADD);
-        assertThat(srvModification.getAttribute().getAttributeDescription().getAttributeType().getNameOrOID()).isEqualTo("test");
-        assertThat(srvModification.getAttribute().size()).isEqualTo(2);
+        assertThat(attr.getAttributeDescription().getAttributeType().getNameOrOID()).isEqualTo("test");
+        assertThat(attr.size()).isEqualTo(2);
 
         mod = new Modification(ModificationType.INCREMENT, attribute);
         srvModification = toModification(mod);
@@ -418,7 +420,7 @@ public class ConvertersTestCase extends DirectoryServerTestCase {
         byte[] data = { 0x00, 0x01, 0x02, (byte) 0xff };
 
         ByteString attrValue = ByteString.wrap(data);
-        Attribute attribute = Attributes.create(DirectoryServer.getAttributeType("cn"), attrValue);
+        Attribute attribute = Attributes.create(getCNAttributeType(), attrValue);
         assertThat(from(attribute).firstValue().toByteArray()).isEqualTo(data);
     }
 

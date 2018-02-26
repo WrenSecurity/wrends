@@ -25,19 +25,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.server.config.server.SizeLimitLogRotationPolicyCfg;
 import org.opends.server.api.DirectoryThread;
 import org.opends.server.api.ServerShutdownListener;
 import org.opends.server.core.DirectoryServer;
-import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.FilePermission;
 import org.opends.server.util.TimeThread;
@@ -60,17 +59,15 @@ class MultifileTextWriter
 
   private static final String UTF8_ENCODING= "UTF-8";
 
-  private CopyOnWriteArrayList<RotationPolicy> rotationPolicies = new CopyOnWriteArrayList<>();
-  private CopyOnWriteArrayList<RetentionPolicy> retentionPolicies = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<RotationPolicy<?>> rotationPolicies = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<RetentionPolicy<?>> retentionPolicies = new CopyOnWriteArrayList<>();
 
   private FileNamingPolicy namingPolicy;
   private FilePermission filePermissions;
-  private LogPublisherErrorHandler errorHandler;
-  /** TODO: Implement actions. */
-  private ArrayList<ActionType> actions;
+  private final LogPublisherErrorHandler errorHandler;
 
-  private String name;
-  private String encoding;
+  private final String name;
+  private final String encoding;
   private int bufferSize;
   private boolean autoFlush;
   private boolean append;
@@ -78,7 +75,7 @@ class MultifileTextWriter
   private boolean stopRequested;
   private long sizeLimit;
 
-  private Thread rotaterThread;
+  private final Thread rotaterThread;
 
   private Calendar lastRotationTime = TimeThread.getCalendar();
   private Calendar lastCleanTime = TimeThread.getCalendar();
@@ -202,7 +199,7 @@ class MultifileTextWriter
    *
    * @param policy The rotation policy to add.
    */
-  public void addRotationPolicy(RotationPolicy policy)
+  public void addRotationPolicy(RotationPolicy<?> policy)
   {
     this.rotationPolicies.add(policy);
 
@@ -224,17 +221,15 @@ class MultifileTextWriter
    *
    * @param policy The retention policy to add.
    */
-  public void addRetentionPolicy(RetentionPolicy policy)
+  public void addRetentionPolicy(RetentionPolicy<?> policy)
   {
     this.retentionPolicies.add(policy);
   }
 
-  /**
-   * Removes all the rotation policies currently enforced by this writer.
-   */
+  /** Removes all the rotation policies currently enforced by this writer. */
   public void removeAllRotationPolicies()
   {
-    for(RotationPolicy policy : rotationPolicies)
+    for (RotationPolicy<?> policy : rotationPolicies)
     {
       if(policy instanceof SizeBasedRotationPolicy)
       {
@@ -249,9 +244,7 @@ class MultifileTextWriter
     this.rotationPolicies.clear();
   }
 
-  /**
-   * Removes all retention policies being enforced by this writer.
-   */
+  /** Removes all retention policies being enforced by this writer. */
   public void removeAllRetentionPolicies()
   {
     this.retentionPolicies.clear();
@@ -334,7 +327,6 @@ class MultifileTextWriter
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(
       SizeLimitLogRotationPolicyCfg config, List<LocalizableMessage> unacceptableReasons)
@@ -343,7 +335,6 @@ class MultifileTextWriter
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
       SizeLimitLogRotationPolicyCfg config)
@@ -351,7 +342,7 @@ class MultifileTextWriter
     long newSizeLimit = Integer.MAX_VALUE;
 
     // Go through all current size rotation policies and get the lowest size setting.
-    for(RotationPolicy policy : rotationPolicies)
+    for (RotationPolicy<?> policy : rotationPolicies)
     {
       if(policy instanceof SizeBasedRotationPolicy)
       {
@@ -377,9 +368,7 @@ class MultifileTextWriter
   private class RotaterThread extends DirectoryThread
   {
     MultifileTextWriter writer;
-    /**
-     * Create a new rotater thread.
-     */
+
     public RotaterThread(MultifileTextWriter writer)
     {
       super(name);
@@ -408,7 +397,7 @@ class MultifileTextWriter
           logger.traceException(e);
         }
 
-        for(RotationPolicy rotationPolicy : rotationPolicies)
+        for (RotationPolicy<?> rotationPolicy : rotationPolicies)
         {
           if(rotationPolicy.rotateFile(writer))
           {
@@ -416,7 +405,7 @@ class MultifileTextWriter
           }
         }
 
-        for(RetentionPolicy retentionPolicy : retentionPolicies)
+        for (RetentionPolicy<?> retentionPolicy : retentionPolicies)
         {
           try
           {
@@ -501,9 +490,7 @@ class MultifileTextWriter
     return stopRequested;
   }
 
-  /**
-   * Shutdown the text writer.
-   */
+  /** Shutdown the text writer. */
   @Override
   public void shutdown()
   {
@@ -575,7 +562,6 @@ class MultifileTextWriter
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void flush()
   {
@@ -622,27 +608,11 @@ class MultifileTextWriter
       errorHandler.handleOpenError(currentFile, e);
     }
 
-    //RotationActionThread rotThread =
-    //  new RotationActionThread(newFile, actions, configEntry);
-    //rotThread.start();
-
-    logger.trace("Log file %s rotated and renamed to %s",
-                       currentFile, newFile);
+    logger.trace("Log file %s rotated and renamed to %s", currentFile, newFile);
     totalFilesRotated++;
     lastRotationTime = TimeThread.getCalendar();
   }
 
-  /**
-   * This method sets the actions that need to be executed after rotation.
-   *
-   * @param actions An array of actions that need to be executed on rotation.
-   */
-  public void setPostRotationActions(ArrayList<ActionType> actions)
-  {
-    this.actions = actions;
-  }
-
-  /** {@inheritDoc} */
   @Override
   public long getBytesWritten()
   {
@@ -671,7 +641,6 @@ class MultifileTextWriter
     return lastCleanCount;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Calendar getLastRotationTime()
   {

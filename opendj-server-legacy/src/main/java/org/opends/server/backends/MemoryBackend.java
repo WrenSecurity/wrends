@@ -26,12 +26,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.ldap.ConditionResult;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
@@ -48,7 +50,6 @@ import org.opends.server.core.ServerContext;
 import org.opends.server.types.BackupConfig;
 import org.opends.server.types.BackupDirectory;
 import org.opends.server.types.Control;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.IndexType;
@@ -58,6 +59,7 @@ import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.LDIFImportResult;
 import org.opends.server.types.RestoreConfig;
 import org.opends.server.types.SearchFilter;
+import org.opends.server.util.CollectionUtils;
 import org.opends.server.util.LDIFException;
 import org.opends.server.util.LDIFReader;
 import org.opends.server.util.LDIFWriter;
@@ -94,25 +96,15 @@ public class MemoryBackend
 {
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-
+  /** The set of supported controls for this backend. */
+  private static final Set<String> supportedControls = Collections.singleton(OID_SUBTREE_DELETE_CONTROL);
 
   /** The base DNs for this backend. */
-  private DN[] baseDNs;
-
+  private Set<DN> baseDNs;
   /** The mapping between parent DNs and their immediate children. */
-  private HashMap<DN,HashSet<DN>> childDNs;
-
-  /** The base DNs for this backend, in a hash set. */
-  private HashSet<DN> baseDNSet;
-
-  /** The set of supported controls for this backend. */
-  private final Set<String> supportedControls =
-      Collections.singleton(OID_SUBTREE_DELETE_CONTROL);
-
+  private Map<DN, HashSet<DN>> childDNs;
   /** The mapping between entry DNs and the corresponding entries. */
   private LinkedHashMap<DN,Entry> entryMap;
-
-
 
   /**
    * Creates a new backend with the provided information.  All backend
@@ -126,48 +118,37 @@ public class MemoryBackend
     // Perform all initialization in initializeBackend.
   }
 
-
   /**
    * Set the base DNs for this backend.  This is used by the unit tests
    * to set the base DNs without having to provide a configuration
    * object when initializing the backend.
    * @param baseDNs The set of base DNs to be served by this memory backend.
    */
-  public void setBaseDNs(DN[] baseDNs)
+  public void setBaseDNs(DN... baseDNs)
   {
-    this.baseDNs = baseDNs;
+    this.baseDNs = CollectionUtils.newHashSet(baseDNs);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void configureBackend(MemoryBackendCfg config, ServerContext serverContext) throws ConfigException
   {
     if (config != null)
     {
-      MemoryBackendCfg cfg = config;
-      DN[] baseDNs = new DN[cfg.getBaseDN().size()];
-      cfg.getBaseDN().toArray(baseDNs);
-      setBaseDNs(baseDNs);
+      this.baseDNs = config.getBaseDN();
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized void openBackend()
        throws ConfigException, InitializationException
   {
-    // We won't support anything other than exactly one base DN in this
-    // implementation.  If we were to add such support in the future, we would
-    // likely want to separate the data for each base DN into a separate entry
-    // map.
-    if (baseDNs == null || baseDNs.length != 1)
+    // We won't support anything other than exactly one base DN in this implementation.
+    // If we were to add such support in the future, we would likely want
+    // to separate the data for each base DN into a separate entry map.
+    if (baseDNs == null || baseDNs.size() != 1)
     {
-      LocalizableMessage message = ERR_MEMORYBACKEND_REQUIRE_EXACTLY_ONE_BASE.get();
-      throw new ConfigException(message);
+      throw new ConfigException(ERR_MEMORYBACKEND_REQUIRE_EXACTLY_ONE_BASE.get());
     }
-
-    baseDNSet = new HashSet<>();
-    Collections.addAll(baseDNSet, baseDNs);
 
     entryMap = new LinkedHashMap<>();
     childDNs = new HashMap<>();
@@ -189,18 +170,13 @@ public class MemoryBackend
     }
   }
 
-
-
-  /**
-   * Removes any data that may have been stored in this backend.
-   */
+  /** Removes any data that may have been stored in this backend. */
   public synchronized void clearMemoryBackend()
   {
     entryMap.clear();
     childDNs.clear();
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized void closeBackend()
   {
@@ -219,14 +195,12 @@ public class MemoryBackend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
-  public DN[] getBaseDNs()
+  public Set<DN> getBaseDNs()
   {
     return baseDNs;
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized long getEntryCount()
   {
@@ -238,7 +212,6 @@ public class MemoryBackend
     return -1;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isIndexed(AttributeType attributeType, IndexType indexType)
   {
@@ -246,7 +219,6 @@ public class MemoryBackend
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized ConditionResult hasSubordinates(DN entryDN)
          throws DirectoryException
@@ -259,14 +231,12 @@ public class MemoryBackend
     return ConditionResult.valueOf(ret != 0);
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getNumberOfEntriesInBaseDN(DN baseDN) throws DirectoryException {
     checkNotNull(baseDN, "baseDN must not be null");
     return getNumberOfSubordinates(baseDN, true) + 1;
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getNumberOfChildren(DN parentDN) throws DirectoryException {
     checkNotNull(parentDN, "parentDN must not be null");
@@ -300,7 +270,6 @@ public class MemoryBackend
     return count;
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized Entry getEntry(DN entryDN)
   {
@@ -313,14 +282,12 @@ public class MemoryBackend
     return entry;
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized boolean entryExists(DN entryDN)
   {
     return entryMap.containsKey(entryDN);
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized void addEntry(Entry entry, AddOperation addOperation)
          throws DirectoryException
@@ -335,14 +302,12 @@ public class MemoryBackend
           ERR_MEMORYBACKEND_ENTRY_ALREADY_EXISTS.get(entryDN));
     }
 
-
     // If the entry is one of the base DNs, then add it.
-    if (baseDNSet.contains(entryDN))
+    if (baseDNs.contains(entryDN))
     {
       entryMap.put(entryDN, e);
       return;
     }
-
 
     // Get the parent DN and ensure that it exists in the backend.
     DN parentDN = DirectoryServer.getParentDNInSuffix(entryDN);
@@ -368,7 +333,6 @@ public class MemoryBackend
     children.add(entryDN);
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized void deleteEntry(DN entryDN,
                                        DeleteOperation deleteOperation)
@@ -381,40 +345,33 @@ public class MemoryBackend
           ERR_BACKEND_ENTRY_DOESNT_EXIST.get(entryDN, getBackendID()));
     }
 
-
     // Check to see if the entry contains a subtree delete control.
     boolean subtreeDelete = deleteOperation != null
         && deleteOperation.getRequestControl(SubtreeDeleteControl.DECODER) != null;
 
-    HashSet<DN> children = childDNs.get(entryDN);
-    if (subtreeDelete)
+    Set<DN> children = childDNs.get(entryDN);
+    if (children != null && !children.isEmpty())
     {
-      if (children != null)
-      {
-        HashSet<DN> childrenCopy = new HashSet<>(children);
-        for (DN childDN : childrenCopy)
-        {
-          try
-          {
-            deleteEntry(childDN, null);
-          }
-          catch (Exception e)
-          {
-            // This shouldn't happen, but we want the delete to continue anyway
-            // so just ignore it if it does for some reason.
-            logger.traceException(e);
-          }
-        }
-      }
-    }
-    else
-    {
-      // Make sure the entry doesn't have any children.  If it does, then throw
-      // an exception.
-      if (children != null && !children.isEmpty())
+      // children exist
+      if (!subtreeDelete)
       {
         throw new DirectoryException(ResultCode.NOT_ALLOWED_ON_NONLEAF,
             ERR_MEMORYBACKEND_CANNOT_DELETE_ENTRY_WITH_CHILDREN.get(entryDN));
+      }
+
+      Set<DN> childrenCopy = new HashSet<>(children);
+      for (DN childDN : childrenCopy)
+      {
+        try
+        {
+          deleteEntry(childDN, null);
+        }
+        catch (Exception ignore)
+        {
+          // This shouldn't happen, but we want the delete to continue anyway
+          // so just ignore it if it does for some reason.
+          logger.traceException(ignore);
+        }
       }
     }
 
@@ -439,7 +396,6 @@ public class MemoryBackend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized void replaceEntry(Entry oldEntry, Entry newEntry,
       ModifyOperation modifyOperation) throws DirectoryException
@@ -454,12 +410,10 @@ public class MemoryBackend
           ERR_BACKEND_ENTRY_DOESNT_EXIST.get(entryDN, getBackendID()));
     }
 
-
     // Replace the old entry with the new one.
     entryMap.put(entryDN, e);
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized void renameEntry(DN currentDN, Entry entry,
                                        ModifyDNOperation modifyDNOperation)
@@ -474,9 +428,8 @@ public class MemoryBackend
           ERR_BACKEND_ENTRY_DOESNT_EXIST.get(currentDN, getBackendID()));
     }
 
-
     // Make sure that the target entry doesn't have any children.
-    HashSet<DN> children  = childDNs.get(currentDN);
+    Set<DN> children = childDNs.get(currentDN);
     if (children != null)
     {
       if (children.isEmpty())
@@ -490,7 +443,6 @@ public class MemoryBackend
       }
     }
 
-
     // Make sure that no entry exists with the new DN.
     if (entryMap.containsKey(e.getName()))
     {
@@ -498,24 +450,12 @@ public class MemoryBackend
           ERR_MEMORYBACKEND_ENTRY_ALREADY_EXISTS.get(e.getName()));
     }
 
-
     // Make sure that the new DN is in this backend.
-    boolean matchFound = false;
-    for (DN dn : baseDNs)
-    {
-      if (dn.isSuperiorOrEqualTo(e.getName()))
-      {
-        matchFound = true;
-        break;
-      }
-    }
-
-    if (! matchFound)
+    if (!superiorExistsInBackend(e.getName()))
     {
       throw new DirectoryException(ResultCode.UNWILLING_TO_PERFORM,
           ERR_MEMORYBACKEND_CANNOT_RENAME_TO_ANOTHER_BACKEND.get(currentDN));
     }
-
 
     // Make sure that the parent of the new entry exists.
     DN parentDN = DirectoryServer.getParentDNInSuffix(e.getName());
@@ -525,13 +465,23 @@ public class MemoryBackend
           ERR_MEMORYBACKEND_RENAME_PARENT_DOESNT_EXIST.get(currentDN, parentDN));
     }
 
-
     // Delete the current entry and add the new one.
     deleteEntry(currentDN, null);
     addEntry(e, null);
   }
 
-  /** {@inheritDoc} */
+  private boolean superiorExistsInBackend(DN dnToFind)
+  {
+    for (DN dn : baseDNs)
+    {
+      if (dn.isSuperiorOrEqualTo(dnToFind))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public synchronized void search(SearchOperation searchOperation)
          throws DirectoryException
@@ -540,7 +490,6 @@ public class MemoryBackend
     DN           baseDN = searchOperation.getBaseDN();
     SearchScope  scope  = searchOperation.getScope();
     SearchFilter filter = searchOperation.getFilter();
-
 
     // Make sure the base entry exists if it's supposed to be in this backend.
     Entry baseEntry = entryMap.get(baseDN);
@@ -568,7 +517,6 @@ public class MemoryBackend
       baseEntry = baseEntry.duplicate(true);
     }
 
-
     // If it's a base-level search, then just get that entry and return it if it
     // matches the filter.
     if (scope == SearchScope.BASE_OBJECT)
@@ -592,21 +540,18 @@ public class MemoryBackend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getSupportedControls()
   {
     return supportedControls;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getSupportedFeatures()
   {
     return Collections.emptySet();
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean supports(BackendOperation backendOperation)
   {
@@ -621,7 +566,6 @@ public class MemoryBackend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized void exportLDIF(LDIFExportConfig exportConfig)
          throws DirectoryException
@@ -639,7 +583,6 @@ public class MemoryBackend
       throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
           ERR_MEMORYBACKEND_CANNOT_CREATE_LDIF_WRITER.get(e), e);
     }
-
 
     // Walk through all the entries and write them to LDIF.
     DN entryDN = null;
@@ -662,26 +605,14 @@ public class MemoryBackend
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public synchronized LDIFImportResult importLDIF(LDIFImportConfig importConfig, ServerContext serverContext)
       throws DirectoryException
   {
     clearMemoryBackend();
 
-    LDIFReader reader;
-    try
-    {
-      reader = new LDIFReader(importConfig);
-    }
-    catch (Exception e)
-    {
-      throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
-          ERR_MEMORYBACKEND_CANNOT_CREATE_LDIF_READER.get(e), e);
-    }
 
-
-    try
+    try (LDIFReader reader = newLDIFReader(importConfig))
     {
       while (true)
       {
@@ -701,10 +632,7 @@ public class MemoryBackend
             throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
                 ERR_MEMORYBACKEND_ERROR_READING_LDIF.get(e), le);
           }
-          else
-          {
-            continue;
-          }
+          continue;
         }
 
         try
@@ -730,13 +658,21 @@ public class MemoryBackend
       throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
           ERR_MEMORYBACKEND_ERROR_DURING_IMPORT.get(e), e);
     }
-    finally
+  }
+
+  private LDIFReader newLDIFReader(LDIFImportConfig importConfig) throws DirectoryException
+  {
+    try
     {
-      reader.close();
+      return new LDIFReader(importConfig);
+    }
+    catch (Exception e)
+    {
+      throw new DirectoryException(DirectoryServer.getServerErrorResultCode(),
+          ERR_MEMORYBACKEND_CANNOT_CREATE_LDIF_READER.get(e), e);
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public void createBackup(BackupConfig backupConfig)
          throws DirectoryException
@@ -745,7 +681,6 @@ public class MemoryBackend
     throw new DirectoryException(ResultCode.UNWILLING_TO_PERFORM, message);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void removeBackup(BackupDirectory backupDirectory,
                            String backupID)
@@ -755,7 +690,6 @@ public class MemoryBackend
     throw new DirectoryException(ResultCode.UNWILLING_TO_PERFORM, message);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void restoreBackup(RestoreConfig restoreConfig)
          throws DirectoryException

@@ -28,9 +28,7 @@ import org.forgerock.i18n.LocalizableMessage;
  */
 public final class PropertyException extends RuntimeException implements LocalizableException {
 
-    /**
-     * Version ID required by serializable classes.
-     */
+    /** Version ID required by serializable classes. */
     private static final long serialVersionUID = -8465109598081914482L;
 
     /**
@@ -118,12 +116,9 @@ public final class PropertyException extends RuntimeException implements Localiz
      *
      * @param pd
      *            The unknown property definition.
-     * @param p
-     *            The visitor parameter if there was one.
      * @return A new unknown property definition exception.
      */
-    public static PropertyException unknownPropertyDefinitionException(
-            final PropertyDefinition<?> pd, final Object p) {
+    public static PropertyException unknownPropertyDefinitionException(final PropertyDefinition<?> pd) {
         return new PropertyException(pd, ERR_UNKNOWN_PROPERTY_DEFINITION_EXCEPTION.get(
                 pd.getName(), pd.getClass().getName()));
     }
@@ -132,17 +127,13 @@ public final class PropertyException extends RuntimeException implements Localiz
     private static LocalizableMessage createMessage(final PropertyDefinition<?> pd,
             final Object value) {
         final PropertyDefinitionUsageBuilder builder = new PropertyDefinitionUsageBuilder(true);
-        return ERR_ILLEGAL_PROPERTY_VALUE_EXCEPTION.get(String.valueOf(value), pd.getName(),
-                builder.getUsage(pd));
+        return ERR_ILLEGAL_PROPERTY_VALUE_EXCEPTION.get(value, pd.getName(), builder.getUsage(pd));
     }
 
     /** LocalizableMessage that explains the problem. */
     private final LocalizableMessage message;
 
-    /**
-     * The property definition associated with the property that caused
-     * the exception.
-     */
+    /** The property definition associated with the property that caused the exception. */
     private final PropertyDefinition<?> pd;
 
     private PropertyException(final PropertyDefinition<?> pd, final LocalizableMessage message) {
@@ -158,7 +149,7 @@ public final class PropertyException extends RuntimeException implements Localiz
         this.pd = pd;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public LocalizableMessage getMessageObject() {
         return message;
     }

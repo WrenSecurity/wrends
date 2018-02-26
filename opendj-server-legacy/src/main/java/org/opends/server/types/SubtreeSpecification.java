@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.util.StaticUtils;
 
@@ -68,7 +69,7 @@ public final class SubtreeSpecification
    * refinement filters entries based on all of the underlying
    * refinements being <code>true</code>.
    */
-  public static final class AndRefinement extends Refinement
+  private static final class AndRefinement extends Refinement
   {
     /** The set of refinements which must all be true. */
     private final Collection<Refinement> refinementSet;
@@ -80,7 +81,7 @@ public final class SubtreeSpecification
      *          The set of refinements which must all be
      *          <code>true</code>.
      */
-    public AndRefinement(final Collection<Refinement> refinementSet)
+    private AndRefinement(final Collection<Refinement> refinementSet)
     {
       this.refinementSet = refinementSet;
     }
@@ -165,7 +166,7 @@ public final class SubtreeSpecification
      * @param filter
      *          The search filter.
      */
-    public FilterRefinement(final SearchFilter filter)
+    private FilterRefinement(final SearchFilter filter)
     {
       this.filter = filter;
     }
@@ -221,7 +222,7 @@ public final class SubtreeSpecification
    * refinement filters entries based on the presence of a specified
    * object class.
    */
-  public static final class ItemRefinement extends Refinement
+  private static final class ItemRefinement extends Refinement
   {
     /** The item's object class. */
     private final String objectClass;
@@ -235,7 +236,7 @@ public final class SubtreeSpecification
      * @param objectClass
      *          The item's object class.
      */
-    public ItemRefinement(final String objectClass)
+    private ItemRefinement(final String objectClass)
     {
       this.objectClass = objectClass;
       this.normalizedObjectClass = StaticUtils
@@ -270,8 +271,8 @@ public final class SubtreeSpecification
     @Override
     public boolean matches(final Entry entry)
     {
-      final ObjectClass oc = DirectoryServer.getObjectClass(normalizedObjectClass);
-      return oc != null && entry.hasObjectClass(oc);
+      final ObjectClass oc = DirectoryServer.getSchema().getObjectClass(normalizedObjectClass);
+      return !oc.isPlaceHolder() && entry.hasObjectClass(oc);
     }
 
     @Override
@@ -289,7 +290,7 @@ public final class SubtreeSpecification
    * being <code>false</code>
    * .
    */
-  public static final class NotRefinement extends Refinement
+  private static final class NotRefinement extends Refinement
   {
     /** The inverted refinement. */
     private final Refinement refinement;
@@ -300,7 +301,7 @@ public final class SubtreeSpecification
      * @param refinement
      *          The refinement which must be <code>false</code>.
      */
-    public NotRefinement(final Refinement refinement)
+    private NotRefinement(final Refinement refinement)
     {
       this.refinement = refinement;
     }
@@ -348,7 +349,7 @@ public final class SubtreeSpecification
    * refinement filters entries based on at least one of the
    * underlying refinements being <code>true</code>.
    */
-  public static final class OrRefinement extends Refinement
+  private static final class OrRefinement extends Refinement
   {
     /** The set of refinements of which at least one must be true. */
     private final Collection<Refinement> refinementSet;
@@ -360,7 +361,7 @@ public final class SubtreeSpecification
      *          The set of refinements of which at least one must be
      *          <code>true</code>.
      */
-    public OrRefinement(final Collection<Refinement> refinementSet)
+    private OrRefinement(final Collection<Refinement> refinementSet)
     {
       this.refinementSet = refinementSet;
     }
@@ -434,7 +435,7 @@ public final class SubtreeSpecification
   }
 
   /** Abstract interface for RFC3672 specification filter refinements. */
-  public static abstract class Refinement
+  private static abstract class Refinement
   {
     /** Create a new RFC3672 specification filter refinement. */
     protected Refinement()
@@ -481,39 +482,39 @@ public final class SubtreeSpecification
    * Internal utility class which can be used by sub-classes to help
    * parse string representations.
    */
-  protected static final class Parser
+  private static final class Parser
   {
     /** Text scanner used to parse the string value. */
     private final Scanner scanner;
 
     /** Pattern used to detect left braces. */
-    private static Pattern LBRACE = Pattern.compile("\\{.*");
+    private static final Pattern LBRACE = Pattern.compile("\\{.*");
     /** Pattern used to parse left braces. */
-    private static Pattern LBRACE_TOKEN = Pattern.compile("\\{");
+    private static final Pattern LBRACE_TOKEN = Pattern.compile("\\{");
     /** Pattern used to detect right braces. */
-    private static Pattern RBRACE = Pattern.compile("\\}.*");
+    private static final Pattern RBRACE = Pattern.compile("\\}.*");
     /** Pattern used to parse right braces. */
-    private static Pattern RBRACE_TOKEN = Pattern.compile("\\}");
+    private static final Pattern RBRACE_TOKEN = Pattern.compile("\\}");
     /** Pattern used to detect comma separators. */
-    private static Pattern SEP = Pattern.compile(",.*");
+    private static final Pattern SEP = Pattern.compile(",.*");
     /** Pattern used to parse comma separators. */
-    private static Pattern SEP_TOKEN = Pattern.compile(",");
+    private static final Pattern SEP_TOKEN = Pattern.compile(",");
     /** Pattern used to detect colon separators. */
-    private static Pattern COLON = Pattern.compile(":.*");
+    private static final Pattern COLON = Pattern.compile(":.*");
     /** Pattern used to parse colon separators. */
-    private static Pattern COLON_TOKEN = Pattern.compile(":");
+    private static final Pattern COLON_TOKEN = Pattern.compile(":");
     /** Pattern used to detect integer values. */
-    private static Pattern INT = Pattern.compile("\\d.*");
+    private static final Pattern INT = Pattern.compile("\\d.*");
     /** Pattern used to parse integer values. */
-    private static Pattern INT_TOKEN = Pattern.compile("\\d+");
+    private static final Pattern INT_TOKEN = Pattern.compile("\\d+");
     /** Pattern used to detect name values. */
-    private static Pattern NAME = Pattern.compile("[\\w_;-].*");
+    private static final Pattern NAME = Pattern.compile("[\\w_;-].*");
     /** Pattern used to parse name values. */
-    private static Pattern NAME_TOKEN = Pattern.compile("[\\w_;-]+");
+    private static final Pattern NAME_TOKEN = Pattern.compile("[\\w_;-]+");
     /** Pattern used to detect RFC3641 string values. */
-    private static Pattern STRING_VALUE = Pattern.compile("\".*");
+    private static final Pattern STRING_VALUE = Pattern.compile("\".*");
     /** Pattern used to parse RFC3641 string values. */
-    private static Pattern STRING_VALUE_TOKEN = Pattern
+    private static final Pattern STRING_VALUE_TOKEN = Pattern
         .compile("\"([^\"]|(\"\"))*\"");
 
     /**
@@ -522,7 +523,7 @@ public final class SubtreeSpecification
      * @param value
      *          The subtree specification string value.
      */
-    public Parser(final String value)
+    private Parser(final String value)
     {
       this.scanner = new Scanner(value);
     }
@@ -533,7 +534,7 @@ public final class SubtreeSpecification
      * @return <code>true</code> if and only if there are remaining
      *         tokens.
      */
-    public boolean hasNext()
+    private boolean hasNext()
     {
       return scanner.hasNext();
     }
@@ -544,7 +545,7 @@ public final class SubtreeSpecification
      * @return <code>true</code> if and only if the next token is a
      *         valid right brace character.
      */
-    public boolean hasNextRightBrace()
+    private boolean hasNextRightBrace()
     {
       return scanner.hasNext(RBRACE);
     }
@@ -560,7 +561,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public int nextInt() throws InputMismatchException,
+    private int nextInt() throws InputMismatchException,
         NoSuchElementException
     {
       final String s = nextValue(INT, INT_TOKEN);
@@ -576,7 +577,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public String nextKey() throws InputMismatchException,
+    private String nextKey() throws InputMismatchException,
         NoSuchElementException
     {
       return StaticUtils.toLowerCase(scanner.next());
@@ -594,7 +595,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public String nextName() throws InputMismatchException,
+    private String nextName() throws InputMismatchException,
         NoSuchElementException
     {
       return nextValue(NAME, NAME_TOKEN);
@@ -617,7 +618,7 @@ public final class SubtreeSpecification
      *           If an error occurred when attempting to parse a
      *           DN value.
      */
-    public void nextSpecificExclusions(final Set<DN> chopBefore,
+    private void nextSpecificExclusions(final Set<DN> chopBefore,
         final Set<DN> chopAfter) throws InputMismatchException,
         NoSuchElementException, DirectoryException
     {
@@ -678,7 +679,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public String nextStringValue() throws InputMismatchException,
+    private String nextStringValue() throws InputMismatchException,
         NoSuchElementException
     {
       final String s = nextValue(STRING_VALUE, STRING_VALUE_TOKEN);
@@ -693,7 +694,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public void skipColon() throws InputMismatchException,
+    private void skipColon() throws InputMismatchException,
         NoSuchElementException
     {
       nextValue(COLON, COLON_TOKEN);
@@ -707,7 +708,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public void skipLeftBrace() throws InputMismatchException,
+    private void skipLeftBrace() throws InputMismatchException,
         NoSuchElementException
     {
       nextValue(LBRACE, LBRACE_TOKEN);
@@ -721,7 +722,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public void skipRightBrace() throws InputMismatchException,
+    private void skipRightBrace() throws InputMismatchException,
         NoSuchElementException
     {
       nextValue(RBRACE, RBRACE_TOKEN);
@@ -735,7 +736,7 @@ public final class SubtreeSpecification
      * @throws NoSuchElementException
      *           If input is exhausted.
      */
-    public void skipSeparator() throws InputMismatchException,
+    private void skipSeparator() throws InputMismatchException,
         NoSuchElementException
     {
       nextValue(SEP, SEP_TOKEN);
@@ -1038,13 +1039,11 @@ public final class SubtreeSpecification
 
   /** Optional set of chop before absolute DNs (mapping to their local-names). */
   private final Map<DN, DN> chopBefore;
-
   /** Optional set of chop after absolute DNs (mapping to their local-names). */
   private final Map<DN, DN> chopAfter;
 
   /** The root DN. */
   private final DN rootDN;
-
   /** The optional relative base DN. */
   private final DN relativeBaseDN;
 

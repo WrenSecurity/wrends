@@ -20,7 +20,7 @@
     <parent>
         <artifactId>opendj-parent</artifactId>
         <groupId>org.forgerock.opendj</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>3.5.1</version>
     </parent>
 
     <artifactId>opendj-rest2ldap</artifactId>
@@ -34,6 +34,7 @@
             org.forgerock.opendj.*;provide:=true,
             org.forgerock.json.*;provide:=true
         </opendj.osgi.import.additional>
+        <openig.toolkit.version>4.5.2</openig.toolkit.version>
     </properties>
 
 
@@ -54,6 +55,27 @@
         </dependency>
 
         <dependency>
+            <groupId>org.forgerock.commons</groupId>
+            <artifactId>forgerock-util</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.forgerock.commons</groupId>
+            <artifactId>i18n-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.forgerock.openig</groupId>
+            <artifactId>openig-toolkit</artifactId>
+            <version>${openig.toolkit.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.forgerock.http</groupId>
+            <artifactId>chf-client-apache-async</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.forgerock</groupId>
             <artifactId>forgerock-build-tools</artifactId>
             <scope>test</scope>
@@ -63,6 +85,24 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.forgerock.commons</groupId>
+                <artifactId>i18n-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-messages</goal>
+                        </goals>
+                        <configuration>
+                            <messageFiles>
+                                <messageFile>org/forgerock/opendj/rest2ldap/rest2ldap.properties</messageFile>
+                            </messageFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>

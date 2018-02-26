@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
+ * Portions Copyright 2016 ForgeRock AS.
  */
 
 package org.forgerock.opendj.config;
@@ -40,9 +41,7 @@ package org.forgerock.opendj.config;
  */
 public abstract class PropertyDefinitionVisitor<R, P> {
 
-    /**
-     * Default constructor.
-     */
+    /** Default constructor. */
     protected PropertyDefinitionVisitor() {
         // No implementation required.
     }
@@ -246,7 +245,7 @@ public abstract class PropertyDefinitionVisitor<R, P> {
      *             Visitor implementations may optionally throw this exception.
      */
     public <T> R visitUnknown(PropertyDefinition<T> pd, P p) {
-        throw PropertyException.unknownPropertyDefinitionException(pd, p);
+        throw PropertyException.unknownPropertyDefinitionException(pd);
     }
 
 }

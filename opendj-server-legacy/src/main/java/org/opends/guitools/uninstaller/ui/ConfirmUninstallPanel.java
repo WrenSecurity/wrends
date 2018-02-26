@@ -12,38 +12,43 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
- * Portions Copyright 2011-2015 ForgeRock AS.
+ * Portions Copyright 2011-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.uninstaller.ui;
 
-import org.opends.quicksetup.CurrentInstallStatus;
-import org.opends.quicksetup.Installation;
+import static org.opends.messages.AdminToolMessages.*;
+
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.swing.Box;
+import javax.swing.DefaultListModel;
+import javax.swing.JCheckBox;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
+
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.quicksetup.Configuration;
+import org.opends.quicksetup.Installation;
 import org.opends.quicksetup.ui.FieldName;
 import org.opends.quicksetup.ui.GuiApplication;
 import org.opends.quicksetup.ui.QuickSetupStepPanel;
 import org.opends.quicksetup.ui.UIFactory;
 import org.opends.quicksetup.util.Utils;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.i18n.slf4j.LocalizedLogger;
-import java.io.IOException;
-
-import static org.opends.messages.AdminToolMessages.*;
-
 /**
  * This is the panel displayed when the user is uninstalling Open DS.  It is
  * basically a panel with the text informing of the consequences of uninstalling
  * the server and asking for confirmation.
- *
  */
 public class ConfirmUninstallPanel extends QuickSetupStepPanel
 {
@@ -59,16 +64,12 @@ public class ConfirmUninstallPanel extends QuickSetupStepPanel
   /**
    * The constructor of this class.
    * @param application Application this panel represents
-   * @param installStatus the object describing the current installation status.
-   *
    */
-  public ConfirmUninstallPanel(GuiApplication application,
-                               CurrentInstallStatus installStatus)
+  public ConfirmUninstallPanel(GuiApplication application)
   {
     super(application);
   }
 
-  /** {@inheritDoc} */
   @Override
   public Object getFieldValue(FieldName fieldName)
   {
@@ -97,14 +98,12 @@ public class ConfirmUninstallPanel extends QuickSetupStepPanel
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   protected LocalizableMessage getTitle()
   {
     return INFO_CONFIRM_UNINSTALL_PANEL_TITLE.get();
   }
 
-  /** {@inheritDoc} */
   @Override
   protected Component createInputPanel()
   {
@@ -174,14 +173,14 @@ public class ConfirmUninstallPanel extends QuickSetupStepPanel
         FieldName.REMOVE_LDIFS
     };
 
-    for (int i=0; i<names.length; i++)
+    for (FieldName fieldName : names)
     {
       gbc.gridwidth = GridBagConstraints.RELATIVE;
       p.add(Box.createHorizontalGlue(), gbc);
       gbc.insets.left = 0;
       gbc.gridwidth = GridBagConstraints.REMAINDER;
       gbc.insets.left = UIFactory.LEFT_INSET_SECONDARY_FIELD;
-      p.add(getCheckBox(names[i]), gbc);
+      p.add(getCheckBox(fieldName), gbc);
     }
 
     gbc.weightx = 1.0;
@@ -227,7 +226,6 @@ public class ConfirmUninstallPanel extends QuickSetupStepPanel
     return panel;
   }
 
-  /** {@inheritDoc} */
   @Override
   protected LocalizableMessage getInstructions()
   {

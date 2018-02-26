@@ -20,7 +20,6 @@ import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.requests.ModifyRequest;
-import org.forgerock.opendj.ldap.requests.Requests;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.api.PasswordStorageScheme;
 import org.opends.server.types.Entry;
@@ -30,12 +29,12 @@ import org.opends.server.core.PasswordPolicy;
 import org.opends.server.schema.AuthPasswordSyntax;
 import org.opends.server.schema.UserPasswordSyntax;
 import org.opends.server.types.DirectoryException;
-import org.opends.server.types.Entry;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.forgerock.opendj.ldap.ModificationType.*;
+import static org.forgerock.opendj.ldap.requests.Requests.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
 import static org.testng.Assert.*;
 
@@ -285,11 +284,11 @@ public abstract class PasswordStorageSchemeTestCase
 
 
   /**
-   * Sets whether or not to allow pre-encoded password values for the
+   * Sets whether to allow pre-encoded password values for the
    * current password storage scheme and returns the previous value so that
    * it can be restored.
    *
-   * @param allowPreencoded whether or not to allow pre-encoded passwords
+   * @param allowPreencoded whether to allow pre-encoded passwords
    * @return the previous value for the allow preencoded passwords
    */
   protected static boolean setAllowPreencodedPasswords(boolean allowPreencoded)
@@ -302,7 +301,7 @@ public abstract class PasswordStorageSchemeTestCase
       PasswordPolicy p = (PasswordPolicy) DirectoryServer.getAuthenticationPolicy(dn);
       final boolean previousValue = p.isAllowPreEncodedPasswords();
 
-      ModifyRequest modifyRequest = Requests.newModifyRequest("cn=Default Password Policy,cn=Password Policies,cn=config")
+      ModifyRequest modifyRequest = newModifyRequest("cn=Default Password Policy,cn=Password Policies,cn=config")
           .addModification(REPLACE, "ds-cfg-allow-pre-encoded-passwords", allowPreencoded);
       ModifyOperation modifyOperation = getRootConnection().processModify(modifyRequest);
       assertEquals(modifyOperation.getResultCode(), ResultCode.SUCCESS);

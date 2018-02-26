@@ -24,7 +24,6 @@ import static org.opends.server.util.StaticUtils.*;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,12 +58,10 @@ import org.opends.server.types.SearchFilter;
  */
 public class ExportTask extends Task
 {
-
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-
   /** Stores mapping between configuration attribute name and its label. */
-  private static Map<String,LocalizableMessage> argDisplayMap = new HashMap<>();
+  private static final Map<String, LocalizableMessage> argDisplayMap = new HashMap<>();
   static {
     argDisplayMap.put(ATTR_TASK_EXPORT_LDIF_FILE, INFO_EXPORT_ARG_LDIF_FILE.get());
     argDisplayMap.put(ATTR_TASK_EXPORT_BACKEND_ID, INFO_EXPORT_ARG_BACKEND_ID.get());
@@ -98,19 +95,16 @@ public class ExportTask extends Task
 
   private LDIFExportConfig exportConfig;
 
-  /** {@inheritDoc} */
   @Override
   public LocalizableMessage getDisplayName() {
     return INFO_TASK_EXPORT_NAME.get();
   }
 
-  /** {@inheritDoc} */
   @Override
   public LocalizableMessage getAttributeDisplayName(String name) {
     return argDisplayMap.get(name);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void initializeTask() throws DirectoryException
   {
@@ -128,9 +122,8 @@ public class ExportTask extends Task
       }
     }
 
-
     Entry taskEntry = getTaskEntry();
-    AttributeType typeWrapColumn = getAttributeType(ATTR_TASK_EXPORT_WRAP_COLUMN);
+    AttributeType typeWrapColumn = getSchema().getAttributeType(ATTR_TASK_EXPORT_WRAP_COLUMN);
 
     ldifFile = toString(taskEntry, ATTR_TASK_EXPORT_LDIF_FILE);
     File f = new File (ldifFile);
@@ -167,26 +160,25 @@ public class ExportTask extends Task
 
   private boolean toBoolean(Entry entry, boolean defaultValue, String attrName)
   {
-    final AttributeType attrType = getAttributeType(attrName);
+    final AttributeType attrType = getSchema().getAttributeType(attrName);
     final List<Attribute> attrs = entry.getAttribute(attrType);
     return TaskUtils.getBoolean(attrs, defaultValue);
   }
 
   private ArrayList<String> toListOfString(Entry entry, String attrName)
   {
-    final AttributeType attrType = getAttributeType(attrName);
+    final AttributeType attrType = getSchema().getAttributeType(attrName);
     final List<Attribute> attrs = entry.getAttribute(attrType);
     return TaskUtils.getMultiValueString(attrs);
   }
 
   private String toString(Entry entry, String attrName)
   {
-    final AttributeType attrType = getAttributeType(attrName);
+    final AttributeType attrType = getSchema().getAttributeType(attrName);
     final List<Attribute> attrs = entry.getAttribute(attrType);
     return TaskUtils.getSingleValueString(attrs);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void interruptTask(TaskState interruptState, LocalizableMessage interruptReason)
   {
@@ -200,13 +192,11 @@ public class ExportTask extends Task
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isInterruptable() {
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   protected TaskState runTask()
   {
@@ -284,8 +274,7 @@ public class ExportTask extends Task
       return TaskState.STOPPED_BY_ERROR;
     }
 
-    ArrayList<DN> defaultIncludeBranches = new ArrayList<>(backend.getBaseDNs().length);
-    Collections.addAll(defaultIncludeBranches, backend.getBaseDNs());
+    ArrayList<DN> defaultIncludeBranches = new ArrayList<>(backend.getBaseDNs());
 
     ArrayList<DN> excludeBranches = new ArrayList<>();
     if (excludeBranchStrings != null)
@@ -309,7 +298,6 @@ public class ExportTask extends Task
         }
       }
     }
-
 
     ArrayList<DN> includeBranches;
     if (!includeBranchStrings.isEmpty())
@@ -343,7 +331,6 @@ public class ExportTask extends Task
       includeBranches = defaultIncludeBranches;
     }
 
-
     // Create the LDIF export configuration to use when reading the LDIF.
     ExistingFileBehavior existingBehavior;
     if (appendToLDIF)
@@ -371,11 +358,9 @@ public class ExportTask extends Task
     // FIXME -- Should this be conditional?
     exportConfig.setInvokeExportPlugins(true);
 
-
     // Get the set of base DNs for the backend as an array.
     DN[] baseDNs = new DN[defaultIncludeBranches.size()];
     defaultIncludeBranches.toArray(baseDNs);
-
 
     // From here we must make sure we close the export config.
     try
@@ -396,7 +381,6 @@ public class ExportTask extends Task
         logger.error(ERR_LDIFEXPORT_CANNOT_LOCK_BACKEND, backend.getBackendID(), getExceptionMessage(e));
         return TaskState.STOPPED_BY_ERROR;
       }
-
 
       // From here we must make sure we release the shared backend lock.
       try
@@ -472,7 +456,7 @@ public class ExportTask extends Task
     HashSet<AttributeType> attributes = new HashSet<>();
     for (String attrName : attributeStrings)
     {
-      attributes.add(DirectoryServer.getAttributeType(attrName));
+      attributes.add(DirectoryServer.getSchema().getAttributeType(attrName));
     }
     return attributes;
   }

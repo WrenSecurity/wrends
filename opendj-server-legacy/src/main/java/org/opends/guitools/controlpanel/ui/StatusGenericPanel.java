@@ -95,7 +95,7 @@ import org.opends.guitools.controlpanel.util.LowerCaseComparator;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.quicksetup.ui.CustomHTMLEditorKit;
 import org.opends.server.schema.SchemaConstants;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.types.OpenDsException;
 import org.opends.server.util.ServerConstants;
 import org.opends.server.util.StaticUtils;
@@ -111,14 +111,10 @@ public abstract class StatusGenericPanel extends JPanel implements ConfigChangeL
 {
   private static final long serialVersionUID = -9123358652232556732L;
 
-  /**
-   * The string to be used as combo separator.
-   */
+  /** The string to be used as combo separator. */
   public static final String COMBO_SEPARATOR = "----------";
 
-  /**
-   * The not applicable message.
-   */
+  /** The not applicable message. */
   protected static final LocalizableMessage NOT_APPLICABLE = INFO_NOT_APPLICABLE_LABEL.get();
 
   private static final LocalizableMessage AUTHENTICATE = INFO_AUTHENTICATE_BUTTON_LABEL.get();
@@ -229,6 +225,7 @@ public abstract class StatusGenericPanel extends JPanel implements ConfigChangeL
    */
   public void toBeDisplayed(final boolean visible)
   {
+    // to be overridden
   }
 
   /**
@@ -242,9 +239,7 @@ public abstract class StatusGenericPanel extends JPanel implements ConfigChangeL
     return true;
   }
 
-  /**
-   * Constructor.
-   */
+  /** Constructor. */
   protected StatusGenericPanel()
   {
     super(new GridBagLayout());
@@ -371,9 +366,7 @@ public abstract class StatusGenericPanel extends JPanel implements ConfigChangeL
     p.add(errorPane, gbc);
   }
 
-  /**
-   * Creates the error pane.
-   */
+  /** Creates the error pane. */
   protected void createErrorPane()
   {
     errorPane = Utilities.makeHtmlPane("", ColorAndFontConstants.progressFont);
@@ -532,9 +525,7 @@ public abstract class StatusGenericPanel extends JPanel implements ConfigChangeL
     comp.setFont(ColorAndFontConstants.defaultFont);
   }
 
-  /**
-   * Packs the parent dialog.
-   */
+  /** Packs the parent dialog. */
   protected void packParentDialog()
   {
     Window dlg = Utilities.getParentDialog(this);
@@ -966,7 +957,6 @@ public abstract class StatusGenericPanel extends JPanel implements ConfigChangeL
           errorPane, title, ColorAndFontConstants.errorTitleFont, mb.toMessage(), ColorAndFontConstants.defaultFont);
       SwingUtilities.invokeLater(new Runnable()
       {
-        /** {@inheritDoc} */
         @Override
         public void run()
         {
@@ -2121,7 +2111,7 @@ public abstract class StatusGenericPanel extends JPanel implements ConfigChangeL
    * @param monitoringEntry
    *          the monitoring entry containing the information to be displayed.
    */
-  protected void updateMonitoringInfo(final List<MonitoringAttributes> monitoringAttrs,
+  protected void updateMonitoringInfo(final List<? extends MonitoringAttributes> monitoringAttrs,
       final List<JLabel> monitoringLabels, final CustomSearchResult monitoringEntry)
   {
     for (int i = 0; i < monitoringAttrs.size(); i++)

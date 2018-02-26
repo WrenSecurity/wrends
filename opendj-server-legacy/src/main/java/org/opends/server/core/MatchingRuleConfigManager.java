@@ -32,17 +32,17 @@ import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.config.server.ConfigurationAddListener;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.config.server.ConfigurationDeleteListener;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.MatchingRuleUse;
 import org.forgerock.opendj.server.config.meta.MatchingRuleCfgDefn;
 import org.forgerock.opendj.server.config.server.MatchingRuleCfg;
 import org.forgerock.opendj.server.config.server.RootCfg;
 import org.forgerock.util.Utils;
 import org.opends.server.api.MatchingRuleFactory;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.InitializationException;
-import org.opends.server.types.MatchingRuleUse;
 
 /**
  * This class defines a utility that will be used to manage the set of matching
@@ -54,15 +54,10 @@ public class MatchingRuleConfigManager
        implements ConfigurationChangeListener<MatchingRuleCfg>,
                   ConfigurationAddListener<MatchingRuleCfg>,
                   ConfigurationDeleteListener<MatchingRuleCfg>
-
 {
-
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-  /**
-   * A mapping between the DNs of the config entries and the associated matching
-   * rule Factories.
-   */
+  /** A mapping between the DNs of the config entries and the associated matching rule Factories. */
   private ConcurrentHashMap<DN, MatchingRuleFactory<?>> matchingRuleFactories;
 
   private final ServerContext serverContext;
@@ -78,8 +73,6 @@ public class MatchingRuleConfigManager
     this.serverContext = serverContext;
     matchingRuleFactories = new ConcurrentHashMap<>();
   }
-
-
 
   /**
    * Initializes all matching rules after reading all the Matching Rule
@@ -111,21 +104,12 @@ public class MatchingRuleConfigManager
         String className = mrConfiguration.getJavaClass();
         try
         {
-          MatchingRuleFactory<?> factory = loadMatchingRuleFactory(className, mrConfiguration, true);
-
-          try
-          {
-            for(MatchingRule matchingRule: factory.getMatchingRules())
-            {
-              DirectoryServer.registerMatchingRule(matchingRule, false);
-            }
-            matchingRuleFactories.put(mrConfiguration.dn(), factory);
-          }
-          catch (DirectoryException de)
-          {
-            logger.warn(WARN_CONFIG_SCHEMA_MR_CONFLICTING_MR, mrConfiguration.dn(), de.getMessageObject());
-            continue;
-          }
+          registerMatchingRules(mrConfiguration, className);
+        }
+        catch (DirectoryException de)
+        {
+          logger.warn(WARN_CONFIG_SCHEMA_MR_CONFLICTING_MR, mrConfiguration.dn(), de.getMessageObject());
+          continue;
         }
         catch (InitializationException ie)
         {
@@ -136,9 +120,6 @@ public class MatchingRuleConfigManager
     }
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAddAcceptable(MatchingRuleCfg configuration,
                       List<LocalizableMessage> unacceptableReasons)
@@ -163,9 +144,6 @@ public class MatchingRuleConfigManager
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationAdd(MatchingRuleCfg configuration)
   {
@@ -178,39 +156,40 @@ public class MatchingRuleConfigManager
       return ccr;
     }
 
-    MatchingRuleFactory<?> factory = null;
 
     // Get the name of the class and make sure we can instantiate it as a
     // matching rule Factory.
     String className = configuration.getJavaClass();
+    registerMatchingRules(configuration, className, ccr);
+    return ccr;
+  }
+
+  private void registerMatchingRules(MatchingRuleCfg configuration, String className, final ConfigChangeResult ccr)
+  {
     try
     {
-      factory = loadMatchingRuleFactory(className, configuration, true);
-
-      for (MatchingRule matchingRule: factory.getMatchingRules())
-      {
-        DirectoryServer.registerMatchingRule(matchingRule, false);
-      }
-      matchingRuleFactories.put(configuration.dn(),factory);
+      registerMatchingRules(configuration, className);
     }
     catch (DirectoryException de)
     {
       ccr.setResultCodeIfSuccess(DirectoryServer.getServerErrorResultCode());
-      ccr.addMessage(WARN_CONFIG_SCHEMA_MR_CONFLICTING_MR.get(
-          configuration.dn(), de.getMessageObject()));
+      ccr.addMessage(WARN_CONFIG_SCHEMA_MR_CONFLICTING_MR.get(configuration.dn(), de.getMessageObject()));
     }
     catch (InitializationException ie)
     {
       ccr.setResultCodeIfSuccess(DirectoryServer.getServerErrorResultCode());
       ccr.addMessage(ie.getMessageObject());
     }
-
-    return ccr;
   }
 
+  private void registerMatchingRules(MatchingRuleCfg configuration, String className)
+      throws InitializationException, DirectoryException
+  {
+    MatchingRuleFactory<?> factory = loadMatchingRuleFactory(className, configuration, true);
+    DirectoryServer.getSchema().registerMatchingRules(factory.getMatchingRules(), false);
+    matchingRuleFactories.put(configuration.dn(),factory);
+  }
 
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationDeleteAcceptable(MatchingRuleCfg configuration,
                       List<LocalizableMessage> unacceptableReasons)
@@ -224,7 +203,7 @@ public class MatchingRuleConfigManager
     {
       if (matchingRule != null)
       {
-        for (AttributeType at : DirectoryServer.getAttributeTypes())
+        for (AttributeType at : DirectoryServer.getSchema().getAttributeTypes())
         {
           final String attr = at.getNameOrOID();
           if (!isDeleteAcceptable(at.getApproximateMatchingRule(), matchingRule, attr, unacceptableReasons)
@@ -238,8 +217,7 @@ public class MatchingRuleConfigManager
         }
 
         final String oid = matchingRule.getOID();
-        for (MatchingRuleUse mru :
-                DirectoryServer.getMatchingRuleUses().values())
+        for (MatchingRuleUse mru : DirectoryServer.getSchema().getMatchingRuleUses())
         {
           if (oid.equals(mru.getMatchingRule().getOID()))
           {
@@ -269,8 +247,6 @@ public class MatchingRuleConfigManager
     return true;
   }
 
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationDelete(MatchingRuleCfg configuration)
   {
@@ -279,27 +255,13 @@ public class MatchingRuleConfigManager
     MatchingRuleFactory<?> factory = matchingRuleFactories.remove(configuration.dn());
     if (factory != null)
     {
-      for(MatchingRule matchingRule: factory.getMatchingRules())
-      {
-        try
-        {
-          DirectoryServer.deregisterMatchingRule(matchingRule);
-        }
-        catch (DirectoryException e)
-        {
-          ccr.addMessage(e.getMessageObject());
-          ccr.setResultCodeIfSuccess(e.getResultCode());
-        }
-      }
+      deregisterMatchingRules(factory, ccr);
       factory.finalizeMatchingRule();
     }
 
     return ccr;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(MatchingRuleCfg configuration,
                       List<LocalizableMessage> unacceptableReasons)
@@ -334,7 +296,7 @@ public class MatchingRuleConfigManager
       {
         if (matchingRule != null)
         {
-          for (AttributeType at : DirectoryServer.getAttributeTypes())
+          for (AttributeType at : DirectoryServer.getSchema().getAttributeTypes())
           {
             final String attr = at.getNameOrOID();
             if (!isDisableAcceptable(at.getApproximateMatchingRule(), matchingRule, attr, unacceptableReasons)
@@ -348,8 +310,7 @@ public class MatchingRuleConfigManager
           }
 
           final String oid = matchingRule.getOID();
-          for (MatchingRuleUse mru :
-               DirectoryServer.getMatchingRuleUses().values())
+          for (MatchingRuleUse mru : DirectoryServer.getSchema().getMatchingRuleUses())
           {
             if (oid.equals(mru.getMatchingRule().getOID()))
             {
@@ -380,18 +341,15 @@ public class MatchingRuleConfigManager
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
                                  MatchingRuleCfg configuration)
   {
     final ConfigChangeResult ccr = new ConfigChangeResult();
 
-
    // Get the existing matching rule factory if it's already enabled.
     MatchingRuleFactory<?> existingFactory =
             matchingRuleFactories.get(configuration.dn());
-
 
     // If the new configuration has the matching rule disabled, then disable it
     // if it is enabled, or do nothing if it's already disabled.
@@ -399,24 +357,12 @@ public class MatchingRuleConfigManager
     {
      if (existingFactory != null)
       {
-        for(MatchingRule existingRule: existingFactory.getMatchingRules())
-        {
-          try
-          {
-            DirectoryServer.deregisterMatchingRule(existingRule);
-          }
-          catch (DirectoryException e)
-          {
-            ccr.addMessage(e.getMessageObject());
-            ccr.setResultCodeIfSuccess(e.getResultCode());
-          }
-        }
+        deregisterMatchingRules(existingFactory, ccr);
         matchingRuleFactories.remove(configuration.dn());
         existingFactory.finalizeMatchingRule();
       }
       return ccr;
     }
-
 
     // Get the class for the matching rule.  If the matching rule is already
     // enabled, then we shouldn't do anything with it although if the class has
@@ -434,32 +380,25 @@ public class MatchingRuleConfigManager
       return ccr;
     }
 
-    MatchingRuleFactory<?> factory = null;
-    try
-    {
-      factory = loadMatchingRuleFactory(className, configuration, true);
-
-      for (MatchingRule matchingRule: factory.getMatchingRules())
-      {
-        DirectoryServer.registerMatchingRule(matchingRule, false);
-      }
-      matchingRuleFactories.put(configuration.dn(), factory);
-    }
-    catch (DirectoryException de)
-    {
-      ccr.addMessage(WARN_CONFIG_SCHEMA_MR_CONFLICTING_MR.get(configuration.dn(), de.getMessageObject()));
-      ccr.setResultCodeIfSuccess(DirectoryServer.getServerErrorResultCode());
-    }
-    catch (InitializationException ie)
-    {
-      ccr.setResultCodeIfSuccess(DirectoryServer.getServerErrorResultCode());
-      ccr.addMessage(ie.getMessageObject());
-    }
-
+    registerMatchingRules(configuration, className, ccr);
     return ccr;
   }
 
-
+  private void deregisterMatchingRules(MatchingRuleFactory<?> factory, final ConfigChangeResult ccr)
+  {
+    for (MatchingRule matchingRule : factory.getMatchingRules())
+    {
+      try
+      {
+        DirectoryServer.getSchema().deregisterMatchingRule(matchingRule);
+      }
+      catch (DirectoryException e)
+      {
+        ccr.addMessage(e.getMessageObject());
+        ccr.setResultCodeIfSuccess(e.getResultCode());
+      }
+    }
+  }
 
   /**
    * Loads the specified class, instantiates it as an attribute syntax, and

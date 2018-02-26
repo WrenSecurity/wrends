@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.server.replication.plugin;
 
@@ -30,14 +30,14 @@ public class ReplLDIFOutputStream
        extends OutputStream
 {
   /** The number of entries to be exported. */
-  long numEntries;
+  private final long numEntries;
 
   /** The current number of entries exported. */
   private long numExportedEntries;
-  String entryBuffer = "";
+  private String entryBuffer = "";
 
   /** The checksum for computing the generation id. */
-  private GenerationIdChecksum checkSum = new GenerationIdChecksum();
+  private final GenerationIdChecksum checkSum = new GenerationIdChecksum();
 
   /**
    * Creates a new ReplLDIFOutputStream related to a replication
@@ -50,7 +50,7 @@ public class ReplLDIFOutputStream
     this.numEntries = numEntries;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void write(int i) throws IOException
   {
     throw new IOException("Invalid call");
@@ -65,64 +65,52 @@ public class ReplLDIFOutputStream
     return checkSum.getValue();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void write(byte b[], int off, int len) throws IOException
   {
-    int endOfEntryIndex;
-    int endIndex;
-
-    String ebytes = "";
-    ebytes = ebytes.concat(entryBuffer);
+    String ebytes = entryBuffer;
     entryBuffer = "";
 
-    ebytes = ebytes.concat(new String(b, off, len));
-    endIndex = ebytes.length();
+    ebytes = ebytes + new String(b, off, len);
+    int endIndex = ebytes.length();
 
     while (true)
     {
       // if we have the bytes for an entry, let's make an entry and send it
-      endOfEntryIndex = ebytes.indexOf(ServerConstants.EOL +
-          ServerConstants.EOL);
-
-      if ( endOfEntryIndex >= 0 )
-      {
-        endOfEntryIndex += 2;
-        entryBuffer = ebytes.substring(0, endOfEntryIndex);
-
-        // Send the entry
-        if (numEntries>0 && getNumExportedEntries() > numEntries)
-        {
-          // This outputstream has reached the total number
-          // of entries to export.
-          throw new IOException();
-        }
-
-        // Add the entry bytes to the checksum
-        byte[] entryBytes = entryBuffer.getBytes();
-        checkSum.update(entryBytes, 0, entryBytes.length);
-
-        numExportedEntries++;
-        entryBuffer = "";
-
-        if (endIndex == endOfEntryIndex)
-        {
-          // no more data to process
-          break;
-        }
-        else
-        {
-          // loop to the data of the next entry
-          ebytes = ebytes.substring(endOfEntryIndex,
-                                    endIndex);
-          endIndex = ebytes.length();
-        }
-      }
-      else
+      int endOfEntryIndex = ebytes.indexOf(ServerConstants.EOL + ServerConstants.EOL);
+      if (endOfEntryIndex < 0)
       {
         // a next call to us will provide more bytes to make an entry
         entryBuffer = entryBuffer.concat(ebytes);
         break;
       }
+
+      endOfEntryIndex += 2;
+      entryBuffer = ebytes.substring(0, endOfEntryIndex);
+
+      // Send the entry
+      if (numEntries > 0 && getNumExportedEntries() > numEntries)
+      {
+        // This outputstream has reached the total number
+        // of entries to export.
+        throw new IOException();
+      }
+
+      // Add the entry bytes to the checksum
+      byte[] entryBytes = entryBuffer.getBytes();
+      checkSum.update(entryBytes, 0, entryBytes.length);
+
+      numExportedEntries++;
+      entryBuffer = "";
+
+      if (endIndex == endOfEntryIndex)
+      {
+        // no more data to process
+        break;
+      }
+      // loop to the data of the next entry
+      ebytes = ebytes.substring(endOfEntryIndex, endIndex);
+      endIndex = ebytes.length();
     }
   }
 

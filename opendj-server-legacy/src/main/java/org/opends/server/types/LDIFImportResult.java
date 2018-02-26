@@ -12,11 +12,9 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2008 Sun Microsystems, Inc.
- * Portions Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2015-2016 ForgeRock AS.
  */
 package org.opends.server.types;
-
-
 
 /**
  * This class defines a data structure for providing information about
@@ -32,10 +30,8 @@ public final class LDIFImportResult
 {
   /** The total number of entries read during the import. */
   private final long entriesRead;
-
   /** The total number of entries rejected during the import. */
   private final long entriesRejected;
-
   /** The total number of entries skipped during the import. */
   private final long entriesSkipped;
 
@@ -122,6 +118,7 @@ public final class LDIFImportResult
    * @return  A string representation of this LDIF import result
    *          object.
    */
+  @Override
   public String toString()
   {
     StringBuilder buffer = new StringBuilder();
@@ -138,7 +135,7 @@ public final class LDIFImportResult
    * @param  buffer  The buffer to which the information should be
    *                 appended.
    */
-  public void toString(StringBuilder buffer)
+  private void toString(StringBuilder buffer)
   {
     buffer.append("LDIFImportResult(entriesRead=");
     buffer.append(entriesRead);
@@ -149,4 +146,3 @@ public final class LDIFImportResult
     buffer.append(")");
   }
 }
-

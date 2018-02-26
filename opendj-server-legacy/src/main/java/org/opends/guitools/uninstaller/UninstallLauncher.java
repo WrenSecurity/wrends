@@ -12,9 +12,8 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
- * Portions Copyright 2011-2015 ForgeRock AS.
+ * Portions Copyright 2011-2016 ForgeRock AS.
  */
-
 package org.opends.guitools.uninstaller;
 
 import static org.opends.messages.AdminToolMessages.*;
@@ -25,11 +24,9 @@ import static com.forgerock.opendj.cli.Utils.wrapText;
 import org.forgerock.i18n.LocalizableMessage;
 import org.opends.messages.ToolMessages;
 
-import java.io.File;
 import org.opends.quicksetup.CliApplication;
 import org.opends.quicksetup.Launcher;
 import org.opends.quicksetup.Installation;
-import org.opends.quicksetup.QuickSetupLog;
 import org.opends.quicksetup.ReturnCode;
 import org.opends.quicksetup.util.Utils;
 import org.opends.server.util.DynamicConstants;
@@ -48,9 +45,6 @@ public class UninstallLauncher extends Launcher {
   /** Prefix for log files. */
   public static final String LOG_FILE_PREFIX = "opendj-uninstall-";
 
-  /** Suffix for log files. */
-  public static final String LOG_FILE_SUFFIX = ".log";
-
   /**
    * The main method which is called by the uninstall command lines.
    *
@@ -59,14 +53,6 @@ public class UninstallLauncher extends Launcher {
    * will pass to the org.opends.server.tools.InstallDS class.
    */
   public static void main(String[] args) {
-    try {
-      QuickSetupLog.initLogFileHandler(
-              File.createTempFile(LOG_FILE_PREFIX, LOG_FILE_SUFFIX));
-
-    } catch (Throwable t) {
-      System.err.println("Unable to initialize log");
-      t.printStackTrace();
-    }
     new UninstallLauncher(args).launch();
   }
 
@@ -78,7 +64,7 @@ public class UninstallLauncher extends Launcher {
    * @param args the arguments passed by the command lines.
    */
   public UninstallLauncher(String[] args) {
-    super(args);
+    super(args, LOG_FILE_PREFIX);
 
     String scriptName;
     if (isWindows()) {
@@ -94,7 +80,7 @@ public class UninstallLauncher extends Launcher {
     initializeParser();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void launch() {
     //  Validate user provided data
     try
@@ -122,9 +108,7 @@ public class UninstallLauncher extends Launcher {
     }
   }
 
-  /**
-   * Initialize the contents of the argument parser.
-   */
+  /** Initialize the contents of the argument parser. */
   protected void initializeParser()
   {
     argParser = new UninstallerArgumentParser(getClass().getName(),
@@ -142,95 +126,65 @@ public class UninstallLauncher extends Launcher {
     }
   }
 
-  /** {@inheritDoc} */
-  protected void guiLaunchFailed(String logFilePath) {
-    if (logFilePath != null)
-    {
-      System.err.println(ERR_UNINSTALL_LAUNCHER_GUI_LAUNCHED_FAILED_DETAILS
-              .get(logFilePath));
-    }
-    else
-    {
-      System.err.println(ERR_UNINSTALL_LAUNCHER_GUI_LAUNCHED_FAILED.get());
-    }
+  @Override
+  protected void guiLaunchFailed() {
+      System.err.println(
+          tempLogFile.isEnabled() ? ERR_UNINSTALL_LAUNCHER_GUI_LAUNCHED_FAILED_DETAILS.get(tempLogFile.getPath())
+                                  : ERR_UNINSTALL_LAUNCHER_GUI_LAUNCHED_FAILED.get());
   }
 
-  /** {@inheritDoc} */
+  @Override
   public ArgumentParser getArgumentParser() {
     return this.argParser;
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected void willLaunchGui() {
     System.out.println(INFO_UNINSTALL_LAUNCHER_LAUNCHING_GUI.get());
     System.setProperty("org.opends.quicksetup.Application.class",
             org.opends.guitools.uninstaller.Uninstaller.class.getName());
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected CliApplication createCliApplication() {
     return new Uninstaller();
   }
 
-  /** {@inheritDoc} */
+  @Override
   protected LocalizableMessage getFrameTitle() {
     return Utils.getCustomizedObject("INFO_FRAME_UNINSTALL_TITLE",
         INFO_FRAME_UNINSTALL_TITLE.get(DynamicConstants.PRODUCT_NAME),
         LocalizableMessage.class);
   }
 
-  /**
-   * Indicates whether or not the launcher should print a usage
-   * statement based on the content of the arguments passed into
-   * the constructor.
-   * @return boolean where true indicates usage should be printed
-   */
+  @Override
   protected boolean shouldPrintUsage() {
     return argParser.isUsageArgumentPresent() &&
     !argParser.usageOrVersionDisplayed();
   }
 
-  /**
-   * Indicates whether or not the launcher should print a usage
-   * statement based on the content of the arguments passed into
-   * the constructor.
-   * @return boolean where true indicates usage should be printed
-   */
+  @Override
   protected boolean isQuiet() {
     return argParser.isQuiet();
   }
 
   /**
-   * Indicates whether or not the launcher should print a usage
-   * statement based on the content of the arguments passed into
-   * the constructor.
+   * Indicates whether the launcher should print a usage statement
+   * based on the content of the arguments passed into the constructor.
    * @return boolean where true indicates usage should be printed
    */
   protected boolean isNoPrompt() {
     return !argParser.isInteractive();
   }
 
-  /**
-   * Indicates whether or not the launcher should print a version
-   * statement based on the content of the arguments passed into
-   * the constructor.
-   * @return boolean where true indicates version should be printed
-   */
+  @Override
   protected boolean shouldPrintVersion() {
     return argParser.isVersionArgumentPresent() &&
     !argParser.usageOrVersionDisplayed();
   }
 
-  /**
-   * Indicates whether the launcher will launch a command line versus
-   * a graphical application based on the contents of the arguments
-   * passed into the constructor.
-   *
-   * @return boolean where true indicates that a CLI application
-   *         should be launched
-   */
+  @Override
   protected boolean isCli() {
     return argParser.isCli();
   }
-
 }

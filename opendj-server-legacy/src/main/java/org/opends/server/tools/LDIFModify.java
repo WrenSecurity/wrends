@@ -19,9 +19,8 @@ package org.opends.server.tools;
 import static org.opends.messages.ToolMessages.*;
 import static org.opends.server.protocols.ldap.LDAPResultCode.*;
 import static org.opends.server.util.StaticUtils.*;
-import static com.forgerock.opendj.cli.ArgumentConstants.*;
-import static com.forgerock.opendj.cli.Utils.*;
 import static com.forgerock.opendj.cli.CommonArguments.*;
+import static com.forgerock.opendj.cli.Utils.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,12 +35,13 @@ import java.util.TreeMap;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.DirectoryServer.DirectoryServerVersionHandler;
 import org.opends.server.loggers.JDKLogging;
 import org.opends.server.types.Attribute;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.ExistingFileBehavior;
@@ -51,7 +51,6 @@ import org.opends.server.types.LDIFExportConfig;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.Modification;
 import org.opends.server.types.NullOutputStream;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.RawModification;
 import org.opends.server.util.AddChangeRecordEntry;
 import org.opends.server.util.BuildVersion;
@@ -309,10 +308,8 @@ public class LDIFModify
         {
           for (ByteString v : a)
           {
-            String stringValue = v.toString();
-            String lowerValue  = toLowerCase(stringValue);
-            ObjectClass oc = DirectoryServer.getObjectClass(lowerValue, true);
-            objectClasses.put(oc, stringValue);
+            String ocName = v.toString();
+            objectClasses.put(DirectoryServer.getSchema().getObjectClass(ocName), ocName);
           }
         }
         else if (t.isOperational())

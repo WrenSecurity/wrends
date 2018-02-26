@@ -19,8 +19,8 @@ package org.opends.server.tools;
 import static org.opends.messages.ToolMessages.*;
 import static org.opends.server.config.ConfigConstants.*;
 import static org.opends.server.util.StaticUtils.*;
-import static com.forgerock.opendj.cli.CommonArguments.*;
 import static com.forgerock.opendj.cli.ArgumentConstants.*;
+import static com.forgerock.opendj.cli.CommonArguments.*;
 import static com.forgerock.opendj.cli.Utils.*;
 
 import java.io.File;
@@ -34,25 +34,20 @@ import java.util.Set;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.forgerock.opendj.config.server.ConfigException;
-import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.server.config.server.BackendCfg;
 import org.opends.server.api.Backend;
 import org.opends.server.api.Backend.BackendOperation;
 import org.opends.server.api.plugin.PluginType;
 import org.opends.server.core.DirectoryServer;
+import org.opends.server.core.DirectoryServer.InitializationBuilder;
 import org.opends.server.core.LockFileManager;
-import org.opends.server.loggers.ErrorLogPublisher;
-import org.opends.server.loggers.ErrorLogger;
 import org.opends.server.loggers.JDKLogging;
-import org.opends.server.loggers.TextErrorLogPublisher;
-import org.opends.server.loggers.TextWriter;
 import org.opends.server.protocols.ldap.LDAPAttribute;
 import org.opends.server.tasks.ImportTask;
 import org.opends.server.tools.makeldif.TemplateFile;
 import org.opends.server.tools.tasks.TaskTool;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.ExistingFileBehavior;
 import org.opends.server.types.InitializationException;
@@ -77,14 +72,10 @@ import com.forgerock.opendj.cli.StringArgument;
  * server process (e.g., via the tasks interface).
  */
 public class ImportLDIF extends TaskTool {
-
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-  /**
-   * The buffer size that should be used when reading data from LDIF.
-   */
-  public static final int LDIF_BUFFER_SIZE = 1048576;
-
+  /** The buffer size that should be used when reading data from LDIF. */
+  private static final int LDIF_BUFFER_SIZE = 1048576;
 
   /**
    * The main method for ImportLDIF tool.
@@ -94,22 +85,10 @@ public class ImportLDIF extends TaskTool {
   public static void main(String[] args)
   {
     int retCode = mainImportLDIF(args, true, System.out, System.err);
-
     if(retCode != 0)
     {
       System.exit(filterExitCode(retCode));
     }
-  }
-
-  /**
-   * Processes the command-line arguments and invokes the import process.
-   *
-   * @param  args  The command-line arguments provided to this program.
-   * @return The error code.
-   */
-  public static int mainImportLDIF(String[] args)
-  {
-    return mainImportLDIF(args, true, System.out, System.err);
   }
 
   /**
@@ -156,18 +135,15 @@ public class ImportLDIF extends TaskTool {
   private StringArgument  templateFile;
   private BooleanArgument skipDNValidation;
   private IntegerArgument threadCount;
-  private IntegerArgument offHeapSize;
   private StringArgument  tmpDirectory;
 
   private int process(String[] args, boolean initializeServer,
                       OutputStream outStream, OutputStream errStream) {
-
     PrintStream out = NullOutputStream.wrapOrNullStream(outStream);
     PrintStream err = NullOutputStream.wrapOrNullStream(errStream);
     JDKLogging.disableLogging();
 
     // FIXME -- Need to add a mechanism for verifying the file signature.
-
 
     // Create the command-line argument parser for use with this program.
     LDAPConnectionArgumentParser argParser =
@@ -207,12 +183,16 @@ public class ImportLDIF extends TaskTool {
       return 1;
     }
 
-
     if (argParser.usageOrVersionDisplayed())
     {
       return 0;
     }
 
+    if (skipDNValidation.isPresent())
+    {
+      printWrappedText(err, ERR_DEPRECATED_SKIP_DN_VALIDATION.get());
+      // continue
+    }
 
     // Make sure that either the "ldifFile" argument or the "templateFile"
     // argument was provided, but not both.
@@ -374,22 +354,16 @@ public class ImportLDIF extends TaskTool {
                       .description(INFO_LDIFIMPORT_DESCRIPTION_SKIP_SCHEMA_VALIDATION.get())
                       .buildAndAddToParser(argParser);
       skipDNValidation =
-              BooleanArgument.builder("skipDNValidation")
-                      .description(INFO_LDIFIMPORT_DESCRIPTION_DN_VALIDATION.get())
-                      .buildAndAddToParser(argParser);
+            BooleanArgument.builder("skipDNValidation")
+                    .description(INFO_LDIFIMPORT_DESCRIPTION_DN_VALIDATION.get())
+                    .hidden()
+                    .buildAndAddToParser(argParser);
       threadCount =
               IntegerArgument.builder("threadCount")
                       .description(INFO_LDIFIMPORT_DESCRIPTION_THREAD_COUNT.get())
                       .lowerBound(1)
                       .defaultValue(0)
                       .valuePlaceholder(INFO_LDIFIMPORT_THREAD_COUNT_PLACEHOLDER.get())
-                      .buildAndAddToParser(argParser);
-      offHeapSize =
-              IntegerArgument.builder("offHeapSize")
-                      .description(INFO_LDIFIMPORT_DESCRIPTION_OFFHEAP_SIZE.get())
-                      .lowerBound(0)
-                      .defaultValue(700)
-                      .valuePlaceholder(INFO_LDIFIMPORT_OFFHEAP_SIZE_PLACEHOLDER.get())
                       .buildAndAddToParser(argParser);
       tmpDirectory =
               StringArgument.builder("tmpdirectory")
@@ -431,7 +405,6 @@ public class ImportLDIF extends TaskTool {
     addAttribute(attributes, ATTR_IMPORT_TEMPLATE_FILE, templateFile.getValue());
     addAttribute(attributes, ATTR_IMPORT_RANDOM_SEED, randomSeed.getValue());
     addAttribute(attributes, ATTR_IMPORT_THREAD_COUNT, threadCount.getValue());
-    addAttribute(attributes, ATTR_IMPORT_OFFHEAP_SIZE, offHeapSize.getValue());
 
     // Optional attributes
     addAttribute2(attributes, ATTR_IMPORT_BACKEND_ID, backendID);
@@ -446,7 +419,6 @@ public class ImportLDIF extends TaskTool {
     addAttribute2(attributes, ATTR_IMPORT_OVERWRITE, overwrite);
     addAttribute2(attributes, ATTR_IMPORT_SKIP_SCHEMA_VALIDATION, skipSchemaValidation);
     addAttribute2(attributes, ATTR_IMPORT_TMP_DIRECTORY, tmpDirectory);
-    addAttribute2(attributes, ATTR_IMPORT_SKIP_DN_VALIDATION, skipDNValidation);
     addAttribute2(attributes, ATTR_IMPORT_IS_COMPRESSED, isCompressed);
     addAttribute2(attributes, ATTR_IMPORT_IS_ENCRYPTED, isEncrypted);
     addAttribute2(attributes, ATTR_IMPORT_CLEAR_BACKEND, clearBackend);
@@ -488,41 +460,24 @@ public class ImportLDIF extends TaskTool {
   }
 
   @Override
-  protected int processLocal(boolean initializeServer,
-                           PrintStream out,
-                           PrintStream err) {
-
-
+  protected int processLocal(boolean initializeServer, PrintStream out, PrintStream err) {
     if (initializeServer)
     {
-      DirectoryServer.InitializationBuilder ib;
       try
       {
-        new DirectoryServer.InitializationBuilder(configFile.getValue())
+        InitializationBuilder initBuilder = new DirectoryServer.InitializationBuilder(configFile.getValue())
             .requireCryptoServices()
-            .requireUserPlugins(PluginType.LDIF_IMPORT)
-            .initialize();
+            .requireUserPlugins(PluginType.LDIF_IMPORT);
+        if (!quietMode.isPresent())
+        {
+          initBuilder.requireErrorAndDebugLogPublisher(out, err);
+        }
+        initBuilder.initialize();
       }
       catch (InitializationException e)
       {
         printWrappedText(err, ERR_CANNOT_INITIALIZE_SERVER_COMPONENTS.get(e.getLocalizedMessage()));
         return 1;
-      }
-      if (! quietMode.isPresent())
-      {
-        try
-        {
-          ErrorLogPublisher errorLogPublisher =
-              TextErrorLogPublisher.getToolStartupTextErrorPublisher(
-                  new TextWriter.STREAM(out));
-          ErrorLogger.getInstance().addLogPublisher(errorLogPublisher);
-        }
-        catch(Exception e)
-        {
-          err.println("Error installing the custom error logger: " +
-              stackTraceToSingleLineString(e));
-          return 1;
-        }
       }
     }
 
@@ -551,7 +506,7 @@ public class ImportLDIF extends TaskTool {
         }
         else
         {
-          excludeAttributes.add(DirectoryServer.getAttributeType(attrName));
+          excludeAttributes.add(DirectoryServer.getSchema().getAttributeType(attrName));
         }
       }
     }
@@ -579,7 +534,7 @@ public class ImportLDIF extends TaskTool {
         }
         else
         {
-          includeAttributes.add(DirectoryServer.getAttributeType(attrName));
+          includeAttributes.add(DirectoryServer.getSchema().getAttributeType(attrName));
         }
       }
     }
@@ -638,7 +593,6 @@ public class ImportLDIF extends TaskTool {
       }
     }
 
-
     // Get information about the backends defined in the server.  Iterate
     // through them, finding the one backend into which the LDIF should be
     // imported and finding backends with subordinate base DNs that should be
@@ -667,8 +621,8 @@ public class ImportLDIF extends TaskTool {
       }
     }
 
-    ArrayList<Backend>     backendList = new ArrayList<>();
-    ArrayList<BackendCfg>  entryList   = new ArrayList<>();
+    ArrayList<Backend<?>> backendList = new ArrayList<>();
+    ArrayList<BackendCfg> entryList = new ArrayList<>();
     ArrayList<List<DN>> dnList = new ArrayList<>();
     int code = BackendToolUtils.getBackends(backendList, entryList, dnList);
     if (code != 0)
@@ -768,7 +722,6 @@ public class ImportLDIF extends TaskTool {
       }
     }
 
-
     // See if the data should be read from LDIF files or generated via MakeLDIF.
     LDIFImportConfig importConfig;
     if (ldifFiles.isPresent())
@@ -812,7 +765,6 @@ public class ImportLDIF extends TaskTool {
       importConfig = new LDIFImportConfig(tf);
     }
 
-
     // Create the LDIF import configuration to use when reading the LDIF.
     importConfig.setCompressed(isCompressed.isPresent());
     importConfig.setClearBackend(clearBackend.isPresent());
@@ -824,7 +776,6 @@ public class ImportLDIF extends TaskTool {
     importConfig.setIncludeBranches(includeBranches);
     importConfig.setIncludeFilters(includeFilters);
     importConfig.setValidateSchema(!skipSchemaValidation.isPresent());
-    importConfig.setSkipDNValidation(skipDNValidation.isPresent());
     importConfig.setTmpDirectory(tmpDirectory.getValue());
 
     try
@@ -836,16 +787,6 @@ public class ImportLDIF extends TaskTool {
         logger.error(ERR_LDIFIMPORT_CANNOT_PARSE_THREAD_COUNT,
                 threadCount.getValue(), e.getMessage());
         return 1;
-    }
-
-    try
-    {
-      importConfig.setOffHeapSize(offHeapSize.getIntValue());
-    }
-    catch (Exception e)
-    {
-      logger.error(ERR_LDIFIMPORT_CANNOT_PARSE_OFFHEAP_SIZE, offHeapSize.getValue(), e.getMessage());
-      return 1;
     }
 
     importConfig.setBufferSize(LDIF_BUFFER_SIZE);
@@ -897,7 +838,6 @@ public class ImportLDIF extends TaskTool {
     DN[] baseDNs = new DN[defaultIncludeBranches.size()];
     defaultIncludeBranches.toArray(baseDNs);
 
-
     // Acquire an exclusive lock for the backend.
     try
     {
@@ -914,7 +854,6 @@ public class ImportLDIF extends TaskTool {
       logger.error(ERR_LDIFIMPORT_CANNOT_LOCK_BACKEND, backend.getBackendID(), getExceptionMessage(e));
       return 1;
     }
-
 
     // Launch the import.
     int retCode = 0;
@@ -937,14 +876,7 @@ public class ImportLDIF extends TaskTool {
     catch (DirectoryException de)
     {
       LocalizableMessage msg;
-      if (de.getResultCode() == ResultCode.CONSTRAINT_VIOLATION)
-      {
-        msg = ERR_LDIFIMPORT_ERROR_CONSTRAINT_VIOLATION.get();
-      }
-      else
-      {
-        msg = de.getMessageObject();
-      }
+      msg = de.getMessageObject();
       logger.error(ERR_LDIFIMPORT_ERROR_DURING_IMPORT.get(msg));
       retCode = 1;
     }
@@ -953,7 +885,6 @@ public class ImportLDIF extends TaskTool {
       logger.error(ERR_LDIFIMPORT_ERROR_DURING_IMPORT, getExceptionMessage(e));
       retCode = 1;
     }
-
 
     // Release the exclusive lock on the backend.
     try
@@ -972,26 +903,15 @@ public class ImportLDIF extends TaskTool {
       retCode = 1;
     }
 
-
     // Clean up after the import by closing the import config.
     importConfig.close();
     return retCode;
   }
 
-  private Object getMessage(Exception e)
+  @Override
+  protected void cleanup()
   {
-    try
-    {
-      throw e;
-    }
-    catch (ConfigException | InitializationException e2)
-    {
-      return e2.getMessage();
-    }
-    catch (Exception e2)
-    {
-      return getExceptionMessage(e2);
-    }
+    DirectoryServer.shutdownBackends();
   }
 
   private boolean useBackend(Set<DN> includeBranches, List<DN> dnlist)

@@ -12,11 +12,11 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.opends.admin.ads.util;
 
-import java.util.LinkedHashSet;
+import java.util.Collections;
 import java.util.Set;
 
 import javax.naming.ldap.InitialLdapContext;
@@ -38,8 +38,8 @@ public class PreferredConnection
     START_TLS
   }
 
-  private String ldapUrl;
-  private Type type;
+  private final String ldapUrl;
+  private final Type type;
 
   /**
    * The constructor of the PreferredConnection.
@@ -71,13 +71,13 @@ public class PreferredConnection
     return type;
   }
 
-  /** {@inheritDoc} */
+  @Override
   public int hashCode()
   {
     return (type+ldapUrl.toLowerCase()).hashCode();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public boolean equals(Object o)
   {
     if (this == o)
@@ -93,16 +93,15 @@ public class PreferredConnection
     return false;
   }
 
-
   /**
    * Commodity method that returns a PreferredConnection object with the
    * information on a given InitialLdapContext.
-   * @param ctx the connection we retrieve the information from.
+   * @param conn the connection we retrieve the information from.
    * @return a preferred connection object.
    */
-  public static PreferredConnection getPreferredConnection(
-      InitialLdapContext ctx)
+  private static PreferredConnection getPreferredConnection(ConnectionWrapper conn)
   {
+    InitialLdapContext ctx = conn.getLdapContext();
     String ldapUrl = ConnectionUtils.getLdapUrl(ctx);
     PreferredConnection.Type type;
     if (ConnectionUtils.isStartTLS(ctx))
@@ -120,20 +119,14 @@ public class PreferredConnection
     return new PreferredConnection(ldapUrl, type);
   }
 
-
-
   /**
    * Commodity method that generates a list of preferred connection (of just
    * one) with the information on a given InitialLdapContext.
-   * @param ctx the connection we retrieve the information from.
+   * @param conn the connection we retrieve the information from.
    * @return a list containing the preferred connection object.
    */
-  public static Set<PreferredConnection> getPreferredConnections(
-      InitialLdapContext ctx)
+  public static Set<PreferredConnection> getPreferredConnections(ConnectionWrapper conn)
   {
-    PreferredConnection cnx = PreferredConnection.getPreferredConnection(ctx);
-    Set<PreferredConnection> returnValue = new LinkedHashSet<>();
-    returnValue.add(cnx);
-    return returnValue;
+    return Collections.singleton(getPreferredConnection(conn));
   }
 }

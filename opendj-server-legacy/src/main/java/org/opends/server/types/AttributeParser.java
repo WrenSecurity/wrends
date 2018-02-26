@@ -11,7 +11,7 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
- * Copyright 2012-2015 ForgeRock AS.
+ * Copyright 2012-2016 ForgeRock AS.
  */
 package org.opends.server.types;
 
@@ -32,8 +32,7 @@ import org.forgerock.util.promise.NeverThrowsException;
 /**
  * A fluent API for parsing attributes as different types of object. An
  * attribute parser is obtained from an entry using the method
- * {@link Entry#parseAttribute} or from an attribute using
- * {@link Attribute#parse}.
+ * {@link Entry#parseAttribute}.
  * <p>
  * Methods throw an {@code IllegalArgumentException} when a value cannot be
  * parsed (e.g. because its syntax is invalid). Methods which return a
@@ -55,7 +54,6 @@ import org.forgerock.util.promise.NeverThrowsException;
  * </pre>
  *
  * @see Entry#parseAttribute
- * @see Attribute#parse
  */
 public final class AttributeParser {
     // TODO: enums, filters, rdns?
@@ -461,9 +459,8 @@ public final class AttributeParser {
     public AttributeParser requireValue() throws NoSuchElementException {
         if (isEmpty(attribute)) {
             throw new NoSuchElementException();
-        } else {
-            return this;
         }
+        return this;
     }
 
     /**
@@ -476,15 +473,10 @@ public final class AttributeParser {
      * @return This attribute parser.
      */
     public AttributeParser usingSchema(final Schema schema) {
-        // Avoid modifying the null instance: a schema will not be needed
-        // anyway.
+        // Avoid modifying the null instance: a schema will not be needed anyway
         if (this != NULL_INSTANCE) {
             this.schema = schema;
         }
         return this;
-    }
-
-    private Schema getSchema() {
-        return schema == null ? Schema.getDefaultSchema() : schema;
     }
 }

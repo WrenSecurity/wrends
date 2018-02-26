@@ -20,10 +20,11 @@ import static org.apache.maven.plugins.annotations.LifecyclePhase.*;
 import static org.forgerock.opendj.maven.doc.DocsMessages.*;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.jar.JarFile;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
@@ -56,9 +58,6 @@ public class GenerateMessageFileMojo extends AbstractMojo {
     /** The tag of the locale for which to generate the documentation. */
     @Parameter(defaultValue = "en")
     private String locale;
-    /** The path to the directory containing the message properties files. */
-    @Parameter(required = true)
-    private String messagesDirectory;
 
     /**
      * The path to the directory where the XML file should be written.
@@ -76,18 +75,20 @@ public class GenerateMessageFileMojo extends AbstractMojo {
         CATEGORY_DESCRIPTIONS.put("ACCESS_CONTROL", CATEGORY_ACCESS_CONTROL.get());
         CATEGORY_DESCRIPTIONS.put("ADMIN", CATEGORY_ADMIN.get());
         CATEGORY_DESCRIPTIONS.put("ADMIN_TOOL", CATEGORY_ADMIN_TOOL.get());
+        CATEGORY_DESCRIPTIONS.put("AUDIT", CATEGORY_AUDIT.get());
         CATEGORY_DESCRIPTIONS.put("BACKEND", CATEGORY_BACKEND.get());
         CATEGORY_DESCRIPTIONS.put("CONFIG", CATEGORY_CONFIG.get());
         CATEGORY_DESCRIPTIONS.put("CORE", CATEGORY_CORE.get());
         CATEGORY_DESCRIPTIONS.put("DSCONFIG", CATEGORY_DSCONFIG.get());
         CATEGORY_DESCRIPTIONS.put("EXTENSIONS", CATEGORY_EXTENSIONS.get());
-        CATEGORY_DESCRIPTIONS.put("JEB", CATEGORY_JEB.get());
+        CATEGORY_DESCRIPTIONS.put("JVM", CATEGORY_JVM.get());
         CATEGORY_DESCRIPTIONS.put("LOG", CATEGORY_LOG.get());
         CATEGORY_DESCRIPTIONS.put("PLUGIN", CATEGORY_PLUGIN.get());
         CATEGORY_DESCRIPTIONS.put("PROTOCOL", CATEGORY_PROTOCOL.get());
         CATEGORY_DESCRIPTIONS.put("QUICKSETUP", CATEGORY_QUICKSETUP.get());
         CATEGORY_DESCRIPTIONS.put("RUNTIME_INFORMATION", CATEGORY_RUNTIME_INFORMATION.get());
         CATEGORY_DESCRIPTIONS.put("SCHEMA", CATEGORY_SCHEMA.get());
+        CATEGORY_DESCRIPTIONS.put("SDK", CATEGORY_SDK.get());
         CATEGORY_DESCRIPTIONS.put("SYNC", CATEGORY_SYNC.get());
         CATEGORY_DESCRIPTIONS.put("TASK", CATEGORY_TASK.get());
         CATEGORY_DESCRIPTIONS.put("THIRD_PARTY", CATEGORY_THIRD_PARTY.get());
@@ -310,8 +311,10 @@ public class GenerateMessageFileMojo extends AbstractMojo {
         map.put("intro", LOG_REF_INTRO.get());
         List<Map<String, Object>> categories = new LinkedList<>();
         for (String category : messageFileNames) {
-            File source = new File(messagesDirectory, category + ".properties");
-            categories.add(getCategoryMap(source, category.toUpperCase()));
+            Map<String, Object> categoryMap = getCategoryMap(category);
+            if (!categoryMap.isEmpty()) {   // Empty: no messages to document
+                categories.add(getCategoryMap(category));
+            }
         }
         map.put("categories", categories);
         File file = new File(outputDirectory, "log-message-reference.xml");
@@ -330,10 +333,10 @@ public class GenerateMessageFileMojo extends AbstractMojo {
         }
     }
 
-    private Map<String, Object> getCategoryMap(File source, String globalCategory) throws MojoExecutionException {
+    private Map<String, Object> getCategoryMap(final String category) throws MojoExecutionException {
         Properties properties = new Properties();
         try {
-            properties.load(new FileInputStream(source));
+            properties.load(loadPropertiesFromJar(category));
             Map<MessagePropertyKey, String> errorMessages = loadErrorProperties(properties);
             TreeSet<MessageRefEntry> messageRefEntries = new TreeSet<>();
             Set<Integer> usedOrdinals = new HashSet<>();
@@ -343,7 +346,7 @@ public class GenerateMessageFileMojo extends AbstractMojo {
                 Integer ordinal = msgKey.getOrdinal();
                 if (ordinal != null && usedOrdinals.contains(ordinal)) {
                     throw new Exception("The ordinal value \'" + ordinal + "\' in key " + msgKey
-                            + " has been previously defined in " + source + KEY_FORM_MSG);
+                            + " has been previously defined in " + category + KEY_FORM_MSG);
                 }
                 usedOrdinals.add(ordinal);
                 messageRefEntries.add(new MessageRefEntry(msgKey.toString(), ordinal, formatString));
@@ -351,10 +354,18 @@ public class GenerateMessageFileMojo extends AbstractMojo {
 
             return messageRefEntries.isEmpty()
                     ? new HashMap<String, Object>()
-                    : new MessageRefCategory(globalCategory, messageRefEntries).toMap();
+                    : new MessageRefCategory(category.toUpperCase(), messageRefEntries).toMap();
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    private InputStream loadPropertiesFromJar(final String category) throws IOException {
+        getLog().debug("category: " + category);
+        final JarFile jarFile = new JarFile(
+                Paths.get(project.getBuild().getDirectory(), "opendj", "lib", "opendj.jar").toString());
+        return jarFile.getInputStream(jarFile.getJarEntry(
+                Paths.get("org", "opends", "messages", category + ".properties").toString()));
     }
 
     private Map<MessagePropertyKey, String> loadErrorProperties(Properties properties) throws Exception {

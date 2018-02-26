@@ -45,6 +45,9 @@ import org.forgerock.i18n.LocalizableMessageBuilder;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationAddListener;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.config.server.ConfigurationDeleteListener;
 import org.forgerock.opendj.ldap.ByteSequence;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.ByteStringBuilder;
@@ -53,14 +56,11 @@ import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.SortKey;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.util.Pair;
-import org.opends.messages.CoreMessages;
-import org.forgerock.opendj.config.server.ConfigurationAddListener;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
-import org.forgerock.opendj.config.server.ConfigurationDeleteListener;
 import org.forgerock.opendj.server.config.server.BackendIndexCfg;
 import org.forgerock.opendj.server.config.server.BackendVLVIndexCfg;
 import org.forgerock.opendj.server.config.server.PluggableBackendCfg;
+import org.forgerock.util.Pair;
+import org.opends.messages.CoreMessages;
 import org.opends.server.api.ClientConnection;
 import org.opends.server.api.EntryCache;
 import org.opends.server.api.VirtualAttributeProvider;
@@ -88,6 +88,8 @@ import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ModifyDNOperation;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.core.SearchOperation;
+import org.opends.server.core.ServerContext;
+import org.opends.server.crypto.CryptoSuite;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.CanceledOperationException;
@@ -152,6 +154,8 @@ public class EntryContainer
 
   /** The set of attribute indexes. */
   private final Map<AttributeType, AttributeIndex> attrIndexMap = new HashMap<>();
+
+  private final Map<AttributeType, CryptoSuite> attrCryptoMap = new HashMap<>();
   /** The set of VLV (Virtual List View) indexes. */
   private final Map<String, VLVIndex> vlvIndexMap = new HashMap<>();
 
@@ -160,6 +164,8 @@ public class EntryContainer
    * For example when a root container contains multiple suffixes.
    */
   private final String treePrefix;
+
+  private final ServerContext serverContext;
 
   /**
    * This class is responsible for managing the configuration for attribute
@@ -174,7 +180,7 @@ public class EntryContainer
     {
       try
       {
-        new AttributeIndex(cfg, state, EntryContainer.this);
+        newAttributeIndex(cfg, null);
         return true;
       }
       catch(Exception e)
@@ -190,7 +196,8 @@ public class EntryContainer
       final ConfigChangeResult ccr = new ConfigChangeResult();
       try
       {
-        final AttributeIndex index = new AttributeIndex(cfg, state, EntryContainer.this);
+        final CryptoSuite cryptoSuite = newCryptoSuite(cfg.isConfidentialityEnabled());
+        final AttributeIndex index = newAttributeIndex(cfg, cryptoSuite);
         storage.write(new WriteOperation()
         {
           @Override
@@ -203,6 +210,7 @@ public class EntryContainer
               ccr.addMessage(NOTE_INDEX_ADD_REQUIRES_REBUILD.get(cfg.getAttribute().getNameOrOID()));
             }
             attrIndexMap.put(cfg.getAttribute(), index);
+            attrCryptoMap.put(cfg.getAttribute(), cryptoSuite);
           }
         });
       }
@@ -236,6 +244,7 @@ public class EntryContainer
           public void run(WriteableTransaction txn) throws Exception
           {
             attrIndexMap.remove(cfg.getAttribute()).closeAndDelete(txn);
+            attrCryptoMap.remove(cfg.getAttribute());
           }
         });
       }
@@ -338,26 +347,15 @@ public class EntryContainer
   final Lock sharedLock = lock.readLock();
   final Lock exclusiveLock = lock.writeLock();
 
-  /**
-   * Create a new entry container object.
-   *
-   * @param baseDN  The baseDN this entry container will be responsible for
-   *                storing on disk.
-   * @param backendID  ID of the backend that is creating this entry container.
-   *                   It is needed by the Directory Server entry cache methods.
-   * @param config The configuration of the backend.
-   * @param storage The storage for this entryContainer.
-   * @param rootContainer The root container this entry container is in.
-   * @throws ConfigException if a configuration related error occurs.
-   */
-  EntryContainer(DN baseDN, String backendID, PluggableBackendCfg config, Storage storage,
-      RootContainer rootContainer) throws ConfigException
+  EntryContainer(DN baseDN, String backendID, PluggableBackendCfg config, Storage storage, RootContainer rootContainer,
+      ServerContext serverContext) throws ConfigException
   {
     this.backendID = backendID;
     this.baseDN = baseDN;
     this.config = config;
     this.storage = storage;
     this.rootContainer = rootContainer;
+    this.serverContext = serverContext;
     this.treePrefix = baseDN.toNormalizedUrlSafeString();
     this.id2childrenCount = new ID2ChildrenCount(getIndexName(ID2CHILDREN_COUNT_TREE_NAME));
     this.dn2id = new DN2ID(getIndexName(DN2ID_TREE_NAME), baseDN);
@@ -373,6 +371,29 @@ public class EntryContainer
     vlvIndexCfgManager = new VLVIndexCfgManager();
     config.addBackendVLVIndexAddListener(vlvIndexCfgManager);
     config.addBackendVLVIndexDeleteListener(vlvIndexCfgManager);
+  }
+
+  private CryptoSuite newCryptoSuite(boolean confidentiality)
+  {
+    return serverContext.getCryptoManager().newCryptoSuite(config.getCipherTransformation(),
+        config.getCipherKeyLength(), confidentiality);
+  }
+
+  private AttributeIndex newAttributeIndex(BackendIndexCfg cfg, CryptoSuite cryptoSuite) throws ConfigException
+  {
+    return new AttributeIndex(cfg, state, this, cryptoSuite);
+  }
+
+  private DataConfig newDataConfig(PluggableBackendCfg config)
+  {
+    return new DataConfig.Builder()
+        .compress(config.isEntriesCompressed())
+        .encode(config.isCompactEncoding())
+        .encrypt(config.isConfidentialityEnabled())
+        .cryptoSuite(serverContext.getCryptoManager().newCryptoSuite(config.getCipherTransformation(),
+            config.getCipherKeyLength(),config.isConfidentialityEnabled()))
+        .schema(rootContainer.getCompressedSchema())
+        .build();
   }
 
   private TreeName getIndexName(String indexId)
@@ -393,10 +414,7 @@ public class EntryContainer
     boolean shouldCreate = accessMode.isWriteable();
     try
     {
-      DataConfig entryDataConfig = new DataConfig(
-          config.isEntriesCompressed(), config.isCompactEncoding(), rootContainer.getCompressedSchema());
-
-      id2entry = new ID2Entry(getIndexName(ID2ENTRY_TREE_NAME), entryDataConfig);
+      id2entry = new ID2Entry(getIndexName(ID2ENTRY_TREE_NAME), newDataConfig(config));
       id2entry.open(txn, shouldCreate);
       id2childrenCount.open(txn, shouldCreate);
       dn2id.open(txn, shouldCreate);
@@ -407,13 +425,15 @@ public class EntryContainer
       {
         BackendIndexCfg indexCfg = config.getBackendIndex(idx);
 
-        final AttributeIndex index = new AttributeIndex(indexCfg, state, this);
+        CryptoSuite cryptoSuite = newCryptoSuite(indexCfg.isConfidentialityEnabled());
+        final AttributeIndex index = newAttributeIndex(indexCfg, cryptoSuite);
         index.open(txn, shouldCreate);
         if(!index.isTrusted())
         {
           logger.info(NOTE_INDEX_ADD_REQUIRES_REBUILD, index.getName());
         }
         attrIndexMap.put(indexCfg.getAttribute(), index);
+        attrCryptoMap.put(indexCfg.getAttribute(), cryptoSuite);
       }
 
       for (String idx : config.listBackendVLVIndexes())
@@ -2209,8 +2229,7 @@ public class EntryContainer
     // Process in index configuration order.
     for (AttributeIndex index : attrIndexMap.values())
     {
-      // Check whether any modifications apply to this indexed attribute.
-      if (isAttributeModified(index, mods))
+      if (isAttributeModified(index.getAttributeType(), mods))
       {
         index.modifyEntry(buffer, entryID, oldEntry, newEntry);
       }
@@ -2341,11 +2360,43 @@ public class EntryContainer
   }
 
   @Override
-  public boolean isConfigurationChangeAcceptable(
-      PluggableBackendCfg cfg, List<LocalizableMessage> unacceptableReasons)
+  public boolean isConfigurationChangeAcceptable(PluggableBackendCfg cfg, List<LocalizableMessage> unacceptableReasons)
   {
-    // This is always true because only all config attributes used
-    // by the entry container should be validated by the admin framework.
+    if (cfg.isConfidentialityEnabled())
+    {
+      final String cipherTransformation = cfg.getCipherTransformation();
+      final int keyLength = cfg.getCipherKeyLength();
+
+      try
+      {
+        serverContext.getCryptoManager().ensureCipherKeyIsAvailable(cipherTransformation, keyLength);
+      }
+      catch (Exception e)
+      {
+        unacceptableReasons.add(ERR_BACKEND_FAULTY_CRYPTO_TRANSFORMATION.get(cipherTransformation, keyLength, e));
+        return false;
+      }
+    }
+    else
+    {
+      StringBuilder builder = new StringBuilder();
+      for (AttributeIndex attributeIndex : attrIndexMap.values())
+      {
+        if (attributeIndex.isConfidentialityEnabled())
+        {
+          if (builder.length() > 0)
+          {
+            builder.append(", ");
+          }
+          builder.append(attributeIndex.getAttributeType().getNameOrOID());
+        }
+      }
+      if (builder.length() > 0)
+      {
+        unacceptableReasons.add(ERR_BACKEND_CANNOT_CHANGE_CONFIDENTIALITY.get(getBaseDN(), builder.toString()));
+        return false;
+      }
+    }
     return true;
   }
 
@@ -2362,13 +2413,14 @@ public class EntryContainer
         @Override
         public void run(WriteableTransaction txn) throws Exception
         {
-          DataConfig entryDataConfig = new DataConfig(cfg.isEntriesCompressed(),
-              cfg.isCompactEncoding(), rootContainer.getCompressedSchema());
-          id2entry.setDataConfig(entryDataConfig);
-
+          id2entry.setDataConfig(newDataConfig(cfg));
           EntryContainer.this.config = cfg;
         }
       });
+      for (CryptoSuite indexCrypto : attrCryptoMap.values())
+      {
+        indexCrypto.newParameters(cfg.getCipherTransformation(), cfg.getCipherKeyLength(), indexCrypto.isEncrypted());
+      }
     }
     catch (Exception e)
     {
@@ -2451,29 +2503,9 @@ public class EntryContainer
     return null;
   }
 
-  /**
-   * Checks if any modifications apply to this indexed attribute.
-   * @param index the indexed attributes.
-   * @param mods the modifications to check for.
-   * @return true if any apply, false otherwise.
-   */
-  private static boolean isAttributeModified(AttributeIndex index, List<Modification> mods)
+  boolean isConfidentialityEnabled()
   {
-    AttributeType indexAttributeType = index.getAttributeType();
-    List<AttributeType> subTypes =
-            DirectoryServer.getSchema().getSubTypes(indexAttributeType);
-
-    for (Modification mod : mods)
-    {
-      Attribute modAttr = mod.getAttribute();
-      AttributeType modAttrType = modAttr.getAttributeDescription().getAttributeType();
-      if (modAttrType.equals(indexAttributeType)
-          || subTypes.contains(modAttrType))
-      {
-        return true;
-      }
-    }
-    return false;
+    return config.isConfidentialityEnabled();
   }
 
   /**
@@ -2699,5 +2731,17 @@ public class EntryContainer
   @Override
   public String toString() {
     return treePrefix;
+  }
+
+  static boolean isAttributeModified(AttributeType attrType, List<Modification> mods)
+  {
+    for (Modification mod : mods)
+    {
+      if (attrType.isSuperTypeOf(mod.getAttribute().getAttributeDescription().getAttributeType()))
+      {
+        return true;
+      }
+    }
+    return false;
   }
 }

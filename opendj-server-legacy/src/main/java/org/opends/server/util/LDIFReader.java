@@ -45,6 +45,7 @@ import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
 import org.opends.server.api.plugin.PluginResult;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.PluginConfigManager;
@@ -56,7 +57,7 @@ import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.Entry;
 import org.opends.server.types.LDIFImportConfig;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.types.RawModification;
 
 /**
@@ -75,49 +76,38 @@ public class LDIFReader implements Closeable
 
   /** The reader that will be used to read the data. */
   private BufferedReader reader;
-
   /** The import configuration that specifies what should be imported. */
-  protected LDIFImportConfig importConfig;
+  protected final LDIFImportConfig importConfig;
 
   /** The lines that comprise the body of the last entry read. */
   protected List<StringBuilder> lastEntryBodyLines;
-
-  /**
-   * The lines that comprise the header (DN and any comments) for the last entry
-   * read.
-   */
+  /** The lines that comprise the header (DN and any comments) for the last entry read. */
   protected List<StringBuilder> lastEntryHeaderLines;
-
 
   /**
    * The number of entries that have been ignored by this LDIF reader because
    * they didn't match the criteria.
    */
   private final AtomicLong entriesIgnored = new AtomicLong();
-
   /**
    * The number of entries that have been read by this LDIF reader, including
    * those that were ignored because they didn't match the criteria, and
    * including those that were rejected because they were invalid in some way.
    */
   protected final AtomicLong entriesRead = new AtomicLong();
-
   /** The number of entries that have been rejected by this LDIF reader. */
   private final AtomicLong entriesRejected = new AtomicLong();
 
   /** The line number on which the last entry started. */
   protected long lastEntryLineNumber = -1;
-
-  /**
-   * The line number of the last line read from the LDIF file, starting with 1.
-   */
+  /** The line number of the last line read from the LDIF file, starting with 1. */
   private long lineNumber;
 
   /**
    * The plugin config manager that will be used if we are to invoke plugins on
    * the entries as they are read.
    */
-  protected PluginConfigManager pluginConfigManager;
+  protected final PluginConfigManager pluginConfigManager;
 
   /**
    * Creates a new LDIF reader that will read information from the specified
@@ -265,6 +255,7 @@ public class LDIFReader implements Closeable
         logToSkipWriter(lines, ERR_LDIF_SKIP.get(entryDN));
         return false;
       }
+      return true;
     }
     catch (Exception e)
     {
@@ -274,7 +265,6 @@ public class LDIFReader implements Closeable
           ERR_LDIF_COULD_NOT_EVALUATE_FILTERS_FOR_IMPORT.get(entry.getName(), lastEntryLineNumber, e);
       throw new LDIFException(message, lastEntryLineNumber, true, e);
     }
-    return true;
   }
 
   private boolean invokeImportPlugins(Entry entry, LinkedList<StringBuilder> lines)
@@ -286,16 +276,10 @@ public class LDIFReader implements Closeable
       if (!pluginResult.continueProcessing())
       {
         final DN entryDN = entry.getName();
-        LocalizableMessage m;
         LocalizableMessage rejectMessage = pluginResult.getErrorMessage();
-        if (rejectMessage == null)
-        {
-          m = ERR_LDIF_REJECTED_BY_PLUGIN_NOMESSAGE.get(entryDN);
-        }
-        else
-        {
-          m = ERR_LDIF_REJECTED_BY_PLUGIN.get(entryDN, rejectMessage);
-        }
+        LocalizableMessage m = rejectMessage != null
+            ? ERR_LDIF_REJECTED_BY_PLUGIN.get(entryDN, rejectMessage)
+            : ERR_LDIF_REJECTED_BY_PLUGIN_NOMESSAGE.get(entryDN);
 
         logToRejectWriter(lines, m);
         return false;
@@ -348,7 +332,7 @@ public class LDIFReader implements Closeable
    * @param builders the list of AttributeBuilders
    * @return a new list of Attributes
    */
-  protected List<Attribute> toAttributesList(List<AttributeBuilder> builders)
+  private List<Attribute> toAttributesList(List<AttributeBuilder> builders)
   {
     List<Attribute> results = new ArrayList<>(builders.size());
     for (AttributeBuilder builder : builders)
@@ -397,47 +381,37 @@ public class LDIFReader implements Closeable
       }
 
       String changeType = readChangeType(lines);
-
-      ChangeRecordEntry entry;
-
       if(changeType != null)
       {
-        if(changeType.equals("add"))
+        switch (changeType)
         {
-          entry = parseAddChangeRecordEntry(entryDN, lines);
-        } else if (changeType.equals("delete"))
-        {
-          entry = parseDeleteChangeRecordEntry(entryDN, lines);
-        } else if (changeType.equals("modify"))
-        {
-          entry = parseModifyChangeRecordEntry(entryDN, lines);
-        } else if (changeType.equals("modrdn"))
-        {
-          entry = parseModifyDNChangeRecordEntry(entryDN, lines);
-        } else if (changeType.equals("moddn"))
-        {
-          entry = parseModifyDNChangeRecordEntry(entryDN, lines);
-        } else
-        {
+        case "add":
+          return parseAddChangeRecordEntry(entryDN, lines);
+        case "delete":
+          return parseDeleteChangeRecordEntry(entryDN, lines);
+        case "modify":
+          return parseModifyChangeRecordEntry(entryDN, lines);
+        case "modrdn":
+          return parseModifyDNChangeRecordEntry(entryDN, lines);
+        case "moddn":
+          return parseModifyDNChangeRecordEntry(entryDN, lines);
+        default:
           LocalizableMessage message = ERR_LDIF_INVALID_CHANGETYPE_ATTRIBUTE.get(
               changeType, "add, delete, modify, moddn, modrdn");
           throw new LDIFException(message, lastEntryLineNumber, false);
         }
-      } else
-      {
-        // default to "add"?
-        if(defaultAdd)
-        {
-          entry = parseAddChangeRecordEntry(entryDN, lines);
-        } else
-        {
-          LocalizableMessage message = ERR_LDIF_INVALID_CHANGETYPE_ATTRIBUTE.get(
-              null, "add, delete, modify, moddn, modrdn");
-          throw new LDIFException(message, lastEntryLineNumber, false);
-        }
       }
-
-      return entry;
+      else if (defaultAdd)
+      {
+        // default to "add"
+        return parseAddChangeRecordEntry(entryDN, lines);
+      }
+      else
+      {
+        LocalizableMessage message =
+            ERR_LDIF_INVALID_CHANGETYPE_ATTRIBUTE.get(null, "add, delete, modify, moddn, modrdn");
+        throw new LDIFException(message, lastEntryLineNumber, false);
+      }
     }
   }
 
@@ -455,15 +429,14 @@ public class LDIFReader implements Closeable
    */
   protected LinkedList<StringBuilder> readEntryLines() throws IOException, LDIFException
   {
-    // Read the entry lines into a buffer.
-    LinkedList<StringBuilder> lines = new LinkedList<>();
-    int lastLine = -1;
-
     if(reader == null)
     {
       return null;
     }
 
+    // Read the entry lines into a buffer.
+    LinkedList<StringBuilder> lines = new LinkedList<>();
+    int lastLine = -1;
     while (true)
     {
       String line = reader.readLine();
@@ -479,11 +452,7 @@ public class LDIFReader implements Closeable
           break;
         }
         reader = importConfig.nextReader();
-        if (reader != null)
-        {
-          return readEntryLines();
-        }
-        return null;
+        return reader != null ? readEntryLines() : null;
       }
       else if (line.length() == 0)
       {
@@ -788,14 +757,7 @@ public class LDIFReader implements Closeable
       }
 
       String ocName      = value.toString().trim();
-      String lowerOCName = toLowerCase(ocName);
-
-      ObjectClass objectClass = DirectoryServer.getObjectClass(lowerOCName);
-      if (objectClass == null)
-      {
-        objectClass = DirectoryServer.getDefaultObjectClass(ocName);
-      }
-
+      ObjectClass objectClass = DirectoryServer.getSchema().getObjectClass(ocName);
       if (objectClasses.containsKey(objectClass))
       {
         logger.warn(WARN_LDIF_DUPLICATE_OBJECTCLASS, entryDN, lastEntryLineNumber, ocName);
@@ -1034,11 +996,7 @@ public class LDIFReader implements Closeable
     }
   }
 
-
-
-  /**
-   * Closes this LDIF reader and the underlying file or input stream.
-   */
+  /** Closes this LDIF reader and the underlying file or input stream. */
   @Override
   public void close()
   {
@@ -1356,8 +1314,8 @@ public class LDIFReader implements Closeable
     }
 
     // Reconstruct the object class attribute.
-    AttributeType ocType = DirectoryServer.getObjectClassAttributeType();
-    AttributeBuilder builder = new AttributeBuilder(ocType, "objectClass");
+    AttributeType ocType = CoreSchema.getObjectClassAttributeType();
+    AttributeBuilder builder = new AttributeBuilder(ocType);
     builder.addAllStrings(objectClasses.values());
     Map<AttributeType, List<Attribute>> attributes = toAttributesMap(attrBuilders);
     if (attributes.get(ocType) == null)

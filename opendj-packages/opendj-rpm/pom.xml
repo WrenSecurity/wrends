@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-packages</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>3.5.1</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -28,10 +28,21 @@
     <artifactId>opendj-rpm</artifactId>
     <name>OpenDJ RPM Packages Parent</name>
 
-    <modules>
-        <module>opendj-rpm-standard</module>
-        <module>opendj-rpm-oem</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>packages</id>
+            <modules>
+                <module>opendj-rpm-standard</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>packages-oem</id>
+            <modules>
+                <module>opendj-rpm-oem</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <description>
         This module contains configuration and generic plugin calls to generate RPM OpenDJ packages.
@@ -67,7 +78,7 @@
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.forgerock.opendj</groupId>
-                                        <artifactId>opendj-man-pages</artifactId>
+                                        <artifactId>opendj-doc-generated-ref</artifactId>
                                         <version>${project.version}</version>
                                         <outputDirectory>${project.build.directory}/dependency/man</outputDirectory>
                                         <classifier>server-man-pages</classifier>
@@ -136,10 +147,6 @@
 
                             ${rpm.product.summary}
                         </description>
-
-                        <requires>
-                            <require>jre &gt;= 1.7</require>
-                        </requires>
 
                         <defineStatements>
                             <defineStatement>arch noarch</defineStatement>

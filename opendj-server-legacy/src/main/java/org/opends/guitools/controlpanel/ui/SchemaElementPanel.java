@@ -27,9 +27,9 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.guitools.controlpanel.event.SchemaElementSelectionEvent;
 import org.opends.guitools.controlpanel.event.SchemaElementSelectionListener;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.Schema;
 
 /**
@@ -107,19 +107,16 @@ public abstract class SchemaElementPanel extends StatusGenericPanel
    * Method called when there is an object class selected in a list.
    * @param list the list.
    */
-  protected void objectClassSelected(JList list)
+  protected void objectClassSelected(JList<?> list)
   {
     String o = (String)list.getSelectedValue();
-    if (o != null)
+    Schema schema = getInfo().getServerDescriptor().getSchema();
+    if (o != null && schema != null)
     {
-      Schema schema = getInfo().getServerDescriptor().getSchema();
-      if (schema != null)
+      ObjectClass oc = schema.getObjectClass(o);
+      if (!oc.isPlaceHolder())
       {
-        ObjectClass oc = schema.getObjectClass(o.toLowerCase());
-        if (oc != null)
-        {
-          notifySchemaSelectionListeners(oc);
-        }
+        notifySchemaSelectionListeners(oc);
       }
     }
   }
@@ -131,7 +128,7 @@ public abstract class SchemaElementPanel extends StatusGenericPanel
    */
   protected Set<String> getAliases(AttributeType attr)
   {
-    return getAliases(attr.getNames(), toLowerCase(attr.getNameOrOID()));
+    return getAliases(attr.getNames(), attr.getNameOrOID());
   }
 
   /**
@@ -141,19 +138,17 @@ public abstract class SchemaElementPanel extends StatusGenericPanel
    */
   protected Set<String> getAliases(ObjectClass oc)
   {
-    return getAliases(oc.getNormalizedNames(), oc.getPrimaryName());
+    return getAliases(oc.getNames(), oc.getNameOrOID());
   }
 
-  private Set<String> getAliases(Iterable<String> names, String primaryName)
+  private Set<String> getAliases(Iterable<String> names, String nameOrOid)
   {
-    Set<String> aliases = new LinkedHashSet<>();
-    if (primaryName == null)
-    {
-      primaryName = "";
-    }
+    nameOrOid = nameOrOid != null ? nameOrOid : "";
+
+    final Set<String> aliases = new LinkedHashSet<>();
     for (String name : names)
     {
-      if (!name.equalsIgnoreCase(primaryName))
+      if (!name.equalsIgnoreCase(nameOrOid))
       {
         aliases.add(toLowerCase(name));
       }

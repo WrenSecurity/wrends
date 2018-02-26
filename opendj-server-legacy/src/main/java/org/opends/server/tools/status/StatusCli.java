@@ -18,15 +18,17 @@ package org.opends.server.tools.status;
 
 import static com.forgerock.opendj.cli.ArgumentConstants.*;
 import static com.forgerock.opendj.cli.Utils.*;
+
 import static org.forgerock.opendj.ldap.LDAPConnectionFactory.*;
 import static org.forgerock.util.Utils.*;
-import static org.opends.messages.ToolMessages.*;
+import static org.forgerock.util.time.Duration.*;
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.messages.QuickSetupMessages.INFO_ERROR_READING_SERVER_CONFIGURATION;
 import static org.opends.messages.QuickSetupMessages.INFO_NOT_AVAILABLE_LABEL;
+import static org.opends.messages.ToolMessages.*;
 
 import java.io.File;
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
@@ -40,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.naming.AuthenticationException;
 import javax.naming.NamingException;
-import javax.naming.ldap.InitialLdapContext;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManager;
@@ -54,13 +55,13 @@ import org.forgerock.opendj.config.client.ManagementContext;
 import org.forgerock.opendj.config.client.ldap.LDAPManagementContext;
 import org.forgerock.opendj.ldap.AuthorizationException;
 import org.forgerock.opendj.ldap.Connection;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.LDAPConnectionFactory;
 import org.forgerock.opendj.ldap.LdapException;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SSLContextBuilder;
 import org.forgerock.opendj.ldap.TrustManagers;
 import org.forgerock.util.Options;
-import org.forgerock.util.time.Duration;
 import org.opends.admin.ads.util.ApplicationTrustManager;
 import org.opends.admin.ads.util.ConnectionWrapper;
 import org.opends.guitools.controlpanel.datamodel.BackendDescriptor;
@@ -75,7 +76,7 @@ import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
 import org.opends.guitools.controlpanel.util.ControlPanelLog;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.server.admin.client.cli.SecureConnectionCliArgs;
-import org.forgerock.opendj.ldap.DN;
+import org.opends.server.loggers.JDKLogging;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.NullOutputStream;
 import org.opends.server.util.BuildVersion;
@@ -107,9 +108,9 @@ public class StatusCli extends ConsoleApplication
   private boolean displayMustStartLegend;
 
   /** Prefix for log files. */
-  public static final String LOG_FILE_PREFIX = "opendj-status-";
+  private static final String LOG_FILE_PREFIX = "opendj-status-";
   /** Suffix for log files. */
-  public static final String LOG_FILE_SUFFIX = ".log";
+  private static final String LOG_FILE_SUFFIX = ".log";
 
   private ApplicationTrustManager interactiveTrustManager;
   private boolean useInteractiveTrustManager;
@@ -124,10 +125,8 @@ public class StatusCli extends ConsoleApplication
    *          The print stream to use for standard output.
    * @param err
    *          The print stream to use for standard error.
-   * @param in
-   *          The input stream to use for standard input.
    */
-  public StatusCli(PrintStream out, PrintStream err, InputStream in)
+  private StatusCli(PrintStream out, PrintStream err)
   {
     super(out, err);
   }
@@ -139,25 +138,11 @@ public class StatusCli extends ConsoleApplication
    */
   public static void main(String[] args)
   {
-    int retCode = mainCLI(args, true, System.out, System.err, System.in);
+    int retCode = mainCLI(args, System.out, System.err);
     if(retCode != 0)
     {
       System.exit(retCode);
     }
-  }
-
-  /**
-   * Parses the provided command-line arguments and uses that information to
-   * run the status tool.
-   *
-   * @param args the command-line arguments provided to this program.
-   *
-   * @return The return code.
-   */
-
-  public static int mainCLI(String[] args)
-  {
-    return mainCLI(args, true, System.out, System.err, System.in);
   }
 
   /**
@@ -166,23 +151,19 @@ public class StatusCli extends ConsoleApplication
    *
    * @param args
    *          The command-line arguments provided to this program.
-   * @param initializeServer
-   *          Indicates whether to initialize the server.
    * @param outStream
    *          The output stream to use for standard output, or {@code null}
    *          if standard output is not needed.
    * @param errStream
    *          The output stream to use for standard error, or {@code null}
    *          if standard error is not needed.
-   * @param inStream
-   *          The input stream to use for standard input.
    * @return The return code.
    */
-  public static int mainCLI(String[] args, boolean initializeServer,
-      OutputStream outStream, OutputStream errStream, InputStream inStream)
+  public static int mainCLI(String[] args, OutputStream outStream, OutputStream errStream)
   {
     PrintStream out = NullOutputStream.wrapOrNullStream(outStream);
     PrintStream err = NullOutputStream.wrapOrNullStream(errStream);
+    JDKLogging.disableLogging();
 
     try {
       ControlPanelLog.initLogFileHandler(
@@ -193,7 +174,7 @@ public class StatusCli extends ConsoleApplication
       t.printStackTrace();
     }
 
-    final StatusCli statusCli = new StatusCli(out, err, inStream);
+    final StatusCli statusCli = new StatusCli(out, err);
     int retCode = statusCli.execute(args);
     if (retCode == 0)
     {
@@ -210,7 +191,7 @@ public class StatusCli extends ConsoleApplication
    *          The command-line arguments provided to this program.
    * @return The return code of the process.
    */
-  public int execute(String[] args) {
+  private int execute(String[] args) {
     argParser = new StatusCliArgumentParser(StatusCli.class.getName());
     try {
       argParser.initializeGlobalArguments(getOutputStream());
@@ -262,8 +243,6 @@ public class StatusCli extends ConsoleApplication
       String bindDn = null;
       String bindPwd = null;
 
-      ManagementContext mContext = null;
-
       // This is done because we do not need to ask the user about these
       // parameters. We force their presence in the
       // LDAPConnectionConsoleInteraction, this done, it will not prompt
@@ -302,6 +281,8 @@ public class StatusCli extends ConsoleApplication
         argParser.displayMessageAndUsageReference(getErrStream(), e.getMessageObject());
         return ReturnCode.CLIENT_SIDE_PARAM_ERROR.get();
       }
+
+      boolean managementContextOpened = false;
       try
       {
         if (argParser.isInteractive())
@@ -316,25 +297,28 @@ public class StatusCli extends ConsoleApplication
         }
         if (bindPwd != null && !bindPwd.isEmpty())
         {
-          mContext = getManagementContextFromConnection(ci);
-          interactiveTrustManager = ci.getTrustManager();
-          controlInfo.setTrustManager(interactiveTrustManager);
-          useInteractiveTrustManager = true;
+          try (ManagementContext mContext = getManagementContextFromConnection(ci))
+          {
+            managementContextOpened = true;
+            interactiveTrustManager = ci.getTrustManager();
+            controlInfo.setTrustManager(interactiveTrustManager);
+            useInteractiveTrustManager = true;
+          }
+          catch (IOException e)
+          {
+            logger.traceException(e);
+          }
         }
       } catch (ClientException e) {
         println(e.getMessageObject());
         return ReturnCode.CLIENT_SIDE_PARAM_ERROR.get();
-      } finally {
-        closeSilently(mContext);
       }
 
-      if (mContext != null)
+      if (managementContextOpened)
       {
-        InitialLdapContext ctx = null;
-        try {
-          ctx = Utilities.getAdminDirContext(controlInfo, bindDn, bindPwd);
-          controlInfo.setConnection(
-              new ConnectionWrapper(ctx, controlInfo.getConnectTimeout(), controlInfo.getTrustManager()));
+        try (ConnectionWrapper conn = Utilities.getAdminDirContext(controlInfo, bindDn, bindPwd))
+        {
+          controlInfo.setConnection(conn);
           controlInfo.regenerateDescriptor();
           writeStatus(controlInfo);
 
@@ -353,8 +337,6 @@ public class StatusCli extends ConsoleApplication
           println();
           println(cre.getMessageObject());
           return ReturnCode.ERROR_INITIALIZING_SERVER.get();
-        } finally {
-          StaticUtils.close(ctx);
         }
       } else {
         // The user did not provide authentication: just display the
@@ -1157,7 +1139,7 @@ public class StatusCli extends ConsoleApplication
     // This connection should always be secure. useSSL = true.
     Connection connection = null;
     final Options options = Options.defaultOptions();
-    options.set(CONNECT_TIMEOUT, new Duration((long) ci.getConnectTimeout(), TimeUnit.MILLISECONDS));
+    options.set(CONNECT_TIMEOUT, duration(ci.getConnectTimeout(), TimeUnit.MILLISECONDS));
     LDAPConnectionFactory factory = null;
     while (true)
     {

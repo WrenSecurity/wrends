@@ -14,10 +14,8 @@
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions copyright 2012-2016 ForgeRock AS.
  */
-
 package org.forgerock.opendj.ldap;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -38,6 +36,13 @@ import org.forgerock.util.Reject;
 
 /** This class contains methods for creating common types of key manager. */
 public final class KeyManagers {
+
+    private static final String KEY_STORE_PROVIDER = "javax.net.ssl.keyStoreProvider";
+    private static final String KEY_STORE_TYPE = "javax.net.ssl.keyStoreType";
+    private static final String KEY_STORE_FILE = "javax.net.ssl.keyStore";
+    private static final String KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
+    private static volatile X509KeyManager jvmKeyManager;
+
     /**
      * This class implements an X.509 key manager that will be used to wrap an
      * existing key manager and makes it possible to configure which
@@ -189,33 +194,46 @@ public final class KeyManagers {
      */
     public static X509KeyManager useKeyStoreFile(final String file, final char[] password,
             final String format) throws GeneralSecurityException, IOException {
-        Reject.ifNull(file);
+        return useKeyStoreFile(file, password, format, null);
+    }
 
-        final File keyStoreFile = new File(file);
+    /**
+     * Creates a new {@code X509KeyManager} which will use the named key store
+     * file for retrieving certificates. It will use the provided key store
+     * format and password.
+     *
+     * @param keyStoreFile
+     *            The key store file name.
+     * @param password
+     *            The key store password, which may be {@code null}.
+     * @param format
+     *            The key store format, which may be {@code null} to indicate that the default key store format for the
+     *            JVM (e.g. {@code JKS}) should be used.
+     * @param provider
+     *            The key store provider, which may be {@code null} to indicate that the default key store provider for
+     *            the JVM should be used.
+     * @return A new {@code X509KeyManager} which will use the named key store file for retrieving certificates.
+     * @throws GeneralSecurityException
+     *            If the key store could not be loaded, perhaps due to incorrect format, or missing algorithms.
+     * @throws IOException
+     *            If the key store file could not be found or could not be read.
+     * @throws NullPointerException
+     *            If {@code file} was {@code null}.
+     */
+    public static X509KeyManager useKeyStoreFile(final String keyStoreFile, final char[] password,
+            final String format, String provider) throws GeneralSecurityException, IOException {
+        Reject.ifNull(keyStoreFile);
+
         final String keyStoreFormat = format != null ? format : KeyStore.getDefaultType();
+        final KeyStore keyStore = provider != null
+            ? KeyStore.getInstance(keyStoreFormat, provider)
+            : KeyStore.getInstance(keyStoreFormat);
 
-        final KeyStore keyStore = KeyStore.getInstance(keyStoreFormat);
-        try (FileInputStream fos = new FileInputStream(keyStoreFile)) {
-            keyStore.load(fos, password);
+        try (FileInputStream fis = new FileInputStream(keyStoreFile)) {
+            keyStore.load(fis, password);
         }
 
-        final KeyManagerFactory kmf =
-                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(keyStore, password);
-
-        X509KeyManager x509km = null;
-        for (final KeyManager km : kmf.getKeyManagers()) {
-            if (km instanceof X509KeyManager) {
-                x509km = (X509KeyManager) km;
-                break;
-            }
-        }
-
-        if (x509km == null) {
-            throw new NoSuchAlgorithmException();
-        }
-
-        return x509km;
+        return getX509KeyManager(keyStore, password);
     }
 
     /**
@@ -237,23 +255,51 @@ public final class KeyManagers {
             throws GeneralSecurityException, IOException {
         final KeyStore keyStore = KeyStore.getInstance("PKCS11");
         keyStore.load(null, password);
-        final KeyManagerFactory kmf =
-                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        return getX509KeyManager(keyStore, password);
+    }
+
+    private static X509KeyManager getX509KeyManager(final KeyStore keyStore, final char[] password)
+            throws GeneralSecurityException {
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(keyStore, password);
 
-        X509KeyManager x509km = null;
         for (final KeyManager km : kmf.getKeyManagers()) {
             if (km instanceof X509KeyManager) {
-                x509km = (X509KeyManager) km;
-                break;
+                return (X509KeyManager) km;
+            }
+        }
+        throw new NoSuchAlgorithmException();
+    }
+
+    /**
+     * Creates a new {@code X509KeyManager} which will use the JVM's default keystore for retrieving certificates.
+     *
+     * @return A new {@code X509KeyManager} which will use the JVM's default keystore for retrieving certificates or
+     *             {@code null} if the necessary JVM settings are missing.
+     * @throws GeneralSecurityException
+     *             If the key store could not be loaded, perhaps due to incorrect format, or missing algorithms.
+     * @throws IOException
+     *             If the key store file could not be found or could not be read.
+     */
+    public static X509KeyManager useJvmDefaultKeyStore() throws GeneralSecurityException, IOException {
+        if (jvmKeyManager == null) {
+            final String keyStoreFile = System.getProperty(KEY_STORE_FILE);
+            if (keyStoreFile != null) {
+                synchronized (KeyManagers.class) {
+                    if (jvmKeyManager == null) {
+                        final String keyStoreProvider = System.getProperty(KEY_STORE_PROVIDER);
+                        final String keyStoreType = System.getProperty(KEY_STORE_TYPE, KeyStore.getDefaultType());
+                        final String keyStorePassword = System.getProperty(KEY_STORE_PASSWORD);
+
+                        jvmKeyManager = useKeyStoreFile(keyStoreFile,
+                                keyStorePassword != null ? keyStorePassword.toCharArray() : null,
+                                keyStoreType, keyStoreProvider);
+                    }
+                }
             }
         }
 
-        if (x509km == null) {
-            throw new NoSuchAlgorithmException();
-        }
-
-        return x509km;
+        return jvmKeyManager;
     }
 
     /**
@@ -275,9 +321,8 @@ public final class KeyManagers {
         return new SelectCertificate(keyManager, alias);
     }
 
-    /** Prevent insantiation. */
+    /** Prevent instantiation. */
     private KeyManagers() {
         // Nothing to do.
     }
-
 }

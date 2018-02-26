@@ -11,24 +11,42 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
+ * Portions Copyright 2014 The Apache Software Foundation
  * Copyright 2015-2016 ForgeRock AS.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.opends.server.backends.pluggable;
 
 import static java.nio.channels.FileChannel.*;
-
+import static java.nio.file.StandardOpenOption.*;
 import static org.forgerock.util.Utils.*;
 import static org.opends.messages.BackendMessages.*;
 import static org.opends.server.util.DynamicConstants.*;
 import static org.opends.server.util.StaticUtils.*;
-import static java.nio.file.StandardOpenOption.*;
+import static org.forgerock.opendj.ldap.ResultCode.*;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -41,7 +59,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -80,21 +98,23 @@ import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.ldap.ByteSequence;
 import org.forgerock.opendj.ldap.ByteString;
-import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.UnknownSchemaElementException;
 import org.forgerock.opendj.ldap.spi.Indexer;
-import org.forgerock.util.Reject;
-import org.forgerock.util.Utils;
-import org.forgerock.util.promise.PromiseImpl;
 import org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn.IndexType;
 import org.forgerock.opendj.server.config.server.BackendIndexCfg;
 import org.forgerock.opendj.server.config.server.PluggableBackendCfg;
+import org.forgerock.util.Reject;
+import org.forgerock.util.Utils;
+import org.forgerock.util.promise.PromiseImpl;
 import org.opends.server.api.CompressedSchema;
 import org.opends.server.backends.RebuildConfig;
 import org.opends.server.backends.pluggable.AttributeIndex.MatchingRuleIndex;
 import org.opends.server.backends.pluggable.CursorTransformer.SequentialCursorAdapter;
 import org.opends.server.backends.pluggable.DN2ID.TreeVisitor;
 import org.opends.server.backends.pluggable.ImportLDIFReader.EntryInformation;
-import org.opends.server.backends.pluggable.OnDiskMergeImporter.ExternalSortChunk.InMemorySortedChunk;
+import org.opends.server.backends.pluggable.OnDiskMergeImporter.BufferPool.MemoryBuffer;
 import org.opends.server.backends.pluggable.spi.Cursor;
 import org.opends.server.backends.pluggable.spi.Importer;
 import org.opends.server.backends.pluggable.spi.ReadOperation;
@@ -107,19 +127,18 @@ import org.opends.server.backends.pluggable.spi.WriteOperation;
 import org.opends.server.backends.pluggable.spi.WriteableTransaction;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ServerContext;
-import org.forgerock.opendj.ldap.DN;
+import org.opends.server.schema.SchemaConstants;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.LDIFImportResult;
-import org.opends.server.util.Platform;
 
 import com.forgerock.opendj.util.OperatingSystem;
 import com.forgerock.opendj.util.PackedLong;
+import com.forgerock.opendj.util.Predicate;
 
-// @Checkstyle:ignore
-import sun.misc.Unsafe;
+import net.jcip.annotations.NotThreadSafe;
 
 /**
  * Imports LDIF data contained in files into the database. Because of the B-Tree structure used in backend, import is
@@ -156,11 +175,21 @@ final class OnDiskMergeImporter
     /** Small heap threshold used to give more memory to JVM to attempt OOM errors. */
     private static final int SMALL_HEAP_SIZE = 256 * MB;
 
+    private static final Predicate<Tree, Void> IS_VLV = new Predicate<Tree, Void>()
+    {
+      @Override
+      public boolean matches(Tree value, Void p)
+      {
+        return value.getName().getIndexId().startsWith("vlv.");
+      }
+    };
+
     private final ServerContext serverContext;
     private final RootContainer rootContainer;
     private final PluggableBackendCfg backendCfg;
 
-    StrategyImpl(ServerContext serverContext, RootContainer rootContainer, PluggableBackendCfg backendCfg)
+    StrategyImpl(final ServerContext serverContext, final RootContainer rootContainer,
+        final PluggableBackendCfg backendCfg)
     {
       this.serverContext = serverContext;
       this.rootContainer = rootContainer;
@@ -168,78 +197,73 @@ final class OnDiskMergeImporter
     }
 
     @Override
-    public LDIFImportResult importLDIF(LDIFImportConfig importConfig) throws Exception
+    public LDIFImportResult importLDIF(LDIFImportConfig importConfig)
+        throws InitializationException, ConfigException, InterruptedException, ExecutionException
     {
-      final int threadCount =
-          importConfig.getThreadCount() == 0 ? Runtime.getRuntime().availableProcessors()
-              : importConfig.getThreadCount();
-      final int indexCount = getIndexCount();
-
-      final int nbBuffer = threadCount * indexCount * 2;
-      final int bufferSize;
-      if (BufferPool.SUPPORTS_OFF_HEAP && importConfig.getOffHeapSize() > 0)
-      {
-        final long offHeapSize = importConfig.getOffHeapSize();
-        bufferSize = (int) ((offHeapSize * MB) / nbBuffer);
-        if (bufferSize < MIN_BUFFER_SIZE)
-        {
-          // Not enough memory.
-          throw new InitializationException(ERR_IMPORT_LDIF_LACK_MEM.get(offHeapSize * MB, nbBuffer * MIN_BUFFER_SIZE));
-        }
-        logger.info(NOTE_IMPORT_LDIF_OFFHEAP_MEM_BUF_INFO, DB_CACHE_SIZE, offHeapSize, nbBuffer, bufferSize / KB);
-      }
-      else
-      {
-        bufferSize = computeBufferSize(nbBuffer);
-        logger.info(NOTE_IMPORT_LDIF_DB_MEM_BUF_INFO, DB_CACHE_SIZE, bufferSize);
-      }
       logger.info(NOTE_IMPORT_STARTING, DirectoryServer.getVersionString(), BUILD_ID, REVISION);
-      logger.info(NOTE_IMPORT_THREAD_COUNT, threadCount);
 
       final long startTime = System.currentTimeMillis();
-      final OnDiskMergeImporter importer;
-      final ExecutorService sorter = Executors.newFixedThreadPool(
-          Runtime.getRuntime().availableProcessors(),
-          newThreadFactory(null, SORTER_THREAD_NAME, true));
-      final LDIFReaderSource source =
-          new LDIFReaderSource(rootContainer, importConfig, PHASE1_IMPORTER_THREAD_NAME, threadCount);
-      final File tempDir = prepareTempDir(backendCfg, importConfig.getTmpDirectory());
-      try (final Importer dbStorage = rootContainer.getStorage().startImport();
-           final BufferPool bufferPool = new BufferPool(nbBuffer, bufferSize))
+      final int maxThreadCount = importConfig.getThreadCount() == 0
+          ? getDefaultNumberOfThread()
+          : importConfig.getThreadCount();
+      final int nbBuffersPerThread = 2 * getIndexCount();
+      try (final BufferPool bufferPool = newBufferPool(maxThreadCount, nbBuffersPerThread))
       {
-        final Collection<EntryContainer> entryContainers = rootContainer.getEntryContainers();
-        final AbstractTwoPhaseImportStrategy importStrategy = importConfig.getSkipDNValidation()
-            ? new SortAndImportWithoutDNValidation(entryContainers, dbStorage, tempDir, bufferPool, sorter)
-            : new SortAndImportWithDNValidation(entryContainers, dbStorage, tempDir, bufferPool, sorter);
-
-        importer = new OnDiskMergeImporter(PHASE2_IMPORTER_THREAD_NAME, importStrategy);
-        importer.doImport(source);
-      }
-      finally
-      {
-        sorter.shutdown();
-        if (OperatingSystem.isWindows())
+        final int threadCount = bufferPool.size() / nbBuffersPerThread;
+        logger.info(NOTE_IMPORT_THREAD_COUNT, threadCount);
+        final OnDiskMergeImporter importer;
+        final ExecutorService sorter =
+            Executors.newFixedThreadPool(threadCount, newThreadFactory(null, SORTER_THREAD_NAME, true));
+        try (final LDIFReaderSource source =
+            new LDIFReaderSource(rootContainer, importConfig, PHASE1_IMPORTER_THREAD_NAME, threadCount))
         {
-          // Try to force the JVM to close mmap()ed file so that they can be deleted.
-          // (see http://bugs.java.com/view_bug.do?bug_id=4715154)
-          System.gc();
+          final File tempDir = prepareTempDir(backendCfg, importConfig.getTmpDirectory());
+          try (final Importer dbStorage = rootContainer.getStorage().startImport())
+          {
+            final Collection<EntryContainer> entryContainers = rootContainer.getEntryContainers();
+            final AbstractTwoPhaseImportStrategy importStrategy =
+                new ExternalSortAndImportStrategy(entryContainers, dbStorage, tempDir, bufferPool, sorter);
+            importer = new OnDiskMergeImporter(PHASE2_IMPORTER_THREAD_NAME, importStrategy);
+            importer.doImport(source);
+          }
+          finally
+          {
+            sorter.shutdownNow();
+            if (OperatingSystem.isWindows())
+            {
+              // Try to force the JVM to close mmap()ed file so that they can be deleted.
+              // (see http://bugs.java.com/view_bug.do?bug_id=4715154)
+              System.gc();
+              Runtime.getRuntime().runFinalization();
+            }
+            recursiveDelete(tempDir);
+          }
+          logger.info(NOTE_IMPORT_PHASE_STATS,
+                      importer.getTotalTimeInMillis() / 1000,
+                      importer.getPhaseOneTimeInMillis() / 1000,
+                      importer.getPhaseTwoTimeInMillis() / 1000);
+
+          final long importTime = System.currentTimeMillis() - startTime;
+          float rate = 0;
+          if (importTime > 0)
+          {
+            rate = 1000f * source.getEntriesRead() / importTime;
+          }
+          logger.info(NOTE_IMPORT_FINAL_STATUS, source.getEntriesRead(), importer.getImportedCount(), source
+              .getEntriesIgnored(), source.getEntriesRejected(), 0, importTime / 1000, rate);
+          return new LDIFImportResult(source.getEntriesRead(), source.getEntriesRejected(), source.getEntriesIgnored());
         }
-        recursiveDelete(tempDir);
       }
-      logger.info(NOTE_IMPORT_PHASE_STATS, importer.getTotalTimeInMillis() / 1000, importer.getPhaseOneTimeInMillis()
-          / 1000, importer.getPhaseTwoTimeInMillis() / 1000);
-
-      final long importTime = System.currentTimeMillis() - startTime;
-      float rate = 0;
-      if (importTime > 0)
+      catch (IOException e)
       {
-        rate = 1000f * source.getEntriesRead() / importTime;
+        throw new ExecutionException(e);
       }
-      logger.info(NOTE_IMPORT_FINAL_STATUS, source.getEntriesRead(), importer.getImportedCount(), source
-          .getEntriesIgnored(), source.getEntriesRejected(), 0, importTime / 1000, rate);
+    }
 
-      return new LDIFImportResult(source.getEntriesRead(), source.getEntriesRejected(), source
-          .getEntriesIgnored());
+    private static int getDefaultNumberOfThread()
+    {
+      final int nbProcessors = Runtime.getRuntime().availableProcessors();
+      return Math.max(2, DirectoryServer.isRunning() ? nbProcessors / 2 : nbProcessors);
     }
 
     private int getIndexCount() throws ConfigException
@@ -263,17 +287,26 @@ final class OnDiskMergeImporter
     }
 
     @Override
-    public void rebuildIndex(final RebuildConfig rebuildConfig) throws Exception
+    public void rebuildIndex(final RebuildConfig rebuildConfig)
+        throws InitializationException, ExecutionException, ConfigException, InterruptedException
     {
       final EntryContainer entryContainer = rootContainer.getEntryContainer(rebuildConfig.getBaseDN());
-      final long totalEntries = rootContainer.getStorage().read(new ReadOperation<Long>()
+      final long totalEntries;
+      try
       {
-        @Override
-        public Long run(ReadableTransaction txn) throws Exception
+        totalEntries = rootContainer.getStorage().read(new ReadOperation<Long>()
         {
-          return entryContainer.getID2Entry().getRecordCount(txn);
-        }
-      });
+          @Override
+          public Long run(ReadableTransaction txn) throws Exception
+          {
+            return entryContainer.getID2Entry().getRecordCount(txn);
+          }
+        });
+      }
+      catch (Exception e)
+      {
+        throw new ExecutionException(e);
+      }
 
       final Set<String> indexesToRebuild = selectIndexesToRebuild(entryContainer, rebuildConfig, totalEntries);
       if (rebuildConfig.isClearDegradedState())
@@ -287,20 +320,28 @@ final class OnDiskMergeImporter
       }
     }
 
-    private void clearDegradedState(final EntryContainer entryContainer, final Set<String> indexes) throws Exception
+    private void clearDegradedState(final EntryContainer entryContainer, final Set<String> indexIds)
+        throws ExecutionException
     {
-      rootContainer.getStorage().write(new WriteOperation()
+      try
       {
-        @Override
-        public void run(WriteableTransaction txn) throws Exception
+        rootContainer.getStorage().write(new WriteOperation()
         {
-          visitIndexes(entryContainer, visitOnlyIndexes(indexes, setTrust(true, txn)));
-        }
-      });
+          @Override
+          public void run(WriteableTransaction txn)
+          {
+            visitIndexes(entryContainer, visitOnlyIndexes(indexIdIn(indexIds), setTrust(true, txn)));
+          }
+        });
+      }
+      catch (Exception e)
+      {
+        throw new ExecutionException(e);
+      }
     }
 
     private void rebuildIndex(EntryContainer entryContainer, String tmpDirectory, Set<String> indexesToRebuild,
-        long totalEntries) throws Exception
+        long totalEntries) throws InitializationException, ConfigException, InterruptedException, ExecutionException
     {
       if (indexesToRebuild.isEmpty())
       {
@@ -308,162 +349,257 @@ final class OnDiskMergeImporter
         return;
       }
       rootContainer.getStorage().close();
-      final int threadCount = Runtime.getRuntime().availableProcessors();
-      final int nbBuffer = 2 * indexesToRebuild.size() * threadCount;
-      final int bufferSize = computeBufferSize(nbBuffer);
-
-      final ExecutorService sorter = Executors.newFixedThreadPool(
-          Runtime.getRuntime().availableProcessors(),
-          newThreadFactory(null, SORTER_THREAD_NAME, true));
-
-      final OnDiskMergeImporter importer;
-      final File tempDir = prepareTempDir(backendCfg, tmpDirectory);
-      try (final Importer dbStorage = rootContainer.getStorage().startImport();
-           final BufferPool bufferPool = new BufferPool(nbBuffer, bufferSize))
+      final int nbBuffersPerThread = 2 * indexesToRebuild.size();
+      try (final BufferPool bufferPool = newBufferPool(getDefaultNumberOfThread(), nbBuffersPerThread))
       {
-        final AbstractTwoPhaseImportStrategy strategy = new RebuildIndexStrategy(
-            rootContainer.getEntryContainers(), dbStorage, tempDir, bufferPool, sorter, indexesToRebuild);
+        final int threadCount = bufferPool.size() / nbBuffersPerThread;
+        final ExecutorService sorter =
+            Executors.newFixedThreadPool(threadCount, newThreadFactory(null, SORTER_THREAD_NAME, true));
 
-        importer = new OnDiskMergeImporter(PHASE2_REBUILDER_THREAD_NAME, strategy);
-        importer.doImport(
-            new ID2EntrySource(entryContainer, dbStorage, PHASE1_REBUILDER_THREAD_NAME, threadCount, totalEntries));
-      }
-      finally
-      {
-        sorter.shutdown();
-        recursiveDelete(tempDir);
-      }
+        final OnDiskMergeImporter importer;
+        final File tempDir = prepareTempDir(backendCfg, tmpDirectory);
+        try (final Importer dbStorage = rootContainer.getStorage().startImport())
+        {
+          final AbstractTwoPhaseImportStrategy strategy =
+              new RebuildIndexStrategy(
+                  rootContainer.getEntryContainers(), dbStorage, tempDir, bufferPool, sorter, indexesToRebuild);
 
-      final long totalTime = importer.getTotalTimeInMillis();
-      final float rate = totalTime > 0 ? 1000f * importer.getImportedCount() / totalTime : 0;
-      logger.info(NOTE_REBUILD_FINAL_STATUS, importer.getImportedCount(), totalTime / 1000, rate);
+          importer = new OnDiskMergeImporter(PHASE2_REBUILDER_THREAD_NAME, strategy);
+          importer.doImport(new ID2EntrySource(entryContainer, dbStorage, PHASE1_REBUILDER_THREAD_NAME, threadCount,
+              totalEntries));
+        }
+        finally
+        {
+          sorter.shutdown();
+          recursiveDelete(tempDir);
+        }
+        final long totalTime = importer.getTotalTimeInMillis();
+        final float rate = totalTime > 0 ? 1000f * importer.getImportedCount() / totalTime : 0;
+        logger.info(NOTE_REBUILD_FINAL_STATUS, importer.getImportedCount(), totalTime / 1000, rate);
+      }
     }
 
-    private static final Set<String> selectIndexesToRebuild(EntryContainer entryContainer, RebuildConfig rebuildConfig,
-        long totalEntries) throws InitializationException
+    /**
+     * Try to allocate a {@link BufferPool} with a number of buffer in it being a multiple of {@code nbBuffers} in the
+     * range [1, {@code maxThreadCount}] depending of the amount of memory available.
+     */
+    BufferPool newBufferPool(final int maxThreadCount, final int nbBuffers) throws InitializationException
+    {
+      final int initialThreadCount = maxThreadCount;
+      final Long offheapMemorySize = backendCfg.getImportOffheapMemorySize();
+      boolean useOffHeap = (offheapMemorySize != null && offheapMemorySize > 0);
+      long memoryAvailable =
+          useOffHeap ? offheapMemorySize.longValue() : calculateAvailableHeapMemoryForBuffersAfterGC();
+      int threadCount = initialThreadCount;
+      for (;;)
+      {
+        final int nbRequiredBuffers = threadCount * nbBuffers;
+        try
+        {
+          return useOffHeap
+              ? newOffHeapBufferPool(nbRequiredBuffers, memoryAvailable)
+              : newHeapBufferPool(nbRequiredBuffers, memoryAvailable);
+        }
+        catch (InitializationException e)
+        {
+          if (threadCount > 1)
+          {
+            // Retry using less buffer by reducing the number of importer threads.
+            threadCount--;
+          }
+          else if (useOffHeap)
+          {
+            // Retry using on-heap buffer
+            useOffHeap = false;
+            memoryAvailable = calculateAvailableHeapMemoryForBuffersAfterGC();
+            threadCount = initialThreadCount;
+          }
+          else
+          {
+            throw e;
+          }
+        }
+      }
+    }
+
+    private BufferPool newOffHeapBufferPool(final int nbBuffers, long offHeapMemoryAvailable)
+        throws InitializationException
+    {
+      // Try off-heap direct buffer
+      logger.info(NOTE_IMPORT_LDIF_TOT_MEM_BUF, offHeapMemoryAvailable, nbBuffers);
+      int bufferSize = (int) (offHeapMemoryAvailable / nbBuffers);
+      while (bufferSize > MIN_BUFFER_SIZE)
+      {
+        BufferPool pool = null;
+        try
+        {
+          pool = new BufferPool(nbBuffers, bufferSize, true);
+          final long usedOffHeapMemory = (((long) bufferSize) * nbBuffers) / MB;
+          logger.info(NOTE_IMPORT_LDIF_OFFHEAP_MEM_BUF_INFO, DB_CACHE_SIZE / MB, usedOffHeapMemory, nbBuffers,
+              bufferSize / KB);
+          return pool;
+        }
+        catch (OutOfMemoryError e)
+        {
+          bufferSize /= 2;
+          closeSilently(pool);
+          pool = null;
+        }
+      }
+      throw new InitializationException(ERR_IMPORT_LDIF_LACK_MEM.get(offHeapMemoryAvailable, nbBuffers
+          * MIN_BUFFER_SIZE));
+    }
+
+    private BufferPool newHeapBufferPool(final int nbBuffers, final long heapMemoryAvailable)
+        throws InitializationException
+    {
+      final long minimumRequiredMemory = nbBuffers * MIN_BUFFER_SIZE + DB_CACHE_SIZE + REQUIRED_FREE_MEMORY;
+      if (heapMemoryAvailable < minimumRequiredMemory)
+      {
+        // Not enough memory.
+        throw new InitializationException(ERR_IMPORT_LDIF_LACK_MEM.get(heapMemoryAvailable, minimumRequiredMemory));
+      }
+      logger.info(NOTE_IMPORT_LDIF_TOT_MEM_BUF, heapMemoryAvailable, nbBuffers);
+      final long buffersMemory = heapMemoryAvailable - DB_CACHE_SIZE - REQUIRED_FREE_MEMORY;
+      final int bufferSize = Math.min(((int) (buffersMemory / nbBuffers)), MAX_BUFFER_SIZE);
+      logger.info(NOTE_IMPORT_LDIF_DB_MEM_BUF_INFO, DB_CACHE_SIZE, bufferSize);
+      return new BufferPool(nbBuffers, bufferSize, false);
+    }
+
+    private final Set<String> selectIndexesToRebuild(final EntryContainer entryContainer,
+        final RebuildConfig rebuildConfig, final long totalEntries) throws InitializationException
     {
       final SelectIndexName selector = new SelectIndexName();
+      final Set<String> indexesToRebuild;
       switch (rebuildConfig.getRebuildMode())
       {
       case ALL:
         visitIndexes(entryContainer, selector);
+        indexesToRebuild = selector.getSelectedIndexNames();
         logger.info(NOTE_REBUILD_ALL_START, totalEntries);
         break;
       case DEGRADED:
         visitIndexes(entryContainer, visitOnlyDegraded(selector));
+        indexesToRebuild = selector.getSelectedIndexNames();
         logger.info(NOTE_REBUILD_DEGRADED_START, totalEntries);
         break;
       case USER_DEFINED:
-        // User defined format is attributeType(.indexType)
-        visitIndexes(entryContainer,
-            visitOnlyIndexes(buildUserDefinedIndexNames(entryContainer, rebuildConfig.getRebuildList()), selector));
+        // User defined format is (attributeType)((.indexType)|(.matchingRule))
+        indexesToRebuild = expandIndexNames(entryContainer, rebuildConfig.getRebuildList());
         if (!rebuildConfig.isClearDegradedState())
         {
-          logger.info(NOTE_REBUILD_START, Utils.joinAsString(", ", rebuildConfig.getRebuildList()), totalEntries);
+          logger.info(NOTE_REBUILD_START, Utils.joinAsString(", ", indexesToRebuild), totalEntries);
         }
         break;
       default:
         throw new UnsupportedOperationException("Unsupported rebuild mode " + rebuildConfig.getRebuildMode());
       }
-      final Set<String> indexesToRebuild = selector.getSelectedIndexNames();
-      if (indexesToRebuild.contains(SuffixContainer.DN2ID_INDEX_NAME))
+      if (indexesToRebuild.contains(entryContainer.getDN2ID().getName().getIndexId()))
       {
         // Always rebuild id2childrencount with dn2id.
-        indexesToRebuild.add(SuffixContainer.ID2CHILDREN_COUNT_NAME);
+        indexesToRebuild.add(entryContainer.getID2ChildrenCount().getName().getIndexId());
       }
-      return selector.getSelectedIndexNames();
+      return indexesToRebuild;
     }
 
     /**
-     * Translate attributeType(.indexType|matchingRuleOid) into attributeType.matchingRuleOid index name.
+     * Translate (attributeType)((.indexType)|(.matchingRuleNameOrOid)) into attributeType.matchingRuleOid index name.
      *
      * @throws InitializationException
      *           if rebuildList contains an invalid/non-existing attribute/index name.
      */
-    private static final Set<String> buildUserDefinedIndexNames(EntryContainer entryContainer,
-        Collection<String> rebuildList) throws InitializationException
-    {
+    final Set<String> expandIndexNames(final EntryContainer entryContainer, final Collection<String> rebuildList)
+        throws InitializationException
+   {
       final Set<String> indexNames = new HashSet<>();
-      for (String name : rebuildList)
+      for (final String name : rebuildList)
       {
-        final String parts[] = name.split("\\.");
-        if (parts.length == 1)
+        // Name could be a (attributeType)((.indexType)|(.matchingRule))
+        // Add a trailing "." to ensure that resulting parts has always at least two parts.
+        final String parts[] = (name + ".*").split("\\.");
+
+        // Is name represents all VLV index ?
+        final SelectIndexName selector = new SelectIndexName();
+        if (parts[0].equalsIgnoreCase("vlv") && isWildcard(parts[1]))
         {
-          // Add all indexes of this attribute
-          // for example: "cn" or "sn"
-          final AttributeIndex attrIndex = findAttributeIndex(entryContainer, parts[0]);
-          for (Tree index : attrIndex.getNameToIndexes().values())
-          {
-            indexNames.add(index.getName().getIndexId());
-          }
-        }
-        else if (parts.length == 2)
-        {
-          // First, assume the supplied name is a valid index name ...
-          // for example: "cn.substring", "vlv.someVlvIndex", "cn.caseIgnoreMatch"
-          // or "cn.caseIgnoreSubstringsMatch:6"
-          final SelectIndexName selector = new SelectIndexName();
-          visitIndexes(entryContainer, visitOnlyIndexes(Arrays.asList(name), selector));
-          indexNames.addAll(selector.getSelectedIndexNames());
-          if (selector.getSelectedIndexNames().isEmpty())
-          {
-            // ... if not, assume the supplied name identify an attributeType.indexType
-            // for example: aliases like "cn.substring" could not be found by the previous step
-            try
-            {
-              final AttributeIndex attrIndex = findAttributeIndex(entryContainer, parts[0]);
-              indexNames.addAll(getIndexNames(IndexType.valueOf(parts[1].toUpperCase()), attrIndex));
-            }
-            catch (IllegalArgumentException e)
-            {
-              throw new InitializationException(ERR_ATTRIBUTE_INDEX_NOT_CONFIGURED.get(name), e);
-            }
-          }
+          visitIndexes(entryContainer, visitOnlyIndexes(IS_VLV, selector));
         }
         else
         {
-          throw new InitializationException(ERR_ATTRIBUTE_INDEX_NOT_CONFIGURED.get(name));
+          // Is name a fully qualified index id ? i.e: "dn2id", "sn.caseIgnoreMatch:6"
+          visitIndexes(entryContainer, visitOnlyIndexes(indexIdIn(Arrays.asList(name)), selector));
         }
+
+        if (selector.getSelectedIndexNames().isEmpty())
+        {
+          if (isWildcard(parts[1]))
+          {
+            // Name is "attributeType", "attributeType." or "attributeType.*"
+            visitAttributeIndexes(entryContainer.getAttributeIndexes(), attributeTypeIs(parts[0]), selector);
+            if (selector.getSelectedIndexNames().isEmpty())
+            {
+              throw new InitializationException(ERR_ATTRIBUTE_INDEX_NOT_CONFIGURED.get(name));
+            }
+          }
+          else
+          {
+            final Collection<Predicate<MatchingRuleIndex, AttributeIndex>> attributeIndexFilters = new ArrayList<>();
+            if (!isWildcard(parts[0]))
+            {
+              // Name is attributeType.matchingRule or attributeType.indexType
+              attributeIndexFilters.add(attributeTypeIs(parts[0]));
+            }
+            // Filter on index type or matching rule.
+            final IndexType indexType = indexTypeForNameOrNull(parts[1]);
+            if (indexType == null)
+            {
+              // Name contains a matching rule
+              try
+              {
+                attributeIndexFilters.add(matchingRuleIs(serverContext.getSchema().getMatchingRule(parts[1])));
+              }
+              catch (UnknownSchemaElementException usee)
+              {
+                throw new InitializationException(usee.getMessageObject(), usee);
+              }
+
+              if (parts[1].equalsIgnoreCase(SchemaConstants.EMR_DN_NAME))
+              {
+                indexNames.add(entryContainer.getDN2ID().getName().getIndexId());
+                indexNames.add(entryContainer.getDN2URI().getName().getIndexId());
+              }
+            }
+            else
+            {
+              // Name contains an index type
+              attributeIndexFilters.add(indexTypeIs(indexType));
+            }
+            visitAttributeIndexes(entryContainer.getAttributeIndexes(), matchingAllOf(attributeIndexFilters), selector);
+          }
+        }
+        indexNames.addAll(selector.getSelectedIndexNames());
       }
       return indexNames;
     }
 
-    private static final AttributeIndex findAttributeIndex(EntryContainer entryContainer, String name)
-        throws InitializationException
+    private static boolean isWildcard(final String part)
     {
-      for (AttributeIndex index : entryContainer.getAttributeIndexes())
-      {
-        if (index.getAttributeType().hasNameOrOID(name.toLowerCase()))
-        {
-          return index;
-        }
-      }
-      throw new InitializationException(ERR_ATTRIBUTE_INDEX_NOT_CONFIGURED.get(name));
+      return part.isEmpty() || "*".equals(part);
     }
 
-
-    private static Collection<String> getIndexNames(IndexType indexType, AttributeIndex attrIndex)
+    /**
+     * Retrieves the index type for the specified name, or {@code null} if there is no such index type.
+     */
+    private static IndexType indexTypeForNameOrNull(final String indexName)
     {
-      if (indexType.equals(IndexType.PRESENCE))
+      for (final IndexType type : IndexType.values())
       {
-        if (!attrIndex.isIndexed(org.opends.server.types.IndexType.PRESENCE))
+        if (type.name().equalsIgnoreCase(indexName))
         {
-          throw new IllegalArgumentException("No index found for type " + indexType);
+          return type;
         }
-        return Collections.singletonList(IndexType.PRESENCE.toString());
       }
-      final Set<String> indexNames = new HashSet<>();
-      for (Indexer indexer : AttributeIndex.getMatchingRule(indexType, attrIndex.getAttributeType())
-                                           .createIndexers(attrIndex.getIndexingOptions()))
-      {
-        final Tree indexTree = attrIndex.getNameToIndexes().get(indexer.getIndexID());
-        if (indexTree == null)
-        {
-          throw new IllegalArgumentException("No index found for type " + indexType);
-        }
-        indexNames.add(indexTree.getName().getIndexId());
-      }
-      return indexNames;
+      return null;
     }
 
     private static File prepareTempDir(PluggableBackendCfg backendCfg, String tmpDirectory)
@@ -479,59 +615,34 @@ final class OnDiskMergeImporter
       return tempDir;
     }
 
-    private int computeBufferSize(int nbBuffer) throws InitializationException
-    {
-      final long availableMemory = calculateAvailableHeapMemoryForBuffers();
-      logger.info(NOTE_IMPORT_LDIF_TOT_MEM_BUF, availableMemory, nbBuffer);
-
-      final int bufferSize = Math.min((int) (availableMemory / nbBuffer), MAX_BUFFER_SIZE);
-      if (bufferSize < MIN_BUFFER_SIZE)
-      {
-        // Not enough memory.
-        throw new InitializationException(ERR_IMPORT_LDIF_LACK_MEM.get(availableMemory, nbBuffer * MIN_BUFFER_SIZE
-            + DB_CACHE_SIZE + REQUIRED_FREE_MEMORY));
-      }
-      return bufferSize;
-    }
-
     /**
-     * Calculates the amount of available memory which can be used by this import, taking into account whether or not
+     * Calculates the amount of available memory which can be used by this import, taking into account whether
      * the import is running offline or online as a task.
      */
-    private long calculateAvailableHeapMemoryForBuffers()
+    private long calculateAvailableHeapMemoryForBuffersAfterGC()
     {
-      final Runtime runtime = Runtime.getRuntime();
-      // call twice gc to ensure finalizers are called
-      // and young to old gen references are properly gc'd
-      runtime.gc();
-      runtime.gc();
+      final Runtime runTime = Runtime.getRuntime();
+      runTime.gc();
+      runTime.gc();
 
-      final long totalAvailableMemory;
-      if (DirectoryServer.isRunning())
+      // First try calculation based on oldgen size
+      final List<MemoryPoolMXBean> mpools = ManagementFactory.getMemoryPoolMXBeans();
+      for (final MemoryPoolMXBean mpool : mpools)
       {
-        // Online import/rebuild.
-        final long availableMemory = serverContext.getMemoryQuota().getAvailableMemory();
-        totalAvailableMemory = Math.max(availableMemory, 16 * MB);
+        final MemoryUsage usage = mpool.getUsage();
+        if (usage != null && mpool.getName().endsWith("Old Gen") && usage.getMax() > 0)
+        {
+          final long max = usage.getMax();
+          return (max > SMALL_HEAP_SIZE ? (max * 90 / 100) : (max * 70 / 100));
+        }
       }
-      else
-      {
-        // Offline import/rebuild.
-        totalAvailableMemory = Platform.getUsableMemoryForCaching();
-      }
-
-      // Now take into account various fudge factors.
-      int importMemPct = 90;
-      if (totalAvailableMemory <= SMALL_HEAP_SIZE)
-      {
-        // Be pessimistic when memory is low.
-        importMemPct -= 25;
-      }
-      return (totalAvailableMemory * importMemPct / 100) - (DB_CACHE_SIZE + REQUIRED_FREE_MEMORY);
+      // Fall back to 40% of overall heap size (no need to do gc() again).
+      return (runTime.freeMemory() + (runTime.maxMemory() - runTime.totalMemory())) * 40 / 100;
     }
   }
 
   /** Source of LDAP {@link Entry}s to process. */
-  private interface Source
+  private interface Source extends Closeable
   {
     /** Process {@link Entry}s extracted from a {@link Source}. */
     interface EntryProcessor
@@ -539,7 +650,7 @@ final class OnDiskMergeImporter
       void processEntry(EntryContainer container, EntryID entryID, Entry entry) throws Exception;
     }
 
-    void processAllEntries(EntryProcessor processor) throws Exception;
+    void processAllEntries(EntryProcessor processor) throws InterruptedException, ExecutionException;
 
     boolean isCancelled();
   }
@@ -570,7 +681,13 @@ final class OnDiskMergeImporter
     }
 
     @Override
-    public void processAllEntries(final EntryProcessor entryProcessor) throws Exception
+    public void close()
+    {
+      closeSilently(reader);
+    }
+
+    @Override
+    public void processAllEntries(final EntryProcessor entryProcessor) throws InterruptedException, ExecutionException
     {
       final ScheduledExecutorService scheduler =
           Executors.newSingleThreadScheduledExecutor(newThreadFactory(null, PHASE1_REPORTER_THREAD_NAME, true));
@@ -585,6 +702,7 @@ final class OnDiskMergeImporter
             @Override
             public Void call() throws Exception
             {
+              checkThreadNotInterrupted();
               EntryInformation entryInfo;
               while ((entryInfo = reader.readEntry(entryContainers)) != null && !importConfig.isCancelled())
               {
@@ -613,6 +731,7 @@ final class OnDiskMergeImporter
                 {
                   reader.removePending(entry.getName());
                 }
+                checkThreadNotInterrupted();
               }
               return null;
             }
@@ -728,14 +847,20 @@ final class OnDiskMergeImporter
     }
 
     @Override
-    public void processAllEntries(final EntryProcessor entryProcessor) throws Exception
+    public void close()
+    {
+      executor.shutdown();
+    }
+
+    @Override
+    public void processAllEntries(final EntryProcessor entryProcessor) throws InterruptedException, ExecutionException
     {
       final ScheduledExecutorService scheduler =
           Executors.newSingleThreadScheduledExecutor(newThreadFactory(null, PHASE1_REPORTER_THREAD_NAME, true));
       scheduler.scheduleAtFixedRate(new PhaseOneProgressReporter(), 10, 10, TimeUnit.SECONDS);
-      final PromiseImpl<Void, Exception> promise = PromiseImpl.create();
-      try (final SequentialCursor<ByteString, ByteString> cursor =
-          importer.openCursor(entryContainer.getID2Entry().getName()))
+      final PromiseImpl<Void, ExecutionException> promise = PromiseImpl.create();
+      final ID2Entry id2Entry = entryContainer.getID2Entry();
+      try (final SequentialCursor<ByteString, ByteString> cursor = importer.openCursor(id2Entry.getName()))
       {
         while (cursor.next())
         {
@@ -749,13 +874,18 @@ final class OnDiskMergeImporter
               try
               {
                 entryProcessor.processEntry(entryContainer,
-                    new EntryID(key), ID2Entry.entryFromDatabase(value, schema));
+                    new EntryID(key), id2Entry.entryFromDatabase(value, schema));
                 nbEntriesProcessed.incrementAndGet();
+              }
+              catch (ExecutionException e)
+              {
+                interrupted = true;
+                promise.handleException(e);
               }
               catch (Exception e)
               {
                 interrupted = true;
-                promise.handleException(e);
+                promise.handleException(new ExecutionException(e));
               }
             }
           });
@@ -771,7 +901,7 @@ final class OnDiskMergeImporter
       // Forward exception if any
       if (promise.isDone())
       {
-        promise.getOrThrow(0, TimeUnit.SECONDS);
+        promise.getOrThrow();
       }
     }
 
@@ -817,12 +947,10 @@ final class OnDiskMergeImporter
     }
   }
 
-  /** Default size for the off-heap memory dedicated to the phase one's buffer. */
-  private static final int DEFAULT_OFFHEAP_SIZE = 700;
   /** Max size of phase one buffer. */
-  private static final int MAX_BUFFER_SIZE = 2 * MB;
+  private static final int MAX_BUFFER_SIZE = 4 * MB;
   /** Min size of phase one buffer. */
-  private static final int MIN_BUFFER_SIZE = 4 * KB;
+  private static final int MIN_BUFFER_SIZE = 32 * KB;
   /** DB cache size to use during import. */
   private static final int DB_CACHE_SIZE = 32 * MB;
   /** Required free memory for this importer. */
@@ -842,7 +970,7 @@ final class OnDiskMergeImporter
     this.importStrategy = importStrategy;
   }
 
-  private void doImport(final Source source) throws Exception
+  private void doImport(final Source source) throws InterruptedException, ExecutionException
   {
     final long phaseOneStartTime = System.currentTimeMillis();
     final PhaseOneWriteableTransaction transaction = new PhaseOneWriteableTransaction(importStrategy);
@@ -851,36 +979,42 @@ final class OnDiskMergeImporter
     final ConcurrentMap<EntryContainer, CountDownLatch> importedContainers = new ConcurrentHashMap<>();
 
     // Start phase one
-    source.processAllEntries(new Source.EntryProcessor()
+    try
     {
-      @Override
-      public void processEntry(EntryContainer container, EntryID entryID, Entry entry) throws DirectoryException,
-          InterruptedException
+      source.processAllEntries(new Source.EntryProcessor()
       {
-        CountDownLatch latch = importedContainers.get(container);
-        if (latch == null)
+        @Override
+        public void processEntry(EntryContainer container, EntryID entryID, Entry entry) throws DirectoryException,
+            InterruptedException
         {
-          final CountDownLatch newLatch = new CountDownLatch(1);
-          if (importedContainers.putIfAbsent(container, newLatch) == null)
+          CountDownLatch latch = importedContainers.get(container);
+          if (latch == null)
           {
-            try
+            final CountDownLatch newLatch = new CountDownLatch(1);
+            if (importedContainers.putIfAbsent(container, newLatch) == null)
             {
-              importStrategy.beforePhaseOne(container);
+              try
+              {
+                importStrategy.beforePhaseOne(container);
+              }
+              finally
+              {
+                newLatch.countDown();
+              }
             }
-            finally
-            {
-              newLatch.countDown();
-            }
+            latch = importedContainers.get(container);
           }
-          latch = importedContainers.get(container);
-        }
-        latch.await();
+          latch.await();
 
-        importStrategy.validate(container, entryID, entry);
-        container.importEntry(transaction, entryID, entry);
-        importedCount.incrementAndGet();
-      }
-    });
+          container.importEntry(transaction, entryID, entry);
+          importedCount.incrementAndGet();
+        }
+      });
+    }
+    finally
+    {
+      closeSilently(source);
+    }
     phaseOneTimeMs = System.currentTimeMillis() - phaseOneStartTime;
 
     if (source.isCancelled())
@@ -905,7 +1039,7 @@ final class OnDiskMergeImporter
     }
 
     // Finish import
-    for(EntryContainer entryContainer : importedContainers.keySet())
+    for (EntryContainer entryContainer : importedContainers.keySet())
     {
       importStrategy.afterPhaseTwo(entryContainer);
     }
@@ -961,8 +1095,6 @@ final class OnDiskMergeImporter
       this.sorter = sorter;
     }
 
-    abstract void validate(EntryContainer entryContainer, EntryID entryID, Entry entry) throws DirectoryException;
-
     void beforePhaseOne(EntryContainer entryContainer)
     {
       entryContainer.delete(asWriteableTransaction(importer));
@@ -995,13 +1127,14 @@ final class OnDiskMergeImporter
     }
 
     final Callable<Void> newDN2IDImporterTask(TreeName treeName, final Chunk source,
-        PhaseTwoProgressReporter progressReporter, boolean dn2idAlreadyImported)
+        PhaseTwoProgressReporter progressReporter)
     {
       final EntryContainer entryContainer = entryContainers.get(treeName.getBaseDN());
+      final ID2Entry id2entry = entryContainer.getID2Entry();
       final ID2ChildrenCount id2count = entryContainer.getID2ChildrenCount();
 
-      return new DN2IDImporterTask(progressReporter, importer, tempDir, bufferPool, entryContainer.getDN2ID(), source,
-          id2count, newPhaseTwoCollector(entryContainer, id2count.getName()), dn2idAlreadyImported);
+      return new DN2IDImporterTask(progressReporter, importer, tempDir, bufferPool, id2entry, entryContainer.getDN2ID(),
+          source, id2count, newPhaseTwoCollector(entryContainer, id2count.getName()));
     }
 
     final Callable<Void> newVLVIndexImporterTask(VLVIndex vlvIndex, final Chunk source,
@@ -1017,6 +1150,7 @@ final class OnDiskMergeImporter
         @Override
         public Void call() throws Exception
         {
+          checkThreadNotInterrupted();
           try (final MeteredCursor<ByteString, ByteString> unusued = source.flip())
           {
             // force flush
@@ -1028,28 +1162,23 @@ final class OnDiskMergeImporter
   }
 
   /**
-   * No validation is performed, every {@link TreeName} (but id2entry) are imported into dedicated
-   * {@link ExternalSortChunk} before being imported into the {@link Importer}. id2entry which is directly copied into
-   * the database through {@link ImporterToChunkAdapter}.
+   * During phase one, import all {@link TreeName} (but id2entry) into a dedicated and temporary
+   * {@link ExternalSortChunk} which will sort the keys in the ascending order. Phase two will copy the sorted keys into
+   * the database using the {@link Importer}. id2entry database is imported directly into the database using
+   * {@link ImporterToChunkAdapter}.
    */
-  private static final class SortAndImportWithoutDNValidation extends AbstractTwoPhaseImportStrategy
+  private static final class ExternalSortAndImportStrategy extends AbstractTwoPhaseImportStrategy
   {
-    SortAndImportWithoutDNValidation(Collection<EntryContainer> entryContainers, Importer importer, File tempDir,
+    ExternalSortAndImportStrategy(Collection<EntryContainer> entryContainers, Importer importer, File tempDir,
         BufferPool bufferPool, Executor sorter)
     {
       super(entryContainers, importer, tempDir, bufferPool, sorter);
     }
 
     @Override
-    public void validate(EntryContainer entryContainer, EntryID entryID, Entry entry)
-    {
-      // No validation performed. All entries are considered valid.
-    }
-
-    @Override
     public Chunk newChunk(TreeName treeName) throws Exception
     {
-      if (isID2Entry(treeName))
+      if (isID2Entry(entryContainers.get(treeName.getBaseDN()), treeName))
       {
         return new MostlyOrderedChunk(asChunk(treeName, importer));
       }
@@ -1062,109 +1191,19 @@ final class OnDiskMergeImporter
     {
       final EntryContainer entryContainer = entryContainers.get(treeName.getBaseDN());
 
-      if (isID2Entry(treeName))
+      if (isID2Entry(entryContainer, treeName))
       {
         return newFlushTask(source);
       }
-      else if (isDN2ID(treeName))
+      else if (isDN2ID(entryContainer, treeName))
       {
-        return newDN2IDImporterTask(treeName, source, progressReporter, false);
+        return newDN2IDImporterTask(treeName, source, progressReporter);
       }
       else if (isVLVIndex(entryContainer, treeName))
       {
         return newVLVIndexImporterTask(getVLVIndex(entryContainer, treeName), source, progressReporter);
       }
       return newChunkCopierTask(treeName, source, progressReporter);
-    }
-  }
-
-  /**
-   * This strategy performs two validations by ensuring that there is no duplicate entry (entry with same DN) and that
-   * the given entry has an existing parent. To do so, the dn2id is directly imported into the database in addition of
-   * id2entry. Others tree are externally sorted before being imported into the database.
-   */
-  private static final class SortAndImportWithDNValidation extends AbstractTwoPhaseImportStrategy implements
-      ReadableTransaction
-  {
-    private static final int DN_CACHE_SIZE = 16;
-    private final LRUPresenceCache<DN> dnCache = new LRUPresenceCache<>(DN_CACHE_SIZE);
-
-    SortAndImportWithDNValidation(Collection<EntryContainer> entryContainers, Importer importer, File tempDir,
-        BufferPool bufferPool, Executor sorter)
-    {
-      super(entryContainers, importer, tempDir, bufferPool, sorter);
-    }
-
-    @Override
-    public Chunk newChunk(TreeName treeName) throws Exception
-    {
-      if (isID2Entry(treeName))
-      {
-        return new MostlyOrderedChunk(asChunk(treeName, importer));
-      }
-      else if (isDN2ID(treeName))
-      {
-        return asChunk(treeName, importer);
-      }
-      return newExternalSortChunk(treeName);
-    }
-
-    @Override
-    public Callable<Void> newPhaseTwoTask(TreeName treeName, final Chunk source,
-        PhaseTwoProgressReporter progressReporter)
-    {
-      final EntryContainer entryContainer = entryContainers.get(treeName.getBaseDN());
-
-      if (isID2Entry(treeName))
-      {
-        return newFlushTask(source);
-      }
-      else if (isDN2ID(treeName))
-      {
-        return newDN2IDImporterTask(treeName, source, progressReporter, true);
-      }
-      else if (isVLVIndex(entryContainer, treeName))
-      {
-        return newVLVIndexImporterTask(getVLVIndex(entryContainer, treeName), source, progressReporter);
-      }
-      return newChunkCopierTask(treeName, source, progressReporter);
-    }
-
-    @Override
-    public void validate(EntryContainer entryContainer, EntryID entryID, Entry entry) throws DirectoryException
-    {
-      final DN2ID dn2Id = entryContainer.getDN2ID();
-      final DN entryDN = entry.getName();
-      final DN parentDN = entryContainer.getParentWithinBase(entryDN);
-
-      if (parentDN != null && !dnCache.contains(parentDN) && dn2Id.get(this, parentDN) == null)
-      {
-        throw new DirectoryException(ResultCode.NO_SUCH_OBJECT, ERR_IMPORT_PARENT_NOT_FOUND.get(parentDN));
-      }
-
-      if (dn2Id.get(this, entryDN) != null)
-      {
-        throw new DirectoryException(ResultCode.ENTRY_ALREADY_EXISTS, ERR_ADD_ENTRY_ALREADY_EXISTS.get(entry));
-      }
-      dnCache.add(entryDN);
-    }
-
-    @Override
-    public ByteString read(TreeName treeName, ByteSequence key)
-    {
-      return importer.read(treeName, key);
-    }
-
-    @Override
-    public Cursor<ByteString, ByteString> openCursor(TreeName treeName)
-    {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long getRecordCount(TreeName treeName)
-    {
-      throw new UnsupportedOperationException();
     }
   }
 
@@ -1174,33 +1213,29 @@ final class OnDiskMergeImporter
     private final Set<String> indexesToRebuild;
 
     RebuildIndexStrategy(Collection<EntryContainer> entryContainers, Importer importer, File tempDir,
-        BufferPool bufferPool, Executor sorter, Collection<String> indexNames)
+        BufferPool bufferPool, Executor sorter, Set<String> indexNames)
     {
       super(entryContainers, importer, tempDir, bufferPool, sorter);
-      this.indexesToRebuild = new HashSet<>(indexNames.size());
-      for(String indexName : indexNames)
-      {
-        this.indexesToRebuild.add(indexName.toLowerCase());
-      }
+      this.indexesToRebuild = indexNames;
     }
 
     @Override
     void beforePhaseOne(EntryContainer entryContainer)
     {
-      visitIndexes(entryContainer, visitOnlyIndexes(indexesToRebuild, setTrust(false, importer)));
-      visitIndexes(entryContainer, visitOnlyIndexes(indexesToRebuild, deleteDatabase(importer)));
+      visitIndexes(entryContainer, visitOnlyIndexes(indexIdIn(indexesToRebuild), setTrust(false, importer)));
+      visitIndexes(entryContainer, visitOnlyIndexes(indexIdIn(indexesToRebuild), deleteDatabase(importer)));
     }
 
     @Override
     void afterPhaseTwo(EntryContainer entryContainer)
     {
-      visitIndexes(entryContainer, visitOnlyIndexes(indexesToRebuild, setTrust(true, importer)));
+      visitIndexes(entryContainer, visitOnlyIndexes(indexIdIn(indexesToRebuild), setTrust(true, importer)));
     }
 
     @Override
     public Chunk newChunk(TreeName treeName) throws Exception
     {
-      if (indexesToRebuild.contains(treeName.getIndexId().toLowerCase()))
+      if (indexesToRebuild.contains(treeName.getIndexId()))
       {
         return newExternalSortChunk(treeName);
       }
@@ -1213,26 +1248,20 @@ final class OnDiskMergeImporter
     {
       final EntryContainer entryContainer = entryContainers.get(treeName.getBaseDN());
 
-      if (indexesToRebuild.contains(treeName.getIndexId().toLowerCase()))
+      if (!indexesToRebuild.contains(treeName.getIndexId()))
       {
-        if (isDN2ID(treeName))
-        {
-          return newDN2IDImporterTask(treeName, source, progressReporter, false);
-        }
-        else if (isVLVIndex(entryContainer, treeName))
-        {
-          return newVLVIndexImporterTask(getVLVIndex(entryContainer, treeName), source, progressReporter);
-        }
-        return newChunkCopierTask(treeName, source, progressReporter);
+        // Do nothing (flush null chunk)
+        return newFlushTask(source);
       }
-      // Do nothing (flush null chunk)
-      return newFlushTask(source);
-    }
-
-    @Override
-    public void validate(EntryContainer entryContainer, EntryID entryID, Entry entry) throws DirectoryException
-    {
-      // No validation performed. All entries are considered valid.
+      else if (isDN2ID(entryContainer, treeName))
+      {
+        return newDN2IDImporterTask(treeName, source, progressReporter);
+      }
+      else if (isVLVIndex(entryContainer, treeName))
+      {
+        return newVLVIndexImporterTask(getVLVIndex(entryContainer, treeName), source, progressReporter);
+      }
+      return newChunkCopierTask(treeName, source, progressReporter);
     }
   }
 
@@ -1251,7 +1280,8 @@ final class OnDiskMergeImporter
     }
     finally
     {
-      executor.shutdown();
+      executor.shutdownNow();
+      executor.awaitTermination(5, TimeUnit.SECONDS);
     }
   }
 
@@ -1265,7 +1295,7 @@ final class OnDiskMergeImporter
    */
   private static final class PhaseOneWriteableTransaction implements WriteableTransaction
   {
-    /**  Must be power of 2 because of fast-modulo computing. */
+    /** Must be power of 2 because of fast-modulo computing. */
     private static final int LOCKTABLE_SIZE = 64;
     private final ConcurrentMap<TreeName, Chunk> chunks = new ConcurrentHashMap<>();
     private final ChunkFactory chunkFactory;
@@ -1401,7 +1431,7 @@ final class OnDiskMergeImporter
    * Store and sort data into multiple chunks. Thanks to the chunk rolling mechanism, this chunk can sort and store an
    * unlimited amount of data. This class uses double-buffering: data are firstly stored in a
    * {@link InMemorySortedChunk} which, once full, will be asynchronously sorted and copied into a
-   * {@link FileRegionChunk}. Duplicate keys are reduced by a {@link Collector}.
+   * {@link FileRegion}. Duplicate keys are reduced by a {@link Collector}.
    * {@link #put(ByteSequence, ByteSequence))} is thread-safe.
    * This class is used in phase-one. There is one {@link ExternalSortChunk} per
    * database tree, shared across all phase-one importer threads, in charge of storing/sorting records.
@@ -1420,7 +1450,7 @@ final class OnDiskMergeImporter
     private final Collector<?, ByteString> phaseOneDeduplicator;
     private final Collector<?, ByteString> phaseTwoDeduplicator;
     /** Keep track of pending sorting tasks. */
-    private final CompletionService<MeteredCursor<ByteString, ByteString>> sorter;
+    private final CompletionService<Region> sorter;
     /** Keep track of currently opened chunks. */
     private final Set<Chunk> activeChunks = Collections.synchronizedSet(new HashSet<Chunk>());
     /** Keep track of the number of chunks created. */
@@ -1473,36 +1503,60 @@ final class OnDiskMergeImporter
       {
         sortAndAppendChunkAsync(chunk);
       }
+
+      final List<MeteredCursor<ByteString, ByteString>> cursors = new ArrayList<>();
       try
       {
-        return new CollectorCursor<>(
-            new CompositeCursor<ByteString, ByteString>(name,
-                waitTasksTermination(sorter, nbSortedChunks.get()))
-            {
-              public void close()
-              {
-                super.close();
-                if (OperatingSystem.isWindows())
-                {
-                  // Windows might not be able to delete the file (see http://bugs.java.com/view_bug.do?bug_id=4715154)
-                  // To prevent these not deleted files to waste space, we empty it.
-                  try
-                  {
-                    channel.truncate(0);
-                  }
-                  catch (IOException e)
-                  {
-                    // This is best effort, it's safe to ignore the exception here.
-                  }
-                }
-                closeSilently(channel);
-              }
-            }, (Collector<?, ByteString>) phaseTwoDeduplicator);
+        final List<Region> regions = waitTasksTermination(sorter, nbSortedChunks.get());
+        Collections.sort(regions); // Sort regions by their starting offsets.
+        long mmapPosition = 0;
+        // Create as big as possible memory are (handling 2Gb limit) and create as many cursors as regions from
+        // these area.
+        MappedByteBuffer mmap = channel.map(MapMode.READ_ONLY, mmapPosition, Math.min(size.get(), Integer.MAX_VALUE));
+        for (Region region : regions)
+        {
+          if ((region.offset + region.size) > (mmapPosition + Integer.MAX_VALUE))
+          {
+            // Handle the 2Gb ByteBuffer limit
+            mmapPosition = region.offset;
+            mmap = channel.map(MapMode.READ_ONLY, mmapPosition, Math.min(size.get() - mmapPosition, Integer.MAX_VALUE));
+          }
+          final ByteBuffer regionBuffer = mmap.duplicate();
+          final int relativeRegionOffset = (int) (region.offset - mmapPosition);
+          regionBuffer.position(relativeRegionOffset).limit(regionBuffer.position() + region.size);
+          cursors.add(new FileRegion.Cursor(name, regionBuffer.slice()));
+        }
       }
-      catch (ExecutionException | InterruptedException e)
+      catch (ExecutionException | InterruptedException | IOException e)
       {
         throw new StorageRuntimeException(e);
       }
+
+      final CompositeCursor<ByteString, ByteString> cursor = new CompositeCursor<ByteString, ByteString>(name, cursors)
+      {
+        @Override
+        public void close()
+        {
+          super.close();
+          if (OperatingSystem.isWindows())
+          {
+            // Windows might not be able to delete the file (see http://bugs.java.com/view_bug.do?bug_id=4715154)
+            // To prevent these not deleted files to waste space, we empty it.
+            try
+            {
+              channel.truncate(0);
+            }
+            catch (IOException e)
+            {
+              // This is best effort, it's safe to ignore the exception here.
+            }
+          }
+          closeSilently(channel);
+        }
+      };
+      return phaseTwoDeduplicator != null
+          ? new CollectorCursor<>(cursor, (Collector<?, ByteString>) phaseTwoDeduplicator)
+          : cursor;
     }
 
     @Override
@@ -1528,24 +1582,46 @@ final class OnDiskMergeImporter
       final long startOffset = filePosition.getAndAdd(chunk.size());
       nbSortedChunks.incrementAndGet();
 
-      sorter.submit(new Callable<MeteredCursor<ByteString, ByteString>>()
+      sorter.submit(new Callable<Region>()
       {
         @Override
-        public MeteredCursor<ByteString, ByteString> call() throws Exception
+        public Region call() throws Exception
         {
           /*
-           * NOTE: The resulting size of the FileRegionChunk might be less than chunk.size() because of key
-           * de-duplication performed by the CollectorCursor.
+           * NOTE: The resulting size of the FileRegion might be less than chunk.size() because of key de-duplication
+           * performed by the CollectorCursor.
            */
-          final Chunk persistentChunk = new FileRegionChunk(name, channel, startOffset, chunk.size());
-          try (final SequentialCursor<ByteString, ByteString> source =
-              new CollectorCursor<>(chunk.flip(), phaseOneDeduplicator))
+          checkThreadNotInterrupted();
+          final int regionSize;
+          try (final FileRegion region = new FileRegion(channel, startOffset, chunk.size());
+               final SequentialCursor<ByteString, ByteString> source = phaseOneDeduplicator != null
+                     ? new CollectorCursor<>(chunk.flip(), phaseOneDeduplicator)
+                     : chunk.flip())
           {
-            copyIntoChunk(source, persistentChunk);
+            regionSize = region.write(source);
           }
-          return persistentChunk.flip();
+          return new Region(startOffset, regionSize);
         }
       });
+    }
+
+    /** Define a region inside a file. */
+    private static final class Region implements Comparable<Region>
+    {
+      private final long offset;
+      private final int size;
+
+      Region(long offset, int size)
+      {
+        this.offset = offset;
+        this.size = size;
+      }
+
+      @Override
+      public int compareTo(Region o)
+      {
+        return Long.compare(offset, o.offset);
+      }
     }
 
     /**
@@ -1574,7 +1650,7 @@ final class OnDiskMergeImporter
     {
       private final String metricName;
       private final BufferPool bufferPool;
-      private final Buffer buffer;
+      private final MemoryBuffer buffer;
       private long totalBytes;
       private int indexPos;
       private int dataPos;
@@ -1780,13 +1856,9 @@ final class OnDiskMergeImporter
      * +------------+--------------+--------------+----------------+
      * </pre>
      */
-    static final class FileRegionChunk implements Chunk
+    static final class FileRegion implements Closeable
     {
-      private final String metricName;
-      private final FileChannel channel;
-      private final long startOffset;
-      private long size;
-      private MappedByteBuffer mmapBuffer;
+      private final MappedByteBuffer mmapBuffer;
       private final OutputStream mmapBufferOS = new OutputStream()
       {
         @Override
@@ -1796,65 +1868,44 @@ final class OnDiskMergeImporter
         }
       };
 
-      FileRegionChunk(String name, FileChannel channel, long startOffset, long size) throws IOException
+      FileRegion(FileChannel channel, long startOffset, long size) throws IOException
       {
-        this.metricName = name;
-        this.channel = channel;
-        this.startOffset = startOffset;
         if (size > 0)
         {
           // Make sure that the file is big-enough to encapsulate this memory-mapped region.
           channel.write(ByteBuffer.wrap(new byte[] { 0 }), (startOffset + size) - 1);
         }
-        this.mmapBuffer = channel.map(MapMode.READ_WRITE, startOffset, size);
+        mmapBuffer = channel.map(MapMode.READ_WRITE, startOffset, size);
       }
 
-      @Override
-      public boolean put(ByteSequence key, ByteSequence value)
+      public int write(SequentialCursor<ByteString, ByteString> source) throws IOException, InterruptedException
       {
-        final int recordSize =
-            PackedLong.getEncodedSize(key.length()) + key.length() + PackedLong.getEncodedSize(value.length()) + value
-                .length();
-        if (mmapBuffer.remaining() < recordSize)
+        checkThreadNotInterrupted();
+        while (source.next())
         {
-          // The regions is full
-          return false;
-        }
-
-        try
-        {
+          final ByteSequence key = source.getKey();
+          final ByteSequence value = source.getValue();
           PackedLong.writeCompactUnsigned(mmapBufferOS, key.length());
           PackedLong.writeCompactUnsigned(mmapBufferOS, value.length());
+          key.copyTo(mmapBuffer);
+          value.copyTo(mmapBuffer);
+          checkThreadNotInterrupted();
         }
-        catch (IOException e)
-        {
-          throw new StorageRuntimeException(e);
-        }
-        key.copyTo(mmapBuffer);
-        value.copyTo(mmapBuffer);
-
-        return true;
+        return mmapBuffer.position();
       }
 
       @Override
-      public long size()
+      public void close()
       {
-        return mmapBuffer == null ? size : mmapBuffer.position();
-      }
-
-      @Override
-      public MeteredCursor<ByteString, ByteString> flip()
-      {
-        size = mmapBuffer.position();
-        mmapBuffer = null;
-        return new FileRegionChunkCursor(startOffset, size);
+        // Since this mmapBuffer will be GC'd, we have to ensure that the modified data
+        // are synced to disk. Indeed, there is no guarantee that these data
+        // will otherwise be available for the future File.map(READ).
+        mmapBuffer.force();
       }
 
       /** Cursor through the specific memory-mapped file's region. */
-      private final class FileRegionChunkCursor implements MeteredCursor<ByteString, ByteString>
+      static final class Cursor implements MeteredCursor<ByteString, ByteString>
       {
-        private final long regionOffset;
-        private final long regionSize;
         private final InputStream asInputStream = new InputStream()
         {
           @Override
@@ -1863,19 +1914,19 @@ final class OnDiskMergeImporter
             return region.get() & 0xFF;
           }
         };
+        private final String metricName;
         private ByteBuffer region;
         private ByteString key, value;
 
-        FileRegionChunkCursor(long regionOffset, long regionSize)
+        Cursor(String metricName, ByteBuffer region)
         {
-          this.regionOffset = regionOffset;
-          this.regionSize = regionSize;
+          this.metricName = metricName;
+          this.region = region;
         }
 
         @Override
         public boolean next()
         {
-          ensureRegionIsMemoryMapped();
           if (!region.hasRemaining())
           {
             key = value = null;
@@ -1902,22 +1953,6 @@ final class OnDiskMergeImporter
           value = ByteString.wrap(keyValueData, keyLength, valueLength);
 
           return true;
-        }
-
-        private void ensureRegionIsMemoryMapped()
-        {
-          if (region == null)
-          {
-            // Because mmap() regions are a counted and limited resources, we create them lazily.
-            try
-            {
-              region = channel.map(MapMode.READ_ONLY, regionOffset, regionSize);
-            }
-            catch (IOException e)
-            {
-              throw new IllegalStateException(e);
-            }
-          }
         }
 
         @Override
@@ -1962,13 +1997,13 @@ final class OnDiskMergeImporter
         @Override
         public long getNbBytesRead()
         {
-          return region == null ? 0 : region.position();
+          return region.position();
         }
 
         @Override
         public long getNbBytesTotal()
         {
-          return regionSize;
+          return region.limit();
         }
       }
     }
@@ -2220,8 +2255,9 @@ final class OnDiskMergeImporter
     }
 
     @Override
-    public Void call()
+    public Void call() throws InterruptedException
     {
+      checkThreadNotInterrupted();
       try (final SequentialCursor<ByteString, ByteString> sourceCursor = trackCursorProgress(reporter, source.flip()))
       {
         copyIntoChunk(sourceCursor, asChunk(treeName, destination));
@@ -2247,8 +2283,9 @@ final class OnDiskMergeImporter
     }
 
     @Override
-    public Void call()
+    public Void call() throws InterruptedException
     {
+      checkThreadNotInterrupted();
       try (final SequentialCursor<ByteString, ByteString> sourceCursor = trackCursorProgress(reporter, source.flip()))
       {
         final long nbRecords = copyIntoChunk(sourceCursor, asChunk(vlvIndex.getName(), destination));
@@ -2259,12 +2296,18 @@ final class OnDiskMergeImporter
   }
 
   private static long copyIntoChunk(SequentialCursor<ByteString, ByteString> source, Chunk destination)
+      throws InterruptedException
   {
     long nbRecords = 0;
+    checkThreadNotInterrupted();
     while (source.next())
     {
-      destination.put(source.getKey(), source.getValue());
+      if (!destination.put(source.getKey(), source.getValue()))
+      {
+        throw new IllegalStateException("Destination chunk is full");
+      }
       nbRecords++;
+      checkThreadNotInterrupted();
     }
     return nbRecords;
   }
@@ -2279,6 +2322,7 @@ final class OnDiskMergeImporter
     private final Importer importer;
     private final File tempDir;
     private final BufferPool bufferPool;
+    private final ID2Entry id2entry;
     private final DN2ID dn2id;
     private final ID2ChildrenCount id2count;
     private final Collector<?, ByteString> id2countCollector;
@@ -2286,18 +2330,19 @@ final class OnDiskMergeImporter
     private final Chunk dn2IdDestination;
 
     DN2IDImporterTask(PhaseTwoProgressReporter progressReporter, Importer importer, File tempDir, BufferPool bufferPool,
-        DN2ID dn2id, Chunk dn2IdChunk, ID2ChildrenCount id2count, Collector<?, ByteString> id2countCollector,
-        boolean dn2idAlreadyImported)
+        ID2Entry id2Entry, DN2ID dn2id, Chunk dn2IdChunk, ID2ChildrenCount id2count,
+        Collector<?, ByteString> id2countCollector)
     {
       this.reporter = progressReporter;
       this.importer = importer;
       this.tempDir = tempDir;
       this.bufferPool = bufferPool;
+      this.id2entry = id2Entry;
       this.dn2id = dn2id;
       this.dn2IdSourceChunk = dn2IdChunk;
       this.id2count = id2count;
       this.id2countCollector = id2countCollector;
-      this.dn2IdDestination = dn2idAlreadyImported ? nullChunk() : asChunk(dn2id.getName(), importer);
+      this.dn2IdDestination = asChunk(dn2id.getName(), importer);
     }
 
     @Override
@@ -2308,13 +2353,18 @@ final class OnDiskMergeImporter
               id2countCollector, sameThreadExecutor());
       long totalNumberOfEntries = 0;
 
-      final TreeVisitor<ChildrenCount> visitor = new ID2CountTreeVisitorImporter(asImporter(id2CountChunk));
-      try (final MeteredCursor<ByteString, ByteString> chunkCursor = dn2IdSourceChunk.flip();
-          final SequentialCursor<ByteString, ByteString> dn2idCursor =
-              dn2id.openCursor(trackCursorProgress(reporter, chunkCursor), visitor))
+      final TreeVisitor<ChildrenCount> childrenCountVisitor =
+          new ID2CountTreeVisitorImporter(asImporter(id2CountChunk));
+      try (final SequentialCursor<ByteString, ByteString> chunkCursor =
+               trackCursorProgress(reporter, dn2IdSourceChunk.flip());
+           final DnValidationCursorDecorator validatorCursor =
+               new DnValidationCursorDecorator(chunkCursor, id2entry, asWriteableTransaction(importer));
+           final SequentialCursor<ByteString, ByteString> dn2idCursor =
+               dn2id.openCursor(validatorCursor, childrenCountVisitor))
       {
         while (dn2idCursor.next())
         {
+          checkThreadNotInterrupted();
           dn2IdDestination.put(dn2idCursor.getKey(), dn2idCursor.getValue());
           totalNumberOfEntries++;
         }
@@ -2367,6 +2417,97 @@ final class OnDiskMergeImporter
       {
         this.parentEntryID = id;
       }
+    }
+  }
+
+  /**
+   * Throw a {@link StorageRuntimeException} when a duplicate or orphan DNs is detected. DNs returned by the decorated
+   * cursor must be sorted.
+   */
+  static final class DnValidationCursorDecorator extends
+      SequentialCursorDecorator<SequentialCursor<ByteString, ByteString>, ByteString, ByteString>
+  {
+    private final LinkedList<ByteString> parentDns = new LinkedList<>();
+    private final ID2Entry id2entry;
+    private final ReadableTransaction txn;
+
+    DnValidationCursorDecorator(SequentialCursor<ByteString, ByteString> delegate, ID2Entry id2entry,
+        ReadableTransaction txn)
+    {
+      super(delegate);
+      this.id2entry = id2entry;
+      this.txn = txn;
+    }
+
+    @Override
+    public boolean next()
+    {
+      if (!delegate.next())
+      {
+        return false;
+      }
+      final ByteString dn = delegate.getKey();
+      try
+      {
+        throwIfDuplicate(dn);
+        throwIfOrphan(dn);
+      }
+      catch (DirectoryException e)
+      {
+        throw new StorageRuntimeException(e);
+      }
+      parentDns.add(dn);
+      return true;
+    }
+
+    private void throwIfDuplicate(ByteString dn) throws DirectoryException
+    {
+      if (dn.equals(parentDns.peekLast()))
+      {
+        throw new DirectoryException(ENTRY_ALREADY_EXISTS, ERR_ADD_ENTRY_ALREADY_EXISTS.get(getDnAsString()));
+      }
+    }
+
+    private String getDnAsString()
+    {
+      try
+      {
+        return id2entry.get(txn, new EntryID(delegate.getValue())).getName().toString();
+      }
+      catch (Exception e)
+      {
+        return DnKeyFormat.keyToDNString(delegate.getKey());
+      }
+    }
+
+    private void throwIfOrphan(ByteString dn) throws DirectoryException
+    {
+      if (!parentExists(dn))
+      {
+        throw new DirectoryException(NO_SUCH_OBJECT, ERR_IMPORT_PARENT_NOT_FOUND.get(getDnAsString()));
+      }
+    }
+
+    private boolean parentExists(ByteString childDn)
+    {
+      final Iterator<ByteString> it = parentDns.descendingIterator();
+      int i = parentDns.size();
+      while (it.hasNext())
+      {
+        if (DnKeyFormat.isChild(it.next(), childDn))
+        {
+          if (i < parentDns.size())
+          {
+            // Reset the last element in the stack to be the parentDn:
+            // (removes siblings, nephews, grand-nephews, etc. of childDn)
+            parentDns.subList(i, parentDns.size()).clear();
+          }
+          return true;
+        }
+        i--;
+      }
+      // First DN must represent the base-dn which is encoded as an empty ByteString.
+      return parentDns.isEmpty() && childDn.isEmpty();
     }
   }
 
@@ -2502,7 +2643,7 @@ final class OnDiskMergeImporter
     {
       if ((key.length() + value.length()) >= ENTRY_MAX_SIZE)
       {
-          return delegate.put(key, value);
+        return delegate.put(key, value);
       }
 
       pendingRecords.put(key, value);
@@ -2645,6 +2786,14 @@ final class OnDiskMergeImporter
     return results;
   }
 
+  private static void checkThreadNotInterrupted() throws InterruptedException
+  {
+    if (Thread.interrupted())
+    {
+      throw new InterruptedException();
+    }
+  }
+
   /** Regularly report progress statistics from the registered list of {@link ProgressMetric}. */
   private static final class PhaseTwoProgressReporter implements Runnable, Closeable
   {
@@ -2712,67 +2861,39 @@ final class OnDiskMergeImporter
     }
   }
 
-  /** Buffer used by {@link InMemorySortedChunk} to store and sort data. */
-  interface Buffer extends Closeable
-  {
-    void writeInt(int position, int value);
-
-    int readInt(int position);
-
-    ByteString readByteString(int position, int length);
-
-    void writeByteSequence(int position, ByteSequence data);
-
-    int length();
-
-    int compare(int offsetA, int lengthA, int offsetB, int lengthB);
-  }
-
   /**
    * Pre-allocate and maintain a fixed number of re-usable {@code Buffer}s. This allow to keep controls of heap memory
    * consumption and prevents the significant object allocation cost occurring for huge objects.
    */
   static final class BufferPool implements Closeable
   {
-    private static final Object UNSAFE_OBJECT;
-    static final boolean SUPPORTS_OFF_HEAP;
-    static
-    {
-      Object unsafeObject = null;
-      try
-      {
-        final Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
-        final Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
-        theUnsafeField.setAccessible(true);
-        unsafeObject = theUnsafeField.get(null);
-      }
-      catch (Throwable e)
-      {
-        // Unsupported.
-      }
-      UNSAFE_OBJECT = unsafeObject;
-      SUPPORTS_OFF_HEAP = UNSAFE_OBJECT != null;
-    }
+    private final BlockingQueue<MemoryBuffer> pool;
 
-    private final BlockingQueue<Buffer> pool;
-    private final int bufferSize;
-
-    BufferPool(int nbBuffer, int bufferSize)
+    BufferPool(int nbBuffer, int bufferSize, boolean allocateDirect)
     {
       this.pool = new ArrayBlockingQueue<>(nbBuffer);
-      this.bufferSize = bufferSize;
-      for (int i = 0; i < nbBuffer; i++)
+      try
       {
-        pool.offer(SUPPORTS_OFF_HEAP ? new OffHeapBuffer(bufferSize) : new HeapBuffer(bufferSize));
+        for (int i = 0; i < nbBuffer; i++)
+        {
+          pool.offer(new MemoryBuffer(allocateDirect
+                          ? ByteBuffer.allocateDirect(bufferSize)
+                          : ByteBuffer.allocate(bufferSize)));
+        }
+      }
+      catch (OutOfMemoryError e)
+      {
+        close();
+        throw e;
       }
     }
 
-    public int getBufferSize()
+    private int size()
     {
-      return bufferSize;
+      return pool.size();
     }
 
-    private Buffer get()
+    private MemoryBuffer get()
     {
       try
       {
@@ -2784,7 +2905,7 @@ final class OnDiskMergeImporter
       }
     }
 
-    private void release(Buffer buffer)
+    private void release(MemoryBuffer buffer)
     {
       try
       {
@@ -2796,182 +2917,136 @@ final class OnDiskMergeImporter
       }
     }
 
-    public void setSize(int size)
-    {
-      while (pool.size() > size)
-      {
-        get();
-      }
-    }
-
     @Override
     public void close()
     {
-      Buffer buffer;
-      while ((buffer = pool.poll()) != null)
+      boolean allMemoryBufferFreed = true;
+      for (final MemoryBuffer memoryBuffer : pool)
       {
-        closeSilently(buffer);
+        allMemoryBufferFreed &= memoryBuffer.free();
+      }
+      pool.clear();
+      if (!allMemoryBufferFreed)
+      {
+        // Some DirectByteBuffer were not freed because the cleaner method has failed/is not supported.
+        // Do a best effort at freeing these buffers by requesting a GC.
+        System.gc();
       }
     }
 
-    /** Off-heap buffer using Unsafe memory access. */
-    static final class OffHeapBuffer implements Buffer
+    /** Buffer wrapping a ByteBuffer. */
+    @NotThreadSafe
+    static final class MemoryBuffer
     {
-      private static final Unsafe UNSAFE = (Unsafe) UNSAFE_OBJECT;
-      private static final long BYTE_ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
+      private static final boolean CLEAN_SUPPORTED;
+      private static final Method directBufferCleanerMethod;
+      private static final Method directBufferCleanerCleanMethod;
 
-      private final long address;
-      private final int size;
-      private int position;
-      private final OutputStream asOutputStream = new OutputStream()
+      static
       {
-        @Override
-        public void write(int value) throws IOException
-        {
-          UNSAFE.putByte(address + position++, (byte) (value & 0xFF));
-        }
-
-        @Override
-        public void write(byte[] b) throws IOException {
-            UNSAFE.copyMemory(b, BYTE_ARRAY_OFFSET, null, address + position, b.length);
-            position += b.length;
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            UNSAFE.copyMemory(b, BYTE_ARRAY_OFFSET + off, null, address + position, len);
-            position += b.length;
-        }
-      };
-      private boolean closed;
-
-      OffHeapBuffer(int size)
-      {
-        this.size = size;
-        this.address = UNSAFE.allocateMemory(size);
-      }
-
-      @Override
-      public void writeInt(final int position, final int value)
-      {
-        UNSAFE.putInt(address + position, value);
-      }
-
-      @Override
-      public int readInt(final int position)
-      {
-        return UNSAFE.getInt(address + position);
-      }
-
-      @Override
-      public void writeByteSequence(final int position, ByteSequence data)
-      {
-        Reject.ifFalse(position + data.length() <= size);
-        this.position = position;
+        Method tmpDirectBufferCleanerMethod = null;
+        Method tmpDirectBufferCleanerCleanMethod = null;
+        boolean tmpCleanSupported;
         try
         {
-          data.copyTo(asOutputStream);
+          tmpDirectBufferCleanerMethod = Class.forName("java.nio.DirectByteBuffer").getMethod("cleaner");
+          tmpDirectBufferCleanerMethod.setAccessible(true);
+          tmpDirectBufferCleanerCleanMethod = Class.forName("sun.misc.Cleaner").getMethod("clean");
+          tmpDirectBufferCleanerCleanMethod.setAccessible(true);
+          tmpCleanSupported = true;
         }
-        catch(IOException e)
+        catch (Exception e)
         {
-          throw new StorageRuntimeException(e);
+          tmpCleanSupported = false;
         }
+        CLEAN_SUPPORTED = tmpCleanSupported;
+        directBufferCleanerMethod = tmpDirectBufferCleanerMethod;
+        directBufferCleanerCleanMethod = tmpDirectBufferCleanerCleanMethod;
       }
 
-      @Override
-      public int length()
-      {
-        return size;
-      }
-
-      @Override
-      public ByteString readByteString(int position, int length)
-      {
-        Reject.ifFalse(position + length <= size);
-
-        final byte[] data = new byte[length];
-        UNSAFE.copyMemory(null, address + position, data, BYTE_ARRAY_OFFSET, length);
-        return ByteString.wrap(data);
-      }
-
-      @Override
-      public int compare(int offsetA, int lengthA, int offsetB, int lengthB)
-      {
-        final int len = Math.min(lengthA, lengthB);
-        for(int i = 0 ; i < len ; i++)
-        {
-          final int a = UNSAFE.getByte(address + offsetA + i) & 0xFF;
-          final int b = UNSAFE.getByte(address + offsetB + i) & 0xFF;
-          if ( a != b )
-          {
-            return a - b;
-          }
-        }
-        return lengthA - lengthB;
-      }
-
-      @Override
-      public void close()
-      {
-        if (!closed)
-        {
-          UNSAFE.freeMemory(address);
-        }
-        closed = true;
-      }
-    }
-
-    /** Heap buffer using ByteBuffer. */
-    static final class HeapBuffer implements Buffer
-    {
       private final ByteBuffer buffer;
 
-      HeapBuffer(int size)
+      MemoryBuffer(final ByteBuffer byteBuffer)
       {
-        this.buffer = ByteBuffer.allocate(size);
+        this.buffer = byteBuffer;
       }
 
-      @Override
-      public void writeInt(final int position, final int value)
+      boolean free()
+      {
+        if (!buffer.isDirect())
+        {
+          // Heap buffers will be GC'd.
+          return true;
+        }
+        if (CLEAN_SUPPORTED)
+        {
+          try
+          {
+            /**
+             * DirectByteBuffers are garbage collected by using a phantom reference and a reference queue. Every once a
+             * while, the JVM checks the reference queue and cleans the DirectByteBuffers. However, as this doesn't
+             * happen immediately after discarding all references to a DirectByteBuffer, it's easy to OutOfMemoryError
+             * yourself using DirectByteBuffers. Here we explicitly calls the Cleaner method of the DirectByteBuffer.
+             */
+            directBufferCleanerCleanMethod.invoke(directBufferCleanerMethod.invoke(buffer));
+            return true;
+          }
+          catch (Exception ignored)
+          {
+            // silently ignore exception
+          }
+        }
+        return false;
+      }
+
+      void writeInt(final int position, final int value)
       {
         buffer.putInt(position, value);
       }
 
-      @Override
-      public int readInt(final int position)
+      int readInt(final int position)
       {
         return buffer.getInt(position);
       }
 
-      @Override
-      public void writeByteSequence(int position, ByteSequence data)
+      void writeByteSequence(int position, ByteSequence data)
       {
         buffer.position(position);
         data.copyTo(buffer);
       }
 
-      @Override
-      public int length()
+      int length()
       {
         return buffer.capacity();
       }
 
-      @Override
-      public ByteString readByteString(int position, int length)
+      ByteString readByteString(int position, int length)
       {
-        return ByteString.wrap(buffer.array(), buffer.arrayOffset() + position, length);
+        if (buffer.hasArray())
+        {
+          return ByteString.wrap(buffer.array(), buffer.arrayOffset() + position, length);
+        }
+        final byte[] data = new byte[length];
+        buffer.position(position);
+        buffer.get(data);
+        return ByteString.wrap(data);
       }
 
-      @Override
-      public int compare(int offsetA, int lengthA, int offsetB, int lengthB)
+      int compare(int offsetA, int lengthA, int offsetB, int lengthB)
       {
-        return readByteString(offsetA, lengthA).compareTo(readByteString(offsetB, lengthB));
-      }
-
-      @Override
-      public void close()
-      {
-        // Nothing to do
+        int count = Math.min(lengthA, lengthB);
+        int i = offsetA;
+        int j = offsetB;
+        while (count-- != 0)
+        {
+          final int firstByte = 0xFF & buffer.get(i++);
+          final int secondByte = 0xFF & buffer.get(j++);
+          if (firstByte != secondByte)
+          {
+            return firstByte - secondByte;
+          }
+        }
+        return lengthA - lengthB;
       }
     }
   }
@@ -3023,12 +3098,17 @@ final class OnDiskMergeImporter
       // key conflicts == merge EntryIDSets
       return new EntryIDSetsCollector(index);
     }
-    else if (isID2ChildrenCount(treeName))
+    else if (isID2ChildrenCount(entryContainer, treeName))
     {
       // key conflicts == sum values
       return ID2ChildrenCount.getSumLongCollectorInstance();
     }
-    else if (isDN2ID(treeName) || isDN2URI(treeName) || isVLVIndex(entryContainer, treeName))
+    else if (isDN2ID(entryContainer, treeName))
+    {
+      // Detection of duplicate DN will be performed during phase 2 by the DNImporterTask
+      return null;
+    }
+    else if (isDN2URI(entryContainer, treeName) || isVLVIndex(entryContainer, treeName))
     {
       // key conflicts == exception
       return UniqueValueCollector.getInstance();
@@ -3048,24 +3128,24 @@ final class OnDiskMergeImporter
     return newPhaseTwoCollector(entryContainer, treeName);
   }
 
-  private static boolean isDN2ID(TreeName treeName)
+  private static boolean isDN2ID(final EntryContainer entryContainer, final TreeName treeName)
   {
-    return SuffixContainer.DN2ID_INDEX_NAME.equals(treeName.getIndexId());
+    return entryContainer.getDN2ID().getName().equals(treeName);
   }
 
-  private static boolean isDN2URI(TreeName treeName)
+  private static boolean isDN2URI(final EntryContainer entryContainer, TreeName treeName)
   {
-    return SuffixContainer.DN2URI_INDEX_NAME.equals(treeName.getIndexId());
+    return entryContainer.getDN2URI().getName().equals(treeName);
   }
 
-  private static boolean isID2Entry(TreeName treeName)
+  private static boolean isID2Entry(final EntryContainer entryContainer, final TreeName treeName)
   {
-    return SuffixContainer.ID2ENTRY_INDEX_NAME.equals(treeName.getIndexId());
+    return entryContainer.getID2Entry().getName().equals(treeName);
   }
 
-  private static boolean isID2ChildrenCount(TreeName treeName)
+  private static boolean isID2ChildrenCount(final EntryContainer entryContainer, final TreeName treeName)
   {
-    return SuffixContainer.ID2CHILDREN_COUNT_NAME.equals(treeName.getIndexId());
+    return entryContainer.getID2ChildrenCount().getName().equals(treeName);
   }
 
   private static boolean isVLVIndex(EntryContainer entryContainer, TreeName treeName)
@@ -3140,6 +3220,7 @@ final class OnDiskMergeImporter
   {
     private static final Collector<Object, Object> INSTANCE = new UniqueValueCollector<>();
 
+    @SuppressWarnings("unchecked")
     static <V> Collector<V, V> getInstance()
     {
       return (Collector<V, V>) INSTANCE;
@@ -3199,7 +3280,7 @@ final class OnDiskMergeImporter
     {
       if (resultContainer.size() < indexLimit)
       {
-        resultContainer.add(value.toLong());
+        resultContainer.add(index.importDecodeValue(value));
       }
       /*
        * else EntryIDSet is above index entry limits, discard additional values
@@ -3302,7 +3383,8 @@ final class OnDiskMergeImporter
     {
       final List<EntryIDSet> idSets = new ArrayList<>(encodedIDSets.size());
       int mergedSize = 0;
-      for(ByteString encodedIDSet :encodedIDSets) {
+      for (ByteString encodedIDSet : encodedIDSets)
+      {
         final EntryIDSet entryIDSet = index.decodeValue(ByteString.empty(), encodedIDSet);
         mergedSize += entryIDSet.size();
         if (!entryIDSet.isDefined() || mergedSize >= indexLimit)
@@ -3315,7 +3397,8 @@ final class OnDiskMergeImporter
 
       final long[] entryIDs = new long[mergedSize];
       int offset = 0;
-      for(EntryIDSet idSet : idSets) {
+      for (EntryIDSet idSet : idSets)
+      {
         offset += idSet.copyTo(entryIDs, offset);
       }
       Arrays.sort(entryIDs);
@@ -3430,11 +3513,26 @@ final class OnDiskMergeImporter
     }
   }
 
-  private static void visitIndexes(final EntryContainer entryContainer, IndexVisitor visitor)
+  private static void visitAttributeIndexes(final Collection<AttributeIndex> attributeIndexes,
+      final Predicate<MatchingRuleIndex, AttributeIndex> predicate, final IndexVisitor visitor)
   {
-    for (AttributeIndex attribute : entryContainer.getAttributeIndexes())
+    for (final AttributeIndex attribute : attributeIndexes)
     {
-      for (MatchingRuleIndex index : attribute.getNameToIndexes().values())
+      for (final MatchingRuleIndex index : attribute.getNameToIndexes().values())
+      {
+        if (predicate.matches(index, attribute))
+        {
+          visitor.visitAttributeIndex(index);
+        }
+      }
+    }
+  }
+
+  private static void visitIndexes(final EntryContainer entryContainer, final IndexVisitor visitor)
+  {
+    for (final AttributeIndex attribute : entryContainer.getAttributeIndexes())
+    {
+      for (final MatchingRuleIndex index : attribute.getNameToIndexes().values())
       {
         visitor.visitAttributeIndex(index);
       }
@@ -3617,31 +3715,121 @@ final class OnDiskMergeImporter
     }
   }
 
-  private static final IndexVisitor visitOnlyIndexes(Collection<String> indexNames, IndexVisitor delegate)
+  private static final IndexVisitor visitOnlyIndexes(final Predicate<Tree, Void> predicate, final IndexVisitor delegate)
   {
-    return new SpecificIndexFilter(delegate, indexNames);
+    return new SpecificIndexFilter(delegate, predicate);
   }
 
-  /** Visit indexes only if their name match one contained in a list. */
+  private static final Predicate<Tree, Void> indexIdIn(final Collection<String> caseIgnoredNames) {
+    final Set<String> indexNames = new HashSet<>(caseIgnoredNames.size());
+    for (final String indexName : caseIgnoredNames)
+    {
+      indexNames.add(indexName.toLowerCase());
+    }
+    return new Predicate<Tree, Void>()
+    {
+      @Override
+      public boolean matches(final Tree tree, final Void p)
+      {
+        return indexNames.contains(tree.getName().getIndexId().toLowerCase());
+      }
+    };
+  }
+
+  private static final Predicate<MatchingRuleIndex, AttributeIndex> attributeTypeIs(final String caseIgnoredName)
+  {
+    return new Predicate<MatchingRuleIndex, AttributeIndex>()
+    {
+      @Override
+      public boolean matches(final MatchingRuleIndex index, final AttributeIndex attribute)
+      {
+        return caseIgnoredName.equalsIgnoreCase(attribute.getAttributeType().getNameOrOID());
+      }
+    };
+  }
+
+  private static final Predicate<MatchingRuleIndex, AttributeIndex> matchingRuleIs(final MatchingRule matchingRule)
+  {
+    return new Predicate<MatchingRuleIndex, AttributeIndex>()
+    {
+      @Override
+      public boolean matches(final MatchingRuleIndex index, final AttributeIndex attribute)
+      {
+        for (final Indexer indexer : matchingRule.createIndexers(attribute.getIndexingOptions()))
+        {
+          if (index.equals(attribute.getNameToIndexes().get(indexer.getIndexID())))
+          {
+            return true;
+          }
+        }
+        return false;
+      }
+    };
+  }
+
+  private static final Predicate<MatchingRuleIndex, AttributeIndex> indexTypeIs(final IndexType type)
+  {
+    return new Predicate<MatchingRuleIndex, AttributeIndex>()
+    {
+      @Override
+      public boolean matches(final MatchingRuleIndex index, final AttributeIndex attribute)
+      {
+        if (IndexType.PRESENCE.equals(type))
+        {
+          return index.equals(attribute.getNameToIndexes().get(IndexType.PRESENCE.toString()));
+        }
+        try
+        {
+          final MatchingRule matchingRule = AttributeIndex.getMatchingRule(type, attribute.getAttributeType());
+          if (matchingRule != null && matchingRuleIs(matchingRule).matches(index, attribute))
+          {
+            return true;
+          }
+        }
+        catch (IllegalArgumentException iae)
+        {
+          // getMatchingRule() not implemented for the specified index type. Ignore silently.
+        }
+        return false;
+      }
+    };
+  }
+
+  private static final <M, A> Predicate<M, A> matchingAllOf(final Iterable<Predicate<M, A>> predicates)
+  {
+    return new Predicate<M, A>()
+    {
+      @Override
+      public boolean matches(M value, A p)
+      {
+        for (Predicate<M, A> predicate : predicates)
+        {
+          if (!predicate.matches(value, p))
+          {
+            return false;
+          }
+        }
+        return true;
+      }
+    };
+  }
+
+  /** Visit indexes only if they match the provided predicate. */
   private static final class SpecificIndexFilter implements IndexVisitor
   {
     private final IndexVisitor delegate;
-    private final Collection<String> indexNames;
+    private final Predicate<Tree, Void> predicate;
 
-    SpecificIndexFilter(IndexVisitor delegate, Collection<String> names)
+    SpecificIndexFilter(IndexVisitor delegate, Predicate<Tree, Void> predicate)
     {
       this.delegate = delegate;
-      this.indexNames = new HashSet<>(names.size());
-      for(String indexName : names)
-      {
-        this.indexNames.add(indexName.toLowerCase());
-      }
+      this.predicate = predicate;
     }
 
     @Override
     public void visitAttributeIndex(Index index)
     {
-      if (indexIncluded(index))
+      if (predicate.matches(index, null))
       {
         delegate.visitAttributeIndex(index);
       }
@@ -3650,7 +3838,7 @@ final class OnDiskMergeImporter
     @Override
     public void visitVLVIndex(VLVIndex index)
     {
-      if (indexIncluded(index))
+      if (predicate.matches(index, null))
       {
         delegate.visitVLVIndex(index);
       }
@@ -3659,48 +3847,10 @@ final class OnDiskMergeImporter
     @Override
     public void visitSystemIndex(Tree index)
     {
-      if (indexIncluded(index))
+      if (predicate.matches(index, null))
       {
         delegate.visitSystemIndex(index);
       }
-    }
-
-    private boolean indexIncluded(Tree index)
-    {
-      return indexNames.contains(index.getName().getIndexId().toLowerCase());
-    }
-  }
-
-  /**
-   * Thread-safe fixed-size cache which, once full, remove the least recently accessed entry. Composition is used here
-   * to ensure that only methods generating entry-access in the LinkedHashMap are actually used. Otherwise, the least
-   * recently used property of the cache would not be respected.
-   */
-  private static final class LRUPresenceCache<T>
-  {
-    private final Map<T, Object> cache;
-
-    LRUPresenceCache(final int maxEntries)
-    {
-      // +1 because newly added entry is added before the least recently one is removed.
-      this.cache = Collections.synchronizedMap(new LinkedHashMap<T, Object>(maxEntries + 1, 1.0f, true)
-      {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<T, Object> eldest)
-        {
-          return size() >= maxEntries;
-        }
-      });
-    }
-
-    public boolean contains(T object)
-    {
-      return cache.get(object) != null;
-    }
-
-    public void add(T object)
-    {
-      cache.put(object, null);
     }
   }
 

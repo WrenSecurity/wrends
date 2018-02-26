@@ -24,6 +24,7 @@ import static org.opends.server.util.CollectionUtils.*;
 import static org.opends.server.util.ServerConstants.*;
 import static org.opends.server.util.StaticUtils.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,6 +40,7 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.AVA;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.ConditionResult;
@@ -47,9 +49,10 @@ import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.util.Reject;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.server.config.server.MonitorBackendCfg;
+import org.forgerock.util.Reject;
 import org.opends.server.api.Backend;
 import org.opends.server.api.MonitorData;
 import org.opends.server.api.MonitorProvider;
@@ -71,7 +74,6 @@ import org.opends.server.types.InitializationException;
 import org.opends.server.types.LDIFExportConfig;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.LDIFImportResult;
-import org.opends.server.types.ObjectClass;
 import org.opends.server.types.RestoreConfig;
 import org.opends.server.types.SearchFilter;
 import org.opends.server.util.DynamicConstants;
@@ -89,7 +91,7 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
 {
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-  /** The set of user-defined attributes that will be included in the base monitor entry.   */
+  /** The set of user-defined attributes that will be included in the base monitor entry. */
   private ArrayList<Attribute> userDefinedAttributes;
   /** The set of objectclasses that will be used in monitor entries. */
   private final HashMap<ObjectClass, String> monitorObjectClasses = new LinkedHashMap<>(2);
@@ -100,7 +102,7 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
   /** The DN for the base monitor entry. */
   private DN baseMonitorDN;
   /** The set of base DNs for this backend. */
-  private DN[] baseDNs;
+  private Set<DN> baseDNs;
 
   /**
    * Creates a new backend with the provided information. All backend
@@ -112,7 +114,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     super();
   }
 
-  /** {@inheritDoc} */
   @Override
   public void addEntry(final Entry entry, final AddOperation addOperation)
       throws DirectoryException
@@ -121,7 +122,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_BACKEND_ADD_NOT_SUPPORTED.get(entry.getName(), getBackendID()));
   }
 
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
       final MonitorBackendCfg backendCfg)
@@ -194,12 +194,8 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     addAll(userDefinedAttributes, configEntry.getOperationalAttributes().values());
 
     // Construct the set of objectclasses to include in the base monitor entry.
-    final ObjectClass topOC = DirectoryServer.getObjectClass(OC_TOP, true);
-    monitorObjectClasses.put(topOC, OC_TOP);
-
-    final ObjectClass monitorOC = DirectoryServer.getObjectClass(
-        OC_MONITOR_ENTRY, true);
-    monitorObjectClasses.put(monitorOC, OC_MONITOR_ENTRY);
+    monitorObjectClasses.put(CoreSchema.getTopObjectClass(), OC_TOP);
+    monitorObjectClasses.put(DirectoryServer.getSchema().getObjectClass(OC_MONITOR_ENTRY), OC_MONITOR_ENTRY);
 
     // Create the set of base DNs that we will handle. In this case, it's just
     // the DN of the base monitor entry.
@@ -216,8 +212,7 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
       throw new ConfigException(message, e);
     }
 
-    // FIXME -- Deal with this more correctly.
-    this.baseDNs = new DN[] { baseMonitorDN };
+    this.baseDNs = Collections.singleton(baseMonitorDN);
 
     currentConfig = cfg;
   }
@@ -227,7 +222,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     addAllNonMonitorConfigAttributes(attributes, attributesToAdd);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void createBackup(final BackupConfig backupConfig)
       throws DirectoryException
@@ -236,7 +230,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_BACKEND_BACKUP_AND_RESTORE_NOT_SUPPORTED.get(getBackendID()));
   }
 
-  /** {@inheritDoc} */
   @Override
   public void deleteEntry(final DN entryDN,
       final DeleteOperation deleteOperation) throws DirectoryException
@@ -245,77 +238,69 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_BACKEND_DELETE_NOT_SUPPORTED.get(entryDN, getBackendID()));
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean entryExists(final DN entryDN) throws DirectoryException
   {
     return getDIT().containsKey(entryDN);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void exportLDIF(final LDIFExportConfig exportConfig)
       throws DirectoryException
   {
     // TODO export-ldif reports nonsense for upTime etc.
-
-    // Create the LDIF writer.
-    LDIFWriter ldifWriter;
-    try
+    try (LDIFWriter ldifWriter = newLDIFWriter(exportConfig))
     {
-      ldifWriter = new LDIFWriter(exportConfig);
-    }
-    catch (final Exception e)
-    {
-      logger.traceException(e);
-
-      final LocalizableMessage message = ERR_ROOTDSE_UNABLE_TO_CREATE_LDIF_WRITER
-          .get(stackTraceToSingleLineString(e));
-      throw new DirectoryException(DirectoryServer.getServerErrorResultCode(), message);
-    }
-
-    // Write the base monitor entry to the LDIF.
-    try
-    {
-      ldifWriter.writeEntry(getBaseMonitorEntry());
-    }
-    catch (final Exception e)
-    {
-      logger.traceException(e);
-
-      close(ldifWriter);
-
-      final LocalizableMessage message = ERR_MONITOR_UNABLE_TO_EXPORT_BASE
-          .get(stackTraceToSingleLineString(e));
-      throw new DirectoryException(DirectoryServer.getServerErrorResultCode(), message);
-    }
-
-    // Get all the monitor providers, convert them to entries, and write them to
-    // LDIF.
-    for (final MonitorProvider<?> monitorProvider : DirectoryServer
-        .getMonitorProviders().values())
-    {
+      // Write the base monitor entry to the LDIF.
       try
       {
-        // TODO implementation of export is incomplete
+        ldifWriter.writeEntry(getBaseMonitorEntry());
       }
       catch (final Exception e)
       {
         logger.traceException(e);
+        final LocalizableMessage message = ERR_MONITOR_UNABLE_TO_EXPORT_BASE.get(stackTraceToSingleLineString(e));
+        throw new DirectoryException(DirectoryServer.getServerErrorResultCode(), message);
+      }
 
-        close(ldifWriter);
-
-        final LocalizableMessage message = ERR_MONITOR_UNABLE_TO_EXPORT_PROVIDER_ENTRY
-            .get(monitorProvider.getMonitorInstanceName(), stackTraceToSingleLineString(e));
-        throw new DirectoryException(
-            DirectoryServer.getServerErrorResultCode(), message);
+      // Get all the monitor providers, convert them to entries, and write them to LDIF.
+      for (final MonitorProvider<?> monitorProvider : DirectoryServer.getMonitorProviders().values())
+      {
+        try
+        {
+          // TODO implementation of export is incomplete
+        }
+        catch (final Exception e)
+        {
+          logger.traceException(e);
+          final LocalizableMessage message =
+              ERR_MONITOR_UNABLE_TO_EXPORT_PROVIDER_ENTRY.get(monitorProvider.getMonitorInstanceName(),
+                  stackTraceToSingleLineString(e));
+          throw new DirectoryException(DirectoryServer.getServerErrorResultCode(), message);
+        }
       }
     }
-
-    close(ldifWriter);
+    catch (IOException ignoreOnClose)
+    {
+      logger.traceException(ignoreOnClose);
+    }
   }
 
-  /** {@inheritDoc} */
+  private LDIFWriter newLDIFWriter(final LDIFExportConfig exportConfig) throws DirectoryException
+  {
+    try
+    {
+      return new LDIFWriter(exportConfig);
+    }
+    catch (final Exception e)
+    {
+      logger.traceException(e);
+
+      final LocalizableMessage message = ERR_ROOTDSE_UNABLE_TO_CREATE_LDIF_WRITER.get(stackTraceToSingleLineString(e));
+      throw new DirectoryException(DirectoryServer.getServerErrorResultCode(), message);
+    }
+  }
+
   @Override
   public void closeBackend()
   {
@@ -330,14 +315,12 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     }
   }
 
-  /** {@inheritDoc} */
   @Override
-  public DN[] getBaseDNs()
+  public Set<DN> getBaseDNs()
   {
     return baseDNs;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Entry getEntry(final DN entryDN) throws DirectoryException
   {
@@ -367,28 +350,24 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     return getEntry(entryDN, dit);
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getEntryCount()
   {
     return getDIT().size();
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getSupportedControls()
   {
     return Collections.emptySet();
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getSupportedFeatures()
   {
     return Collections.emptySet();
   }
 
-  /** {@inheritDoc} */
   @Override
   public ConditionResult hasSubordinates(final DN entryDN)
       throws DirectoryException
@@ -402,7 +381,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     return ConditionResult.UNDEFINED;
   }
 
-  /** {@inheritDoc} */
   @Override
   public LDIFImportResult importLDIF(final LDIFImportConfig importConfig, ServerContext serverContext)
       throws DirectoryException
@@ -411,7 +389,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_BACKEND_IMPORT_NOT_SUPPORTED.get(getBackendID()));
   }
 
-  /** {@inheritDoc} */
   @Override
   public void openBackend() throws ConfigException, InitializationException
   {
@@ -433,7 +410,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(
       final MonitorBackendCfg backendCfg,
@@ -444,7 +420,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isIndexed(final AttributeType attributeType,
       final IndexType indexType)
@@ -453,14 +428,12 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     return true;
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getNumberOfEntriesInBaseDN(final DN baseDN) throws DirectoryException {
     checkNotNull(baseDN, "baseDN must not be null");
     return getNumberOfSubordinates(baseDN, true) + 1;
   }
 
-  /** {@inheritDoc} */
   @Override
   public long getNumberOfChildren(final DN parentDN) throws DirectoryException {
     checkNotNull(parentDN, "parentDN must not be null");
@@ -490,7 +463,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     return count;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void removeBackup(final BackupDirectory backupDirectory,
       final String backupID) throws DirectoryException
@@ -499,7 +471,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_BACKEND_BACKUP_AND_RESTORE_NOT_SUPPORTED.get(getBackendID()));
   }
 
-  /** {@inheritDoc} */
   @Override
   public void renameEntry(final DN currentDN, final Entry entry,
       final ModifyDNOperation modifyDNOperation) throws DirectoryException
@@ -508,7 +479,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_BACKEND_MODIFY_DN_NOT_SUPPORTED.get(currentDN, getBackendID()));
   }
 
-  /** {@inheritDoc} */
   @Override
   public void replaceEntry(final Entry oldEntry, final Entry newEntry,
       final ModifyOperation modifyOperation) throws DirectoryException
@@ -517,7 +487,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_MONITOR_MODIFY_NOT_SUPPORTED.get(newEntry.getName(), configEntryDN));
   }
 
-  /** {@inheritDoc} */
   @Override
   public void restoreBackup(final RestoreConfig restoreConfig)
       throws DirectoryException
@@ -526,7 +495,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
         ERR_BACKEND_BACKUP_AND_RESTORE_NOT_SUPPORTED.get(getBackendID()));
   }
 
-  /** {@inheritDoc} */
   @Override
   public void search(final SearchOperation searchOperation)
       throws DirectoryException
@@ -577,7 +545,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean supports(BackendOperation backendOperation)
   {
@@ -594,7 +561,7 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
    */
   private Entry getBaseMonitorEntry()
   {
-    final ObjectClass extensibleObjectOC = DirectoryServer.getObjectClass(OC_EXTENSIBLE_OBJECT_LC, true);
+    final ObjectClass extensibleObjectOC = CoreSchema.getExtensibleObjectObjectClass();
     final HashMap<ObjectClass, String> monitorClasses = newObjectClasses(extensibleObjectOC, OC_EXTENSIBLE_OBJECT);
 
     final HashMap<AttributeType, List<Attribute>> monitorUserAttrs = new LinkedHashMap<>();
@@ -665,7 +632,7 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
    */
   private Entry getBranchMonitorEntry(final DN dn)
   {
-    final ObjectClass monitorOC = DirectoryServer.getObjectClass(OC_MONITOR_BRANCH, true);
+    final ObjectClass monitorOC = DirectoryServer.getSchema().getObjectClass(OC_MONITOR_BRANCH);
     final HashMap<ObjectClass, String> monitorClasses = newObjectClasses(monitorOC, OC_MONITOR_BRANCH);
 
     final HashMap<AttributeType, List<Attribute>> monitorUserAttrs = new LinkedHashMap<>();
@@ -712,8 +679,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     return dit;
   }
 
-
-
   /**
    * Creates the monitor entry having the specified DN.
    *
@@ -744,8 +709,6 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
     }
   }
 
-
-
   /**
    * Generates and returns a monitor entry based on the contents of the provided
    * monitor provider.
@@ -762,7 +725,7 @@ public class MonitorBackend extends Backend<MonitorBackendCfg> implements
       final MonitorProvider<?> monitorProvider)
   {
     final ObjectClass monitorOC = monitorProvider.getMonitorObjectClass();
-    final HashMap<ObjectClass, String> monitorClasses = newObjectClasses(monitorOC, monitorOC.getPrimaryName());
+    final HashMap<ObjectClass, String> monitorClasses = newObjectClasses(monitorOC, monitorOC.getNameOrOID());
 
     final MonitorData monitorAttrs = monitorProvider.getMonitorData();
     final Map<AttributeType, List<Attribute>> attrMap = asMap(monitorAttrs);

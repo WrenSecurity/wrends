@@ -12,9 +12,8 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2006-2009 Sun Microsystems, Inc.
- * Portions Copyright 2011-2015 ForgeRock AS.
+ * Portions Copyright 2011-2016 ForgeRock AS.
  */
-
 package org.opends.server.tasks;
 
 import java.io.File;
@@ -27,7 +26,7 @@ import org.opends.server.backends.task.TaskState;
 import org.opends.server.core.AddOperation;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.Entry;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -357,8 +356,7 @@ public class TestImportAndExport extends TasksTestCase
     int importBeginCount = TestTaskListener.importBeginCount.get();
     int importEndCount   = TestTaskListener.importEndCount.get();
 
-    ObjectClass exportClass =
-         DirectoryServer.getObjectClass("ds-task-export", true);
+    ObjectClass exportClass = DirectoryServer.getSchema().getObjectClass("ds-task-export");
 
     // Use a big timeout since this test is sensitive to host environment (e.g.
     // low memory, etc). See issue OPENDJ-256.

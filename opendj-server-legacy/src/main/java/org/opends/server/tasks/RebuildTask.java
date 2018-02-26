@@ -95,7 +95,7 @@ public class RebuildTask extends Task
     final String val = asString(taskEntry, ATTR_REBUILD_INDEX_CLEARDEGRADEDSTATE);
     isClearDegradedState = Boolean.parseBoolean(val);
 
-    AttributeType typeIndex = getAttributeType(ATTR_REBUILD_INDEX);
+    AttributeType typeIndex = getSchema().getAttributeType(ATTR_REBUILD_INDEX);
     List<Attribute> attrList = taskEntry.getAttribute(typeIndex);
     indexes = TaskUtils.getMultiValueString(attrList);
 
@@ -113,7 +113,7 @@ public class RebuildTask extends Task
 
   private String asString(Entry taskEntry, String attrName)
   {
-    final AttributeType attrType = getAttributeType(attrName);
+    final AttributeType attrType = getSchema().getAttributeType(attrName);
     final List<Attribute> attrList = taskEntry.getAttribute(attrType);
     return TaskUtils.getSingleValueString(attrList);
   }
@@ -245,7 +245,7 @@ public class RebuildTask extends Task
       // This exception catches all 'index not found'
       // The backend needs to be re-enabled at the end of the process.
       LocalizableMessage message =
-          ERR_REBUILDINDEX_ERROR_DURING_REBUILD.get(e.getMessage());
+          ERR_REBUILDINDEX_ERROR_DURING_REBUILD.get(getExceptionMessage(e));
       logger.traceException(e);
       logger.error(message);
       isBackendNeedToBeEnabled = true;
@@ -255,7 +255,7 @@ public class RebuildTask extends Task
     {
       logger.traceException(e);
 
-      logger.error(ERR_REBUILDINDEX_ERROR_DURING_REBUILD, e.getMessage());
+      logger.error(ERR_REBUILDINDEX_ERROR_DURING_REBUILD, getExceptionMessage(e));
       returnCode = TaskState.STOPPED_BY_ERROR;
     }
     finally

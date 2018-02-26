@@ -42,6 +42,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.LocalizableMessageBuilder;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.LdapException;
+import org.forgerock.util.Utils;
 import org.opends.guitools.controlpanel.datamodel.BackendDescriptor;
 import org.opends.guitools.controlpanel.datamodel.BaseDNDescriptor;
 import org.opends.guitools.controlpanel.datamodel.BaseDNTableModel;
@@ -50,23 +55,16 @@ import org.opends.guitools.controlpanel.datamodel.ConnectionHandlerTableModel;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.event.ScrollPaneBorderListener;
-import org.opends.guitools.controlpanel.ui.components.
- SelectableLabelWithHelpIcon;
+import org.opends.guitools.controlpanel.ui.components.SelectableLabelWithHelpIcon;
 import org.opends.guitools.controlpanel.ui.renderer.BaseDNCellRenderer;
 import org.opends.guitools.controlpanel.ui.renderer.CustomCellRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.guitools.controlpanel.util.ViewPositions;
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.i18n.LocalizableMessageBuilder;
-import org.forgerock.opendj.ldap.DN;
-import org.forgerock.opendj.ldap.LdapException;
-import org.forgerock.util.Utils;
 
 /**
  * The panel displaying the general status of the server (started/stopped),
  * basic configuration (base DNs, connection listeners) and that allows to start
  * and stop the server.
- *
  */
 class StatusPanel extends StatusGenericPanel
 {
@@ -95,10 +93,7 @@ class StatusPanel extends StatusGenericPanel
   private ConnectionHandlerTableModel connectionHandlerTableModel;
   private JTable connectionHandlersTable;
 
-  /**
-   * Default constructor.
-   *
-   */
+  /** Default constructor. */
   public StatusPanel()
   {
     super();
@@ -148,7 +143,7 @@ class StatusPanel extends StatusGenericPanel
     inScrollPanel.add(Box.createVerticalGlue(), gbc);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getPreferredFocusComponent()
   {
     if (startButton.isVisible())
@@ -162,7 +157,7 @@ class StatusPanel extends StatusGenericPanel
   }
 
 
-  /** {@inheritDoc} */
+  @Override
   public boolean requiresBorder()
   {
     return false;
@@ -175,13 +170,13 @@ class StatusPanel extends StatusGenericPanel
     Utilities.updateTableSizes(connectionHandlersTable);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTitle()
   {
     return INFO_CTRL_PANEL_STATUS_PANEL_TITLE.get();
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void configurationChanged(final ConfigurationChangeEvent ev)
   {
     if (SwingUtilities.isEventDispatchThread())
@@ -192,7 +187,7 @@ class StatusPanel extends StatusGenericPanel
     {
       SwingUtilities.invokeLater(new Runnable()
       {
-        /** {@inheritDoc} */
+        @Override
         public void run()
         {
           updateContents(ev.getNewDescriptor());
@@ -201,7 +196,7 @@ class StatusPanel extends StatusGenericPanel
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void okClicked()
   {
   }
@@ -210,7 +205,7 @@ class StatusPanel extends StatusGenericPanel
    * Updates the contents of the panel with the provided ServerDescriptor.
    * @param desc the ServerDescriptor.
    */
-  public void updateContents(ServerDescriptor desc)
+  private void updateContents(ServerDescriptor desc)
   {
     JScrollPane scroll = Utilities.getContainingScroll(this);
     ViewPositions pos;
@@ -520,7 +515,7 @@ class StatusPanel extends StatusGenericPanel
     stopButton.setOpaque(false);
     stopButton.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         stopServer();
@@ -536,7 +531,7 @@ class StatusPanel extends StatusGenericPanel
     statusPanel.add(startButton, gbc);
     startButton.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         startServer();
@@ -549,7 +544,7 @@ class StatusPanel extends StatusGenericPanel
     restartButton.setOpaque(false);
     restartButton.addActionListener(new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         restartServer();

@@ -12,19 +12,17 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
+ * Portions Copyright 2016 ForgeRock AS.
  */
-
 package org.opends.guitools.controlpanel.datamodel;
 
-/**
- * Abstract class used to describe the configuration of an index.
- *
- */
+/** Abstract class used to describe the configuration of an index. */
 public abstract class AbstractIndexDescriptor
 implements Comparable<AbstractIndexDescriptor>
 {
-  private String name;
+  private final String name;
   private BackendDescriptor backend;
+
   /**
    * Constructor.
    * @param name the name of the index.
@@ -64,9 +62,6 @@ implements Comparable<AbstractIndexDescriptor>
     recalculateHashCode();
   }
 
-  /**
-   * Method used to minimize the times the hashcode is calculated.
-   *
-   */
+  /** Method used to minimize the times the hashcode is calculated. */
   protected abstract void recalculateHashCode();
 }

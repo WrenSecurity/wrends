@@ -16,6 +16,11 @@
  */
 package org.opends.server.plugins;
 
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
+import static org.opends.messages.PluginMessages.*;
+import static org.opends.server.config.ConfigConstants.*;
+import static org.opends.server.util.TimeThread.*;
+
 import java.util.List;
 import java.util.Set;
 
@@ -23,26 +28,25 @@ import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.server.config.meta.PluginCfgDefn;
 import org.forgerock.opendj.server.config.server.LastModPluginCfg;
 import org.forgerock.opendj.server.config.server.PluginCfg;
 import org.opends.server.api.plugin.DirectoryServerPlugin;
 import org.opends.server.api.plugin.PluginResult;
 import org.opends.server.api.plugin.PluginType;
-import org.opends.server.core.DirectoryServer;
-import org.opends.server.types.*;
+import org.opends.server.types.Attribute;
+import org.opends.server.types.AttributeBuilder;
+import org.opends.server.types.Attributes;
+import org.opends.server.types.DirectoryConfig;
+import org.opends.server.types.DirectoryException;
+import org.opends.server.types.Modification;
 import org.opends.server.types.operation.PreOperationAddOperation;
 import org.opends.server.types.operation.PreOperationModifyDNOperation;
 import org.opends.server.types.operation.PreOperationModifyOperation;
-
-import static org.opends.messages.PluginMessages.*;
-import static org.opends.server.config.ConfigConstants.*;
-import static org.opends.server.util.TimeThread.*;
 
 /**
  * This class implements a Directory Server plugin that will add the
@@ -56,14 +60,6 @@ public final class LastModPlugin
 {
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-  /** The attribute type for the "createTimestamp" attribute. */
-  private final AttributeType createTimestampType;
-  /** The attribute type for the "creatorsName" attribute. */
-  private final AttributeType creatorsNameType;
-  /** The attribute type for the "modifiersName" attribute. */
-  private final AttributeType modifiersNameType;
-  /** The attribute type for the "modifyTimestamp" attribute. */
-  private final AttributeType modifyTimestampType;
   /** The current configuration for this plugin. */
   private LastModPluginCfg currentConfig;
 
@@ -77,19 +73,10 @@ public final class LastModPlugin
   public LastModPlugin()
   {
     super();
-
-
-    // Get the attribute types for the attributes that we will use.  This needs
-    // to be done in the constructor in order to make the associated variables "final".
-    createTimestampType = DirectoryServer.getAttributeType(OP_ATTR_CREATE_TIMESTAMP_LC);
-    creatorsNameType = DirectoryServer.getAttributeType(OP_ATTR_CREATORS_NAME_LC);
-    modifiersNameType = DirectoryServer.getAttributeType(OP_ATTR_MODIFIERS_NAME_LC);
-    modifyTimestampType = DirectoryServer.getAttributeType(OP_ATTR_MODIFY_TIMESTAMP_LC);
   }
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final void initializePlugin(Set<PluginType> pluginTypes,
                                      LastModPluginCfg configuration)
@@ -117,7 +104,6 @@ public final class LastModPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final void finalizePlugin()
   {
@@ -126,14 +112,12 @@ public final class LastModPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final PluginResult.PreOperation
                doPreOperation(PreOperationAddOperation addOperation)
   {
     // Create the attribute list for the creatorsName attribute, if appropriate.
-    AttributeBuilder builder = new AttributeBuilder(creatorsNameType,
-        OP_ATTR_CREATORS_NAME);
+    AttributeBuilder builder = new AttributeBuilder(getCreatorsNameAttributeType());
     DN creatorDN = addOperation.getAuthorizationDN();
     if (creatorDN == null)
     {
@@ -145,13 +129,13 @@ public final class LastModPlugin
     {
       builder.add(creatorDN.toString());
     }
-    addOperation.setAttribute(creatorsNameType, builder.toAttributeList());
+    addOperation.setAttribute(getCreatorsNameAttributeType(), builder.toAttributeList());
 
 
     //  Create the attribute list for the createTimestamp attribute.
     List<Attribute> timeList = Attributes.createAsList(
-        createTimestampType, OP_ATTR_CREATE_TIMESTAMP, getGMTTime());
-    addOperation.setAttribute(createTimestampType, timeList);
+        getCreateTimestampAttributeType(), OP_ATTR_CREATE_TIMESTAMP, getGMTTime());
+    addOperation.setAttribute(getCreateTimestampAttributeType(), timeList);
 
     // We shouldn't ever need to return a non-success result.
     return PluginResult.PreOperation.continueOperationProcessing();
@@ -159,14 +143,12 @@ public final class LastModPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final PluginResult.PreOperation
        doPreOperation(PreOperationModifyOperation modifyOperation)
   {
     // Create the modifiersName attribute.
-    AttributeBuilder builder = new AttributeBuilder(modifiersNameType,
-        OP_ATTR_MODIFIERS_NAME);
+    AttributeBuilder builder = new AttributeBuilder(getModifiersNameAttributeType());
     DN modifierDN = modifyOperation.getAuthorizationDN();
     if (modifierDN == null)
     {
@@ -195,7 +177,7 @@ public final class LastModPlugin
 
 
     //  Create the modifyTimestamp attribute.
-    Attribute timeAttr = Attributes.create(modifyTimestampType,
+    Attribute timeAttr = Attributes.create(getModifyTimestampAttributeType(),
         OP_ATTR_MODIFY_TIMESTAMP, getGMTTime());
     try
     {
@@ -218,14 +200,12 @@ public final class LastModPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public final PluginResult.PreOperation
        doPreOperation(PreOperationModifyDNOperation modifyDNOperation)
   {
     // Create the modifiersName attribute.
-    AttributeBuilder builder = new AttributeBuilder(modifiersNameType,
-        OP_ATTR_MODIFIERS_NAME);
+    AttributeBuilder builder = new AttributeBuilder(getModifiersNameAttributeType());
     DN modifierDN = modifyDNOperation.getAuthorizationDN();
     if (modifierDN == null)
     {
@@ -243,7 +223,7 @@ public final class LastModPlugin
 
 
     // Create the modifyTimestamp attribute.
-    Attribute timeAttr = Attributes.create(modifyTimestampType,
+    Attribute timeAttr = Attributes.create(getModifyTimestampAttributeType(),
         OP_ATTR_MODIFY_TIMESTAMP, getGMTTime());
     modifyDNOperation.addModification(new Modification(
         ModificationType.REPLACE, timeAttr, true));
@@ -255,7 +235,6 @@ public final class LastModPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAcceptable(PluginCfg configuration,
                                            List<LocalizableMessage> unacceptableReasons)
@@ -266,7 +245,6 @@ public final class LastModPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(LastModPluginCfg configuration,
                       List<LocalizableMessage> unacceptableReasons)
@@ -297,7 +275,6 @@ public final class LastModPlugin
 
 
 
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
                                  LastModPluginCfg configuration)

@@ -17,17 +17,14 @@
 package org.forgerock.opendj.config;
 
 import static com.forgerock.opendj.ldap.config.ConfigMessages.*;
-import static com.forgerock.opendj.util.StaticUtils.EOL;
-import static com.forgerock.opendj.util.StaticUtils.stackTraceToSingleLineString;
+import static com.forgerock.opendj.util.StaticUtils.*;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -75,9 +72,7 @@ public final class ConfigurationFramework {
      */
     private static final class MyURLClassLoader extends URLClassLoader {
 
-        /**
-         * Create a class loader with the default parent class loader.
-         */
+        /** Create a class loader with the default parent class loader. */
         public MyURLClassLoader() {
             super(new URL[0]);
         }
@@ -132,9 +127,7 @@ public final class ConfigurationFramework {
     /** Attribute name in jar's MANIFEST corresponding to the revision number. */
     private static final String REVISION_NUMBER = "Revision-Number";
 
-    /**
-     * The attribute names for build information is name, version and revision number.
-     */
+    /** The attribute names for build information is name, version and revision number. */
     private static final String[] BUILD_INFORMATION_ATTRIBUTE_NAMES = new String[] {
         Attributes.Name.EXTENSION_NAME.toString(),
         Attributes.Name.IMPLEMENTATION_VERSION.toString(), REVISION_NUMBER };
@@ -146,6 +139,128 @@ public final class ConfigurationFramework {
      */
     public static ConfigurationFramework getInstance() {
         return INSTANCE;
+    }
+
+    /**
+     * Returns a string representing all information about extensions.
+     *
+     * @param installPath
+     *            The path where application binaries are located.
+     * @param instancePath
+     *            The path where application data are located.
+     *
+     * @return A string representing all information about extensions;
+     *         <code>null</code> if there is no information available.
+     */
+    public static String getPrintableExtensionInformation(final String installPath, final String instancePath) {
+        final File extensionsPath = buildExtensionDir(installPath);
+
+        final List<File> extensions = new ArrayList<>();
+
+        if (extensionsPath.exists() && extensionsPath.isDirectory()) {
+            extensions.addAll(listFiles(extensionsPath));
+        }
+
+        File instanceExtensionsPath = buildExtensionDir(instancePath);
+        if (!extensionsPath.getAbsolutePath().equals(instanceExtensionsPath.getAbsolutePath())) {
+            extensions.addAll(listFiles(instanceExtensionsPath));
+        }
+
+        if (extensions.isEmpty()) {
+            return null;
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        printExtensionDetailsHeader(sb);
+
+        for (final File extension : extensions) {
+            printExtensionDetails(sb, extension);
+        }
+
+        return sb.toString();
+    }
+
+    private static void printExtensionDetailsHeader(final StringBuilder sb) {
+        // Leave space at start of the line for "Extension:"
+        sb.append("--")
+            .append(EOL)
+            .append("           Name                 Build number         Revision number")
+            .append(EOL);
+    }
+
+    private static File buildExtensionDir(String directory)  {
+        final File libDir = new File(directory, LIB_DIR);
+        final File extensionDir = new File(libDir, EXTENSIONS_DIR);
+        try {
+            return extensionDir.getCanonicalFile();
+        } catch (Exception e) {
+            return extensionDir;
+        }
+    }
+
+    private static List<File> listFiles(File path) {
+        if (path.exists() && path.isDirectory()) {
+            return Arrays.asList(path.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    // only files with names ending with ".jar"
+                    return pathname.isFile() && pathname.getName().endsWith(".jar");
+                }
+            }));
+        }
+        return Collections.emptyList();
+    }
+
+    private static void printExtensionDetails(final StringBuilder sb, final File extension) {
+        // retrieve MANIFEST entry and display name, build number and revision number
+        try (JarFile jarFile = new JarFile(extension)) {
+            JarEntry entry = jarFile.getJarEntry(MANIFEST_RELATIVE_PATH);
+            if (entry == null) {
+                return;
+            }
+
+            String[] information = getBuildInformation(jarFile);
+            sb.append("Extension:");
+            for (final String name : information) {
+                sb.append(" ").append(String.format("%-20s", name));
+            }
+            sb.append(EOL);
+        } catch (final IOException ignored) {
+            // ignore extra information for this extension
+        }
+    }
+
+    /**
+     * Returns a String array with the following information : <br>
+     * index 0: the name of the extension. <br>
+     * index 1: the build number of the extension. <br>
+     * index 2: the revision number of the extension.
+     *
+     * @param extension
+     *            the jar file of the extension
+     * @return a String array containing the name, the build number and the revision number
+     *            of the extension given in argument
+     * @throws java.io.IOException
+     *             thrown if the jar file has been closed.
+     */
+    private static String[] getBuildInformation(final JarFile extension) throws IOException {
+        final String[] result = new String[3];
+
+        final Manifest manifest = extension.getManifest();
+        if (manifest != null) {
+            final Attributes attributes = manifest.getMainAttributes();
+
+            int index = 0;
+            for (final String name : BUILD_INFORMATION_ATTRIBUTE_NAMES) {
+                String value = attributes.getValue(name);
+                if (value == null) {
+                    value = "<unknown>";
+                }
+                result[index++] = value;
+            }
+        }
+
+        return result;
     }
 
     /** Set of registered Jar files. */
@@ -258,12 +373,12 @@ public final class ConfigurationFramework {
         if (loader != null) {
             throw new IllegalStateException("configuration framework already initialized.");
         }
-        this.installPath = installPath == null ? System.getenv("INSTALL_ROOT") : installPath;
+        this.installPath = installPath != null ? installPath : System.getenv("INSTALL_ROOT");
         if (instancePath != null) {
             this.instancePath = instancePath;
         } else {
-            this.instancePath = System.getenv("INSTANCE_ROOT") != null ? System.getenv("INSTANCE_ROOT")
-                    : this.installPath;
+            String instanceRoot = System.getenv("INSTANCE_ROOT");
+            this.instancePath = instanceRoot != null ? instanceRoot : this.installPath;
         }
         this.parent = parent;
         initialize0();
@@ -292,72 +407,6 @@ public final class ConfigurationFramework {
     }
 
     /**
-     * Prints out all information about extensions.
-     *
-     * @return A string representing all information about extensions;
-     *         <code>null</code> if there is no information available.
-     */
-    public String printExtensionInformation() {
-        final File extensionsPath = buildExtensionPath(installPath);
-
-        final List<File> extensions = new ArrayList<>();
-
-        if (extensionsPath.exists() && extensionsPath.isDirectory()) {
-            extensions.addAll(listFiles(extensionsPath));
-        }
-
-        File instanceExtensionsPath = buildExtensionPath(instancePath);
-        if (!extensionsPath.getAbsolutePath().equals(instanceExtensionsPath.getAbsolutePath())) {
-            extensions.addAll(listFiles(instanceExtensionsPath));
-        }
-
-        if (extensions.isEmpty()) {
-            return null;
-        }
-
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final PrintStream ps = new PrintStream(baos);
-        // prints:
-        // --
-        // Name Build number Revision number
-        ps.printf("--%s           %-20s %-20s %-20s%s", EOL, "Name", "Build number",
-            "Revision number", EOL);
-
-        for (final File extension : extensions) {
-            printExtensionDetails(ps, extension);
-        }
-
-        return baos.toString();
-    }
-
-    private void printExtensionDetails(PrintStream ps, File extension) {
-        // retrieve MANIFEST entry and display name, build number and revision number
-        try {
-            JarFile jarFile = new JarFile(extension);
-            JarEntry entry = jarFile.getJarEntry(MANIFEST_RELATIVE_PATH);
-            if (entry == null) {
-                return;
-            }
-
-            String[] information = getBuildInformation(jarFile);
-
-            ps.append("Extension: ");
-            boolean addBlank = false;
-            for (String name : information) {
-                if (addBlank) {
-                    ps.append(" ");
-                } else {
-                    addBlank = true;
-                }
-                ps.printf("%-20s", name);
-            }
-            ps.append(EOL);
-        } catch (Exception e) {
-            // ignore extra information for this extension
-        }
-    }
-
-    /**
      * Reloads the configuration framework.
      *
      * @throws ConfigException
@@ -373,7 +422,7 @@ public final class ConfigurationFramework {
     }
 
     /**
-     * Specifies whether or not the configuration framework is being used within
+     * Specifies whether the configuration framework is being used within
      * a client application. Client applications will perform less property
      * value validation than server applications because they do not have
      * resources available such as the server schema.
@@ -424,41 +473,6 @@ public final class ConfigurationFramework {
         }
     }
 
-    /**
-     * Returns a String array with the following information : <br>
-     * index 0: the name of the extension. <br>
-     * index 1: the build number of the extension. <br>
-     * index 2: the revision number of the extension.
-     *
-     * @param extension
-     *            the jar file of the extension
-     * @return a String array containing the name, the build number and the revision number
-     *            of the extension given in argument
-     * @throws java.io.IOException
-     *             thrown if the jar file has been closed.
-     */
-    private String[] getBuildInformation(final JarFile extension) throws IOException {
-        final String[] result = new String[3];
-
-        // retrieve MANIFEST entry and display name, version and revision
-        final Manifest manifest = extension.getManifest();
-
-        if (manifest != null) {
-            final Attributes attributes = manifest.getMainAttributes();
-
-            int index = 0;
-            for (final String name : BUILD_INFORMATION_ATTRIBUTE_NAMES) {
-                String value = attributes.getValue(name);
-                if (value == null) {
-                    value = "<unknown>";
-                }
-                result[index++] = value;
-            }
-        }
-
-        return result;
-    }
-
     private void initialize0() throws ConfigException {
         if (parent != null) {
             loader = new MyURLClassLoader(parent);
@@ -473,22 +487,13 @@ public final class ConfigurationFramework {
         // configuration definition classes in that they contain.
         // First load the extension from the install directory, then
         // from the instance directory.
-        File installExtensionsPath  = buildExtensionPath(installPath);
-        File instanceExtensionsPath = buildExtensionPath(instancePath);
+        File installExtensionsPath  = buildExtensionDir(installPath);
+        File instanceExtensionsPath = buildExtensionDir(instancePath);
 
         initializeAllExtensions(installExtensionsPath);
 
         if (!installExtensionsPath.getAbsolutePath().equals(instanceExtensionsPath.getAbsolutePath())) {
             initializeAllExtensions(instanceExtensionsPath);
-        }
-    }
-
-    private File buildExtensionPath(String directory)  {
-        File libDir = new File(directory, LIB_DIR);
-        try {
-            return new File(libDir, EXTENSIONS_DIR).getCanonicalFile();
-        } catch (Exception e) {
-            return new File(libDir, EXTENSIONS_DIR);
         }
     }
 
@@ -507,15 +512,13 @@ public final class ConfigurationFramework {
         try {
             if (!extensionsPath.exists()) {
                 // The extensions directory does not exist. This is not a critical problem.
-                adminLogger.warn(WARN_ADMIN_NO_EXTENSIONS_DIR, String.valueOf(extensionsPath));
+                adminLogger.warn(WARN_ADMIN_NO_EXTENSIONS_DIR, extensionsPath);
                 return;
             }
 
             if (!extensionsPath.isDirectory()) {
                 // The extensions directory is not a directory. This is more critical.
-                final LocalizableMessage message =
-                        ERR_ADMIN_EXTENSIONS_DIR_NOT_DIRECTORY.get(String.valueOf(extensionsPath));
-                throw new ConfigException(message);
+                throw new ConfigException(ERR_ADMIN_EXTENSIONS_DIR_NOT_DIRECTORY.get(extensionsPath));
             }
 
             // Add and initialize the extensions.
@@ -525,25 +528,10 @@ public final class ConfigurationFramework {
             throw e;
         } catch (final Exception e) {
             debugLogger.trace("Unable to initialize all extensions", e);
-            final LocalizableMessage message =
-                    ERR_ADMIN_EXTENSIONS_CANNOT_LIST_FILES.get(String.valueOf(extensionsPath),
-                            stackTraceToSingleLineString(e, true));
+            final LocalizableMessage message = ERR_ADMIN_EXTENSIONS_CANNOT_LIST_FILES.get(
+                extensionsPath, stackTraceToSingleLineString(e, true));
             throw new ConfigException(message, e);
         }
-    }
-
-    private List<File> listFiles(File path) {
-        if (path.exists() && path.isDirectory()) {
-
-            return Arrays.asList(path.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    // only files with names ending with ".jar"
-                    return pathname.isFile() && pathname.getName().endsWith(".jar");
-                }
-            }));
-        }
-        return Collections.emptyList();
     }
 
     /**
@@ -556,17 +544,14 @@ public final class ConfigurationFramework {
     private void initializeCoreComponents() throws ConfigException {
         final InputStream is = RootCfgDefn.class.getResourceAsStream(MANIFEST_ABSOLUTE_PATH);
         if (is == null) {
-            final LocalizableMessage message = ERR_ADMIN_CANNOT_FIND_CORE_MANIFEST.get(MANIFEST_ABSOLUTE_PATH);
-            throw new ConfigException(message);
+            throw new ConfigException(ERR_ADMIN_CANNOT_FIND_CORE_MANIFEST.get(MANIFEST_ABSOLUTE_PATH));
         }
         try {
             loadDefinitionClasses(is);
         } catch (final ConfigException e) {
             debugLogger.trace("Unable to initialize core components", e);
-            final LocalizableMessage message =
-                    ERR_CLASS_LOADER_CANNOT_LOAD_CORE.get(MANIFEST_ABSOLUTE_PATH, stackTraceToSingleLineString(e,
-                            true));
-            throw new ConfigException(message);
+            throw new ConfigException(ERR_CLASS_LOADER_CANNOT_LOAD_CORE.get(
+                MANIFEST_ABSOLUTE_PATH, stackTraceToSingleLineString(e, true)));
         }
     }
 
@@ -599,18 +584,16 @@ public final class ConfigurationFramework {
                 loadDefinitionClasses(is);
             } catch (final ConfigException e) {
                 debugLogger.trace("Unable to load classes from input stream", e);
-                final LocalizableMessage message =
-                        ERR_CLASS_LOADER_CANNOT_LOAD_EXTENSION.get(jarFile.getName(), MANIFEST_RELATIVE_PATH,
-                                stackTraceToSingleLineString(e, true));
+                final LocalizableMessage message = ERR_CLASS_LOADER_CANNOT_LOAD_EXTENSION.get(
+                    jarFile.getName(), MANIFEST_RELATIVE_PATH, stackTraceToSingleLineString(e, true));
                 throw new ConfigException(message);
             }
             try {
                 // Log build information of extensions in the error log
                 final String[] information = getBuildInformation(jarFile);
-                final LocalizableMessage message =
-                        NOTE_LOG_EXTENSION_INFORMATION.get(jarFile.getName(), information[1],
-                                information[2]);
-                LocalizedLogger.getLocalizedLogger(message.resourceName()).error(message);
+                final LocalizableMessage message = NOTE_LOG_EXTENSION_INFORMATION.get(
+                    jarFile.getName(), information[1], information[2]);
+                LocalizedLogger.getLocalizedLogger(message.resourceName()).info(message);
             } catch (final Exception e) {
                 // Do not log information for that extension
             }
@@ -618,16 +601,15 @@ public final class ConfigurationFramework {
     }
 
     /**
-     * Forcefully load configuration definition classes named in a manifest
-     * file.
+     * Forcefully load configuration definition classes named in a manifest file.
      *
      * @param is
      *            The manifest file input stream.
      * @throws ConfigException
-     *             If the definition classes could not be loaded and
-     *             initialized.
+     *             If the definition classes could not be loaded and initialized.
      */
     private void loadDefinitionClasses(final InputStream is) throws ConfigException {
+        // Cannot use ServiceLoader because constructors are private
         final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         final List<AbstractManagedObjectDefinition<?, ?>> definitions = new LinkedList<>();
         while (true) {
@@ -636,8 +618,7 @@ public final class ConfigurationFramework {
                 className = reader.readLine();
             } catch (final IOException e) {
                 final LocalizableMessage msg =
-                        ERR_CLASS_LOADER_CANNOT_READ_MANIFEST_FILE.get(String.valueOf(e
-                                .getMessage()));
+                        ERR_CLASS_LOADER_CANNOT_READ_MANIFEST_FILE.get(e.getMessage());
                 throw new ConfigException(msg, e);
             }
 
@@ -646,14 +627,9 @@ public final class ConfigurationFramework {
                 break;
             }
 
-            // Skip blank lines.
             className = className.trim();
-            if (className.length() == 0) {
-                continue;
-            }
-
-            // Skip lines beginning with #.
-            if (className.startsWith("#")) {
+            // Skip blank lines or lines beginning with #.
+            if (className.isEmpty() || className.startsWith("#")) {
                 continue;
             }
 
@@ -665,20 +641,17 @@ public final class ConfigurationFramework {
                 theClass = Class.forName(className, true, loader);
             } catch (final Exception e) {
                 final LocalizableMessage msg =
-                        ERR_CLASS_LOADER_CANNOT_LOAD_CLASS.get(className, String.valueOf(e
-                                .getMessage()));
+                        ERR_CLASS_LOADER_CANNOT_LOAD_CLASS.get(className, e.getMessage());
                 throw new ConfigException(msg, e);
             }
             if (AbstractManagedObjectDefinition.class.isAssignableFrom(theClass)) {
-                // We need to instantiate it using its getInstance() static
-                // method.
+                // We need to instantiate it using its getInstance() static method.
                 Method method;
                 try {
                     method = theClass.getMethod("getInstance");
                 } catch (final Exception e) {
                     final LocalizableMessage msg =
-                            ERR_CLASS_LOADER_CANNOT_FIND_GET_INSTANCE_METHOD.get(className, String
-                                    .valueOf(e.getMessage()));
+                            ERR_CLASS_LOADER_CANNOT_FIND_GET_INSTANCE_METHOD.get(className, e.getMessage());
                     throw new ConfigException(msg, e);
                 }
 
@@ -688,8 +661,7 @@ public final class ConfigurationFramework {
                     d = (AbstractManagedObjectDefinition<?, ?>) method.invoke(null);
                 } catch (final Exception e) {
                     final LocalizableMessage msg =
-                            ERR_CLASS_LOADER_CANNOT_INVOKE_GET_INSTANCE_METHOD.get(className,
-                                    String.valueOf(e.getMessage()));
+                            ERR_CLASS_LOADER_CANNOT_INVOKE_GET_INSTANCE_METHOD.get(className, e.getMessage());
                     throw new ConfigException(msg, e);
                 }
                 definitions.add(d);
@@ -701,9 +673,8 @@ public final class ConfigurationFramework {
             try {
                 d.initialize();
             } catch (final Exception e) {
-                final LocalizableMessage msg =
-                        ERR_CLASS_LOADER_CANNOT_INITIALIZE_DEFN.get(d.getName(), d.getClass()
-                                .getName(), String.valueOf(e.getMessage()));
+                final LocalizableMessage msg = ERR_CLASS_LOADER_CANNOT_INITIALIZE_DEFN.get(
+                    d.getName(), d.getClass().getName(), e.getMessage());
                 throw new ConfigException(msg, e);
             }
         }
@@ -740,5 +711,4 @@ public final class ConfigurationFramework {
     public String getInstancePath() {
         return instancePath;
     }
-
 }

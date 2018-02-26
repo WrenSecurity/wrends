@@ -16,6 +16,11 @@
  */
 package org.opends.server.schema;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.opends.server.schema.GeneralizedTimeSyntax.format;
+import static org.opends.server.schema.SchemaConstants.*;
+import static org.testng.Assert.*;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,25 +34,21 @@ import org.forgerock.opendj.ldap.Assertion;
 import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.ConditionResult;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.DecodeException;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.Attribute;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.Entry;
 import org.opends.server.types.FilterType;
 import org.opends.server.types.SearchFilter;
 import org.opends.server.util.TimeThread;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.opends.server.schema.GeneralizedTimeSyntax.*;
-import static org.opends.server.schema.SchemaConstants.*;
-import static org.testng.Assert.*;
 
 /** This class tests various time-based matching rules. */
 @SuppressWarnings("javadoc")
@@ -63,6 +64,15 @@ public final class TimeBasedMatchingRuleTest
 
   private static final String TIME_ATTR = "test-time";
   private static final String DATE_ATTR = "test-date";
+
+  private static final String TEST_TIME_DEF = "( test-time-oid NAME 'test-time' DESC 'Test time attribute'  EQUALITY "
+      + "generalizedTimeMatch ORDERING  generalizedTimeOrderingMatch "
+      + "SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE )";
+  private static final String TEST_DATE_DEF = "( test-date-oid NAME 'test-date' DESC 'Test date attribute'  EQUALITY "
+      + "generalizedTimeMatch ORDERING  generalizedTimeOrderingMatch "
+      + "SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE )";
+  private static final String TEST_OC_DEF = "( testoc-oid NAME 'testOC' SUP top AUXILIARY MUST test-time)";
+  private static final String TEST_OC2_DEF = "( testoc2-oid NAME 'testOC2' SUP top AUXILIARY MUST test-date)";
 
 
   /**
@@ -90,16 +100,31 @@ public final class TimeBasedMatchingRuleTest
     "dn: cn=schema",
     "changetype: modify",
     "add: attributeTypes",
-    "attributeTypes: ( test-time-oid NAME 'test-time' DESC 'Test time attribute'  EQUALITY   " +
-    "generalizedTimeMatch ORDERING  generalizedTimeOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE )",
-    "attributeTypes: ( test-date-oid NAME 'test-date' DESC 'Test date attribute'  EQUALITY   " +
-    "generalizedTimeMatch ORDERING  generalizedTimeOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.24 SINGLE-VALUE )",
+    "attributeTypes: " + TEST_TIME_DEF,
+    "attributeTypes: " + TEST_DATE_DEF,
     "-",
     "add: objectclasses",
-    "objectclasses: ( testoc-oid NAME 'testOC' SUP top AUXILIARY MUST test-time)",
-    "objectclasses: ( testoc2-oid NAME 'testOC2' SUP top AUXILIARY MUST test-date)"
+    "objectclasses: " + TEST_OC_DEF,
+    "objectclasses: " + TEST_OC2_DEF
     );
     assertEquals(0, resultCode);
+  }
+
+  @AfterClass
+  public void cleanup() throws Exception
+  {
+    int resultCode = TestCaseUtils.applyModifications(true,
+        "dn: cn=schema",
+        "changetype: modify",
+        "delete: objectclasses",
+        "objectclasses: " + TEST_OC_DEF,
+        "objectclasses: " + TEST_OC2_DEF,
+        "-",
+        "delete: attributetypes",
+        "attributeTypes: " + TEST_TIME_DEF,
+        "attributeTypes: " + TEST_DATE_DEF
+      );
+      assertThat(resultCode).isEqualTo(0);
   }
 
   @DataProvider
@@ -127,7 +152,7 @@ public final class TimeBasedMatchingRuleTest
   private Collection<DN> getMatchingEntryDNs(SearchFilter filter) throws Exception
   {
     AttributeType attrType = filter.getAttributeType();
-    MatchingRule rule = DirectoryServer.getMatchingRule(filter.getMatchingRuleID());
+    MatchingRule rule = DirectoryServer.getSchema().getMatchingRule(filter.getMatchingRuleID());
     Assertion assertion = rule.getAssertion(filter.getAssertionValue());
 
     Collection<DN> results = new ArrayList<>();
@@ -174,8 +199,7 @@ public final class TimeBasedMatchingRuleTest
   public void testPartialDateNTimeMatch(long timeInMillis, String generalizedTime, String assertionValue)
       throws Exception
   {
-    MatchingRule partialTimeRule = DirectoryServer.getMatchingRule(
-            EXT_PARTIAL_DATE_TIME_NAME.toLowerCase());
+    MatchingRule partialTimeRule = DirectoryServer.getSchema().getMatchingRule(EXT_PARTIAL_DATE_TIME_NAME);
     Assertion assertion = partialTimeRule.getAssertion(ByteString.valueOfUtf8(assertionValue));
     assertEquals(assertion.matches(ByteString.valueOfLong(timeInMillis)), ConditionResult.TRUE);
   }
@@ -199,8 +223,7 @@ public final class TimeBasedMatchingRuleTest
   @Test(dataProvider= "relativeTimeValues")
   public void testRelativeTimeMatchingRuleAssertionSyntax(String assertion,boolean isValid)
   {
-    MatchingRule relativeTimeLTRule =
-            DirectoryServer.getMatchingRule(EXT_OMR_RELATIVE_TIME_LT_ALT_NAME.toLowerCase());
+    MatchingRule relativeTimeLTRule = DirectoryServer.getSchema().getMatchingRule(EXT_OMR_RELATIVE_TIME_LT_ALT_NAME);
     try
     {
       relativeTimeLTRule.getAssertion(ByteString.valueOfUtf8(assertion));
@@ -220,8 +243,7 @@ public final class TimeBasedMatchingRuleTest
   @Test(dataProvider= "partialDateTimeSyntaxes")
   public void testPartialDateTimeMatchingRuleAssertionSyntax(String assertion,boolean isValid)
   {
-    MatchingRule partialDTRule =
-            DirectoryServer.getMatchingRule(EXT_PARTIAL_DATE_TIME_OID);
+    MatchingRule partialDTRule = DirectoryServer.getSchema().getMatchingRule(EXT_PARTIAL_DATE_TIME_OID);
     try
     {
       partialDTRule.getAssertion(ByteString.valueOfUtf8(assertion));

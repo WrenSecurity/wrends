@@ -18,20 +18,18 @@ package org.opends.server.protocols.ldap;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.ldap.AttributeDescription;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.ByteStringBuilder;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.UnknownSchemaElementException;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.FilterType;
@@ -1868,7 +1866,13 @@ public class LDAPFilter
     }
     else
     {
-      subComps = new ArrayList<>(filterComponents.size());
+      int compSize = filterComponents.size();
+      if (compSize == 1)
+      {
+        // the filter can be simplified to the single component
+        return filterComponents.get(0).toSearchFilter();
+      }
+      subComps = new ArrayList<>(compSize);
       for (RawFilter f : filterComponents)
       {
         subComps.add(f.toSearchFilter());
@@ -1887,13 +1891,16 @@ public class LDAPFilter
     }
 
     AttributeDescription attrDesc = null;
-    AttributeType attributeType = null;
-    Set<String> options = Collections.emptySet();
     if (attributeDescription != null)
     {
-      attrDesc = AttributeDescription.valueOf(attributeDescription);
-      attributeType = attrDesc.getAttributeType();
-      options = toSet(attrDesc);
+      try
+      {
+        attrDesc = AttributeDescription.valueOf(attributeDescription);
+      }
+      catch (LocalizedIllegalArgumentException e)
+      {
+        throw new DirectoryException(ResultCode.PROTOCOL_ERROR, e.getMessageObject(), e);
+      }
     }
     if (assertionValue != null && attrDesc == null)
     {
@@ -1903,8 +1910,11 @@ public class LDAPFilter
             ERR_LDAP_FILTER_VALUE_WITH_NO_ATTR_OR_MR.get());
       }
 
-      MatchingRule mr = DirectoryServer.getMatchingRule(toLowerCase(matchingRuleID));
-      if (mr == null)
+      try
+      {
+        DirectoryServer.getSchema().getMatchingRule(matchingRuleID);
+      }
+      catch (UnknownSchemaElementException e)
       {
         throw new DirectoryException(ResultCode.INAPPROPRIATE_MATCHING,
             ERR_LDAP_FILTER_UNKNOWN_MATCHING_RULE.get(matchingRuleID));
@@ -1913,22 +1923,10 @@ public class LDAPFilter
 
     ArrayList<ByteString> subAnyComps =
         subAnyElements != null ? new ArrayList<ByteString>(subAnyElements) : null;
-    return new SearchFilter(filterType, subComps, notComp, attributeType, options,
+    return new SearchFilter(filterType, subComps, notComp, attrDesc,
                             assertionValue, subInitialElement, subAnyComps,
                             subFinalElement, matchingRuleID, dnAttributes);
   }
-
-  private Set<String> toSet(AttributeDescription attrDesc)
-  {
-    LinkedHashSet<String> results = new LinkedHashSet<>();
-    for (String option : attrDesc.getOptions())
-    {
-      results.add(option);
-    }
-    return results;
-  }
-
-
 
   /**
    * Appends a string representation of this search filter to the provided

@@ -17,6 +17,7 @@
 package org.opends.server.plugins;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
 import static org.testng.Assert.*;
 
@@ -24,24 +25,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ModificationType;
+import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.ResultCode;
-import org.opends.server.TestCaseUtils;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.server.config.meta.LastModPluginCfgDefn;
+import org.opends.server.TestCaseUtils;
 import org.opends.server.api.plugin.PluginType;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ModifyDNOperation;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.extensions.InitializationUtils;
 import org.opends.server.protocols.internal.InternalClientConnection;
-import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.types.Attributes;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryConfig;
 import org.opends.server.types.Entry;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.Modification;
-import org.forgerock.opendj.ldap.RDN;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -138,11 +139,11 @@ public class LastModPluginTestCase
   public void testInitializeWithValidConfigs(Entry e)
          throws Exception
   {
-    LastModPlugin plugin = pp(e);
+    LastModPlugin plugin = initializePlugin(e);
     plugin.finalizePlugin();
   }
 
-  private LastModPlugin pp(Entry e) throws ConfigException, InitializationException {
+  private LastModPlugin initializePlugin(Entry e) throws ConfigException, InitializationException {
     return InitializationUtils.initializePlugin(new LastModPlugin(), e, LastModPluginCfgDefn.getInstance());
   }
 
@@ -158,25 +159,25 @@ public class LastModPluginTestCase
   public void testInitializeWithValidConfigsWithoutSchema(Entry e)
          throws Exception
   {
-    AttributeType ctType = DirectoryServer.getAttributeType("createtimestamp");
-    AttributeType cnType = DirectoryServer.getAttributeType("creatorsname");
-    AttributeType mtType = DirectoryServer.getAttributeType("modifytimestamp");
-    AttributeType mnType = DirectoryServer.getAttributeType("modifiersname");
+    AttributeType ctType = getCreateTimestampAttributeType();
+    AttributeType cnType = getCreatorsNameAttributeType();
+    AttributeType mtType = getModifyTimestampAttributeType();
+    AttributeType mnType = getModifiersNameAttributeType();
 
-    DirectoryServer.deregisterAttributeType(ctType);
-    DirectoryServer.deregisterAttributeType(cnType);
-    DirectoryServer.deregisterAttributeType(mtType);
-    DirectoryServer.deregisterAttributeType(mnType);
+    DirectoryServer.getSchema().deregisterAttributeType(ctType);
+    DirectoryServer.getSchema().deregisterAttributeType(cnType);
+    DirectoryServer.getSchema().deregisterAttributeType(mtType);
+    DirectoryServer.getSchema().deregisterAttributeType(mnType);
 
 
-    LastModPlugin plugin = pp(e);
+    LastModPlugin plugin = initializePlugin(e);
     plugin.finalizePlugin();
 
 
-    DirectoryServer.registerAttributeType(ctType, false);
-    DirectoryServer.registerAttributeType(cnType, false);
-    DirectoryServer.registerAttributeType(mtType, false);
-    DirectoryServer.registerAttributeType(mnType, false);
+    DirectoryServer.getSchema().registerAttributeType(ctType, null, false);
+    DirectoryServer.getSchema().registerAttributeType(cnType, null, false);
+    DirectoryServer.getSchema().registerAttributeType(mtType, null, false);
+    DirectoryServer.getSchema().registerAttributeType(mnType, null, false);
   }
 
 
@@ -236,7 +237,7 @@ public class LastModPluginTestCase
   public void testInitializeWithInvalidConfigs(Entry e)
          throws Exception
   {
-    LastModPlugin plugin = pp(e);
+    LastModPlugin plugin = initializePlugin(e);
     plugin.finalizePlugin();
   }
 

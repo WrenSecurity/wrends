@@ -23,11 +23,8 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +42,6 @@ import org.forgerock.opendj.ldap.Filter;
 import org.forgerock.opendj.ldap.LinkedHashMapEntry;
 import org.forgerock.opendj.ldap.Matcher;
 import org.forgerock.opendj.ldap.SearchScope;
-import org.forgerock.opendj.ldap.requests.AddRequest;
 import org.forgerock.opendj.ldap.requests.ModifyRequest;
 import org.forgerock.opendj.ldap.requests.Requests;
 import org.forgerock.opendj.ldap.requests.SearchRequest;
@@ -68,37 +64,38 @@ import static org.opends.messages.ToolMessages.*;
 import static org.opends.server.tools.upgrade.FileManager.*;
 import static org.opends.server.tools.upgrade.Installation.*;
 import static org.opends.server.util.ChangeOperationType.*;
+import static org.opends.server.util.ServerConstants.*;
 
-/**
- * Common utility methods needed by the upgrade.
- */
+/** Common utility methods needed by the upgrade. */
 final class UpgradeUtils
 {
-
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
-  /** The config folder of the current instance. */
+  /** The {@code config} folder of the current instance. */
   static final File configDirectory = new File(getInstancePath(), CONFIG_PATH_RELATIVE);
-  /** The config/schema folder of the current instance. */
+  /** The {@code config/schema} folder of the current instance. */
   static final File configSchemaDirectory = new File(configDirectory, SCHEMA_PATH_RELATIVE);
-  /** The template folder of the current installation. */
-  static final File templateDirectory = new File(getInstallationPath(), TEMPLATE_RELATIVE_PATH);
-  /** The template/config folder of the current installation. */
+  /** The {@code config/upgrade} folder of the current instance. */
+  static final File configUpgradeDirectory = new File(configDirectory, "upgrade");
+  /** The {@code template} folder of the current installation. */
+  private static final File templateDirectory = new File(getInstallationPath(), TEMPLATE_RELATIVE_PATH);
+  /** The {@code template/config} folder of the current installation. */
   static final File templateConfigDirectory = new File(templateDirectory, CONFIG_PATH_RELATIVE);
-  /** The template/config/schema folder of the current installation. */
+  /** The {@code template/config/schema} folder of the current installation. */
   static final File templateConfigSchemaDirectory = new File(templateConfigDirectory, SCHEMA_PATH_RELATIVE);
-  /** The config/snmp/security folder of the current instance. */
+  /** The {@code config/snmp/security} folder of the current instance. */
   static final File configSnmpSecurityDirectory = new File(
       configDirectory + File.separator + SNMP_PATH_RELATIVE + File.separator + SECURITY_PATH_RELATIVE);
-  /** The lib folder of the current installation. */
+  /** The {@code lib} folder of the current installation. */
   static final File libDirectory = new File(getInstallationPath(), LIB_RELATIVE_PATH);
-  /** The bin folder of the current installation. */
+  /** The {@code bin} folder of the current installation. */
   static final File binDirectory = new File(getInstallationPath(), UNIX_BINARIES_PATH_RELATIVE);
-  /** The bat folder of the current installation. */
+  /** The {@code bat} folder of the current installation. */
   static final File batDirectory = new File(getInstallationPath(), WINDOWS_BINARIES_PATH_RELATIVE);
-  /** The server configuration file path */
-  static final String CONFIG_FILE_PATH =
-      Paths.get(configDirectory.getAbsolutePath(), CURRENT_CONFIG_FILE_NAME).toString();
+  /** The server configuration file path. */
+  static final File configFile = new File(configDirectory, CURRENT_CONFIG_FILE_NAME);
+  /** The concatenated schema file of the current installation. */
+  static final File concatenatedSchemaFile = new File(configUpgradeDirectory, SCHEMA_CONCAT_FILE_NAME);
 
   /**
    * Returns the path of the installation of the directory server. Note that
@@ -106,7 +103,7 @@ final class UpgradeUtils
    *
    * @return the path of the installation of the directory server.
    */
-  static String getInstallPathFromClasspath()
+  private static String getInstallPathFromClasspath()
   {
     String installPath = DirectoryServer.getServerRoot();
     if (installPath != null)
@@ -226,71 +223,10 @@ final class UpgradeUtils
     }
   }
 
-  /**
-   * Returns the absolute path for the given parentPath and relativePath.
-   *
-   * @param parentPath
-   *          the parent path.
-   * @param relativePath
-   *          the relative path.
-   * @return the absolute path for the given parentPath and relativePath.
-   */
-  static String getPath(final String parentPath, final String relativePath)
-  {
-    return getPath(new File(new File(parentPath), relativePath));
-  }
-
   static File getFileForPath(String path)
   {
     final File f = new File(path);
     return f.isAbsolute() ? f : new File(getInstancePath(), path);
-  }
-
-  /**
-   * Determines whether one file is the parent of another.
-   *
-   * @param ancestor
-   *          possible parent of <code>descendant</code>
-   * @param descendant
-   *          possible child 0f <code>ancestor</code>
-   * @return return true if ancestor is a parent of descendant
-   */
-  static boolean isParentOf(final File ancestor, File descendant)
-  {
-    if (ancestor != null)
-    {
-      if (ancestor.equals(descendant))
-      {
-        return false;
-      }
-      while (descendant != null && !ancestor.equals(descendant))
-      {
-        descendant = descendant.getParentFile();
-      }
-    }
-    return ancestor != null && descendant != null;
-  }
-
-  /**
-   * Returns <CODE>true</CODE> if the first provided path is under the second
-   * path in the file system.
-   * @param descendant the descendant candidate path.
-   * @param path the path.
-   * @return <CODE>true</CODE> if the first provided path is under the second
-   * path in the file system; <code>false</code> otherwise or if
-   * either of the files are null
-   */
-  static boolean isDescendant(File descendant, File path) {
-    if (descendant != null && path != null) {
-      File parent = descendant.getParentFile();
-      while (parent != null) {
-        if (path.equals(parent)) {
-          return true;
-        }
-        parent = parent.getParentFile();
-      }
-    }
-    return false;
   }
 
   /**
@@ -366,42 +302,41 @@ final class UpgradeUtils
     return baseDNs;
   }
 
-  static EntryReader searchConfigFile(final SearchRequest sr) throws FileNotFoundException
+  static EntryReader searchConfigFile(final SearchRequest searchRequest) throws FileNotFoundException
   {
     final Schema schema = getUpgradeSchema();
     final File configFile = new File(configDirectory, CURRENT_CONFIG_FILE_NAME);
     final LDIFEntryReader entryReader = new LDIFEntryReader(new FileInputStream(configFile)).setSchema(schema);
-    return LDIF.search(entryReader, sr, schema);
+    return LDIF.search(entryReader, searchRequest, schema);
   }
 
   /**
    * Updates the config file during the upgrade process.
    *
-   * @param configPath
+   * @param configFile
    *          The original path to the file.
    * @param filter
    *          The filter to select entries. Only useful for modify change type.
    * @param changeType
    *          The change type which must be applied to ldif lines.
    * @param ldifLines
-   *          The change record ldif lines.
-   *          For ADD change type, the first line must be the dn.
-   *          For DELETE change type, the first and only line must be the dn.
+   *          The change record ldif lines. For ADD change type, the first line must be the dn. For
+   *          DELETE change type, the first and only line must be the dn.
    * @throws IOException
    *           If an Exception occurs during the input output methods.
    * @return The changes number that have occurred.
    */
-  static int updateConfigFile(final String configPath,
+  static int updateConfigFile(final File configFile,
       final Filter filter, final ChangeOperationType changeType,
       final String... ldifLines) throws IOException
   {
-    final File original = new File(configPath);
+    final File original = configFile;
     final File copyConfig =
         File.createTempFile("copyConfig", ".tmp", original.getParentFile());
 
     int changeCount = 0;
     final Schema schema = getUpgradeSchema();
-    try (LDIFEntryReader entryReader = new LDIFEntryReader(new FileInputStream(configPath)).setSchema(schema);
+    try (LDIFEntryReader entryReader = new LDIFEntryReader(new FileInputStream(configFile)).setSchema(schema);
         LDIFEntryWriter writer = new LDIFEntryWriter(new FileOutputStream(copyConfig)))
     {
       writer.setWrapColumn(80);
@@ -478,8 +413,7 @@ final class UpgradeUtils
 
       if (changeType == ADD && !entryAlreadyExist)
       {
-        final AddRequest ar = Requests.newAddRequest(ldifLines);
-        writer.writeEntry(ar);
+        writer.writeEntry(Requests.newAddRequest(ldifLines));
         logger.debug(LocalizableMessage.raw("Entry successfully added %s in %s", ldifDN, original.getAbsolutePath()));
         changeCount++;
       }
@@ -495,7 +429,8 @@ final class UpgradeUtils
     try
     {
       // Renaming the file, overwriting previous one.
-      rename(copyConfig, new File(configPath));
+      rename(copyConfig, configFile);
+      return changeCount;
     }
     catch (IOException e)
     {
@@ -503,8 +438,6 @@ final class UpgradeUtils
       deleteRecursively(original);
       throw e;
     }
-
-    return changeCount;
   }
 
   private static String removeDnPrefix(String dnLine)
@@ -672,14 +605,13 @@ final class UpgradeUtils
     {
       throw new IllegalStateException(e);
     }
-    throw new IllegalStateException(ERR_UPGRADE_UNKNOWN_OC_ATT.get(type, oid)
-        .toString());
+    throw new IllegalStateException(ERR_UPGRADE_UNKNOWN_OC_ATT.get(type, oid).toString());
   }
 
   /**
-   * Creates a new file in the config/upgrade folder. The new file is a
-   * concatenation of entries of all files contained in the config/schema
-   * folder.
+   * Creates a new file in The {@code config/upgrade} folder.
+   * The new file is a concatenation of entries of all files contained in the
+   * {@code config/schema} folder.
    *
    * @param folder
    *          The folder containing the schema files.
@@ -763,7 +695,8 @@ final class UpgradeUtils
    *
    * @return A schema which may used in the upgrade context.
    */
-  static Schema getUpgradeSchema() {
+  private static Schema getUpgradeSchema()
+  {
     final SchemaBuilder sb = new SchemaBuilder(Schema.getCoreSchema())
         .setOption(DEFAULT_MATCHING_RULE_OID, getCaseExactMatchingRule().getOID())
         .setOption(DEFAULT_SYNTAX_OID, getDirectoryStringSyntax().getOID());
@@ -799,34 +732,20 @@ final class UpgradeUtils
     return modifiedLines;
   }
 
-  /** Filter provided list of indexes name to return indexes which are present in the provided backend. */
-  static List<String> filterExistingIndexes(final Set<String> candidateIndexes, final String backendID)
+  /** Returns {@code true} if the installed instance contains at least one JE backend. */
+  static boolean instanceContainsJeBackends()
   {
-    final List<String> indexesToRebuild = new ArrayList<>();
-    try (final LDIFEntryReader entryReader = new LDIFEntryReader(new FileInputStream(CONFIG_FILE_PATH)))
+    final SearchRequest sr = Requests.newSearchRequest(
+            "", SearchScope.WHOLE_SUBTREE, "(objectclass=ds-cfg-je-backend)", "dn");
+    try (final EntryReader entryReader = searchConfigFile(sr))
     {
-      while (entryReader.hasNext())
-      {
-        final Entry entry = entryReader.readEntry();
-        if (entry.containsAttribute("objectClass", "ds-cfg-backend-index")
-            && entry.getName().toString().contains("ds-cfg-backend-id=" + backendID))
-        {
-          for (final String indexName : candidateIndexes)
-          {
-            if (entry.containsAttribute("ds-cfg-attribute", indexName))
-            {
-              indexesToRebuild.add(indexName);
-            }
-          }
-        }
-      }
+      return entryReader.hasNext();
     }
     catch (final IOException unlikely)
     {
       logger.error(ERR_UPGRADE_READING_CONF_FILE.get(unlikely.getMessage()));
+      return true;
     }
-
-    return indexesToRebuild;
   }
 
   /** Prevent instantiation. */

@@ -26,13 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.WeakHashMap;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.Schema;
 import org.forgerock.opendj.ldap.schema.UnknownSchemaElementException;
+import org.forgerock.util.Pair;
 import org.forgerock.util.Reject;
 
 import com.forgerock.opendj.util.ASCIICharProp;
@@ -334,12 +334,19 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
 
     }
 
-    private static final ThreadLocal<WeakHashMap<Schema, Map<String, AttributeDescription>>> CACHE =
-            new ThreadLocal<WeakHashMap<Schema, Map<String, AttributeDescription>>>() {
-
+    private static final ThreadLocal<Map<String, Pair<Schema, AttributeDescription>>> CACHE =
+            new ThreadLocal<Map<String, Pair<Schema, AttributeDescription>>>() {
+                @SuppressWarnings("serial")
                 @Override
-                protected WeakHashMap<Schema, Map<String, AttributeDescription>> initialValue() {
-                    return new WeakHashMap<>();
+                protected Map<String, Pair<Schema, AttributeDescription>> initialValue() {
+                    return new LinkedHashMap<String, Pair<Schema, AttributeDescription>>(
+                            ATTRIBUTE_DESCRIPTION_CACHE_SIZE, 0.75f, true) {
+                        @Override
+                        protected boolean removeEldestEntry(
+                                final Map.Entry<String, Pair<Schema, AttributeDescription>> eldest) {
+                            return size() > ATTRIBUTE_DESCRIPTION_CACHE_SIZE;
+                        }
+                    };
                 }
             };
 
@@ -529,7 +536,14 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
      *             If {@code attributeType} was {@code null}.
      */
     public static AttributeDescription create(final AttributeType attributeType) {
-        return create(attributeType.getNameOrOID(), attributeType);
+        Reject.ifNull(attributeType);
+
+        // Use object identity in case attribute type does not come from core schema.
+        if (attributeType == OBJECT_CLASS.getAttributeType()) {
+            return OBJECT_CLASS;
+        }
+        String attributeName = attributeType.getNameOrOID();
+        return new AttributeDescription(attributeName, attributeName, attributeType, ZERO_OPTION_IMPL);
     }
 
     /**
@@ -549,8 +563,8 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
     public static AttributeDescription create(final String attributeName, final AttributeType attributeType) {
         Reject.ifNull(attributeName, attributeType);
 
-        // Use object identity in case attribute type does not come from core schema.
-        if (attributeType == OBJECT_CLASS.getAttributeType()) {
+        if (attributeType == OBJECT_CLASS.getAttributeType()
+                && attributeName.equals(attributeType.getNameOrOID())) {
             return OBJECT_CLASS;
         }
         return new AttributeDescription(attributeName, attributeName, attributeType, ZERO_OPTION_IMPL);
@@ -760,38 +774,22 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
      *             If {@code attributeDescription} or {@code schema} was
      *             {@code null}.
      */
-    @SuppressWarnings("serial")
     public static AttributeDescription valueOf(final String attributeDescription,
             final Schema schema) {
         Reject.ifNull(attributeDescription, schema);
 
         // First look up the attribute description in the cache.
-        final WeakHashMap<Schema, Map<String, AttributeDescription>> threadLocalMap = CACHE.get();
-        Map<String, AttributeDescription> schemaLocalMap = threadLocalMap.get(schema);
-
-        AttributeDescription ad = null;
-        if (schemaLocalMap == null) {
-            schemaLocalMap =
-                    new LinkedHashMap<String, AttributeDescription>(
-                            ATTRIBUTE_DESCRIPTION_CACHE_SIZE, 0.75f, true) {
-                        @Override
-                        protected boolean removeEldestEntry(
-                                final Map.Entry<String, AttributeDescription> eldest) {
-                            return size() > ATTRIBUTE_DESCRIPTION_CACHE_SIZE;
-                        }
-                    };
-            threadLocalMap.put(schema, schemaLocalMap);
-        } else {
-            ad = schemaLocalMap.get(attributeDescription);
+        final Map<String, Pair<Schema, AttributeDescription>> threadLocalCache = CACHE.get();
+        Pair<Schema, AttributeDescription> ad = threadLocalCache.get(attributeDescription);
+        // WARNING: When we'll support multiple schema, this schema equality check will be a problem
+        // for heavily used core attributes like "cn" which will be inherited in any sub-schema.
+        // See OPENDJ-3191
+        if (ad == null || ad.getFirst() != schema) {
+            // Cache miss: decode and cache.
+            ad = Pair.of(schema, valueOf0(attributeDescription, schema));
+            threadLocalCache.put(attributeDescription, ad);
         }
-
-        // Cache miss: decode and cache.
-        if (ad == null) {
-            ad = valueOf0(attributeDescription, schema);
-            schemaLocalMap.put(attributeDescription, ad);
-        }
-
-        return ad;
+        return ad.getSecond();
     }
 
     private static int skipTrailingWhiteSpace(final String attributeDescription, int i,
@@ -836,9 +834,7 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
         // Validate the first non-whitespace character.
         ASCIICharProp cp = ASCIICharProp.valueOf(c);
         if (cp == null) {
-            final LocalizableMessage message =
-                    ERR_ATTRIBUTE_DESCRIPTION_ILLEGAL_CHARACTER.get(attributeDescription, c, i);
-            throw new LocalizedIllegalArgumentException(message);
+            throw illegalCharacter(attributeDescription, i, c);
         }
 
         // Mark the attribute type start position.
@@ -853,11 +849,8 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
                 }
 
                 cp = ASCIICharProp.valueOf(c);
-                if (!cp.isKeyChar(allowMalformedNamesAndOptions)) {
-                    final LocalizableMessage message =
-                            ERR_ATTRIBUTE_DESCRIPTION_ILLEGAL_CHARACTER.get(attributeDescription,
-                                    c, i);
-                    throw new LocalizedIllegalArgumentException(message);
+                if (cp == null || !cp.isKeyChar(allowMalformedNamesAndOptions)) {
+                    throw illegalCharacter(attributeDescription, i, c);
                 }
                 i++;
             }
@@ -873,20 +866,15 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
                 }
 
                 cp = ASCIICharProp.valueOf(c);
-                if (c != '.' && !cp.isDigit()) {
-                    final LocalizableMessage message =
-                            ERR_ATTRIBUTE_DESCRIPTION_ILLEGAL_CHARACTER.get(attributeDescription,
-                                    c, i);
-                    throw new LocalizedIllegalArgumentException(message);
+                if (cp == null || (c != '.' && !cp.isDigit())) {
+                    throw illegalCharacter(attributeDescription, i, c);
                 }
                 i++;
             }
 
             // (charAt(i) == ';' || charAt(i) == ' ' || i == length)
         } else {
-            final LocalizableMessage message =
-                    ERR_ATTRIBUTE_DESCRIPTION_ILLEGAL_CHARACTER.get(attributeDescription, c, i);
-            throw new LocalizedIllegalArgumentException(message);
+            throw illegalCharacter(attributeDescription, i, c);
         }
 
         // Skip trailing white space.
@@ -934,10 +922,8 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
             }
 
             cp = ASCIICharProp.valueOf(c);
-            if (!cp.isKeyChar(allowMalformedNamesAndOptions)) {
-                final LocalizableMessage message =
-                        ERR_ATTRIBUTE_DESCRIPTION_ILLEGAL_CHARACTER.get(attributeDescription, c, i);
-                throw new LocalizedIllegalArgumentException(message);
+            if (cp == null || !cp.isKeyChar(allowMalformedNamesAndOptions)) {
+                throw illegalCharacter(attributeDescription, i, c);
             }
 
             if (builder == null) {
@@ -999,11 +985,8 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
                 }
 
                 cp = ASCIICharProp.valueOf(c);
-                if (!cp.isKeyChar(allowMalformedNamesAndOptions)) {
-                    final LocalizableMessage message =
-                            ERR_ATTRIBUTE_DESCRIPTION_ILLEGAL_CHARACTER.get(attributeDescription,
-                                    c, i);
-                    throw new LocalizedIllegalArgumentException(message);
+                if (cp == null || !cp.isKeyChar(allowMalformedNamesAndOptions)) {
+                    throw illegalCharacter(attributeDescription, i, c);
                 }
 
                 if (builder == null) {
@@ -1037,13 +1020,25 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
                 i = skipTrailingWhiteSpace(attributeDescription, i + 1, length);
             }
 
-            options.add(option);
-            normalizedOptions.add(normalizedOption);
+            if (normalizedOptions.add(normalizedOption)) {
+                options.add(option);
+            }
         }
 
-        return new AttributeDescription(attributeDescription, oid, attributeType,
-                new MultiOptionImpl(options.toArray(new String[options.size()]),
-                                    normalizedOptions.toArray(new String[normalizedOptions.size()])));
+        final Impl pimpl = normalizedOptions.size() > 1
+            ? new MultiOptionImpl(toArray(options), toArray(normalizedOptions))
+            : new SingleOptionImpl(options.get(0), normalizedOptions.first());
+        return new AttributeDescription(attributeDescription, oid, attributeType, pimpl);
+    }
+
+    private static String[] toArray(final Collection<String> col) {
+        return col.toArray(new String[col.size()]);
+    }
+
+    private static LocalizedIllegalArgumentException illegalCharacter(
+            final String attributeDescription, int i, char c) {
+        return new LocalizedIllegalArgumentException(
+                ERR_ATTRIBUTE_DESCRIPTION_ILLEGAL_CHARACTER.get(attributeDescription, c, i));
     }
 
     private final String attributeDescription;
@@ -1085,8 +1080,7 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
     }
 
     /**
-     * Indicates whether or not this attribute description contains the provided
-     * option.
+     * Indicates whether this attribute description contains the provided option.
      *
      * @param option
      *            The option for which to make the determination.
@@ -1136,6 +1130,9 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
     /**
      * Returns the attribute name or the oid provided by the user associated with this attribute
      * description.
+     * <p>
+     * In other words, it returns the user-provided name or oid of this attribute description,
+     * leaving out the option(s).
      *
      * @return The attribute name or the oid provided by the user associated with this attribute
      *         description.
@@ -1173,7 +1170,7 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
     }
 
     /**
-     * Indicates whether or not this attribute description has any options.
+     * Indicates whether this attribute description has any options.
      *
      * @return {@code true} if this attribute description has any options, or
      *         {@code false} if not.
@@ -1183,7 +1180,7 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
     }
 
     /**
-     * Indicates whether or not this attribute description is the
+     * Indicates whether this attribute description is the
      * {@code objectClass} attribute description with no options.
      *
      * @return {@code true} if this attribute description is the
@@ -1215,7 +1212,7 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
     }
 
     /**
-     * Indicates whether or not this attribute description is a sub-type of the
+     * Indicates whether this attribute description is a sub-type of the
      * provided attribute description as defined in RFC 4512 section 2.5.
      * Specifically, this method will return {@code true} if and only if the
      * following conditions are both {@code true}:
@@ -1242,7 +1239,7 @@ public final class AttributeDescription implements Comparable<AttributeDescripti
     }
 
     /**
-     * Indicates whether or not this attribute description is a super-type of
+     * Indicates whether this attribute description is a super-type of
      * the provided attribute description as defined in RFC 4512 section 2.5.
      * Specifically, this method will return {@code true} if and only if the
      * following conditions are both {@code true}:

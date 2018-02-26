@@ -20,37 +20,32 @@ import static org.opends.messages.ToolMessages.*;
 import static org.opends.server.config.ConfigConstants.*;
 import static org.opends.server.util.StaticUtils.*;
 import static com.forgerock.opendj.cli.ArgumentConstants.*;
-import static com.forgerock.opendj.cli.Utils.*;
 import static com.forgerock.opendj.cli.CommonArguments.*;
+import static com.forgerock.opendj.cli.Utils.*;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.server.config.server.BackendCfg;
+import org.forgerock.util.Utils;
 import org.opends.server.api.Backend;
 import org.opends.server.api.Backend.BackendOperation;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.LockFileManager;
-import org.opends.server.loggers.DebugLogger;
-import org.opends.server.loggers.ErrorLogPublisher;
-import org.opends.server.loggers.ErrorLogger;
 import org.opends.server.loggers.JDKLogging;
-import org.opends.server.loggers.TextErrorLogPublisher;
-import org.opends.server.loggers.TextWriter;
 import org.opends.server.protocols.ldap.LDAPAttribute;
 import org.opends.server.tasks.RestoreTask;
 import org.opends.server.tools.tasks.TaskTool;
 import org.opends.server.types.BackupDirectory;
 import org.opends.server.types.BackupInfo;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.NullOutputStream;
@@ -285,25 +280,13 @@ public class RestoreDB extends TaskTool {
       try
       {
         new DirectoryServer.InitializationBuilder(configFile.getValue())
+            .requireErrorAndDebugLogPublisher(out, err)
             .initialize();
       }
       catch (InitializationException ie)
       {
         printWrappedText(err, ERR_CANNOT_INITIALIZE_SERVER_COMPONENTS.get(ie.getLocalizedMessage()));
         return 1;
-      }
-
-      try
-      {
-        ErrorLogPublisher errorLogPublisher =
-            TextErrorLogPublisher.getToolStartupTextErrorPublisher(new TextWriter.STREAM(out));
-        ErrorLogger.getInstance().addLogPublisher(errorLogPublisher);
-        DebugLogger.getInstance().addPublisherIfRequired(new TextWriter.STREAM(out));
-      }
-      catch(Exception e)
-      {
-        err.println("Error installing the custom error logger: " +
-                    stackTraceToSingleLineString(e));
       }
     }
 
@@ -346,27 +329,18 @@ public class RestoreDB extends TaskTool {
         out.println(message);
 
         byte[] hash = backupInfo.getUnsignedHash();
-
         message = INFO_RESTOREDB_LIST_HASHED.get(hash != null);
         out.println(message);
 
         byte[] signature = backupInfo.getSignedHash();
-
         message = INFO_RESTOREDB_LIST_SIGNED.get(signature != null);
         out.println(message);
 
         StringBuilder dependencyList = new StringBuilder();
-        HashSet<String> dependencyIDs = backupInfo.getDependencies();
+        Set<String> dependencyIDs = backupInfo.getDependencies();
         if (! dependencyIDs.isEmpty())
         {
-          Iterator<String> iterator = dependencyIDs.iterator();
-          dependencyList.append(iterator.next());
-
-          while (iterator.hasNext())
-          {
-            dependencyList.append(", ");
-            dependencyList.append(iterator.next());
-          }
+          Utils.joinAsString(dependencyList, ", ", dependencyIDs);
         }
         else
         {
@@ -420,17 +394,17 @@ public class RestoreDB extends TaskTool {
 
     // Get information about the backends defined in the server and determine
     // which to use for the restore.
-    ArrayList<Backend>     backendList = new ArrayList<>();
-    ArrayList<BackendCfg> entryList   = new ArrayList<>();
-    ArrayList<List<DN>>    dnList      = new ArrayList<>();
+    List<Backend<?>> backendList = new ArrayList<>();
+    List<BackendCfg> entryList = new ArrayList<>();
+    List<List<DN>> dnList = new ArrayList<>();
     BackendToolUtils.getBackends(backendList, entryList, dnList);
 
 
-    Backend     backend     = null;
-    int         numBackends = backendList.size();
+    Backend<?> backend = null;
+    int numBackends = backendList.size();
     for (int i=0; i < numBackends; i++)
     {
-      Backend     b = backendList.get(i);
+      Backend<?> b = backendList.get(i);
       BackendCfg e = entryList.get(i);
       if (e.dn().equals(configEntryDN))
       {

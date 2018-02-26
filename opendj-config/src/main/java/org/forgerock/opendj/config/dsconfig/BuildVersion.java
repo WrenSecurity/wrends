@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.forgerock.opendj.config.dsconfig;
 
@@ -33,10 +33,11 @@ import org.forgerock.opendj.ldap.responses.SearchResultEntry;
 import org.forgerock.util.Utils;
 
 /**
- * Represents a particular version of OpenDJ useful for making comparisons between versions. FIXME TODO Move this file
- * in ? package.
+ * Represents a particular version of OpenDJ useful for making comparisons between versions.
+ * <p>
+ * FIXME TODO Move this file in ? package.
  */
-public class BuildVersion implements Comparable<BuildVersion> {
+class BuildVersion implements Comparable<BuildVersion> {
 
     private final int major;
     private final int minor;
@@ -91,7 +92,7 @@ public class BuildVersion implements Comparable<BuildVersion> {
     public static void checkVersionMismatch(final Connection connection) throws ConfigException {
         final BuildVersion binaryVersion = BuildVersion.binaryVersion(connection);
         final BuildVersion instanceVersion = BuildVersion.instanceVersion();
-        if (!binaryVersion.toString().equals(instanceVersion.toString())) {
+        if (!binaryVersion.equals(instanceVersion)) {
             throw new ConfigException(ERR_BUILDVERSION_MISMATCH.get(binaryVersion, instanceVersion));
         }
     }
@@ -176,19 +177,19 @@ public class BuildVersion implements Comparable<BuildVersion> {
         return point;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public boolean equals(final Object obj) {
         if (this == obj) {
             return true;
         } else if (obj instanceof BuildVersion) {
             final BuildVersion other = (BuildVersion) obj;
-            return major == other.major && minor == other.minor && point == other.point && rev.equals(other.rev);
+            return major == other.major && minor == other.minor && point == other.point;
         } else {
             return false;
         }
     }
 
-    /** {@inheritDoc} */
+    @Override
     public int compareTo(final BuildVersion version) {
         if (major == version.major) {
             if (minor == version.minor) {
@@ -219,7 +220,7 @@ public class BuildVersion implements Comparable<BuildVersion> {
         return rev;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public int hashCode() {
         return Arrays.hashCode(new int[] { major, minor, point, rev.hashCode() });
     }
@@ -233,6 +234,7 @@ public class BuildVersion implements Comparable<BuildVersion> {
      *
      * @return The string representation of the version.
      */
+    @Override
     public String toString() {
         return Utils.joinAsString(".", major, minor, point, rev);
     }

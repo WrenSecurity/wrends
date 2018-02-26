@@ -35,6 +35,7 @@ import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SortKey;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.UnknownSchemaElementException;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.protocols.ldap.LDAPResultCode;
 import org.opends.server.types.Control;
@@ -58,26 +59,19 @@ import org.opends.server.types.LDAPException;
 public class ServerSideSortRequestControl
     extends Control
 {
-  /**
-   * The BER type to use when encoding the orderingRule element.
-   */
+  /** The BER type to use when encoding the orderingRule element. */
   private static final byte TYPE_ORDERING_RULE_ID = (byte) 0x80;
 
 
 
-  /**
-   * The BER type to use when encoding the reverseOrder element.
-   */
+  /** The BER type to use when encoding the reverseOrder element. */
   private static final byte TYPE_REVERSE_ORDER = (byte) 0x81;
 
 
-  /**
-   * ControlDecoder implementation to decode this control from a ByteString.
-   */
+  /** ControlDecoder implementation to decode this control from a ByteString. */
   private static final class Decoder
       implements ControlDecoder<ServerSideSortRequestControl>
   {
-    /** {@inheritDoc} */
     @Override
     public ServerSideSortRequestControl decode(boolean isCritical,
                                                ByteString value)
@@ -104,7 +98,7 @@ public class ServerSideSortRequestControl
         {
           reader.readStartSequence();
           String attrName = reader.readOctetStringAsString();
-          AttributeType attrType = DirectoryServer.getAttributeType(attrName);
+          AttributeType attrType = DirectoryServer.getSchema().getAttributeType(attrName);
           if (attrType.isPlaceHolder())
           {
             //This attribute is not defined in the schema. There is no point
@@ -117,17 +111,15 @@ public class ServerSideSortRequestControl
           if(reader.hasNextElement() &&
               reader.peekType() == TYPE_ORDERING_RULE_ID)
           {
-            String orderingRuleID =
-                toLowerCase(reader.readOctetStringAsString());
-            orderingRule =
-                DirectoryServer.getMatchingRule(orderingRuleID);
-            if (orderingRule == null)
+            String orderingRuleID = reader.readOctetStringAsString();
+            try
             {
-              LocalizableMessage message =
-                  INFO_SORTREQ_CONTROL_UNDEFINED_ORDERING_RULE.
-                      get(orderingRuleID);
-              throw new DirectoryException(ResultCode.PROTOCOL_ERROR,
-                  message);
+              orderingRule = DirectoryServer.getSchema().getMatchingRule(orderingRuleID);
+            }
+            catch (UnknownSchemaElementException e)
+            {
+              LocalizableMessage message = INFO_SORTREQ_CONTROL_UNDEFINED_ORDERING_RULE.get(orderingRuleID);
+              throw new DirectoryException(ResultCode.PROTOCOL_ERROR, message);
             }
           }
           if(reader.hasNextElement() &&
@@ -171,9 +163,7 @@ public class ServerSideSortRequestControl
 
   }
 
-  /**
-   * The Control Decoder that can be used to decode this control.
-   */
+  /** The Control Decoder that can be used to decode this control. */
   public static final ControlDecoder<ServerSideSortRequestControl> DECODER =
       new Decoder();
 
@@ -431,7 +421,7 @@ public class ServerSideSortRequestControl
     List<SortKey> sortKeys = new ArrayList<>();
     for(String[] decodedKey : decodedKeyList)
     {
-      AttributeType attrType = DirectoryServer.getAttributeType(decodedKey[0]);
+      AttributeType attrType = DirectoryServer.getSchema().getAttributeType(decodedKey[0]);
       if (attrType.isPlaceHolder())
       {
         //This attribute is not defined in the schema. There is no point
@@ -442,8 +432,11 @@ public class ServerSideSortRequestControl
       MatchingRule orderingRule = null;
       if(decodedKey[1] != null)
       {
-        orderingRule = DirectoryServer.getMatchingRule(decodedKey[1].toLowerCase());
-        if (orderingRule == null)
+        try
+        {
+          orderingRule = DirectoryServer.getSchema().getMatchingRule(decodedKey[1]);
+        }
+        catch (UnknownSchemaElementException e)
         {
           LocalizableMessage message = INFO_SORTREQ_CONTROL_UNDEFINED_ORDERING_RULE.get(decodedKey[1]);
           throw new DirectoryException(ResultCode.PROTOCOL_ERROR, message);

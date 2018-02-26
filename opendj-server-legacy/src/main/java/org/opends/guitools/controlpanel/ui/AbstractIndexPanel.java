@@ -38,10 +38,10 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.opendj.config.LDAPProfile;
 import org.forgerock.opendj.config.PropertyException;
 import org.forgerock.opendj.config.client.ManagementContext;
 import org.forgerock.opendj.config.client.ldap.LDAPManagementContext;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.server.config.client.BackendIndexCfgClient;
 import org.forgerock.opendj.server.config.client.PluggableBackendCfgClient;
 import org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn;
@@ -52,7 +52,6 @@ import org.opends.guitools.controlpanel.ui.renderer.CustomListCellRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.quicksetup.Installation;
 import org.opends.server.config.ConfigException;
-import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.types.OpenDsException;
 
 /**
@@ -90,18 +89,13 @@ abstract class AbstractIndexPanel extends StatusGenericPanel
 
   /** Name of the index label. */
   final JLabel name = Utilities.createDefaultLabel();
-
   /** Backends label. */
-  final JLabel lBackend = Utilities.createPrimaryLabel(INFO_CTRL_PANEL_BACKEND_LABEL.get());
+  private final JLabel lBackend = Utilities.createPrimaryLabel(INFO_CTRL_PANEL_BACKEND_LABEL.get());
   /** Read-only backend name label. */
   final JLabel backendName = Utilities.createDefaultLabel();
-
   final JLabel lAttribute = Utilities.createPrimaryLabel(INFO_CTRL_PANEL_ATTRIBUTE_LABEL.get());
-
   final JLabel lEntryLimit = Utilities.createPrimaryLabel(INFO_CTRL_PANEL_ENTRY_LIMIT_LABEL.get());
-
   final JTextField entryLimit = Utilities.createShortTextField();
-
   final JLabel lType = Utilities.createPrimaryLabel(INFO_CTRL_PANEL_INDEX_TYPE_LABEL.get());
   /** Panel containing all the index types. */
   final JPanel typesPanel = new JPanel(new GridBagLayout());
@@ -119,7 +113,7 @@ abstract class AbstractIndexPanel extends StatusGenericPanel
   /** Array of checkboxes. */
   final JCheckBox[] types =       { approximate, equality, ordering, presence, substring };
   /** Array of index types that matches the array of checkboxes (types). */
-  final IndexType[] configTypes = { APPROXIMATE, EQUALITY, ORDERING, PRESENCE, SUBSTRING };
+  private final IndexType[] configTypes = { APPROXIMATE, EQUALITY, ORDERING, PRESENCE, SUBSTRING };
 
   final JButton deleteIndex = Utilities.createButton(INFO_CTRL_PANEL_DELETE_INDEX_LABEL.get());
   final JButton saveChanges = Utilities.createButton(INFO_CTRL_PANEL_SAVE_CHANGES_LABEL.get());
@@ -374,8 +368,7 @@ abstract class AbstractIndexPanel extends StatusGenericPanel
   {
     getInfo().initializeConfigurationFramework();
     final File configFile = Installation.getLocal().getCurrentConfigurationFile();
-    final LDAPProfile ldapProfile = LDAPProfile.getInstance();
-    try (ManagementContext context = LDAPManagementContext.newLDIFManagementContext(configFile, ldapProfile))
+    try (ManagementContext context = LDAPManagementContext.newLDIFManagementContext(configFile))
     {
       final PluggableBackendCfgClient backend =
           (PluggableBackendCfgClient) context.getRootConfiguration().getBackend(backendName);

@@ -22,19 +22,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.forgerock.opendj.ldap.ResultCode;
-import org.forgerock.util.Utils;
 import org.forgerock.opendj.config.ClassPropertyDefinition;
+import org.forgerock.opendj.config.server.ConfigChangeResult;
+import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.config.server.ConfigurationAddListener;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.config.server.ConfigurationDeleteListener;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.server.config.meta.AlertHandlerCfgDefn;
 import org.forgerock.opendj.server.config.server.AlertHandlerCfg;
 import org.forgerock.opendj.server.config.server.RootCfg;
+import org.forgerock.util.Utils;
 import org.opends.server.api.AlertHandler;
-import org.forgerock.opendj.config.server.ConfigException;
-import org.forgerock.opendj.config.server.ConfigChangeResult;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.InitializationException;
 
 import static org.opends.messages.ConfigMessages.*;
@@ -50,13 +50,11 @@ public class AlertHandlerConfigManager
        implements ConfigurationChangeListener<AlertHandlerCfg>,
                   ConfigurationAddListener<AlertHandlerCfg>,
                   ConfigurationDeleteListener<AlertHandlerCfg>
-
 {
-
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
   /** A mapping between the DNs of the config entries and the associated alert handlers. */
-  private final ConcurrentHashMap<DN,AlertHandler> alertHandlers;
+  private final ConcurrentHashMap<DN, AlertHandler<?>> alertHandlers;
 
   private final ServerContext serverContext;
 
@@ -90,7 +88,6 @@ public class AlertHandlerConfigManager
     rootConfiguration.addAlertHandlerAddListener(this);
     rootConfiguration.addAlertHandlerDeleteListener(this);
 
-
     //Initialize the existing alert handlers.
     for (String name : rootConfiguration.listAlertHandlers())
     {
@@ -102,7 +99,7 @@ public class AlertHandlerConfigManager
         String className = configuration.getJavaClass();
         try
         {
-          AlertHandler handler = loadHandler(className, configuration, true);
+          AlertHandler<?> handler = loadHandler(className, configuration, true);
           alertHandlers.put(configuration.dn(), handler);
           DirectoryServer.registerAlertHandler(handler);
         }
@@ -115,9 +112,6 @@ public class AlertHandlerConfigManager
     }
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAddAcceptable(AlertHandlerCfg configuration,
                                               List<LocalizableMessage> unacceptableReasons)
@@ -142,9 +136,6 @@ public class AlertHandlerConfigManager
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationAdd(AlertHandlerCfg configuration)
   {
@@ -157,10 +148,9 @@ public class AlertHandlerConfigManager
       return ccr;
     }
 
-    AlertHandler alertHandler = null;
+    AlertHandler<?> alertHandler = null;
 
-    // Get the name of the class and make sure we can instantiate it as an alert
-    // handler.
+    // Get the name of the class and make sure we can instantiate it as an alert handler
     String className = configuration.getJavaClass();
     try
     {
@@ -181,9 +171,6 @@ public class AlertHandlerConfigManager
     return ccr;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationDeleteAcceptable(
                       AlertHandlerCfg configuration,
@@ -194,16 +181,13 @@ public class AlertHandlerConfigManager
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationDelete(
                                  AlertHandlerCfg configuration)
   {
     final ConfigChangeResult ccr = new ConfigChangeResult();
 
-    AlertHandler alertHandler = alertHandlers.remove(configuration.dn());
+    AlertHandler<?> alertHandler = alertHandlers.remove(configuration.dn());
     if (alertHandler != null)
     {
       DirectoryServer.deregisterAlertHandler(alertHandler);
@@ -213,9 +197,6 @@ public class AlertHandlerConfigManager
     return ccr;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(AlertHandlerCfg configuration,
                       List<LocalizableMessage> unacceptableReasons)
@@ -240,19 +221,14 @@ public class AlertHandlerConfigManager
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
                                  AlertHandlerCfg configuration)
   {
     final ConfigChangeResult ccr = new ConfigChangeResult();
 
-
     // Get the existing alert handler if it's already enabled.
-    AlertHandler existingHandler = alertHandlers.get(configuration.dn());
-
+    AlertHandler<?> existingHandler = alertHandlers.get(configuration.dn());
 
     // If the new configuration has the handler disabled, then disable it if it
     // is enabled, or do nothing if it's already disabled.
@@ -262,7 +238,7 @@ public class AlertHandlerConfigManager
       {
         DirectoryServer.deregisterAlertHandler(existingHandler);
 
-        AlertHandler alertHandler = alertHandlers.remove(configuration.dn());
+        AlertHandler<?> alertHandler = alertHandlers.remove(configuration.dn());
         if (alertHandler != null)
         {
           alertHandler.finalizeAlertHandler();
@@ -271,7 +247,6 @@ public class AlertHandlerConfigManager
 
       return ccr;
     }
-
 
     // Get the class for the alert handler.  If the handler is already enabled,
     // then we shouldn't do anything with it although if the class has changed
@@ -289,7 +264,7 @@ public class AlertHandlerConfigManager
       return ccr;
     }
 
-    AlertHandler alertHandler = null;
+    AlertHandler<?> alertHandler = null;
     try
     {
       alertHandler = loadHandler(className, configuration, true);
@@ -309,8 +284,6 @@ public class AlertHandlerConfigManager
     return ccr;
   }
 
-
-
   /**
    * Loads the specified class, instantiates it as an alert handler, and
    * optionally initializes that instance.
@@ -327,7 +300,7 @@ public class AlertHandlerConfigManager
    * @throws  InitializationException  If a problem occurred while attempting to
    *                                   initialize the alert handler.
    */
-  private AlertHandler loadHandler(String className,
+  private AlertHandler<?> loadHandler(String className,
                                    AlertHandlerCfg configuration,
                                    boolean initialize)
           throws InitializationException
@@ -366,4 +339,3 @@ public class AlertHandlerConfigManager
     }
   }
 }
-

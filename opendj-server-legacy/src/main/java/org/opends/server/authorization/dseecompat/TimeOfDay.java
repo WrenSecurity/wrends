@@ -12,30 +12,26 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008 Sun Microsystems, Inc.
- * Portions Copyright 2013-2015 ForgeRock AS.
+ * Portions Copyright 2013-2016 ForgeRock AS.
  */
 package org.opends.server.authorization.dseecompat;
-import org.forgerock.i18n.LocalizableMessage;
 
 import static org.opends.messages.AccessControlMessages.*;
-import org.opends.server.util.TimeThread;
+
 import java.util.regex.Pattern;
 
-/**
- * This class represents the timeofday keyword in a bind rule.
- */
-public class TimeOfDay implements KeywordBindRule {
+import org.forgerock.i18n.LocalizableMessage;
+import org.opends.server.util.TimeThread;
 
-    /**
-     * Regular expression matching a valid timeofday rule value (0-2359).
-     */
-    private static final String timeofdayRegex = "[0-2]\\d[0-5]\\d";
+/** This class represents the timeofday keyword in a bind rule. */
+public class TimeOfDay implements KeywordBindRule {
+    /** Regular expression matching a valid timeofday rule value (0-2359). */
+    private static final Pattern timeofdayRegex = Pattern.compile("[0-2]\\d[0-5]\\d");
 
     /** Enumeration representing the bind rule operation type. */
-    private EnumBindRuleType type;
-
+    private final EnumBindRuleType type;
     /** Holds the time value parsed from the ACI. */
-    private int timeRef;
+    private final int timeRef;
 
     /**
      * Constructor to create a timeofday keyword class.
@@ -57,7 +53,7 @@ public class TimeOfDay implements KeywordBindRule {
     public static TimeOfDay decode(String expr,  EnumBindRuleType type)
     throws AciException  {
         int valueAsInt = 0;
-        if (!Pattern.matches(timeofdayRegex, expr))
+        if (!timeofdayRegex.matcher(expr).matches())
         {
             LocalizableMessage message = WARN_ACI_SYNTAX_INVALID_TIMEOFDAY.get(expr);
             throw new AciException(message);
@@ -82,54 +78,33 @@ public class TimeOfDay implements KeywordBindRule {
      * Evaluates the timeofday bind rule using the evaluation context
      * passed into the method.
      * @param evalCtx  The evaluation context to use for the evaluation.
-     * @return  An enumeration result representing the result of the
-     * evaluation.
+     * @return  An enumeration result representing the result of the evaluation.
      */
+    @Override
     public EnumEvalResult evaluate(AciEvalContext evalCtx) {
-        EnumEvalResult matched=EnumEvalResult.FALSE;
-
-        int currentTime=TimeThread.getHourAndMinute();
-        //check the type
-        switch (type) {
-        case EQUAL_BINDRULE_TYPE:
-        case NOT_EQUAL_BINDRULE_TYPE:
-            if (currentTime != timeRef)
-            {
-                matched=EnumEvalResult.TRUE;
-            }
-            break;
-
-        case LESS_OR_EQUAL_BINDRULE_TYPE:
-            if (currentTime <= timeRef)
-            {
-                matched=EnumEvalResult.TRUE;
-            }
-            break;
-
-        case LESS_BINDRULE_TYPE:
-            if (currentTime < timeRef)
-            {
-                matched=EnumEvalResult.TRUE;
-            }
-            break;
-
-        case GREATER_OR_EQUAL_BINDRULE_TYPE:
-            if (currentTime >= timeRef)
-            {
-                matched=EnumEvalResult.TRUE;
-            }
-            break;
-
-        case GREATER_BINDRULE_TYPE:
-            if (currentTime > timeRef)
-            {
-                matched=EnumEvalResult.TRUE;
-            }
-        }
+        EnumEvalResult matched = evaluate() ? EnumEvalResult.TRUE : EnumEvalResult.FALSE;
         return matched.getRet(type, false);
     }
 
-    /** {@inheritDoc} */
+    private boolean evaluate() {
+        int currentTime=TimeThread.getHourAndMinute();
+        switch (type) {
+        case EQUAL_BINDRULE_TYPE:
+        case NOT_EQUAL_BINDRULE_TYPE:
+            return currentTime != timeRef;
+        case LESS_OR_EQUAL_BINDRULE_TYPE:
+            return currentTime <= timeRef;
+        case LESS_BINDRULE_TYPE:
+            return currentTime < timeRef;
+        case GREATER_OR_EQUAL_BINDRULE_TYPE:
+            return currentTime >= timeRef;
+        case GREATER_BINDRULE_TYPE:
+            return currentTime > timeRef;
+        default:
+            return false;
+        }
+    }
+
     @Override
     public String toString()
     {
@@ -138,11 +113,9 @@ public class TimeOfDay implements KeywordBindRule {
         return sb.toString();
     }
 
-    /** {@inheritDoc} */
     @Override
     public final void toString(StringBuilder buffer)
     {
         buffer.append(super.toString());
     }
-
 }

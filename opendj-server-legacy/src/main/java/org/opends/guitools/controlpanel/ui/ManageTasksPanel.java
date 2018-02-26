@@ -20,7 +20,6 @@ import static org.forgerock.util.Utils.*;
 import static org.opends.messages.AdminToolMessages.*;
 import static org.opends.server.util.CollectionUtils.*;
 import static org.opends.server.util.LDIFReader.*;
-import static org.opends.server.util.StaticUtils.*;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -73,7 +72,7 @@ import org.opends.server.tools.tasks.TaskEntry;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Entry;
-import org.opends.server.types.ObjectClass;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.opends.server.types.OpenDsException;
 
 /** The panel displaying the list of scheduled tasks. */
@@ -633,7 +632,7 @@ public class ManageTasksPanel extends StatusGenericPanel
    * the attributes definition and objectclasses in the schema of the server.
    * TODO: move somewhere better.
    */
-  public static Entry getEntry(CustomSearchResult csr) throws OpenDsException
+  private static Entry getEntry(CustomSearchResult csr) throws OpenDsException
   {
     DN dn = DN.valueOf(csr.getDN());
     Map<ObjectClass,String> objectClasses = new HashMap<>();
@@ -652,16 +651,7 @@ public class ManageTasksPanel extends StatusGenericPanel
         for (Object value : csr.getAttributeValues(attrType.getNameOrOID()))
         {
           String ocName = value.toString().trim();
-          String lowerOCName = toLowerCase(ocName);
-
-          ObjectClass objectClass =
-            DirectoryServer.getObjectClass(lowerOCName);
-          if (objectClass == null)
-          {
-            objectClass = DirectoryServer.getDefaultObjectClass(ocName);
-          }
-
-          objectClasses.put(objectClass, ocName);
+          objectClasses.put(DirectoryServer.getSchema().getObjectClass(ocName), ocName);
         }
       }
       else
@@ -859,7 +849,7 @@ public class ManageTasksPanel extends StatusGenericPanel
   }
 
   /** The specific menu bar of this panel. */
-  class ManageTasksMenuBar extends MainMenuBar
+  private class ManageTasksMenuBar extends MainMenuBar
   {
     private static final long serialVersionUID = 5051878116443370L;
 
@@ -867,7 +857,7 @@ public class ManageTasksPanel extends StatusGenericPanel
      * Constructor.
      * @param info the control panel info.
      */
-    public ManageTasksMenuBar(ControlPanelInfo info)
+    private ManageTasksMenuBar(ControlPanelInfo info)
     {
       super(info);
     }

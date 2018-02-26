@@ -19,10 +19,13 @@ package org.opends.server.core;
 import java.util.List;
 import java.util.Map;
 
-import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.opends.server.types.*;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.opends.server.types.Attribute;
+import org.opends.server.types.Operation;
+import org.opends.server.types.RawAttribute;
 
 /**
  * This interface defines an operation that may be used to add a new entry to
@@ -177,6 +180,7 @@ public interface AddOperation extends Operation
    *          authorization has been requested, or {@code null} if proxied
    *          authorization has not been requested.
    */
+  @Override
   DN getProxiedAuthorizationDN();
 
   /**
@@ -188,6 +192,7 @@ public interface AddOperation extends Operation
    *          authorization has been requested, or {@code null} if proxied
    *          authorization has not been requested.
    */
+  @Override
   void setProxiedAuthorizationDN(DN proxiedAuthorizationDN);
 
 }

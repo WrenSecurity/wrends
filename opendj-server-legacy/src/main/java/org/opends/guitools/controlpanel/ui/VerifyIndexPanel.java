@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.controlpanel.ui;
@@ -63,9 +63,7 @@ import org.opends.guitools.controlpanel.ui.renderer.IndexComboBoxCellRenderer;
 import org.opends.guitools.controlpanel.util.Utilities;
 import org.opends.guitools.controlpanel.util.ViewPositions;
 
-/**
- * The panel that appears when the user wants to verify an index.
- */
+/** The panel that appears when the user wants to verify an index. */
 public class VerifyIndexPanel extends StatusGenericPanel implements IndexModifiedListener
 {
   private static final long serialVersionUID = 5252070109221657041L;
@@ -441,7 +439,7 @@ public class VerifyIndexPanel extends StatusGenericPanel implements IndexModifie
   }
 
   /** The task in charge of verifying the index. */
-  protected class VerifyIndexTask extends IndexTask
+  private class VerifyIndexTask extends IndexTask
   {
     private String baseDN;
 
@@ -453,7 +451,7 @@ public class VerifyIndexPanel extends StatusGenericPanel implements IndexModifie
      * @param dlg
      *          the progress dialog that shows the progress of the task.
      */
-    public VerifyIndexTask(ControlPanelInfo info, ProgressDialog dlg)
+    private VerifyIndexTask(ControlPanelInfo info, ProgressDialog dlg)
     {
       super(info, dlg, getSelectedBaseDN());
       this.baseDN = getSelectedBaseDN();

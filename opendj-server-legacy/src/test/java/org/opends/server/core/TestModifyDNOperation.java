@@ -17,13 +17,24 @@
  */
 package org.opends.server.core;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.forgerock.opendj.ldap.ResultCode.*;
+import static org.forgerock.opendj.ldap.requests.Requests.*;
+import static org.opends.server.TestCaseUtils.*;
+import static org.opends.server.protocols.internal.InternalClientConnection.*;
+import static org.opends.server.util.ServerConstants.*;
+import static org.testng.Assert.*;
+
 import java.util.Collections;
 import java.util.List;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.AVA;
 import org.forgerock.opendj.ldap.ByteString;
+import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.RDN;
 import org.forgerock.opendj.ldap.ResultCode;
+import org.forgerock.opendj.ldap.requests.ModifyDNRequest;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.controls.ProxiedAuthV1Control;
@@ -42,21 +53,12 @@ import org.opends.server.types.Attribute;
 import org.opends.server.types.CancelRequest;
 import org.opends.server.types.CancelResult;
 import org.opends.server.types.Control;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.opends.server.types.LockManager.DNLock;
 import org.opends.server.types.Operation;
-import org.forgerock.opendj.ldap.RDN;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.ResultCode.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
 
 @SuppressWarnings("javadoc")
 public class TestModifyDNOperation extends OperationTestCase
@@ -228,43 +230,44 @@ public class TestModifyDNOperation extends OperationTestCase
   protected Operation[] createTestOperations() throws Exception
   {
     return new ModifyDNOperation[] {
-      newModifyDNOperationRaw("cn=test,ou=test", "cn=test2", true, "dc=example,dc=com"),
-      newModifyDNOperation("cn=test,ou=test", "cn=test2", true, "dc=example,dc=com")
+      newModifyDNOpRaw("cn=test,ou=test", "cn=test2", true, "dc=example,dc=com"),
+      newModifyDNOp("cn=test,ou=test", "cn=test2", true, "dc=example,dc=com")
     };
   }
 
-  private ModifyDNOperation runModifyDNOperation(
+  private ModifyDNOperation runModifyDNOp(
       String entryDN, String newRDN, boolean deleteOldRDN, String newSuperior) throws DirectoryException
   {
-    ModifyDNOperation op = newModifyDNOperation(entryDN, newRDN, deleteOldRDN, newSuperior);
+    ModifyDNOperation op = newModifyDNOp(entryDN, newRDN, deleteOldRDN, newSuperior);
     op.run();
     return op;
   }
 
-  private ModifyDNOperation runModifyDNOperationRaw(
+  private ModifyDNOperation runModifyDNOpRaw(
       String entryDN, String newRDN, boolean deleteOldRDN, String newSuperior)
   {
-    ModifyDNOperation op = newModifyDNOperationRaw(entryDN, newRDN, deleteOldRDN, newSuperior);
+    ModifyDNOperation op = newModifyDNOpRaw(entryDN, newRDN, deleteOldRDN, newSuperior);
     op.run();
     return op;
   }
 
-  private ModifyDNOperationBasis newModifyDNOperation(
+  private ModifyDNOperationBasis newModifyDNOp(
       String entryDN, String newRDN, boolean deleteOldRDN, String newSuperior) throws DirectoryException
   {
     return new ModifyDNOperationBasis(getRootConnection(), nextOperationID(), nextMessageID(),
         Collections.<Control> emptyList(), dn(entryDN), rdn(newRDN), deleteOldRDN, dn(newSuperior));
   }
 
-  private ModifyDNOperationBasis newModifyDNOperationRaw(
+  private ModifyDNOperationBasis newModifyDNOpRaw(
       String entryDN, String newRDN, boolean deleteOldRDN, String newSuperior)
   {
     return new ModifyDNOperationBasis(getRootConnection(), nextOperationID(), nextMessageID(),
         Collections.<Control> emptyList(), b(entryDN), b(newRDN), deleteOldRDN, b(newSuperior));
   }
 
-  private ModifyDNOperation runModifyDNOperation(
-      InternalClientConnection conn, String entryDN, String newRDN, boolean deleteOldRDN, Control control) throws DirectoryException
+  private ModifyDNOperation runModifyDNOp(
+      InternalClientConnection conn, String entryDN, String newRDN, boolean deleteOldRDN, Control control)
+          throws DirectoryException
   {
     ModifyDNOperation op = new ModifyDNOperationBasis(conn, nextOperationID(), nextMessageID(),
         Collections.singletonList(control), dn(entryDN), rdn(newRDN), deleteOldRDN, null);
@@ -272,7 +275,7 @@ public class TestModifyDNOperation extends OperationTestCase
     return op;
   }
 
-  private ModifyDNOperation runModifyDNOperationRaw(
+  private ModifyDNOperation runModifyDNOpRaw(
       String entryDN, String newRDN, boolean deleteOldRDN, String newSuperior, Control control)
   {
     ModifyDNOperation op = new ModifyDNOperationBasis(proxyUserConn, nextOperationID(), nextMessageID(),
@@ -319,12 +322,12 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=user.test0,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperationRaw(oldEntryDN, "uid=user.test0", false, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOpRaw(oldEntryDN, "uid=user.test0", false, null);
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, true, true);
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperationRaw(newEntryDN, "uid=user.0", true, null);
+    modifyDNOperation = runModifyDNOpRaw(newEntryDN, "uid=user.0", true, null);
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOperation(modifyDNOperation);
   }
@@ -336,12 +339,12 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=user.test0,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(oldEntryDN, "uid=user.test0", false, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(oldEntryDN, "uid=user.test0", false, null);
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, true, true);
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperation(newEntryDN, "uid=user.0", true, null);
+    modifyDNOperation = runModifyDNOp(newEntryDN, "uid=user.0", true, null);
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOperation(modifyDNOperation);
   }
@@ -357,7 +360,7 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=USER.0,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(oldEntryDN, "uid=USER.0", true, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(oldEntryDN, "uid=USER.0", true, null);
     assertSuccess(modifyDNOperation);
 
     Entry newEntry = DirectoryServer.getEntry(dn(oldEntryDN));
@@ -368,7 +371,7 @@ public class TestModifyDNOperation extends OperationTestCase
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperation(newEntryDN, "uid=user.0", true, null);
+    modifyDNOperation = runModifyDNOp(newEntryDN, "uid=user.0", true, null);
     assertSuccess(modifyDNOperation);
     assertNotNull(DirectoryServer.getEntry(dn(oldEntryDN)));
     examineCompletedOperation(modifyDNOperation);
@@ -393,7 +396,7 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=UserID.0+cn=Test,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(oldEntryDN, "uid=UserID.0+cn=Test", false, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(oldEntryDN, "uid=UserID.0+cn=Test", false, null);
     assertSuccess(modifyDNOperation);
     assertEntryAttrValue(newEntryDN, "uid", "UserID.0");
     examineCompletedOperation(modifyDNOperation);
@@ -413,7 +416,7 @@ public class TestModifyDNOperation extends OperationTestCase
 
   private void assertAttrValue(Entry newEntry, String attrName, String expectedAttrValue)
   {
-    AttributeType at = DirectoryServer.getAttributeType(attrName);
+    AttributeType at = DirectoryServer.getSchema().getAttributeType(attrName);
     List<Attribute> attrList = newEntry.getAttribute(at);
     assertThat(attrList).hasSize(1);
 
@@ -445,7 +448,7 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=userid.0+sn=JENSEN,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(oldEntryDN, "uid=userid.0+sn=JENSEN", false, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(oldEntryDN, "uid=userid.0+sn=JENSEN", false, null);
     assertSuccess(modifyDNOperation);
     assertEntryAttrValue(newEntryDN, "sn", "JENSEN");
     examineCompletedOperation(modifyDNOperation);
@@ -466,12 +469,12 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=user.test0,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperationRaw(oldEntryDN, "uid=user.test0", true, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOpRaw(oldEntryDN, "uid=user.test0", true, null);
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, false, true);
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperationRaw(newEntryDN, "uid=user.0", true, null);
+    modifyDNOperation = runModifyDNOpRaw(newEntryDN, "uid=user.0", true, null);
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOperation(modifyDNOperation);
   }
@@ -483,7 +486,7 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=user.test0,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(oldEntryDN, "uid=user.test0", true, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(oldEntryDN, "uid=user.test0", true, null);
 
     CancelRequest cancelRequest = new CancelRequest(false, LocalizableMessage.raw("testCancelBeforeStartup"));
     CancelResult cancelResult = modifyDNOperation.cancel(cancelRequest);
@@ -493,7 +496,7 @@ public class TestModifyDNOperation extends OperationTestCase
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperation(newEntryDN, "uid=user.0", true, null);
+    modifyDNOperation = runModifyDNOp(newEntryDN, "uid=user.0", true, null);
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOperation(modifyDNOperation);
   }
@@ -506,12 +509,12 @@ public class TestModifyDNOperation extends OperationTestCase
 
     InvocationCounterPlugin.resetAllCounters();
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperationRaw(oldEntryDN, "uid=user.test0", true, "dc=example,dc=com");
+        runModifyDNOpRaw(oldEntryDN, "uid=user.test0", true, "dc=example,dc=com");
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, false, true);
     examineCompletedOPNoExtraPluginCounts(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperationRaw(newEntryDN, "uid=user.0", true, "ou=People,dc=example,dc=com");
+    modifyDNOperation = runModifyDNOpRaw(newEntryDN, "uid=user.0", true, "ou=People,dc=example,dc=com");
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOPNoExtraPluginCounts(modifyDNOperation);
   }
@@ -523,12 +526,12 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=user.test0,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(oldEntryDN, "uid=user.test0", true, "dc=example,dc=com");
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(oldEntryDN, "uid=user.test0", true, "dc=example,dc=com");
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, false, true);
     examineCompletedOPNoExtraPluginCounts(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperation(newEntryDN, "uid=user.0", true, "ou=People,dc=example,dc=com");
+    modifyDNOperation = runModifyDNOp(newEntryDN, "uid=user.0", true, "ou=People,dc=example,dc=com");
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOPNoExtraPluginCounts(modifyDNOperation);
   }
@@ -541,14 +544,14 @@ public class TestModifyDNOperation extends OperationTestCase
 
     InvocationCounterPlugin.resetAllCounters();
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperation(oldEntryDN, "cn=Aaccf Amar Test", true, "dc=example,dc=com");
+        runModifyDNOp(oldEntryDN, "cn=Aaccf Amar Test", true, "dc=example,dc=com");
     assertSuccess(modifyDNOperation);
     Entry entry = assertCnAttrValues(newEntryDN, oldEntryDN);
     assertThat(entry.getAttribute("uid")).isEmpty();
     examineCompletedOPNoExtraPluginCounts(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperation(newEntryDN, "uid=user.0", false, "ou=People,dc=example,dc=com");
+    modifyDNOperation = runModifyDNOp(newEntryDN, "uid=user.0", false, "ou=People,dc=example,dc=com");
     assertSuccess(modifyDNOperation);
     Entry newOldEntry = assertCnAttrValues(oldEntryDN, newEntryDN);
     for(Attribute attribute : newOldEntry.getAttribute("uid"))
@@ -576,7 +579,7 @@ public class TestModifyDNOperation extends OperationTestCase
   public void testInvalidEntryModify() throws Exception
   {
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(
         "uid=user.invalid,ou=People,dc=example,dc=com", "uid=user.test0", true, "dc=example,dc=com");
     examineIncompleteOperation(modifyDNOperation, NO_SUCH_OBJECT);
   }
@@ -585,7 +588,7 @@ public class TestModifyDNOperation extends OperationTestCase
   public void testInvalidRDNModify() throws Exception
   {
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(
         "uid=user.0,ou=People,dc=example,dc=com", "invalid=invalid", true, "dc=example,dc=com");
     examineIncompleteOperation(modifyDNOperation, OBJECTCLASS_VIOLATION);
   }
@@ -594,7 +597,7 @@ public class TestModifyDNOperation extends OperationTestCase
   public void testInvalidSuperiorModify() throws Exception
   {
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(
         "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", true, "dc=invalid,dc=com");
     examineIncompleteOperation(modifyDNOperation, NO_SUCH_OBJECT);
   }
@@ -604,7 +607,7 @@ public class TestModifyDNOperation extends OperationTestCase
   {
     InvocationCounterPlugin.resetAllCounters();
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperationRaw("invalid DN", "uid=user.test0", true, "dc=example,dc=com");
+        runModifyDNOpRaw("invalid DN", "uid=user.test0", true, "dc=example,dc=com");
     examineUnparsedOperation(modifyDNOperation, INVALID_DN_SYNTAX);
   }
 
@@ -613,7 +616,7 @@ public class TestModifyDNOperation extends OperationTestCase
   {
     InvocationCounterPlugin.resetAllCounters();
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperationRaw("uid=user.0,ou=People,dc=example,dc=com", "invalid RDN", true, "dc=example,dc=com");
+        runModifyDNOpRaw("uid=user.0,ou=People,dc=example,dc=com", "invalid RDN", true, "dc=example,dc=com");
     examineUnparsedOperation(modifyDNOperation, INVALID_DN_SYNTAX);
   }
 
@@ -622,7 +625,7 @@ public class TestModifyDNOperation extends OperationTestCase
   {
     InvocationCounterPlugin.resetAllCounters();
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperationRaw("uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", true, "invalid superior");
+        runModifyDNOpRaw("uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", true, "invalid superior");
     examineUnparsedOperation(modifyDNOperation, INVALID_DN_SYNTAX);
   }
 
@@ -630,7 +633,7 @@ public class TestModifyDNOperation extends OperationTestCase
   public void testModifySuffix() throws Exception
   {
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation("dc=example,dc=com", "dc=exampletest", true, null);
+    ModifyDNOperation modifyDNOperation = runModifyDNOp("dc=example,dc=com", "dc=exampletest", true, null);
     examineIncompleteOperation(modifyDNOperation, UNWILLING_TO_PERFORM);
   }
 
@@ -642,12 +645,12 @@ public class TestModifyDNOperation extends OperationTestCase
     String newEntryDN = "uid=user.test0,ou=People,dc=example,dc=com";
 
     InvocationCounterPlugin.resetAllCounters();
-    ModifyDNOperation modifyDNOperation = runModifyDNOperationRaw(oldEntryDN, "uid=user.test0", false, null, authV1Control);
+    ModifyDNOperation modifyDNOperation = runModifyDNOpRaw(oldEntryDN, "uid=user.test0", false, null, authV1Control);
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, true, true);
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperationRaw(newEntryDN, "uid=user.0", true, null, authV1Control);
+    modifyDNOperation = runModifyDNOpRaw(newEntryDN, "uid=user.0", true, null, authV1Control);
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOperation(modifyDNOperation);
   }
@@ -661,12 +664,12 @@ public class TestModifyDNOperation extends OperationTestCase
 
     InvocationCounterPlugin.resetAllCounters();
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperation(proxyUserConn, oldEntryDN, "uid=user.test0", false, authV1Control);
+        runModifyDNOp(proxyUserConn, oldEntryDN, "uid=user.test0", false, authV1Control);
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, true, true);
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperation(proxyUserConn, newEntryDN, "uid=user.0", true, authV1Control);
+    modifyDNOperation = runModifyDNOp(proxyUserConn, newEntryDN, "uid=user.0", true, authV1Control);
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOperation(modifyDNOperation);
   }
@@ -678,7 +681,7 @@ public class TestModifyDNOperation extends OperationTestCase
     InvocationCounterPlugin.resetAllCounters();
 
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperation(proxyUserConn, "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, authV1Control);
+        runModifyDNOp(proxyUserConn, "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, authV1Control);
     examineIncompleteOperation(modifyDNOperation, AUTHORIZATION_DENIED);
   }
 
@@ -691,12 +694,12 @@ public class TestModifyDNOperation extends OperationTestCase
 
     InvocationCounterPlugin.resetAllCounters();
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperation(proxyUserConn, oldEntryDN, "uid=user.test0", false, authV2Control);
+        runModifyDNOp(proxyUserConn, oldEntryDN, "uid=user.test0", false, authV2Control);
     assertSuccessAndEntryExists(modifyDNOperation, newEntryDN, true, true);
     examineCompletedOperation(modifyDNOperation);
 
     InvocationCounterPlugin.resetAllCounters();
-    modifyDNOperation = runModifyDNOperation(proxyUserConn, newEntryDN, "uid=user.0", true, authV2Control);
+    modifyDNOperation = runModifyDNOp(proxyUserConn, newEntryDN, "uid=user.0", true, authV2Control);
     assertSuccessAndEntryExists(modifyDNOperation, oldEntryDN, true, false);
     examineCompletedOperation(modifyDNOperation);
   }
@@ -708,7 +711,7 @@ public class TestModifyDNOperation extends OperationTestCase
     InvocationCounterPlugin.resetAllCounters();
 
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperation(proxyUserConn, "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, authV2Control);
+        runModifyDNOp(proxyUserConn, "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, authV2Control);
     examineIncompleteOperation(modifyDNOperation, AUTHORIZATION_DENIED);
   }
 
@@ -719,7 +722,7 @@ public class TestModifyDNOperation extends OperationTestCase
     InvocationCounterPlugin.resetAllCounters();
 
     ModifyDNOperation modifyDNOperation =
-        runModifyDNOperation(proxyUserConn, "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, authV2Control);
+        runModifyDNOp(proxyUserConn, "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, authV2Control);
     examineIncompleteOperation(modifyDNOperation, PROTOCOL_ERROR);
   }
 
@@ -729,7 +732,8 @@ public class TestModifyDNOperation extends OperationTestCase
     LDAPControl assertControl = new LDAPControl("1.1.1.1.1.1", true);
     InvocationCounterPlugin.resetAllCounters();
 
-    ModifyDNOperation modifyDNOperation = runModifyDNOperation(getRootConnection(), "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, assertControl);
+    ModifyDNOperation modifyDNOperation = runModifyDNOp(
+        getRootConnection(), "uid=user.0,ou=People,dc=example,dc=com", "uid=user.test0", false, assertControl);
     examineIncompleteOperation(modifyDNOperation, UNAVAILABLE_CRITICAL_EXTENSION);
   }
 
@@ -916,8 +920,9 @@ public class TestModifyDNOperation extends OperationTestCase
       assertFalse(DirectoryServer.entryExists(
                       dn("uid=first.test,ou=Users,dc=example,dc=com")));
 
-      ModifyDNOperation modifyDNOperation =
-          getRootConnection().processModifyDN("ou=People,dc=example,dc=com", "ou=Users", true);
+      ModifyDNRequest modifyDNRequest =
+          newModifyDNRequest("ou=People,dc=example,dc=com", "ou=Users").setDeleteOldRDN(true);
+      ModifyDNOperation modifyDNOperation = getRootConnection().processModifyDN(modifyDNRequest);
       assertSuccess(modifyDNOperation);
 //      assertEquals(InvocationCounterPlugin.getSubordinateModifyDNCount(), 2);
 
@@ -1018,7 +1023,7 @@ public class TestModifyDNOperation extends OperationTestCase
   {
     InvocationCounterPlugin.resetAllCounters();
 
-    ModifyDNOperation modifyDNOperation = newModifyDNOperation(
+    ModifyDNOperation modifyDNOperation = newModifyDNOp(
         "uid=user.invalid,ou=People,dc=example,dc=com", "uid=user.test0", true, "dc=example,dc=com");
 
     CancelRequest cancelRequest = new CancelRequest(false,

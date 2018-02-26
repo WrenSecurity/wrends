@@ -22,13 +22,24 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-packages</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>3.5.1</version>
     </parent>
 
-    <modules>
-        <module>opendj-deb-standard</module>
-        <module>opendj-deb-oem</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>packages</id>
+            <modules>
+                <module>opendj-deb-standard</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>packages-oem</id>
+            <modules>
+                <module>opendj-deb-oem</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <artifactId>opendj-deb</artifactId>
     <name>OpenDJ Debian Packages Parent</name>
@@ -67,7 +78,7 @@
                                 <artifactItems>
                                     <artifactItem>
                                         <groupId>org.forgerock.opendj</groupId>
-                                        <artifactId>opendj-man-pages</artifactId>
+                                        <artifactId>opendj-doc-generated-ref</artifactId>
                                         <version>${project.version}</version>
                                         <outputDirectory>${project.build.directory}/dependency/man</outputDirectory>
                                         <classifier>server-man-pages</classifier>

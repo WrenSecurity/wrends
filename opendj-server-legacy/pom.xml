@@ -20,11 +20,11 @@
   <parent>
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-parent</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>3.5.1</version>
   </parent>
   <artifactId>opendj-server-legacy</artifactId>
   <packaging>jar</packaging>
-  <name>OpenDJ LDAP Directory Server</name>
+  <name>OpenDJ Server</name>
   <description>
     This module provides the OpenDJ LDAP Directory Server.
   </description>
@@ -56,7 +56,6 @@
     <docWikiUrl>http://opendj.forgerock.org/docs.html</docWikiUrl>
     <docGuideRefUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideRefUrl>
     <docGuideAdminUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideAdminUrl>
-    <locales>ca_ES,es,de,fr,ja,ko,pl,zh_CN,zh_TW</locales>
 
     <!-- Other properties -->
     <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
@@ -134,7 +133,7 @@
 
     <dependency>
       <groupId>org.forgerock.http</groupId>
-      <artifactId>chf-http-servlet</artifactId>
+      <artifactId>chf-http-grizzly</artifactId>
     </dependency>
 
     <!-- ForgeRock Common Audit libraries -->
@@ -146,6 +145,11 @@
     <dependency>
       <groupId>org.forgerock.commons</groupId>
       <artifactId>forgerock-audit-handler-csv</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.forgerock.commons</groupId>
+      <artifactId>forgerock-audit-handler-elasticsearch</artifactId>
     </dependency>
 
     <dependency>
@@ -174,19 +178,7 @@
       <artifactId>jul-to-slf4j</artifactId>
     </dependency>
 
-    <!-- servlet and mail -->
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>3.1.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.glassfish.grizzly</groupId>
-      <artifactId>grizzly-http-servlet</artifactId>
-      <version>${grizzly-framework.version}</version>
-    </dependency>
-
+    <!-- mail -->
     <dependency>
       <groupId>com.sun.mail</groupId>
       <artifactId>javax.mail</artifactId>
@@ -225,7 +217,7 @@
     <dependency>
       <groupId>org.forgerock.commons</groupId>
       <artifactId>forgerock-persistit-core</artifactId>
-      <version>4.3.1</version>
+      <version>4.3.2</version>
     </dependency>
 
     <dependency>
@@ -315,6 +307,20 @@
                       <runOnIncremental>false</runOnIncremental>
                     </execute>
                   </action>
+                </pluginExecution>
+                <pluginExecution>
+                	<pluginExecutionFilter>
+                		<groupId>org.forgerock.opendj</groupId>
+                		<artifactId>opendj-maven-plugin</artifactId>
+                		<versionRange>[4.0.0-SNAPSHOT,)</versionRange>
+                		<goals>
+                			<goal>generate-manifest</goal>
+                			<goal>concat</goal>
+                		</goals>
+                	</pluginExecutionFilter>
+                	<action>
+                		<ignore />
+                	</action>
                 </pluginExecution>
               </pluginExecutions>
             </lifecycleMappingMetadata>
@@ -452,6 +458,7 @@
       <plugin>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-maven-plugin</artifactId>
+
         <executions>
           <execution>
             <id>generate-bootstrap-manifest</id>
@@ -459,30 +466,19 @@
               <goal>generate-manifest</goal>
             </goals>
             <configuration>
-              <classPathProperty>classpath.bootstrap</classPathProperty>
-              <productJarName>${product.name.lowercase}</productJarName>
-              <supportedLocales>${locales}</supportedLocales>
-              <excludes>
-                <exclude>org.slf4j:slf4j-jdk14</exclude>
-              </excludes>
               <additionalJars>
                  <additionalJar>opendj-slf4j-adapter.jar</additionalJar>
                  <additionalJar>opendj-je-backend.jar</additionalJar>
               </additionalJars>
             </configuration>
           </execution>
+
           <execution>
             <id>generate-bootstrap-client-manifest</id>
             <goals>
               <goal>generate-manifest</goal>
             </goals>
             <configuration>
-              <classPathProperty>classpath.bootstrap-client</classPathProperty>
-              <productJarName>${product.name.lowercase}</productJarName>
-              <supportedLocales>${locales}</supportedLocales>
-              <excludes>
-                <exclude>org.slf4j:jul-to-slf4j</exclude>
-              </excludes>
               <additionalJars>
                  <additionalJar>opendj-je-backend.jar</additionalJar>
               </additionalJars>
@@ -1006,6 +1002,24 @@
               </archive>
             </configuration>
           </execution>
+
+          <!-- Creates the archive folder -->
+          <execution>
+            <id>build-example-plugin.zip</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <finalName>example-plugin</finalName>
+              <outputDirectory>${project.build.directory}/package/${product.name.lowercase}/</outputDirectory>
+              <appendAssemblyId>false</appendAssemblyId>
+              <attach>false</attach>
+              <descriptors>
+                <descriptor>src/main/assembly/example-plugin-assembly.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 
@@ -1015,11 +1029,13 @@
         <executions>
           <execution>
             <!-- Copy config.ldif in build dir (needed if snmp config merge is needed) -->
+            <!-- Also copy the ForgeRock binary license in build dir -->
             <id>copy-config-ldif</id>
             <phase>generate-resources</phase>
             <configuration>
               <target>
                 <copy todir="${project.build.directory}/template/config" file="${basedir}/resource/config/config.ldif" />
+                <copy todir="${project.build.directory}/legal-notices" file="${basedir}/legal-notices/Forgerock_License.txt" />
               </target>
             </configuration>
             <goals>
@@ -1248,11 +1264,6 @@
       </dependencies>
 
       <build>
-        <resources>
-          <resource>
-            <directory>src/snmp/resource</directory>
-          </resource>
-        </resources>
         <plugins>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
@@ -1346,22 +1357,27 @@
             </executions>
           </plugin>
 
-          <!-- Creates snmp jar file -->
           <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
+            <artifactId>maven-assembly-plugin</artifactId>
             <executions>
+              <!-- Package snmp jar -->
               <execution>
-                <id>create-snmp-jar</id>
+                <id>build-snmp-jar</id>
                 <phase>prepare-package</phase>
                 <goals>
-                  <goal>jar</goal>
+                  <goal>single</goal>
                 </goals>
                 <configuration>
                   <outputDirectory>${jars.dir}</outputDirectory>
                   <finalName>${snmp.jar.name}</finalName>
-                  <includes>
-                    <include>org/opends/server/snmp/**</include>
-                  </includes>
+                  <attach>false</attach>
+                  <descriptors>
+                    <descriptor>src/main/assembly/snmp-jar-assembly.xml</descriptor>
+                  </descriptors>
+                  <appendAssemblyId>false</appendAssemblyId>
+                  <formats>
+                    <format>jar</format>
+                  </formats>
                   <archive>
                     <index>true</index>
                     <addMavenDescriptor>false</addMavenDescriptor>
@@ -1373,13 +1389,8 @@
                   </archive>
                 </configuration>
               </execution>
-            </executions>
-          </plugin>
 
-          <!-- Package the final zip -->
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <executions>
+              <!-- Package the final zip -->
               <execution>
                 <id>build-opendj-archive</id>
                 <phase>package</phase>
@@ -1418,169 +1429,6 @@
         <docGuideRefUrl>https://backstage.forgerock.com/#!/docs/opendj/${project.version}/admin-guide</docGuideRefUrl>
         <docGuideAdminUrl>https://backstage.forgerock.com/#!/docs/opendj/${project.version}/admin-guide</docGuideAdminUrl>
       </properties>
-    </profile>
-
-    <profile>
-      <!--
-        Build the configuration reference, reference documentation source files,
-        and assemble artifacts from the results.
-        The artifacts are used when preparing the product documentation.
-
-        This profile is active without being specified explicitly.
-        To deactivate this profile, use an exclamation point as in `-P!docs`.
-      -->
-      <id>docs</id>
-
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack-source-dependencies</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.forgerock.opendj</groupId>
-                      <artifactId>opendj-core</artifactId>
-                      <version>${project.version}</version>
-                      <classifier>sources</classifier>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <groupId>org.forgerock.opendj</groupId>
-            <artifactId>opendj-doc-maven-plugin</artifactId>
-            <!--
-              Configuration reference generation requires
-              that opendj-config be on the runtime classpath for the plugin.
-              It is not enough to declare it as a dependency of this module.
-            -->
-            <dependencies>
-              <dependency>
-                <groupId>org.forgerock.opendj</groupId>
-                <artifactId>opendj-config</artifactId>
-                <version>${project.version}</version>
-              </dependency>
-            </dependencies>
-            <executions>
-              <execution>
-                <id>generate-configuration-reference-doc</id>
-                <phase>compile</phase>
-                <goals>
-                  <goal>generate-config-ref</goal>
-                </goals>
-              </execution>
-
-              <execution>
-                <id>generate-global-acis-table-for-doc</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>generate-global-acis-table</goal>
-                </goals>
-              </execution>
-
-              <execution>
-                <id>generate-schema-reference-doc</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>generate-schema-ref</goal>
-                </goals>
-              </execution>
-
-              <execution>
-                <id>generate-log-reference-doc</id>
-                <goals>
-                  <goal>generate-xml-messages-doc</goal>
-                </goals>
-                <phase>prepare-package</phase>
-                <configuration>
-                  <messagesDirectory>${basedir}/src/messages/org/opends/messages</messagesDirectory>
-                  <outputDirectory>${project.build.directory}/docbkx-sources/shared</outputDirectory>
-                  <messageFileNames>
-                    <!-- for xxx_yyy.properties generates a log-ref-xxx-yyy.xml file -->
-                    <messageFileName>admin</messageFileName>
-                    <messageFileName>backend</messageFileName>
-                    <messageFileName>config</messageFileName>
-                    <messageFileName>core</messageFileName>
-                    <messageFileName>extension</messageFileName>
-                    <messageFileName>logger</messageFileName>
-                    <messageFileName>plugin</messageFileName>
-                    <messageFileName>protocol</messageFileName>
-                    <messageFileName>replication</messageFileName>
-                    <messageFileName>schema</messageFileName>
-                    <messageFileName>task</messageFileName>
-                    <messageFileName>tool</messageFileName>
-                    <messageFileName>utility</messageFileName>
-
-                    <!-- Ignore following message files as we document only serious errors. -->
-                    <!-- <messageFileName>access_control</messageFileName> -->
-                    <!-- <messageFileName>admin_tool</messageFileName> -->
-                    <!-- <messageFileName>external</messageFileName> -->
-                    <!-- <messageFileName>quicksetup.properties</messageFileName> -->
-                    <!-- <messageFileName>runtime_information.properties</messageFileName> -->
-                    <!-- <messageFileName>version.properties</messageFileName> -->
-                  </messageFileNames>
-                </configuration>
-              </execution>
-
-              <execution>
-                <id>generate-result-code-doc</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>generate-result-code-doc</goal>
-                </goals>
-                <configuration>
-                  <resultCodeSource>${project.build.directory}/dependency/org/forgerock/opendj/ldap/ResultCode.java</resultCodeSource>
-                  <xmlFile>${project.build.directory}/docbkx-sources/shared/appendix-ldap-result-codes.xml</xmlFile>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>config-ref</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-                <configuration>
-                  <descriptors>
-                    <descriptor>src/main/assembly/config-ref-assembly.xml</descriptor>
-                  </descriptors>
-                </configuration>
-              </execution>
-              <execution>
-                <id>generated-doc-sources</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-                <configuration>
-                  <descriptors>
-                    <descriptor>src/main/assembly/generated-doc-sources-assembly.xml</descriptor>
-                  </descriptors>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
 

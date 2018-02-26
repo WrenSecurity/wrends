@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
- * Portions Copyright 2014-2015 ForgeRock AS.
+ * Portions Copyright 2014-2016 ForgeRock AS.
  */
 
 package org.opends.guitools.controlpanel.ui;
@@ -37,27 +37,23 @@ import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.JPanel;
 
+import org.forgerock.i18n.LocalizableMessage;
 import org.opends.guitools.controlpanel.datamodel.Action;
 import org.opends.guitools.controlpanel.datamodel.Category;
 import org.opends.guitools.controlpanel.event.ConfigurationChangeEvent;
 import org.opends.guitools.controlpanel.ui.components.ActionButton;
 import org.opends.guitools.controlpanel.ui.components.CategoryPanel;
 import org.opends.guitools.controlpanel.util.Utilities;
-import org.forgerock.i18n.LocalizableMessage;
 
 /**
  * The panel on the left side of the main Control Center dialog.  It contains
  * all the actions on the pane divided in categories.
- *
  */
 public class MainActionsPane extends StatusGenericPanel
 {
   private static final long serialVersionUID = 7616418700758530191L;
 
-  /**
-   * Default constructor.
-   *
-   */
+  /** Default constructor. */
   public MainActionsPane()
   {
     super();
@@ -87,7 +83,7 @@ public class MainActionsPane extends StatusGenericPanel
         actions.add(b);
         b.addActionListener(new ActionListener()
         {
-          /** {@inheritDoc} */
+          @Override
           public void actionPerformed(ActionEvent ev)
           {
             // Constructs the panels using reflection.
@@ -152,7 +148,7 @@ public class MainActionsPane extends StatusGenericPanel
     createActionButtonListeners(actions);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public Component getPreferredFocusComponent()
   {
     return null;
@@ -163,7 +159,7 @@ public class MainActionsPane extends StatusGenericPanel
    * @param panel the panel that will be contained in the frame.
    * @return the frame to be displayed using the provided panel.
    */
-  protected GenericFrame createFrame(StatusGenericPanel panel)
+  private GenericFrame createFrame(StatusGenericPanel panel)
   {
     return new GenericFrame(panel);
   }
@@ -172,7 +168,7 @@ public class MainActionsPane extends StatusGenericPanel
    * Creates the categories contained by this panel.
    * @return the categories contained by this panel.
    */
-  protected ArrayList<Category> createCategories()
+  private ArrayList<Category> createCategories()
   {
     ArrayList<Category> categories = new ArrayList<>();
     LocalizableMessage[][] labels;
@@ -265,19 +261,18 @@ public class MainActionsPane extends StatusGenericPanel
       classes.add(WindowsServicePanel.class);
     }
     int classIndex = 0;
-    for (int i=0; i<labels.length; i++)
+    for (LocalizableMessage[] label : labels)
     {
       Category category = new Category();
-      category.setName(labels[i][0]);
-      for (int j=1; j<labels[i].length; j++)
+      category.setName(label[0]);
+      for (int j = 1; j < label.length; j++)
       {
         Action action = new Action();
-        action.setName(labels[i][j]);
+        action.setName(label[j]);
         action.setAssociatedPanel(classes.get(classIndex));
         classIndex ++;
 
         category.getActions().add(action);
-
       }
       categories.add(category);
     }
@@ -294,7 +289,7 @@ public class MainActionsPane extends StatusGenericPanel
   {
     ActionListener actionListener = new ActionListener()
     {
-      /** {@inheritDoc} */
+      @Override
       public void actionPerformed(ActionEvent ev)
       {
         for (ActionButton button : actions)
@@ -310,7 +305,7 @@ public class MainActionsPane extends StatusGenericPanel
 
     MouseAdapter mouseListener = new MouseAdapter()
     {
-      /** {@inheritDoc} */
+      @Override
       public void mousePressed(MouseEvent ev)
       {
         for (ActionButton button : actions)
@@ -323,7 +318,7 @@ public class MainActionsPane extends StatusGenericPanel
         }
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void mouseReleased(MouseEvent ev)
       {
         for (ActionButton button : actions)
@@ -336,7 +331,7 @@ public class MainActionsPane extends StatusGenericPanel
         }
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void mouseExited(MouseEvent ev)
       {
         for (ActionButton button : actions)
@@ -349,7 +344,7 @@ public class MainActionsPane extends StatusGenericPanel
         }
       }
 
-      /** {@inheritDoc} */
+      @Override
       public void mouseEntered(MouseEvent ev)
       {
         for (ActionButton button : actions)
@@ -373,19 +368,18 @@ public class MainActionsPane extends StatusGenericPanel
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public LocalizableMessage getTitle()
   {
     return null;
   }
 
-
-  /** {@inheritDoc} */
+  @Override
   public void configurationChanged(ConfigurationChangeEvent ev)
   {
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void okClicked()
   {
   }

@@ -15,21 +15,29 @@
  */
 package org.opends.server.tools.upgrade;
 
+import static java.nio.charset.StandardCharsets.*;
+import static java.nio.file.StandardOpenOption.*;
 import static javax.security.auth.callback.ConfirmationCallback.NO;
 import static javax.security.auth.callback.ConfirmationCallback.YES;
 import static javax.security.auth.callback.TextOutputCallback.*;
 
+import static org.forgerock.util.Utils.joinAsString;
 import static org.opends.messages.ToolMessages.*;
-import static org.opends.server.tools.upgrade.FileManager.copy;
+import static org.opends.server.tools.upgrade.FileManager.copyRecursively;
 import static org.opends.server.tools.upgrade.UpgradeUtils.*;
-import static org.opends.server.util.StaticUtils.isClassAvailable;
+import static org.opends.server.types.Schema.*;
+import static org.opends.server.util.StaticUtils.*;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +55,14 @@ import org.forgerock.opendj.ldap.Filter;
 import org.forgerock.opendj.ldap.SearchScope;
 import org.forgerock.opendj.ldap.requests.Requests;
 import org.forgerock.opendj.ldap.requests.SearchRequest;
+import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.MatchingRule;
+import org.forgerock.opendj.ldap.schema.Schema;
+import org.forgerock.opendj.ldap.schema.SchemaBuilder;
+import org.forgerock.opendj.ldap.schema.Syntax;
 import org.forgerock.opendj.ldif.EntryReader;
-import org.forgerock.util.Utils;
+import org.forgerock.opendj.ldif.LDIFEntryReader;
 import org.opends.server.backends.pluggable.spi.TreeName;
 import org.opends.server.tools.JavaPropertiesTool;
 import org.opends.server.tools.RebuildIndex;
@@ -74,13 +88,12 @@ public final class UpgradeTasks
   static int countErrors;
 
   /** Contains all the indexes to rebuild. */
-  static Set<String> indexesToRebuild = new HashSet<>();
+  private static final Set<String> indexesToRebuild = new LinkedHashSet<>();
 
   /** A flag to avoid rebuild single indexes if 'rebuild all' is selected. */
-  static boolean isRebuildAllIndexesIsPresent;
-
+  private static boolean isRebuildAllIndexesIsPresent;
   /** A flag for marking 'rebuild all' task accepted by user. */
-  static boolean isRebuildAllIndexesTaskAccepted;
+  private static boolean isRebuildAllIndexesTaskAccepted;
 
   private static final List<String> SUPPORTED_LOCALES_FOR_3_0_0 = Arrays.asList(
       "ca_ES", "de", "es", "fr", "ja", "ko", "pl", "zh_CN", "zh_TW");
@@ -100,6 +113,42 @@ public final class UpgradeTasks
       final String... ldif)
   {
     return updateConfigEntry(summary, null, ChangeOperationType.ADD, ldif);
+  }
+
+  /**
+   * Returns a new upgrade task which adds a config entry to the underlying
+   * config file. No summary message will be output.
+   *
+   * @param ldif
+   *          The LDIF record which will be applied to matching entries.
+   * @return A new upgrade task which applies an LDIF record to all
+   *         configuration entries matching the provided filter.
+   */
+  public static UpgradeTask addConfigEntry(final String... ldif)
+  {
+    return new AbstractUpgradeTask()
+    {
+      @Override
+      public void perform(final UpgradeContext context) throws ClientException
+      {
+        try
+        {
+          final int changeCount = updateConfigFile(configFile, null, ChangeOperationType.ADD, ldif);
+          displayChangeCount(configFile, changeCount);
+        }
+        catch (final Exception e)
+        {
+          countErrors++;
+          throw new ClientException(ReturnCode.ERROR_UNEXPECTED, LocalizableMessage.raw(e.getMessage()));
+        }
+      }
+
+      @Override
+      public String toString()
+      {
+        return "Add entry " + ldif[0];
+      }
+    };
   }
 
   /**
@@ -135,13 +184,13 @@ public final class UpgradeTasks
             throw new IOException(ERR_UPGRADE_CORRUPTED_TEMPLATE
                 .get(schemaFileTemplate.getPath()).toString());
           }
-          copy(schemaFileTemplate, configSchemaDirectory, true);
+          copyRecursively(schemaFileTemplate, configSchemaDirectory, true);
           context.notifyProgress(pnc.setProgress(100));
         }
         catch (final IOException e)
         {
-          manageTaskException(context, ERR_UPGRADE_COPYSCHEMA_FAILS.get(
-              schemaFileTemplate.getName(), e.getMessage()), pnc);
+          throw unexpectedException(context, pnc, ERR_UPGRADE_COPYSCHEMA_FAILS.get(
+              schemaFileTemplate.getName(), e.getMessage()));
         }
       }
 
@@ -180,13 +229,13 @@ public final class UpgradeTasks
         {
           context.notifyProgress(pnc.setProgress(20));
 
-          copy(configFile, configDirectory, true);
+          copyRecursively(configFile, configDirectory, true);
           context.notifyProgress(pnc.setProgress(100));
         }
         catch (final IOException e)
         {
-          manageTaskException(context, ERR_UPGRADE_ADD_CONFIG_FILE_FAILS.get(
-              configFile.getName(), e.getMessage()), pnc);
+          throw unexpectedException(context, pnc, ERR_UPGRADE_ADD_CONFIG_FILE_FAILS.get(
+              configFile.getName(), e.getMessage()));
         }
       }
 
@@ -272,24 +321,18 @@ public final class UpgradeTasks
         final ProgressNotificationCallback pnc = new ProgressNotificationCallback(INFORMATION, summary, 20);
         context.notifyProgress(pnc);
 
-        final File schemaFileTemplate =
-            new File(templateConfigSchemaDirectory, fileName);
-
+        final File schemaFileTemplate = new File(templateConfigSchemaDirectory, fileName);
         final File pathDestination = new File(configSchemaDirectory, fileName);
         try
         {
-          final int changeCount =
-              updateSchemaFile(schemaFileTemplate, pathDestination,
-                  attributeOids, null);
-
-          displayChangeCount(pathDestination.getPath(), changeCount);
-
+          final int changeCount = updateSchemaFile(schemaFileTemplate, pathDestination, attributeOids, null);
+          displayChangeCount(pathDestination, changeCount);
           context.notifyProgress(pnc.setProgress(100));
         }
         catch (final IOException | IllegalStateException e)
         {
-          manageTaskException(context, ERR_UPGRADE_ADDATTRIBUTE_FAILS.get(
-              schemaFileTemplate.getName(), e.getMessage()), pnc);
+          throw unexpectedException(context, pnc, ERR_UPGRADE_ADDATTRIBUTE_FAILS.get(
+              schemaFileTemplate.getName(), e.getMessage()));
         }
       }
 
@@ -331,32 +374,25 @@ public final class UpgradeTasks
         final ProgressNotificationCallback pnc = new ProgressNotificationCallback(INFORMATION, summary, 20);
         context.notifyProgress(pnc);
 
-        final File schemaFileTemplate =
-            new File(templateConfigSchemaDirectory, fileName);
-
+        final File schemaFileTemplate = new File(templateConfigSchemaDirectory, fileName);
         final File pathDestination = new File(configSchemaDirectory, fileName);
-
         context.notifyProgress(pnc.setProgress(20));
 
         try
         {
-          final int changeCount =
-              updateSchemaFile(schemaFileTemplate, pathDestination,
-                  null, objectClassesOids);
-
-          displayChangeCount(pathDestination.getPath(), changeCount);
-
+          final int changeCount = updateSchemaFile(schemaFileTemplate, pathDestination, null, objectClassesOids);
+          displayChangeCount(pathDestination, changeCount);
           context.notifyProgress(pnc.setProgress(100));
         }
         catch (final IOException e)
         {
-          manageTaskException(context, ERR_UPGRADE_ADDOBJECTCLASS_FAILS.get(
-              schemaFileTemplate.getName(), e.getMessage()), pnc);
+          throw unexpectedException(context, pnc, ERR_UPGRADE_ADDOBJECTCLASS_FAILS.get(
+              schemaFileTemplate.getName(), e.getMessage()));
         }
         catch (final IllegalStateException e)
         {
-          manageTaskException(context, ERR_UPGRADE_ADDATTRIBUTE_FAILS.get(
-              schemaFileTemplate.getName(), e.getMessage()), pnc);
+          throw unexpectedException(context, pnc, ERR_UPGRADE_ADDATTRIBUTE_FAILS.get(
+              schemaFileTemplate.getName(), e.getMessage()));
         }
       }
 
@@ -501,7 +537,14 @@ public final class UpgradeTasks
         {
           for (UpgradeTask task : tasks)
           {
-            task.perform(context);
+            try
+            {
+              task.perform(context);
+            }
+            catch (ClientException e)
+            {
+              handleClientException(context, e);
+            }
           }
         }
       }
@@ -522,7 +565,7 @@ public final class UpgradeTasks
               }
               catch (ClientException e)
               {
-                logger.error(LocalizableMessage.raw(e.getMessage()));
+                logger.error(e.getMessageObject());
                 isOk = false;
               }
             }
@@ -540,7 +583,7 @@ public final class UpgradeTasks
         final StringBuilder sb = new StringBuilder();
         sb.append(condition).append(" = ").append(shouldPerformUpgradeTasks).append('\n');
         sb.append('[');
-        Utils.joinAsString(sb, "\n", (Object[]) tasks);
+        joinAsString(sb, "\n", (Object[]) tasks);
         sb.append(']');
         return sb.toString();
       }
@@ -603,8 +646,7 @@ public final class UpgradeTasks
    *
    * @param summary
    *          A message describing why the index needs to be rebuilt and asking
-   *          them whether or not they wish to perform this task after the
-   *          upgrade.
+   *          them whether they wish to perform this task after the upgrade.
    * @param indexNames
    *          The indexes to rebuild.
    * @return The rebuild index task.
@@ -641,7 +683,8 @@ public final class UpgradeTasks
       {
         if (!isRebuildAllIndexesIsPresent)
         {
-          context.notify(INFO_UPGRADE_REBUILD_INDEXES_DECLINED.get(indexNames), TextOutputCallback.WARNING);
+          context.notify(INFO_UPGRADE_REBUILD_INDEXES_DECLINED.get(joinAsString(", ", indexNames)),
+              TextOutputCallback.WARNING);
         }
       }
 
@@ -687,34 +730,34 @@ public final class UpgradeTasks
           for (final Map.Entry<String, Set<String>> backendEntry : baseDNsForBackends.entrySet())
           {
             final String backend = backendEntry.getKey();
-            final List<String> filteredIndexes = filterExistingIndexes(indexesToRebuild, backend);
-            if (filteredIndexes.isEmpty())
+            if (indexesToRebuild.isEmpty())
             {
               logger.debug(INFO_UPGRADE_NO_INDEX_TO_REBUILD_FOR_BACKEND.get(backend));
               continue;
             }
 
             final List<String> args = new ArrayList<>();
-            for (final String indexToRebuild : filteredIndexes)
+            for (final String indexToRebuild : indexesToRebuild)
             {
               args.add("--index");
               args.add(indexToRebuild);
             }
             final Set<String> baseDNs = backendEntry.getValue();
-            rebuildIndex(INFO_UPGRADE_REBUILD_INDEX_STARTS.get(filteredIndexes, baseDNs), context, baseDNs, args);
+            rebuildIndex(INFO_UPGRADE_REBUILD_INDEX_STARTS.get(indexesToRebuild, baseDNs), context, baseDNs, args);
           }
         }
       }
 
       private void rebuildIndex(final LocalizableMessage infoMsg, final UpgradeContext context,
-          final Set<String> baseDNs, final List<String> args) throws ClientException
+          final Set<String> baseDNs, final List<String> baseArgs) throws ClientException
       {
         final ProgressNotificationCallback pnc = new ProgressNotificationCallback(INFORMATION, infoMsg, 25);
         logger.debug(infoMsg);
         context.notifyProgress(pnc);
 
+        List<String> args = new ArrayList<>(baseArgs);
         args.add("--configFile");
-        args.add(CONFIG_FILE_PATH);
+        args.add(configFile.getAbsolutePath());
         for (final String be : baseDNs)
         {
           args.add("--baseDN");
@@ -774,7 +817,7 @@ public final class UpgradeTasks
         }
         catch (final Exception ex)
         {
-          manageTaskException(context, ERR_UPGRADE_CONFIG_ERROR_UPGRADE_FOLDER.get(ex.getMessage()), pnc);
+          throw unexpectedException(context, pnc, ERR_UPGRADE_CONFIG_ERROR_UPGRADE_FOLDER.get(ex.getMessage()));
         }
       }
 
@@ -828,7 +871,7 @@ public final class UpgradeTasks
           catch (final Exception ex)
           {
             LocalizableMessage msg = ERR_UPGRADE_RENAME_SNMP_SECURITY_CONFIG_FILE.get(ex.getMessage());
-            manageTaskException(context, msg, pnc);
+            throw unexpectedException(context, pnc, msg);
           }
         }
       }
@@ -865,7 +908,7 @@ public final class UpgradeTasks
         }
         catch (Exception e)
         {
-          manageTaskException(context, LocalizableMessage.raw(e.getMessage()), pnc);
+          throw unexpectedException(context, pnc, LocalizableMessage.raw(e.getMessage()));
         }
       }
 
@@ -990,7 +1033,7 @@ public final class UpgradeTasks
               JEHelper.migrateDatabases(backend.envDir, backend.renamedDbs);
               context.notifyProgress(pnc.setProgress(100));
             } catch (ClientException e) {
-              manageTaskException(context, e.getMessageObject(), pnc);
+              throw unexpectedException(context, pnc, e.getMessageObject());
             }
           } else {
             // Skip backends which have been disabled.
@@ -1031,9 +1074,12 @@ public final class UpgradeTasks
 
   /**
    * Creates backups of the local DB backends directories by renaming adding them a ".bak" suffix.
-   *  e.g "userRoot" would become "userRoot.bak"
+   * e.g "userRoot" would become "userRoot.bak"
+   *
+   * @param backendObjectClass
+   *          The backend object class name.
    */
-  static UpgradeTask renameLocalDBBackendDirectories()
+  static UpgradeTask renameLocalDBBackendDirectories(final String backendObjectClass)
   {
     return new AbstractUpgradeTask()
     {
@@ -1044,7 +1090,7 @@ public final class UpgradeTasks
       {
         try
         {
-          Filter filter = Filter.equality("objectclass", "ds-cfg-local-db-backend");
+          Filter filter = Filter.equality("objectclass", backendObjectClass);
           SearchRequest findLocalDBBackends = Requests.newSearchRequest(DN.rootDN(), SearchScope.WHOLE_SUBTREE, filter);
           try (final EntryReader jeBackends = searchConfigFile(findLocalDBBackends))
           {
@@ -1101,14 +1147,14 @@ public final class UpgradeTasks
   }
 
   /** This inner classes causes JE to be lazily linked and prevents runtime errors if JE is not in the classpath. */
-  static final class JEHelper {
+  private static final class JEHelper {
     private static ClientException clientException(final File backendDirectory, final DatabaseException e) {
       logger.error(LocalizableMessage.raw(StaticUtils.stackTraceToString(e)));
       return new ClientException(ReturnCode.CONSTRAINT_VIOLATION,
                                  INFO_UPGRADE_TASK_MIGRATE_JE_ENV_UNREADABLE.get(backendDirectory), e);
     }
 
-    static Set<String> listDatabases(final File backendDirectory) throws ClientException {
+    private static Set<String> listDatabases(final File backendDirectory) throws ClientException {
       try (Environment je = new Environment(backendDirectory, null)) {
         Set<String> databases = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         databases.addAll(je.getDatabaseNames());
@@ -1118,7 +1164,8 @@ public final class UpgradeTasks
       }
     }
 
-    static void migrateDatabases(final File envDir, final Map<String, String> renamedDbs) throws ClientException {
+    private static void migrateDatabases(final File envDir, final Map<String, String> renamedDbs)
+          throws ClientException {
       EnvironmentConfig config = new EnvironmentConfig().setTransactional(true);
       try (Environment je = new Environment(envDir, config)) {
         final Transaction txn = je.beginTransaction(null, new TransactionConfig());
@@ -1143,9 +1190,9 @@ public final class UpgradeTasks
     }
   }
 
-  private static void displayChangeCount(final String fileName,
-      final int changeCount)
+  private static void displayChangeCount(final File configfile, final int changeCount)
   {
+    String fileName = configfile.getAbsolutePath();
     if (changeCount != 0)
     {
       logger.debug(INFO_UPGRADE_CHANGE_DONE_IN_SPECIFIC_FILE, fileName, changeCount);
@@ -1170,16 +1217,20 @@ public final class UpgradeTasks
     }
   }
 
-  private static void manageTaskException(final UpgradeContext context,
-      final LocalizableMessage message, final ProgressNotificationCallback pnc)
-      throws ClientException
+  private static ClientException unexpectedException(final UpgradeContext context,
+      final ProgressNotificationCallback pnc, final LocalizableMessage message) throws ClientException
   {
     countErrors++;
     context.notifyProgress(pnc.setProgress(-100));
-    logger.error(message);
+    return new ClientException(ReturnCode.ERROR_UNEXPECTED, message);
+  }
+
+  static void handleClientException(final UpgradeContext context, ClientException e) throws ClientException
+  {
+    logger.error(e.getMessageObject());
     if (!context.isIgnoreErrorsMode())
     {
-      throw new ClientException(ReturnCode.ERROR_UNEXPECTED, message);
+      throw e;
     }
   }
 
@@ -1214,14 +1265,14 @@ public final class UpgradeTasks
     try
     {
       final Filter filterVal = filter != null ? Filter.valueOf(filter) : null;
-      final int changeCount = updateConfigFile(CONFIG_FILE_PATH, filterVal, changeOperationType, ldif);
-      displayChangeCount(CONFIG_FILE_PATH, changeCount);
+      final int changeCount = updateConfigFile(configFile, filterVal, changeOperationType, ldif);
+      displayChangeCount(configFile, changeCount);
 
       context.notifyProgress(pnc.setProgress(100));
     }
     catch (final Exception e)
     {
-      manageTaskException(context, LocalizableMessage.raw(e.getMessage()), pnc);
+      throw unexpectedException(context, pnc, LocalizableMessage.raw(e.getMessage()));
     }
   }
 
@@ -1283,11 +1334,11 @@ public final class UpgradeTasks
         }
         catch (ClientException e)
         {
-          manageTaskException(context, e.getMessageObject(), pnc);
+          throw unexpectedException(context, pnc, e.getMessageObject());
         }
         catch (Exception e)
         {
-          manageTaskException(context, LocalizableMessage.raw(e.getLocalizedMessage()), pnc);
+          throw unexpectedException(context, pnc, LocalizableMessage.raw(e.getLocalizedMessage()));
         }
       }
 
@@ -1365,12 +1416,114 @@ public final class UpgradeTasks
         }
       }
     };
-
   }
 
   /** Prevent instantiation. */
   private UpgradeTasks()
   {
     // Do nothing.
+  }
+
+  /**
+   * This task exists because OpenDJ 3.0.0 added an attribute type definition for
+   * {@code ds-cfg-csv-delimiter-char}, but unfortunately trailing spaces existed after the closing
+   * parenthesis. As a consequence, this definition was not added to the concatenated schema.
+   * <p>
+   * This task restores this definition in the concatenated schema using the following algorithm:
+   * <p>
+   * If {@code ds-cfg-csv-delimiter-char} attribute type definition exists in 02-config.ldif,
+   * but not in the concatenated schema then append its definition to the concatenated schema,
+   * omitting the trailing spaces.
+   *
+   * @return The relevant upgrade task
+   * @see OPENDJ-3081
+   */
+  static UpgradeTask restoreCsvDelimiterAttributeTypeInConcatenatedSchemaFile()
+  {
+    return new AbstractUpgradeTask()
+    {
+      private boolean shouldRunTask;
+
+      @Override
+      public void prepare(UpgradeContext context) throws ClientException
+      {
+        shouldRunTask = concatenatedSchemaFile.exists();
+      }
+
+      @Override
+      public void perform(UpgradeContext context) throws ClientException
+      {
+        if (!shouldRunTask)
+        {
+          return;
+        }
+        final ProgressNotificationCallback pnc = new ProgressNotificationCallback(INFORMATION, getSummary(), 0);
+
+        final File configFile = new File(configSchemaDirectory, "02-config.ldif");
+        AttributeType configCsvCharAT = readCsvDelimiterCharAttributeType(configFile, context, pnc);
+        context.notifyProgress(pnc.setProgress(33));
+
+        AttributeType concatenatedCsvCharAT = readCsvDelimiterCharAttributeType(concatenatedSchemaFile, context, pnc);
+        context.notifyProgress(pnc.setProgress(66));
+
+        if (!configCsvCharAT.isPlaceHolder() && concatenatedCsvCharAT.isPlaceHolder())
+        {
+          final String csvCharAttrTypeDefinition = configCsvCharAT.toString().trim();
+          try (BufferedWriter writer = Files.newBufferedWriter(concatenatedSchemaFile.toPath(), UTF_8, APPEND))
+          {
+            writer.append(CoreSchema.getAttributeTypesAttributeType().getNameOrOID());
+            writer.append(": ");
+            writer.append(addSchemaFileToElementDefinitionIfAbsent(csvCharAttrTypeDefinition, "02-config.ldif"));
+            writer.newLine();
+          }
+          catch (IOException e)
+          {
+            throw unexpectedException(context, pnc, INFO_UPGRADE_TASK_CANNOT_WRITE_TO_CONCATENATED_SCHEMA_FILE.get(
+                concatenatedSchemaFile.toPath(), stackTraceToSingleLineString(e)));
+          }
+        }
+        context.notifyProgress(pnc.setProgress(100));
+      }
+
+      private AttributeType readCsvDelimiterCharAttributeType(final File schemaFile,
+          final UpgradeContext context, final ProgressNotificationCallback pnc) throws ClientException
+      {
+        final Schema coreSchema = Schema.getCoreSchema();
+        try (EntryReader entryReader = new LDIFEntryReader(new FileReader(schemaFile)))
+        {
+          final Entry schemaEntry = entryReader.readEntry();
+          final SchemaBuilder builder = new SchemaBuilder();
+          for (Syntax syntax : coreSchema.getSyntaxes())
+          {
+            builder.buildSyntax(syntax).addToSchema();
+          }
+          for (MatchingRule rule : coreSchema.getMatchingRules())
+          {
+            builder.buildMatchingRule(rule).addToSchema();
+          }
+          return builder
+              .addSchema(schemaEntry, false)
+              .toSchema()
+              .asNonStrictSchema()
+              .getAttributeType("ds-cfg-csv-delimiter-char");
+        }
+        catch (IOException e)
+        {
+          throw unexpectedException(context, pnc, INFO_UPGRADE_TASK_CANNOT_READ_SCHEMA_FILE.get(
+              schemaFile.getAbsolutePath(), stackTraceToSingleLineString(e)));
+        }
+      }
+
+      private LocalizableMessage getSummary()
+      {
+        return INFO_UPGRADE_TASK_SUMMARY_RESTORE_CSV_DELIMITER_CHAR.get();
+      }
+
+      @Override
+      public String toString()
+      {
+        return getSummary().toString();
+      }
+    };
   }
 }

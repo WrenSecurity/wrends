@@ -55,11 +55,7 @@ public class MemberVirtualAttributeProvider
   /** The current configuration for this member virtual attribute. */
   private MemberVirtualAttributeCfg currentConfig;
 
-
-
-  /**
-   * Creates a new instance of this member virtual attribute provider.
-   */
+  /** Creates a new instance of this member virtual attribute provider. */
   public MemberVirtualAttributeProvider()
   {
     super();
@@ -68,9 +64,6 @@ public class MemberVirtualAttributeProvider
     // initializeVirtualAttributeProvider method.
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void initializeVirtualAttributeProvider(
                             MemberVirtualAttributeCfg configuration)
@@ -80,18 +73,12 @@ public class MemberVirtualAttributeProvider
     currentConfig = configuration;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isMultiValued()
   {
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public Attribute getValues(Entry entry, VirtualAttributeRule rule)
   {
@@ -138,9 +125,6 @@ public class MemberVirtualAttributeProvider
     return builder.toAttribute();
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean hasValue(Entry entry, VirtualAttributeRule rule)
   {
@@ -182,9 +166,6 @@ public class MemberVirtualAttributeProvider
     return false;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean hasValue(Entry entry, VirtualAttributeRule rule, ByteString value)
   {
@@ -207,9 +188,13 @@ public class MemberVirtualAttributeProvider
     return false;
   }
 
+  @Override
+  public ConditionResult matchesEqualityAssertion(Entry entry,
+                                                  VirtualAttributeRule rule, ByteString assertionValue)
+  {
+    return ConditionResult.valueOf(hasValue(entry, rule, assertionValue));
+  }
 
-
-  /** {@inheritDoc} */
   @Override
   public ConditionResult matchesSubstring(Entry entry,
                                           VirtualAttributeRule rule,
@@ -221,9 +206,6 @@ public class MemberVirtualAttributeProvider
     return ConditionResult.UNDEFINED;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConditionResult greaterThanOrEqualTo(Entry entry,
                               VirtualAttributeRule rule,
@@ -233,9 +215,6 @@ public class MemberVirtualAttributeProvider
     return ConditionResult.UNDEFINED;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConditionResult lessThanOrEqualTo(Entry entry,
                               VirtualAttributeRule rule,
@@ -245,9 +224,6 @@ public class MemberVirtualAttributeProvider
     return ConditionResult.UNDEFINED;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConditionResult approximatelyEqualTo(Entry entry,
                               VirtualAttributeRule rule,
@@ -257,9 +233,6 @@ public class MemberVirtualAttributeProvider
     return ConditionResult.UNDEFINED;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isSearchable(VirtualAttributeRule rule,
                               SearchOperation searchOperation,
@@ -268,9 +241,6 @@ public class MemberVirtualAttributeProvider
     return false;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public void processSearch(VirtualAttributeRule rule,
                             SearchOperation searchOperation)
@@ -279,9 +249,6 @@ public class MemberVirtualAttributeProvider
     return;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationChangeAcceptable(
                       MemberVirtualAttributeCfg configuration,
@@ -291,9 +258,6 @@ public class MemberVirtualAttributeProvider
     return true;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public ConfigChangeResult applyConfigurationChange(
                                  MemberVirtualAttributeCfg configuration)
@@ -302,4 +266,3 @@ public class MemberVirtualAttributeProvider
     return new ConfigChangeResult();
   }
 }
-

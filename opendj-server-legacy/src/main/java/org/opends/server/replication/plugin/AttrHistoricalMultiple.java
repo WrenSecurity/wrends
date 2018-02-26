@@ -17,8 +17,6 @@
 package org.opends.server.replication.plugin;
 
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 import org.forgerock.opendj.ldap.ByteString;
@@ -29,6 +27,8 @@ import org.opends.server.types.Attribute;
 import org.opends.server.types.AttributeBuilder;
 import org.opends.server.types.Entry;
 import org.opends.server.types.Modification;
+
+import com.forgerock.opendj.util.SmallSet;
 
 /**
  * This class is used to store historical information for multiple valued attributes.
@@ -42,16 +42,8 @@ public class AttrHistoricalMultiple extends AttrHistorical
   private CSN deleteTime;
   /** Last time the attribute was modified. */
   private CSN lastUpdateTime;
-  /**
-   * Change history for the values of this attribute.
-   * <p>
-   * We are using a LinkedHashMap here because we want:
-   * <ol>
-   * <li>Fast access for removing/adding a AttrValueHistorical keyed by the attribute value => Use a Map</li>
-   * <li>Ordering changes according to the CSN of each changes => Use a LinkedHashMap</li>
-   * </ol>
-   */
-  private final Map<AttrValueHistorical, AttrValueHistorical> valuesHist = new LinkedHashMap<>();
+  /** Change history for the values of this attribute. */
+  private final SmallSet<AttrValueHistorical> valuesHist = new SmallSet<>();
 
    /**
     * Create a new object from the provided information.
@@ -59,15 +51,13 @@ public class AttrHistoricalMultiple extends AttrHistorical
     * @param updateTime the last time this attribute was updated
     * @param valuesHist the new attribute values when updated.
     */
-   public AttrHistoricalMultiple(CSN deleteTime,
-       CSN updateTime,
-       Map<AttrValueHistorical,AttrValueHistorical> valuesHist)
+   AttrHistoricalMultiple(CSN deleteTime, CSN updateTime, Set<AttrValueHistorical> valuesHist)
    {
      this.deleteTime = deleteTime;
      this.lastUpdateTime = updateTime;
      if (valuesHist != null)
      {
-       this.valuesHist.putAll(valuesHist);
+      this.valuesHist.addAll(valuesHist);
      }
    }
 
@@ -82,7 +72,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
     * Returns the last time when the attribute was updated.
     * @return the last time when the attribute was updated
     */
-   private CSN getLastUpdateTime()
+   CSN getLastUpdateTime()
    {
      return lastUpdateTime;
    }
@@ -91,18 +81,6 @@ public class AttrHistoricalMultiple extends AttrHistorical
    public CSN getDeleteTime()
    {
      return deleteTime;
-   }
-
-   /**
-    * Duplicate an object. CSNs are duplicated by references.
-    * <p>
-    * Method only called in tests
-    *
-    * @return the duplicated object.
-    */
-   AttrHistoricalMultiple duplicate()
-   {
-     return new AttrHistoricalMultiple(this.deleteTime, this.lastUpdateTime, this.valuesHist);
    }
 
    /**
@@ -115,8 +93,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
    {
      // iterate through the values in the valuesInfo and suppress all the values
      // that have not been added after the date of this delete.
-     Iterator<AttrValueHistorical> it = valuesHist.keySet().iterator();
-     while (it.hasNext())
+     for (Iterator<AttrValueHistorical> it = valuesHist.iterator(); it.hasNext();)
      {
        AttrValueHistorical info = it.next();
        if (csn.isNewerThanOrEqualTo(info.getValueUpdateTime()) &&
@@ -147,21 +124,25 @@ public class AttrHistoricalMultiple extends AttrHistorical
    */
   void delete(Attribute attr, CSN csn)
   {
+    AttributeType attrType = attr.getAttributeDescription().getAttributeType();
     for (ByteString val : attr)
     {
-      delete(val, csn);
+      delete(val, attrType, csn);
     }
   }
 
    /**
-    * Update the historical of this attribute after a delete value.
-    *
-    * @param val value that was deleted
-    * @param csn time when the delete was done
-    */
-   void delete(ByteString val, CSN csn)
+   * Update the historical of this attribute after a delete value.
+   *
+   * @param val
+   *          value that was deleted
+   * @param attrType
+   * @param csn
+   *          time when the delete was done
+   */
+  void delete(ByteString val, AttributeType attrType, CSN csn)
    {
-     update(csn, new AttrValueHistorical(val, null, csn));
+     update(csn, new AttrValueHistorical(val, attrType, null, csn));
    }
 
   /**
@@ -174,44 +155,41 @@ public class AttrHistoricalMultiple extends AttrHistorical
    */
   private void add(Attribute attr, CSN csn)
   {
+    AttributeType attrType = attr.getAttributeDescription().getAttributeType();
     for (ByteString val : attr)
     {
-      add(val, csn);
+      add(val, attrType, csn);
     }
   }
 
-   /**
-     * Update the historical information when a value is added.
-     *
-     * @param addedValue
-     *          values that was added
-     * @param csn
-     *          time when the value was added
-     */
-   void add(ByteString addedValue, CSN csn)
-   {
-     update(csn, new AttrValueHistorical(addedValue, csn, null));
-   }
+  /**
+   * Update the historical information when a value is added.
+   *
+   * @param addedValue
+   *          the added value
+   * @param attrType
+   *          the attribute type of the added value
+   * @param csn
+   *          time when the value was added
+   */
+  void add(ByteString addedValue, AttributeType attrType, CSN csn)
+  {
+    update(csn, new AttrValueHistorical(addedValue, attrType, csn, null));
+  }
 
   private void update(CSN csn, AttrValueHistorical valInfo)
   {
-    updateValInfo(valInfo, valInfo);
+    valuesHist.addOrReplace(valInfo);
     if (csn.isNewerThan(lastUpdateTime))
     {
       lastUpdateTime = csn;
     }
   }
 
-  private void updateValInfo(AttrValueHistorical oldValInfo, AttrValueHistorical newValInfo)
-  {
-    valuesHist.remove(oldValInfo);
-    valuesHist.put(newValInfo, newValInfo);
-  }
-
   @Override
   public Set<AttrValueHistorical> getValuesHistorical()
   {
-    return valuesHist.keySet();
+    return valuesHist;
   }
 
   @Override
@@ -388,7 +366,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
       m.setModificationType(ModificationType.REPLACE);
       AttributeBuilder builder = new AttributeBuilder(modAttr.getAttributeDescription());
 
-      for (Iterator<AttrValueHistorical> it = valuesHist.keySet().iterator(); it.hasNext();)
+      for (Iterator<AttrValueHistorical> it = valuesHist.iterator(); it.hasNext();)
       {
         AttrValueHistorical valInfo = it.next();
 
@@ -425,15 +403,20 @@ public class AttrHistoricalMultiple extends AttrHistorical
       // we are processing DELETE of some attribute values
       AttributeBuilder builder = new AttributeBuilder(modAttr);
 
+      AttributeType attrType = modAttr.getAttributeDescription().getAttributeType();
       for (ByteString val : modAttr)
       {
         boolean deleteIt = true;  // true if the delete must be done
         boolean addedInCurrentOp = false;
 
         // update historical information
-        AttrValueHistorical valInfo = new AttrValueHistorical(val, null, csn);
+        AttrValueHistorical valInfo = new AttrValueHistorical(val, attrType, null, csn);
         AttrValueHistorical oldValInfo = valuesHist.get(valInfo);
-        if (oldValInfo != null)
+        if (oldValInfo == null)
+        {
+          valuesHist.add(valInfo);
+        }
+        else
         {
           // this value already exist in the historical information
           if (csn.equals(oldValInfo.getValueUpdateTime()))
@@ -445,16 +428,12 @@ public class AttrHistoricalMultiple extends AttrHistorical
           if (csn.isNewerThanOrEqualTo(oldValInfo.getValueDeleteTime()) &&
               csn.isNewerThanOrEqualTo(oldValInfo.getValueUpdateTime()))
           {
-            updateValInfo(oldValInfo, valInfo);
+            valuesHist.addOrReplace(valInfo);
           }
           else if (oldValInfo.isUpdate())
           {
             deleteIt = false;
           }
-        }
-        else
-        {
-          updateValInfo(oldValInfo, valInfo);
         }
 
         /* if the attribute value is not to be deleted
@@ -516,10 +495,12 @@ public class AttrHistoricalMultiple extends AttrHistorical
       return false;
     }
 
-    AttributeBuilder builder = new AttributeBuilder(m.getAttribute());
-    for (ByteString addVal : m.getAttribute())
+    Attribute attribute = m.getAttribute();
+    AttributeBuilder builder = new AttributeBuilder(attribute);
+    AttributeType attrType = attribute.getAttributeDescription().getAttributeType();
+    for (ByteString addVal : attribute)
     {
-      AttrValueHistorical valInfo = new AttrValueHistorical(addVal, csn, null);
+      AttrValueHistorical valInfo = new AttrValueHistorical(addVal, attrType, csn, null);
       AttrValueHistorical oldValInfo = valuesHist.get(valInfo);
       if (oldValInfo == null)
       {
@@ -527,7 +508,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
          * add it in the historical information
          * let the operation process normally
          */
-        valuesHist.put(valInfo, valInfo);
+        valuesHist.add(valInfo);
       }
       else
       {
@@ -540,7 +521,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
            */
           if (csn.isNewerThan(oldValInfo.getValueUpdateTime()))
           {
-            updateValInfo(oldValInfo, valInfo);
+            valuesHist.addOrReplace(valInfo);
           }
           builder.remove(addVal);
         }
@@ -551,7 +532,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
            */
           if (csn.isNewerThanOrEqualTo(oldValInfo.getValueDeleteTime()))
           {
-            updateValInfo(oldValInfo, valInfo);
+            valuesHist.addOrReplace(valInfo);
           }
           else
           {
@@ -582,21 +563,21 @@ public class AttrHistoricalMultiple extends AttrHistorical
   }
 
   @Override
-  public void assign(HistAttrModificationKey histKey, ByteString value, CSN csn)
+  public void assign(HistAttrModificationKey histKey, AttributeType attrType, ByteString value, CSN csn)
   {
     switch (histKey)
     {
     case ADD:
       if (value != null)
       {
-        add(value, csn);
+        add(value, attrType, csn);
       }
       break;
 
     case DEL:
       if (value != null)
       {
-        delete(value, csn);
+        delete(value, attrType, csn);
       }
       break;
 
@@ -604,7 +585,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
       delete(csn);
       if (value != null)
       {
-        add(value, csn);
+        add(value, attrType, csn);
       }
       break;
 
@@ -633,7 +614,7 @@ public class AttrHistoricalMultiple extends AttrHistorical
       }
       sb.append("lastUpdateTime=").append(lastUpdateTime);
     }
-    sb.append(", valuesHist=").append(valuesHist.keySet());
+    sb.append(", valuesHist=").append(valuesHist);
     sb.append(")");
     return sb.toString();
   }

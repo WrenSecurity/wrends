@@ -16,8 +16,6 @@
  */
 package org.opends.server.api;
 
-import static org.opends.server.util.ServerConstants.*;
-
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,10 +25,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.ldap.schema.CoreSchema;
+import org.forgerock.opendj.ldap.schema.ObjectClass;
 import org.forgerock.opendj.server.config.server.MonitorProviderCfg;
-import org.opends.server.types.DirectoryConfig;
 import org.opends.server.types.InitializationException;
-import org.opends.server.types.ObjectClass;
 
 /**
  * This class defines the set of methods and structures that must be
@@ -157,7 +155,7 @@ public abstract class MonitorProvider<T extends MonitorProviderCfg>
    */
   public ObjectClass getMonitorObjectClass()
   {
-    return DirectoryConfig.getObjectClass(OC_EXTENSIBLE_OBJECT_LC, true);
+    return CoreSchema.getExtensibleObjectObjectClass();
   }
 
 

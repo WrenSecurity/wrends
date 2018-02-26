@@ -34,6 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.IllegalFormatConversionException;
+import java.util.MissingFormatArgumentException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -57,6 +59,7 @@ import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
+import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.DecodeException;
@@ -65,8 +68,8 @@ import org.forgerock.opendj.ldap.GeneralizedTime;
 import org.forgerock.opendj.ldap.ModificationType;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
+import org.forgerock.opendj.ldap.Filter;
 import org.forgerock.opendj.ldap.schema.AttributeType;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.server.config.meta.LDAPPassThroughAuthenticationPolicyCfgDefn.MappingPolicy;
 import org.forgerock.opendj.server.config.server.LDAPPassThroughAuthenticationPolicyCfg;
 import org.opends.server.api.AuthenticationPolicy;
@@ -105,17 +108,15 @@ import org.opends.server.util.TimeThread;
 
 import static org.opends.messages.ExtensionMessages.*;
 import static org.opends.server.config.ConfigConstants.*;
+import static org.opends.server.core.DirectoryServer.*;
 import static org.opends.server.protocols.internal.InternalClientConnection.*;
 import static org.opends.server.protocols.ldap.LDAPConstants.*;
 import static org.opends.server.util.StaticUtils.*;
 
-/**
- * LDAP pass through authentication policy implementation.
- */
+/** LDAP pass through authentication policy implementation. */
 public final class LDAPPassThroughAuthenticationPolicyFactory implements
     AuthenticationPolicyFactory<LDAPPassThroughAuthenticationPolicyCfg>
 {
-
   // TODO: handle password policy response controls? AD?
   // TODO: custom aliveness pings
   // TODO: improve debug logging and error messages.
@@ -127,17 +128,13 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
   static abstract class AbstractLoadBalancer implements ConnectionFactory,
       Runnable
   {
-    /**
-     * A connection which automatically retries operations on other servers.
-     */
+    /** A connection which automatically retries operations on other servers. */
     private final class FailoverConnection implements Connection
     {
       private Connection connection;
       private MonitoredConnectionFactory factory;
       private final int startIndex;
       private int nextIndex;
-
-
 
       private FailoverConnection(final int startIndex)
           throws DirectoryException
@@ -175,18 +172,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         throw lastException;
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void close()
       {
         connection.close();
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public ByteString search(final DN baseDN, final SearchScope scope,
           final SearchFilter filter) throws DirectoryException
@@ -205,9 +196,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         }
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void simpleBind(final ByteString username,
           final ByteString password) throws DirectoryException
@@ -226,8 +214,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           }
         }
       }
-
-
 
       private void handleDirectoryException(final DirectoryException e)
           throws DirectoryException
@@ -269,8 +255,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         throw e;
       }
 
-
-
       private void incrementNextIndex()
       {
         // Try the next index.
@@ -279,10 +263,7 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           nextIndex = 0;
         }
       }
-
     }
-
-
 
     /**
      * A connection factory which caches its online/offline state in order to
@@ -296,25 +277,17 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       private volatile boolean isAvailable = true;
       private DirectoryException lastException;
 
-
-
       private MonitoredConnectionFactory(final ConnectionFactory factory)
       {
         this.factory = factory;
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void close()
       {
         factory.close();
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public Connection getConnection() throws DirectoryException
       {
@@ -334,13 +307,9 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
     private final MonitoredConnectionFactory[] factories;
     private final int maxIndex;
     private final ScheduledFuture<?> monitorFuture;
-
-
 
     /**
      * Creates a new abstract load-balancer.
@@ -365,11 +334,7 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           TimeUnit.SECONDS);
     }
 
-
-
-    /**
-     * Close underlying connection pools.
-     */
+    /** Close underlying connection pools. */
     @Override
     public final void close()
     {
@@ -381,9 +346,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public final Connection getConnection() throws DirectoryException
     {
@@ -391,11 +353,7 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       return new FailoverConnection(startIndex);
     }
 
-
-
-    /**
-     * Try to connect to any offline connection factories.
-     */
+    /** Try to connect to any offline connection factories. */
     @Override
     public void run()
     {
@@ -415,18 +373,13 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
     /**
      * Return the start which should be used for the next connection attempt.
      *
      * @return The start which should be used for the next connection attempt.
      */
     abstract int getStartIndex();
-
   }
-
-
 
   /**
    * A factory which returns pre-authenticated connections for searches.
@@ -436,12 +389,9 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
   static final class AuthenticatedConnectionFactory implements
       ConnectionFactory
   {
-
     private final ConnectionFactory factory;
     private final DN username;
     private final String password;
-
-
 
     /**
      * Creates a new authenticated connection factory which will bind on
@@ -463,18 +413,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       this.password = password;
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public void close()
     {
       factory.close();
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public Connection getConnection() throws DirectoryException
     {
@@ -495,25 +439,14 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
       return connection;
     }
-
   }
 
-
-
-  /**
-   * An LDAP connection which will be used in order to search for or
-   * authenticate users.
-   */
+  /** An LDAP connection which will be used in order to search for or authenticate users. */
   static interface Connection extends Closeable
   {
-
-    /**
-     * Closes this connection.
-     */
+    /** Closes this connection. */
     @Override
     void close();
-
-
 
     /**
      * Returns the name of the user whose entry matches the provided search
@@ -536,8 +469,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     ByteString search(DN baseDN, SearchScope scope, SearchFilter filter)
         throws DirectoryException;
 
-
-
     /**
      * Performs a simple bind for the user.
      *
@@ -553,8 +484,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         throws DirectoryException;
   }
 
-
-
   /**
    * An interface for obtaining connections: users of this interface will obtain
    * a connection, perform a single operation (search or bind), and then close
@@ -569,8 +498,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
      */
     @Override
     void close();
-
-
 
     /**
      * Returns a connection which can be used in order to search for or
@@ -593,26 +520,17 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
    */
   static final class ConnectionPool implements ConnectionFactory
   {
-
-    /**
-     * Pooled connection's intercept close and release connection back to the
-     * pool.
-     */
+    /** Pooled connection's intercept close and release connection back to the pool. */
     private final class PooledConnection implements Connection
     {
       private Connection connection;
       private boolean connectionIsClosed;
-
-
 
       private PooledConnection(final Connection connection)
       {
         this.connection = connection;
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void close()
       {
@@ -635,9 +553,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         }
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public ByteString search(final DN baseDN, final SearchScope scope,
           final SearchFilter filter) throws DirectoryException
@@ -668,9 +583,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         }
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void simpleBind(final ByteString username,
           final ByteString password) throws DirectoryException
@@ -701,8 +613,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         }
       }
 
-
-
       private void closeIfConnectionFailure(final DirectoryException e)
           throws DirectoryException
       {
@@ -714,8 +624,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           availableConnections.release();
         }
       }
-
-
 
       private void reconnectIfConnectionFailure(final DirectoryException e)
           throws DirectoryException
@@ -743,8 +651,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
     /** Guarded by PolicyImpl.lock. */
     private boolean poolIsClosed;
 
@@ -752,8 +658,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     private final int poolSize = Runtime.getRuntime().availableProcessors() * 2;
     private final Semaphore availableConnections = new Semaphore(poolSize);
     private final Queue<Connection> connectionPool = new ConcurrentLinkedQueue<>();
-
-
 
     /**
      * Creates a new connection pool for the provided factory.
@@ -767,11 +671,7 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       this.factory = factory;
     }
 
-
-
-    /**
-     * Release all connections: do we want to block?
-     */
+    /** Release all connections: do we want to block? */
     @Override
     public void close()
     {
@@ -796,9 +696,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public Connection getConnection() throws DirectoryException
     {
@@ -830,8 +727,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     }
   }
 
-
-
   /**
    * A simplistic two-way fail-over connection factory implementation.
    * <p>
@@ -839,7 +734,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
    */
   static final class FailoverLoadBalancer extends AbstractLoadBalancer
   {
-
     /**
      * Creates a new fail-over connection factory which will always try the
      * primary connection factory first, before trying the second.
@@ -858,19 +752,13 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       super(new ConnectionFactory[] { primary, secondary }, scheduler);
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     int getStartIndex()
     {
       // Always start with the primaries.
       return 0;
     }
-
   }
-
-
 
   /**
    * The PTA design guarantees that connections are only used by a single thread
@@ -880,9 +768,7 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
    */
   static final class LDAPConnectionFactory implements ConnectionFactory
   {
-    /**
-     * LDAP connection implementation.
-     */
+    /** LDAP connection implementation. */
     private final class LDAPConnection implements Connection
     {
       private final Socket plainSocket;
@@ -891,8 +777,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       private final LDAPReader reader;
       private int nextMessageID = 1;
       private boolean isClosed;
-
-
 
       private LDAPConnection(final Socket plainSocket, final Socket ldapSocket,
           final LDAPReader reader, final LDAPWriter writer)
@@ -903,9 +787,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         this.writer = writer;
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void close()
       {
@@ -938,9 +819,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         StaticUtils.close(ldapSocket, plainSocket);
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public ByteString search(final DN baseDN, final SearchScope scope,
           final SearchFilter filter) throws DirectoryException
@@ -1040,9 +918,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         return username;
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void simpleBind(final ByteString username,
           final ByteString password) throws DirectoryException
@@ -1085,16 +960,11 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         }
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       protected void finalize()
       {
         close();
       }
-
-
 
       private void handleUnexpectedResponse(final LDAPMessage responseMessage)
           throws DirectoryException
@@ -1135,8 +1005,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
             ERR_LDAP_PTA_CONNECTION_WRONG_RESPONSE.get(host, port,
                 cfg.dn(), responseMessage.getProtocolOp()));
       }
-
-
 
       /** Reads a response message and adapts errors to directory exceptions. */
       private LDAPMessage readResponse() throws DirectoryException
@@ -1190,8 +1058,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         return responseMessage;
       }
 
-
-
       /** Sends a request message and adapts errors to directory exceptions. */
       private void sendRequest(final ProtocolOp request)
           throws DirectoryException
@@ -1210,14 +1076,10 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
     private final String host;
     private final int port;
     private final LDAPPassThroughAuthenticationPolicyCfg cfg;
     private final int timeoutMS;
-
-
 
     /**
      * LDAP connection factory implementation is package private so that it can
@@ -1243,18 +1105,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           Integer.MAX_VALUE);
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public void close()
     {
       // Nothing to do.
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public Connection getConnection() throws DirectoryException
     {
@@ -1390,8 +1246,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     }
   }
 
-
-
   /**
    * An interface for obtaining a connection factory for LDAP connections to a
    * named LDAP server and the monitoring scheduler.
@@ -1414,8 +1268,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     ConnectionFactory getLDAPConnectionFactory(String host, int port,
         LDAPPassThroughAuthenticationPolicyCfg cfg);
 
-
-
     /**
      * Returns the scheduler which should be used to periodically ping
      * connection factories to determine when they are online.
@@ -1424,8 +1276,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
      *         connection factories to determine when they are online.
      */
     ScheduledExecutorService getScheduledExecutorService();
-
-
 
     /**
      * Returns the current time in order to perform cached password expiration
@@ -1436,8 +1286,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
      */
     String getCurrentTime();
 
-
-
     /**
      * Returns the current time in order to perform cached password expiration
      * checks.
@@ -1447,8 +1295,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     long getCurrentTimeMS();
   }
 
-
-
   /**
    * A simplistic load-balancer connection factory implementation using
    * approximately round-robin balancing.
@@ -1457,8 +1303,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
   {
     private final AtomicInteger nextIndex = new AtomicInteger();
     private final int maxIndex;
-
-
 
     /**
      * Creates a new load-balancer which will distribute connection requests
@@ -1476,9 +1320,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       this.maxIndex = factories.length;
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     int getStartIndex()
     {
@@ -1508,43 +1349,28 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       // connection factory.
       return oldNextIndex;
     }
-
   }
 
-
-
-  /**
-   * LDAP PTA policy implementation.
-   */
+  /** LDAP PTA policy implementation. */
   private final class PolicyImpl extends AuthenticationPolicy implements
       ConfigurationChangeListener<LDAPPassThroughAuthenticationPolicyCfg>
   {
-
-    /**
-     * LDAP PTA policy state implementation.
-     */
+    /** LDAP PTA policy state implementation. */
     private final class StateImpl extends AuthenticationPolicyState
     {
-
       private final AttributeType cachedPasswordAttribute;
       private final AttributeType cachedPasswordTimeAttribute;
 
       private ByteString newCachedPassword;
 
-
-
-
       private StateImpl(final Entry userEntry)
       {
         super(userEntry);
 
-        this.cachedPasswordAttribute = DirectoryServer.getAttributeType(OP_ATTR_PTAPOLICY_CACHED_PASSWORD);
-        this.cachedPasswordTimeAttribute = DirectoryServer.getAttributeType(OP_ATTR_PTAPOLICY_CACHED_PASSWORD_TIME);
+        this.cachedPasswordAttribute = getSchema().getAttributeType(OP_ATTR_PTAPOLICY_CACHED_PASSWORD);
+        this.cachedPasswordTimeAttribute = getSchema().getAttributeType(OP_ATTR_PTAPOLICY_CACHED_PASSWORD_TIME);
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public void finalizeStateAfterBind() throws DirectoryException
       {
@@ -1593,18 +1419,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         }
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public AuthenticationPolicy getAuthenticationPolicy()
       {
         return PolicyImpl.this;
       }
 
-
-
-      /** {@inheritDoc} */
       @Override
       public boolean passwordMatches(final ByteString password)
           throws DirectoryException
@@ -1660,6 +1480,8 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
             // A search against the remote directory is required in order to
             // determine the bind DN.
 
+            final String filterTemplate =  cfg.getMappedSearchFilterTemplate();
+
             // Construct the search filter.
             final LinkedList<SearchFilter> filterComponents = new LinkedList<>();
             for (final AttributeType at : cfg.getMappedAttribute())
@@ -1668,7 +1490,15 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
               {
                 for (final ByteString value : attribute)
                 {
-                  filterComponents.add(SearchFilter.createEqualityFilter(at, value));
+                  if (filterTemplate != null)
+                  {
+                    filterComponents.add(SearchFilter.createFilterFromString(
+                        Filter.format(filterTemplate, value).toString()));
+                  }
+                  else
+                  {
+                    filterComponents.add(SearchFilter.createEqualityFilter(at, value));
+                  }
                 }
               }
             }
@@ -1738,9 +1568,7 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
 
             if (username == null)
             {
-              /*
-               * No matching entries were found in the remote directory.
-               */
+              /* No matching entries were found in the remote directory. */
               throw new DirectoryException(ResultCode.INVALID_CREDENTIALS,
                   ERR_LDAP_PTA_MAPPED_SEARCH_NO_CANDIDATES.get(
                       userEntry.getName(), cfg.dn(), filter));
@@ -1782,8 +1610,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           sharedLock.unlock();
         }
       }
-
-
 
       private boolean passwordMatchesCachedPassword(ByteString password)
       {
@@ -1872,9 +1698,7 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
-    // Guards against configuration changes.
+    /** Guards against configuration changes. */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReadLock sharedLock = lock.readLock();
     private final WriteLock exclusiveLock = lock.writeLock();
@@ -1887,17 +1711,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
 
     private PasswordStorageScheme<?> pwdStorageScheme;
 
-
-
     private PolicyImpl(
         final LDAPPassThroughAuthenticationPolicyCfg configuration)
     {
       initializeConfiguration(configuration);
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public ConfigChangeResult applyConfigurationChange(
         final LDAPPassThroughAuthenticationPolicyCfg cfg)
@@ -1915,9 +1734,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       return new ConfigChangeResult();
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public AuthenticationPolicyState createAuthenticationPolicyState(
         final Entry userEntry, final long time) throws DirectoryException
@@ -1926,9 +1742,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       return new StateImpl(userEntry);
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public void finalizeAuthenticationPolicy()
     {
@@ -1944,18 +1757,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public DN getDN()
     {
       return cfg.dn();
     }
 
-
-
-    /** {@inheritDoc} */
     @Override
     public boolean isConfigurationChangeAcceptable(
         final LDAPPassThroughAuthenticationPolicyCfg cfg,
@@ -1964,8 +1771,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       return LDAPPassThroughAuthenticationPolicyFactory.this
           .isConfigurationAcceptable(cfg, unacceptableReasons);
     }
-
-
 
     private void closeConnections()
     {
@@ -1983,15 +1788,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           bindFactory.close();
           bindFactory = null;
         }
-
       }
       finally
       {
         exclusiveLock.unlock();
       }
     }
-
-
 
     private void initializeConfiguration(
         final LDAPPassThroughAuthenticationPolicyCfg cfg)
@@ -2080,18 +1882,13 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       }
     }
 
-
-
     private ConnectionFactory newLDAPConnectionFactory(final String hostPort)
     {
       // Validation already performed by admin framework.
       final HostPort hp = HostPort.valueOf(hostPort);
       return provider.getLDAPConnectionFactory(hp.getHost(), hp.getPort(), cfg);
     }
-
   }
-
-
 
   /** Debug tracer for this class. */
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
@@ -2130,16 +1927,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
           }
         });
 
-
-
     @Override
     public ConnectionFactory getLDAPConnectionFactory(final String host,
         final int port, final LDAPPassThroughAuthenticationPolicyCfg cfg)
     {
       return new LDAPConnectionFactory(host, port, cfg);
     }
-
-
 
     @Override
     public ScheduledExecutorService getScheduledExecutorService()
@@ -2160,8 +1953,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     }
 
   };
-
-
 
   /**
    * Determines whether or no a result code is expected to trigger the
@@ -2197,8 +1988,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       return false;
     }
   }
-
-
 
   /**
    * Get the search bind password performing mapped searches.
@@ -2278,7 +2067,25 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     return password;
   }
 
+  private static boolean isMappedFilterTemplateValid(
+      final String filterTemplate,
+      final List<LocalizableMessage> unacceptableReasons)
+  {
+    if (filterTemplate != null)
+    {
+      try
+      {
+        Filter.format(filterTemplate, "testValue");
+      }
+      catch(IllegalFormatConversionException | MissingFormatArgumentException | LocalizedIllegalArgumentException e)
+      {
+        unacceptableReasons.add(ERR_LDAP_PTA_INVALID_FILTER_TEMPLATE.get(filterTemplate));
+        return false;
+      }
+    }
 
+    return true;
+  }
 
   private static boolean isServerAddressValid(
       final LDAPPassThroughAuthenticationPolicyCfg configuration,
@@ -2299,8 +2106,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       return false;
     }
   }
-
-
 
   private static String mappedAttributesAsString(
       final Collection<AttributeType> attributes)
@@ -2323,8 +2128,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
       return builder.toString();
     }
   }
-
-
 
   /**
    * Public default constructor used by the admin framework. This will use the
@@ -2359,9 +2162,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     this.provider = provider;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public AuthenticationPolicy createAuthenticationPolicy(
       final LDAPPassThroughAuthenticationPolicyCfg configuration)
@@ -2372,9 +2172,6 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
     return policy;
   }
 
-
-
-  /** {@inheritDoc} */
   @Override
   public boolean isConfigurationAcceptable(
       final LDAPPassThroughAuthenticationPolicyCfg cfg,
@@ -2402,6 +2199,12 @@ public final class LDAPPassThroughAuthenticationPolicyFactory implements
         && cfg.getMappedSearchBindDN() != null
         && !cfg.getMappedSearchBindDN().isRootDN()
         && getMappedSearchBindPassword(cfg, unacceptableReasons) == null)
+    {
+      configurationIsAcceptable = false;
+    }
+
+    if (!isMappedFilterTemplateValid(cfg.getMappedSearchFilterTemplate(),
+        unacceptableReasons))
     {
       configurationIsAcceptable = false;
     }

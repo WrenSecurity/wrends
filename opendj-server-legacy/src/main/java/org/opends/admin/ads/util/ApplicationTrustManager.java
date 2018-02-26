@@ -13,9 +13,8 @@
  *
  * Copyright 2008-2009 Sun Microsystems, Inc.
  * Portions Copyright 2009 Parametric Technology Corporation (PTC)
- * Portions Copyright 2011-2015 ForgeRock AS.
+ * Portions Copyright 2011-2016 ForgeRock AS.
  */
-
 package org.opends.admin.ads.util;
 
 import java.security.KeyStore;
@@ -25,6 +24,7 @@ import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
@@ -46,8 +46,7 @@ import org.opends.server.util.Platform;
  * it cannot be retrieved this class will only accept the certificates
  * explicitly accepted by the user (and specified by calling acceptCertificate).
  *
- * NOTE: this class is not aimed to be used when we have connections in
- * parallel.
+ * NOTE: this class is not aimed to be used when we have connections in parallel.
  */
 public class ApplicationTrustManager implements X509TrustManager
 {
@@ -57,14 +56,9 @@ public class ApplicationTrustManager implements X509TrustManager
    */
   public enum Cause
   {
-    /**
-     * The certificate was not trusted.
-     */
+    /** The certificate was not trusted. */
     NOT_TRUSTED,
-    /**
-     * The certificate's subject DN's value and the host name we tried to
-     * connect to do not match.
-     */
+    /** The certificate's subject DN's value and the host name we tried to connect to do not match. */
     HOST_NAME_MISMATCH
   }
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
@@ -73,18 +67,17 @@ public class ApplicationTrustManager implements X509TrustManager
   private String lastRefusedAuthType;
   private X509Certificate[] lastRefusedChain;
   private Cause lastRefusedCause;
-  private KeyStore keystore;
+  private final KeyStore keystore;
 
   /**
    * The following ArrayList contain information about the certificates
    * explicitly accepted by the user.
    */
-  private ArrayList<X509Certificate[]> acceptedChains = new ArrayList<>();
-  private ArrayList<String> acceptedAuthTypes = new ArrayList<>();
-  private ArrayList<String> acceptedHosts = new ArrayList<>();
+  private final List<X509Certificate[]> acceptedChains = new ArrayList<>();
+  private final List<String> acceptedAuthTypes = new ArrayList<>();
+  private final List<String> acceptedHosts = new ArrayList<>();
 
   private String host;
-
 
   /**
    * The default constructor.
@@ -161,7 +154,7 @@ public class ApplicationTrustManager implements X509TrustManager
       }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void checkClientTrusted(X509Certificate[] chain, String authType)
   throws CertificateException
   {
@@ -195,7 +188,7 @@ public class ApplicationTrustManager implements X509TrustManager
     {
       try
       {
-        verifyHostName(chain, authType);
+        verifyHostName(chain);
       }
       catch (CertificateException ce)
       {
@@ -204,7 +197,7 @@ public class ApplicationTrustManager implements X509TrustManager
     }
   }
 
-  /** {@inheritDoc} */
+  @Override
   public void checkServerTrusted(X509Certificate[] chain,
       String authType) throws CertificateException
   {
@@ -238,7 +231,7 @@ public class ApplicationTrustManager implements X509TrustManager
     {
       try
       {
-        verifyHostName(chain, authType);
+        verifyHostName(chain);
       }
       catch (CertificateException ce)
       {
@@ -257,7 +250,7 @@ public class ApplicationTrustManager implements X509TrustManager
     throw new OpendsCertificateException(chain, ce);
   }
 
-  /** {@inheritDoc} */
+  @Override
   public X509Certificate[] getAcceptedIssuers()
   {
     if (trustManager != null)
@@ -364,8 +357,7 @@ public class ApplicationTrustManager implements X509TrustManager
    * @throws CertificateException if the subject DN of the certificate does
    * not match with the host name specified with the method setHost.
    */
-  private void verifyHostName(X509Certificate[] chain, String authType)
-  throws CertificateException
+  private void verifyHostName(X509Certificate[] chain) throws CertificateException
   {
     if (host != null)
     {

@@ -1177,8 +1177,7 @@ public class LDAPConnectionConsoleInteraction
   }
 
   /**
-   * Indicates whether or not a connection should use SSL based on this
-   * interaction.
+   * Indicates whether a connection should use SSL based on this interaction.
    *
    * @return boolean where true means use SSL
    */
@@ -1188,8 +1187,7 @@ public class LDAPConnectionConsoleInteraction
   }
 
   /**
-   * Indicates whether or not a connection should use StartTLS based on this
-   * interaction.
+   * Indicates whether a connection should use StartTLS based on this interaction.
    *
    * @return boolean where true means use StartTLS
    */
@@ -1243,6 +1241,10 @@ public class LDAPConnectionConsoleInteraction
     if (useAdminOrBindDn)
     {
       return state.getAdminOrBindDN();
+    }
+    else if (isAdminUidArgVisible())
+    {
+      return getAdministratorDN(state.adminUID);
     }
     else
     {

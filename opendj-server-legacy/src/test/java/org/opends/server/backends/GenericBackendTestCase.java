@@ -20,12 +20,14 @@ import static org.opends.server.TestCaseUtils.*;
 import static org.testng.Assert.*;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
+import org.forgerock.opendj.ldap.DN;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.api.Backend;
 import org.opends.server.api.Backend.BackendOperation;
 import org.opends.server.core.DirectoryServer;
-import org.forgerock.opendj.ldap.DN;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -50,7 +52,7 @@ public class GenericBackendTestCase extends BackendTestCase
   @DataProvider(name = "backends")
   public Object[][] getBackends()
   {
-    ArrayList<Backend> backendList = new ArrayList<>(DirectoryServer.getBackends().values());
+    List<Backend<?>> backendList = new ArrayList<>(DirectoryServer.getBackends());
     Object[][] objectArray = new Object[backendList.size()][1];
     for (int i=0; i < objectArray.length; i++)
     {
@@ -63,9 +65,9 @@ public class GenericBackendTestCase extends BackendTestCase
   @Test(dataProvider = "backends")
   public void testGetBaseDNs(Backend<?> b)
   {
-    DN[] baseDNs = b.getBaseDNs();
+    Set<DN> baseDNs = b.getBaseDNs();
     assertNotNull(baseDNs);
-    assertNotEquals(baseDNs.length, 0);
+    assertNotEquals(baseDNs.size(), 0);
   }
 
   /** Tests the {@link Backend#getSupportedControls} method for the provided backend. */

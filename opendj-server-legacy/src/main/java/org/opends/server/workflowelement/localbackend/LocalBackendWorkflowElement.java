@@ -619,7 +619,7 @@ public class LocalBackendWorkflowElement
     final Entry fullEntry = entry.duplicate(true);
 
     // Even though the associated update succeeded,
-    // we should still check whether or not we should return the entry.
+    // we should still check whether we should return the entry.
     final SearchResultEntry unfilteredSearchEntry = new SearchResultEntry(fullEntry, null);
     if (getAccessControlHandler().maySend(operation, unfilteredSearchEntry))
     {
@@ -653,7 +653,7 @@ public class LocalBackendWorkflowElement
     }
 
     // Even though the associated update succeeded,
-    // we should still check whether or not we should return the entry.
+    // we should still check whether we should return the entry.
     final SearchResultEntry unfilteredSearchEntry = new SearchResultEntry(entry, null);
     if (getAccessControlHandler().maySend(operation, unfilteredSearchEntry))
     {
@@ -898,16 +898,44 @@ public class LocalBackendWorkflowElement
 
   private static LocalBackendWorkflowElement getLocalBackendWorkflowElement(DN entryDN)
   {
-    while (entryDN != null)
+    if (entryDN.isRootDN())
     {
-      final LocalBackendWorkflowElement workflow = registeredLocalBackends.get(entryDN);
-      if (workflow != null)
-      {
-        return workflow;
-      }
-      entryDN = DirectoryServer.getParentDNInSuffix(entryDN);
+      return registeredLocalBackends.get(entryDN);
     }
-    return null;
+    /*
+     * Try to minimize the number of lookups in the Map to find the backend containing the entry.
+     * If the DN contains many RDNs it is faster to iterate through the list of registered backends,
+     * otherwise iterating through the parents requires less lookups. It also avoids some attacks
+     * where we would spend time going through the list of all parents to finally decide the
+     * baseDN is absent.
+     */
+    if (entryDN.size() <= registeredLocalBackends.size())
+    {
+      while (!entryDN.isRootDN())
+      {
+        final LocalBackendWorkflowElement workflow = registeredLocalBackends.get(entryDN);
+        if (workflow != null)
+        {
+          return workflow;
+        }
+        entryDN = entryDN.parent();
+      }
+      return null;
+    }
+    else
+    {
+      LocalBackendWorkflowElement workflow = null;
+      int currentSize = 0;
+      for (DN backendDN : registeredLocalBackends.keySet())
+      {
+        if (entryDN.isSubordinateOrEqualTo(backendDN) && backendDN.size() > currentSize)
+        {
+          workflow = registeredLocalBackends.get(backendDN);
+          currentSize = backendDN.size();
+        }
+      }
+      return workflow;
+    }
   }
 
   /**
