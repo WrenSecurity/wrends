@@ -64,10 +64,18 @@
             <artifactId>i18n-core</artifactId>
         </dependency>
 
-		<dependency>
-			<groupId>org.forgerock.http</groupId>
-			<artifactId>chf-oauth2</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.forgerock.http</groupId>
+            <artifactId>chf-oauth2</artifactId>
+            <!--
+              NOTE: This is a workaround for the missing openIG Toolkit 4.5.2.
+                    In OpenDS 4.x, FR moved this dependency to a separate
+                    project that we have in wrensec-commons. So, for 3.5.x,
+                    we're using it instead of the copy from OpenIG we don't
+                    have.
+              -->
+            <version>21.0.0-alpha-6</version>
+        </dependency>
 
         <dependency>
             <groupId>org.forgerock.http</groupId>
