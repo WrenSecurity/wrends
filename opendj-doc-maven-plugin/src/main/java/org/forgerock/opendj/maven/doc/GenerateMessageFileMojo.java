@@ -13,6 +13,7 @@
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2018 Wren Security.
  */
 package org.forgerock.opendj.maven.doc;
 
@@ -363,7 +364,7 @@ public class GenerateMessageFileMojo extends AbstractMojo {
     private InputStream loadPropertiesFromJar(final String category) throws IOException {
         getLog().debug("category: " + category);
         final JarFile jarFile = new JarFile(
-                Paths.get(project.getBuild().getDirectory(), "opendj", "lib", "opendj.jar").toString());
+                Paths.get(project.getBuild().getDirectory(), "opendj", "lib", "wrends.jar").toString());
         return jarFile.getInputStream(jarFile.getJarEntry(
                 Paths.get("org", "opends", "messages", category + ".properties").toString()));
     }
