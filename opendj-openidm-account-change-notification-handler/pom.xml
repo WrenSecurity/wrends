@@ -25,12 +25,12 @@
   </parent>
 
   <artifactId>opendj-openidm-account-change-notification-handler</artifactId>
-  <name>Wren:DS account change notification handler for Wren:IDM</name>
+  <name>Wren:DS Account Change Notification Handler for IDM</name>
 
   <description>
     A handler for notifying Wren:IDM when an account has been updated, allowing Wren:IDM to react to
     password and profile change events.
-    </description>
+  </description>
 
   <packaging>jar</packaging>
 
