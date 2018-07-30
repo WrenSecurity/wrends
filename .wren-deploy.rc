@@ -1,6 +1,4 @@
 export MAVEN_PACKAGE="opendj"
-export BINTRAY_PACKAGE="wrends"
-export JFROG_PACKAGE="org/forgerock/opendj"
 
 package_accept_release_tag() {
   local tag_name="${1}"
