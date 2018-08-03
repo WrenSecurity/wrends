@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2014 ForgeRock AS.
+ * Portions Copyright 2017-2018 Wren Security.
  */
 
 package org.forgerock.opendj.server.core;
@@ -37,7 +38,7 @@ public class ProductInformationTest extends ForgeRockTestCase {
 
     @Test
     public void testProductShortName() {
-        assertThat(ProductInformation.getInstance().productShortName()).isEqualTo("OpenDJ");
+        assertThat(ProductInformation.getInstance().productShortName()).isEqualTo("Wren:DS");
     }
 
     @Test

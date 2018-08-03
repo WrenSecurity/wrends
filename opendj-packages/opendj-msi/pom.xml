@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -24,12 +25,12 @@
     </parent>
 
     <artifactId>opendj-msi</artifactId>
-    <name>OpenDJ MSI Packages Parent</name>
+    <name>Wren:DS MSI Packages Parent</name>
 
     <packaging>pom</packaging>
 
     <description>
-        This module contains configuration and generic plugin call to build OpenDJ MSI packages.
+        This module contains configuration and generic plugin call to build Wren:DS MSI packages.
     </description>
 
     <profiles>

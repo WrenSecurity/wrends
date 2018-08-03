@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -24,7 +25,7 @@
     </parent>
 
     <artifactId>opendj-core</artifactId>
-    <name>OpenDJ Core APIs</name>
+    <name>Wren:DS Core APIs</name>
     <description>
         This module provides the core APIs required for implementing LDAP Directory
         client and server applications. Unlike the SDK this module does not
@@ -229,7 +230,7 @@
             <id>forgerock-release</id>
 
             <properties>
-                <javadocTitle>OpenDJ LDAP SDK ${project.version} API</javadocTitle>
+                <javadocTitle>Wren:DS LDAP SDK ${project.version} API</javadocTitle>
                 <timestamp>${maven.build.timestamp}</timestamp>
                 <maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
             </properties>
