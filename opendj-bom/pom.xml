@@ -19,10 +19,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.forgerock</groupId>
-        <artifactId>forgerock-parent</artifactId>
-        <version>2.0.3</version>
-        <relativePath />
+        <groupId>org.wrensecurity</groupId>
+        <artifactId>wrensec-parent</artifactId>
+        <version>2.2.0</version>
     </parent>
 
     <groupId>org.forgerock.opendj</groupId>
@@ -38,6 +37,8 @@
 
     <properties>
         <i18n-framework.version>1.4.2</i18n-framework.version>
+        
+        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.1.0</pgpWhitelistArtifact>
     </properties>
 
     <dependencyManagement>
