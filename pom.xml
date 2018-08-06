@@ -22,7 +22,7 @@
   ! CDDL HEADER END
   !
   !      Copyright 2011-2015 ForgeRock AS.
-  !      Portions Copyright 2017 Wren Security.
+  !      Portions Copyright 2017-2018 Wren Security.
   !
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -31,12 +31,12 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-sdk-parent</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-server-parent</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -145,7 +145,7 @@
 
     <properties>
         <product.name>Wren:DS</product.name>
-        <opendj.core.test.jar.version>3.0.0</opendj.core.test.jar.version>
+        <opendj.core.test.jar.version>3.0.1-SNAPSHOT</opendj.core.test.jar.version>
     </properties>
 
 
