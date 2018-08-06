@@ -22,7 +22,7 @@
  *
  *
  *      Copyright 2009 Sun Microsystems, Inc.
- *      Portions copyright 2011-2015 ForgeRock AS
+ *      Portions copyright 2011-2016 ForgeRock AS
  */
 package org.forgerock.opendj.ldap.schema;
 
@@ -751,9 +751,9 @@ final class SchemaUtils {
     }
 
     private static void throwIfIA5IllegalCharacter(StringBuilder buffer, ByteSequence value) throws DecodeException {
-        // Replace any consecutive spaces with a single space and watch out
-        // for non-ASCII characters.
-        for (int pos = buffer.length() - 1; pos > 0; pos--) {
+        // Check the string for any non-IA5 characters
+        final int bufferLength = buffer.length();
+        for (int pos = 0; pos < bufferLength; pos++) {
             final char c = buffer.charAt(pos);
             if ((c & 0x7F) != c) {
                 // This is not a valid character for an IA5 string. If strict

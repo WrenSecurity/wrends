@@ -23,7 +23,7 @@
  *
  *      Copyright 2009-2010 Sun Microsystems, Inc.
  *      Portions Copyright 2014 Manuel Gaupp
- *      Portions Copyright 2011-2015 ForgeRock AS
+ *      Portions Copyright 2011-2016 ForgeRock AS
  */
 package org.forgerock.opendj.ldap.schema;
 
@@ -41,7 +41,6 @@ import static com.forgerock.opendj.ldap.CoreMessages.*;
 import static com.forgerock.opendj.util.StaticUtils.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -81,9 +80,7 @@ import org.forgerock.util.promise.Promise;
 import com.forgerock.opendj.util.StaticUtils;
 import com.forgerock.opendj.util.SubstringReader;
 
-/**
- * Schema builders should be used for incremental construction of new schemas.
- */
+/** Schema builders should be used for incremental construction of new schemas. */
 public final class SchemaBuilder {
 
     /** Constant used for name to oid mapping when one name actually maps to multiple numerical OID. */
@@ -387,7 +384,7 @@ public final class SchemaBuilder {
                 atBuilder.approximateMatchingRule(approxRules.get(0));
             }
 
-            if (superiorType == null && syntax == null) {
+            if (superiorType == null && syntax == null && !options.get(ALLOW_ATTRIBUTE_TYPES_WITH_NO_SUP_OR_SYNTAX)) {
                 throw new LocalizedIllegalArgumentException(
                     WARN_ATTR_SYNTAX_ATTRTYPE_MISSING_SYNTAX_AND_SUPERIOR.get(definition));
             }
@@ -395,7 +392,7 @@ public final class SchemaBuilder {
             atBuilder.superiorType(superiorType)
                      .syntax(syntax);
 
-            return overwrite ? atBuilder.addToSchemaOverwrite() : atBuilder.addToSchema();
+            return atBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_ATTRTYPE_INVALID1.get(definition, e.getMessageObject());
             throw new LocalizedIllegalArgumentException(msg, e.getCause());
@@ -502,7 +499,7 @@ public final class SchemaBuilder {
                 }
             }
 
-            return overwrite ? contentRuleBuilder.addToSchemaOverwrite() : contentRuleBuilder.addToSchema();
+            return contentRuleBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_DCR_INVALID1.get(definition, e.getMessageObject());
             throw new LocalizedIllegalArgumentException(msg, e.getCause());
@@ -609,7 +606,7 @@ public final class SchemaBuilder {
             }
             ruleBuilder.nameForm(nameForm);
 
-            return overwrite ? ruleBuilder.addToSchemaOverwrite() : ruleBuilder.addToSchema();
+            return ruleBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_DSR_INVALID1.get(definition, e.getMessageObject());
             throw new LocalizedIllegalArgumentException(msg, e.getCause());
@@ -637,28 +634,10 @@ public final class SchemaBuilder {
     public SchemaBuilder addEnumerationSyntax(final String oid, final String description,
             final boolean overwrite, final String... enumerations) {
         Reject.ifNull((Object) enumerations);
-
-        lazyInitBuilder();
-
-        final EnumSyntaxImpl enumImpl = new EnumSyntaxImpl(oid, Arrays.asList(enumerations));
-
-        final Syntax.Builder syntaxBuilder = buildSyntax(oid).description(description)
-                .extraProperties(Collections.singletonMap("X-ENUM", Arrays.asList(enumerations)))
-                .implementation(enumImpl);
-
-        syntaxBuilder.addToSchema(overwrite);
-
-        try {
-            buildMatchingRule(enumImpl.getOrderingMatchingRule())
-                    .names(OMR_GENERIC_ENUM_NAME + oid)
-                    .syntaxOID(oid)
-                    .extraProperties(CoreSchemaImpl.OPENDS_ORIGIN)
-                    .implementation(new EnumOrderingMatchingRule(enumImpl))
-                    .addToSchemaOverwrite();
-        } catch (final ConflictingSchemaElementException e) {
-            removeSyntax(oid);
-        }
-        return this;
+        return buildSyntax(oid)
+                .description(description)
+                .extraProperties("X-ENUM", enumerations)
+                .addToSchema(overwrite);
     }
 
     /**
@@ -762,11 +741,7 @@ public final class SchemaBuilder {
             if (syntax == null) {
                 throw new LocalizedIllegalArgumentException(ERR_ATTR_SYNTAX_MR_NO_SYNTAX.get(definition));
             }
-            if (overwrite) {
-                matchingRuleBuilder.addToSchemaOverwrite();
-            } else {
-                matchingRuleBuilder.addToSchema();
-            }
+            matchingRuleBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg =
                     ERR_ATTR_SYNTAX_MR_INVALID1.get(definition, e.getMessageObject());
@@ -875,7 +850,7 @@ public final class SchemaBuilder {
             }
             useBuilder.attributes(attributes);
 
-            return overwrite ? useBuilder.addToSchemaOverwrite() : useBuilder.addToSchema();
+            return useBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg = ERR_ATTR_SYNTAX_MRUSE_INVALID1.get(definition, e.getMessageObject());
             throw new LocalizedIllegalArgumentException(msg, e.getCause());
@@ -1073,11 +1048,7 @@ public final class SchemaBuilder {
                 throw new LocalizedIllegalArgumentException(ERR_ATTR_SYNTAX_NAME_FORM_NO_REQUIRED_ATTR.get(definition));
             }
 
-            if (overwrite) {
-                nameFormBuilder.addToSchemaOverwrite();
-            } else {
-                nameFormBuilder.addToSchema();
-            }
+            nameFormBuilder.addToSchema(overwrite);
         } catch (final DecodeException e) {
             final LocalizableMessage msg =
                     ERR_ATTR_SYNTAX_NAME_FORM_INVALID1.get(definition, e.getMessageObject());
@@ -1214,13 +1185,7 @@ public final class SchemaBuilder {
      * @return A builder to continue building the MatchingRule.
      */
     public MatchingRule.Builder buildMatchingRule(final MatchingRule matchingRule) {
-        return buildMatchingRule(matchingRule, true);
-    }
-
-    private MatchingRule.Builder buildMatchingRule(final MatchingRule matchingRule, final boolean initialize) {
-        if (initialize) {
-            lazyInitBuilder();
-        }
+        lazyInitBuilder();
         return new MatchingRule.Builder(matchingRule, this);
     }
 
@@ -1280,13 +1245,7 @@ public final class SchemaBuilder {
      * @return A builder to continue building the Syntax.
      */
     public Syntax.Builder buildSyntax(final Syntax syntax) {
-        return buildSyntax(syntax, true);
-    }
-
-    private Syntax.Builder buildSyntax(final Syntax syntax, final boolean initialize) {
-        if (initialize) {
-            lazyInitBuilder();
-        }
+        lazyInitBuilder();
         return new Syntax.Builder(syntax, this);
     }
 
@@ -1408,7 +1367,7 @@ public final class SchemaBuilder {
                 }
                 ocBuilder.superiorObjectClasses(superiorClasses)
                          .type(ocType);
-                return overwrite ? ocBuilder.addToSchemaOverwrite() : ocBuilder.addToSchema();
+                return ocBuilder.addToSchema(overwrite);
             }
         } catch (final DecodeException e) {
             throw new LocalizedIllegalArgumentException(
@@ -1437,15 +1396,10 @@ public final class SchemaBuilder {
     public SchemaBuilder addPatternSyntax(final String oid, final String description,
             final Pattern pattern, final boolean overwrite) {
         Reject.ifNull(pattern);
-
-        lazyInitBuilder();
-
-        final Syntax.Builder syntaxBuilder = buildSyntax(oid).description(description).extraProperties(
-                Collections.singletonMap("X-PATTERN", Collections.singletonList(pattern.toString())));
-
-        syntaxBuilder.addToSchema(overwrite);
-
-        return this;
+        return buildSyntax(oid)
+                .description(description)
+                .extraProperties("X-PATTERN", pattern.toString())
+                .addToSchema(overwrite);
     }
 
     /**
@@ -1763,15 +1717,10 @@ public final class SchemaBuilder {
     public SchemaBuilder addSubstitutionSyntax(final String oid, final String description,
             final String substituteSyntax, final boolean overwrite) {
         Reject.ifNull(substituteSyntax);
-
-        lazyInitBuilder();
-
-        final Syntax.Builder syntaxBuilder = buildSyntax(oid).description(description).extraProperties(
-                Collections.singletonMap("X-SUBST", Collections.singletonList(substituteSyntax)));
-
-        syntaxBuilder.addToSchema(overwrite);
-
-        return this;
+        return buildSyntax(oid)
+                .description(description)
+                .extraProperties("X-SUBST", substituteSyntax)
+                .addToSchema(overwrite);
     }
 
     /**
@@ -1855,23 +1804,6 @@ public final class SchemaBuilder {
                 } else {
                     throw new LocalizedIllegalArgumentException(
                         ERR_ATTR_SYNTAX_ATTRSYNTAX_ILLEGAL_TOKEN1.get(definition, tokenName));
-                }
-            }
-
-            // See if it is a enum syntax
-            for (final Map.Entry<String, List<String>> property : syntaxBuilder.getExtraProperties().entrySet()) {
-                if ("x-enum".equalsIgnoreCase(property.getKey())) {
-                    final EnumSyntaxImpl enumImpl = new EnumSyntaxImpl(oid, property.getValue());
-                    syntaxBuilder.implementation(enumImpl);
-                    syntaxBuilder.addToSchema(overwrite);
-
-                    buildMatchingRule(enumImpl.getOrderingMatchingRule())
-                        .names(OMR_GENERIC_ENUM_NAME + oid)
-                        .syntaxOID(oid)
-                        .extraProperties(CoreSchemaImpl.OPENDS_ORIGIN)
-                        .implementation(new EnumOrderingMatchingRule(enumImpl))
-                        .addToSchemaOverwrite();
-                    return this;
                 }
             }
 
@@ -2380,43 +2312,35 @@ public final class SchemaBuilder {
         // unlikely, may be different in the new schema.
 
         for (final Syntax syntax : schema.getSyntaxes()) {
-            if (overwrite) {
-                buildSyntax(syntax, false).addToSchemaOverwrite();
-            } else {
-                buildSyntax(syntax, false).addToSchema();
-            }
+            buildSyntax(syntax).addToSchema(overwrite);
         }
 
         for (final MatchingRule matchingRule : schema.getMatchingRules()) {
-            if (overwrite) {
-                buildMatchingRule(matchingRule, false).addToSchemaOverwrite();
-            } else {
-                buildMatchingRule(matchingRule, false).addToSchema();
-            }
+            buildMatchingRule(matchingRule).addToSchema(overwrite);
         }
 
         for (final MatchingRuleUse matchingRuleUse : schema.getMatchingRuleUses()) {
-            addMatchingRuleUse(matchingRuleUse, overwrite);
+            buildMatchingRuleUse(matchingRuleUse).addToSchema(overwrite);
         }
 
         for (final AttributeType attributeType : schema.getAttributeTypes()) {
-            addAttributeType(attributeType, overwrite);
+            buildAttributeType(attributeType).addToSchema(overwrite);
         }
 
         for (final ObjectClass objectClass : schema.getObjectClasses()) {
-            addObjectClass(objectClass, overwrite);
+            buildObjectClass(objectClass).addToSchema(overwrite);
         }
 
         for (final NameForm nameForm : schema.getNameForms()) {
-            addNameForm(nameForm, overwrite);
+            buildNameForm(nameForm).addToSchema(overwrite);
         }
 
         for (final DITContentRule contentRule : schema.getDITContentRules()) {
-            addDITContentRule(contentRule, overwrite);
+            buildDITContentRule(contentRule).addToSchema(overwrite);
         }
 
         for (final DITStructureRule structureRule : schema.getDITStuctureRules()) {
-            addDITStructureRule(structureRule, overwrite);
+            buildDITStructureRule(structureRule).addToSchema(overwrite);
         }
     }
 
@@ -2463,13 +2387,13 @@ public final class SchemaBuilder {
             nameForm2StructureRules = new HashMap<>();
             name2OIDs = new HashMap<>();
             warnings = new LinkedList<>();
-        }
 
-        if (copyOnWriteSchema != null) {
-            // Copy the schema.
-            addSchema0(copyOnWriteSchema, true);
-            options = Options.copyOf(copyOnWriteSchema.getOptions());
-            copyOnWriteSchema = null;
+            if (copyOnWriteSchema != null) {
+                // Copy the schema.
+                addSchema0(copyOnWriteSchema, true);
+                options = Options.copyOf(copyOnWriteSchema.getOptions());
+                copyOnWriteSchema = null;
+            }
         }
     }
 
@@ -2609,6 +2533,12 @@ public final class SchemaBuilder {
     }
 
     private void removeSyntax(final Syntax syntax) {
+        for (Map.Entry<String, List<String>> property : syntax.getExtraProperties().entrySet()) {
+            if ("x-enum".equalsIgnoreCase(property.getKey())) {
+                removeMatchingRule(OMR_OID_GENERIC_ENUM + "." + syntax.getOID());
+                break;
+            }
+        }
         numericOID2Syntaxes.remove(syntax.getOID());
     }
 
