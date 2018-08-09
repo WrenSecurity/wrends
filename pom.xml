@@ -22,7 +22,7 @@
   ! CDDL HEADER END
   !
   !      Copyright 2011-2015 ForgeRock AS.
-  !      Portions Copyright 2017 Wren Security.
+  !      Portions Copyright 2017-2019 Wren Security.
   !
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -145,6 +145,7 @@
 
     <properties>
         <product.name>Wren:DS</product.name>
+        <product.lowercaseName>wrends</product.lowercaseName>
         <opendj.core.test.jar.version>3.0.0</opendj.core.test.jar.version>
     </properties>
 
