@@ -27,7 +27,7 @@
 
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-bom</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.0.0-M3</version>
 
     <packaging>pom</packaging>
 
