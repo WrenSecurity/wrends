@@ -38,6 +38,7 @@
 
     <properties>
         <i18n-framework.version>1.4.2</i18n-framework.version>
+        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.3.0</pgpWhitelistArtifact>
     </properties>
 
     <dependencyManagement>
