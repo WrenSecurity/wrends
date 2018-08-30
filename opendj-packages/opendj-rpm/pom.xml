@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -20,13 +21,13 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-packages</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-M3</version>
     </parent>
 
     <packaging>pom</packaging>
 
     <artifactId>opendj-rpm</artifactId>
-    <name>OpenDJ RPM Packages Parent</name>
+    <name>Wren:DS RPM Packages Parent</name>
 
     <profiles>
         <profile>
@@ -45,7 +46,7 @@
     </profiles>
 
     <description>
-        This module contains configuration and generic plugin calls to generate RPM OpenDJ packages.
+        This module contains configuration and generic plugin calls to generate RPM Wren:DS packages.
     </description>
 
     <properties>
@@ -139,10 +140,10 @@
                         <targetOS>linux</targetOS>
                         <description>
                             ${rpm.description.header}
-                            OpenDJ is an LDAPv3 compliant directory service, developed for the Java
+                            Wren:DS is an LDAPv3 compliant directory service, developed for the Java
                             platform, providing a high performance, highly available and secure store
                             for the identities managed by enterprises. Its easy installation process,
-                            combined with the power of the Java platform makes OpenDJ one of the
+                            combined with the power of the Java platform makes Wren:DS one of the
                             simplest and fastest directory servers to deploy and manage.
 
                             ${rpm.product.summary}

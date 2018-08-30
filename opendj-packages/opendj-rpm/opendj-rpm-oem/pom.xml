@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015 ForgeRock AS.
+  Portions Copyright 2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -20,14 +21,14 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-rpm</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-M3</version>
     </parent>
 
     <artifactId>opendj-rpm-oem</artifactId>
-    <name>OpenDJ RPM OEM Package</name>
+    <name>Wren:DS RPM OEM Package</name>
 
     <description>
-        This module generates a rpm package of the OpenDJ OEM edition.
+        This module generates a rpm package of the Wren:DS OEM edition.
     </description>
 
     <properties>
@@ -36,7 +37,7 @@
         <rpm.product.name.lowercase>${product.name.lowercase}-oem</rpm.product.name.lowercase>
         <rpm.resources.path>${project.parent.basedir}/resources</rpm.resources.path>
         <rpm.description.header>${product.name} LDAP Server OEM edition</rpm.description.header>
-        <rpm.product.summary>This OpenDJ package does not include the Berkeley JE Backend and can be redistributed without any additional license</rpm.product.summary>
+        <rpm.product.summary>This Wren:DS package does not include the Berkeley JE Backend and can be redistributed without any additional license</rpm.product.summary>
         <rpm.license>CDDL</rpm.license>
     </properties>
 

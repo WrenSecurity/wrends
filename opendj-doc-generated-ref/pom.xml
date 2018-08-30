@@ -13,6 +13,7 @@
   ~ information: "Portions Copyright [year] [name of copyright owner]".
   ~
   ~ Copyright 2016 ForgeRock AS.
+  ~ Portions Copyright 2018 Wren Security.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -20,12 +21,12 @@
     <parent>
         <artifactId>opendj-parent</artifactId>
         <groupId>org.forgerock.opendj</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.0-M3</version>
     </parent>
 
     <artifactId>opendj-doc-generated-ref</artifactId>
 
-    <name>OpenDJ Doc Generated References</name>
+    <name>Wren:DS Doc Generated References</name>
     <description>Build generated documentation sources.</description>
     <packaging>pom</packaging>
 
@@ -588,10 +589,9 @@
                                     <goal>build</goal>
                                 </goals>
                                 <configuration>
-                                    <projectName>OpenDJ</projectName>
+                                    <projectName>Wren:DS</projectName>
                                     <projectVersion>${project.version}</projectVersion>
                                     <releaseVersion>${project.version}</releaseVersion>
-                                    <googleAnalyticsId>UA-23412190-8</googleAnalyticsId>
                                     <formats combine.self="override">
                                         <format>man</format>
                                     </formats>

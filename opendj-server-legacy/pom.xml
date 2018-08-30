@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
+  Portions Copyright 2017-2018 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
@@ -20,13 +21,13 @@
   <parent>
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-parent</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.0.0-M3</version>
   </parent>
   <artifactId>opendj-server-legacy</artifactId>
   <packaging>jar</packaging>
-  <name>OpenDJ Server</name>
+  <name>Wren:DS Server</name>
   <description>
-    This module provides the OpenDJ LDAP Directory Server.
+    This module provides the Wren:DS LDAP Directory Server.
   </description>
   <inceptionYear>2010</inceptionYear>
 
@@ -682,7 +683,7 @@
             </configuration>
           </execution>
 
-          <!-- Create OpenDJ manifest -->
+          <!-- Create Wren:DS manifest -->
           <execution>
             <id>opendj-manifest</id>
             <goals>
@@ -805,7 +806,7 @@
             </configuration>
           </execution>
 
-          <!-- Package OpenDJ SL4J Logger Adapter jar -->
+          <!-- Package Wren:DS SL4J Logger Adapter jar -->
           <execution>
             <id>build-opendj-slf4j-adapter-jar</id>
             <phase>prepare-package</phase>
