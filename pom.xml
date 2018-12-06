@@ -46,8 +46,8 @@
         platform, providing a high performance, highly available, secure store
         for the identities managed by enterprises.
     </description>
-    <inceptionYear>2011</inceptionYear>
-    <url>http://opendj.forgerock.org</url>
+    <inceptionYear>2017</inceptionYear>
+    <url>https://github.com/WrenSecurity/WrenDS</url>
 
     <issueManagement>
         <system>GitHub Issues</system>
@@ -73,6 +73,21 @@
 
             <releases>
                 <enabled>true</enabled>
+            </releases>
+        </repository>
+
+        <!-- Needed to retrieve parent POM -->
+        <repository>
+            <id>wrensecurity-snapshots</id>
+            <name>Wren Security Snapshot Repository</name>
+            <url>https://wrensecurity.jfrog.io/wrensecurity/snapshots</url>
+
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+
+            <releases>
+                <enabled>false</enabled>
             </releases>
         </repository>
 
