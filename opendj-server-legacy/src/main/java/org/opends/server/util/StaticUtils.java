@@ -19,6 +19,7 @@ package org.opends.server.util;
 import static org.opends.messages.UtilityMessages.*;
 import static org.opends.server.util.ServerConstants.*;
 
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
@@ -92,6 +95,10 @@ public final class StaticUtils
   /** The number of bytes of a Java long. A Java int is 64 bits, i.e. 8 bytes. */
   public static final int LONG_SIZE = 8;
 
+  /** Size of buffer used to copy/move/extract files. */
+  public static final int BUFFER_SIZE = 8192;
+
+  private static final String[] EXECUTABLE_FILES_SUFFIXES = { ".sh", ".bat", ".exe" };
   /**
    * Number of bytes in a Kibibyte.
    * <p>
@@ -2463,6 +2470,97 @@ public final class StaticUtils
     catch (Exception e)
     {
       return false;
+    }
+  }
+  /**
+   * Extracts the provided zip archive to the provided target directory.
+   * <p>
+   * A file is set to executable if one or more of the following three conditions apply:
+   * <ul>
+   *   <li>It ends with a suffix identified as executable file suffix (.sh, .bat, .exe)</li>
+   *   <li>It is listed in the provided executableFiles</li>
+   *   <li>It is included in a directory that is listed in the provided executableDirectories</li>
+   * </ul>
+   *
+   * @param zipFile
+   *            The zip file to extract.
+   * @param targetDirectory
+   *            The target directory for the content of the archive.
+   * @param executableDirectories
+   *            List of extracted directories which should have all their files set as executable.
+   *            Each directory must be provided as a path relative to the target directory (e.g. "opendj/bin")
+   * @param executableFiles
+   *            List of individual files which should be set as executable.
+   *            Each file must be provided as a path relative to the target directory (e.g. "opendj/setup")
+   * @throws IOException
+   *            If zip archive can't be read or target files can be written.
+   */
+  public static void extractZipArchive(File zipFile, File targetDirectory, List<String> executableDirectories,
+      List<String> executableFiles) throws IOException
+  {
+    try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(zipFile)))
+    {
+      ZipEntry fileEntry;
+      while ((fileEntry = zipStream.getNextEntry()) != null)
+      {
+        File targetFile = new File(targetDirectory.getPath(), fileEntry.getName());
+
+        if (fileEntry.isDirectory())
+        {
+          targetFile.mkdirs();
+          continue;
+        }
+        extractFileFromZip(zipStream, targetFile);
+
+        for (String suffix : EXECUTABLE_FILES_SUFFIXES)
+        {
+          if (fileEntry.getName().toLowerCase().endsWith(suffix))
+          {
+            targetFile.setExecutable(true);
+          }
+        }
+      }
+    }
+    for (String dir: executableDirectories)
+    {
+      File directory = new File(targetDirectory.getPath(), dir);
+      for (File file: directory.listFiles())
+      {
+        if (file.isFile()) {
+          file.setExecutable(true);
+        }
+      }
+    }
+    for (String name : executableFiles)
+    {
+      File file = new File(targetDirectory.getPath(), name);
+      if (file.exists())
+      {
+        file.setExecutable(true);
+      }
+    }
+  }
+
+  /**
+   * Extracts a file from a zip input stream.
+   *
+   * @param zipInput
+   *          The input stream of a zip file.
+   * @param targetFile
+   *          The destination of the extracted file.
+   * @throws IOException
+   *           If the zip file can't be read or the target file can't be written
+   */
+  private static void extractFileFromZip(ZipInputStream zipInput, File targetFile) throws IOException
+  {
+    try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(targetFile)))
+    {
+      int bytesRead = 0;
+      byte[] bytes = new byte[BUFFER_SIZE];
+      while ((bytesRead = zipInput.read(bytes)) != -1)
+      {
+        outputStream.write(bytes, 0, bytesRead);
+      }
     }
   }
 }
