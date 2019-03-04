@@ -35,7 +35,7 @@
   </parent>
   <artifactId>opendj-server-legacy</artifactId>
   <packaging>jar</packaging>
-  <name>Wren:DS</name>
+  <name>OpenDJ</name>
   <description>
     This module provides the Wren:DS server.
   </description>
@@ -632,6 +632,7 @@
             </goals>
             <configuration>
               <buildNumberPropertyName>buildRevision</buildNumberPropertyName>
+              <shortRevisionLength>7</shortRevisionLength>
               <revisionOnScmFailure>-1</revisionOnScmFailure>
             </configuration>
           </execution>

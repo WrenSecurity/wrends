@@ -48,7 +48,7 @@ public class ProductInformationTest extends ForgeRockTestCase {
 
     @Test
     public void testProductShortName() {
-        assertThat(ProductInformation.getInstance().productShortName()).isEqualTo("Wren:DS");
+        assertThat(ProductInformation.getInstance().productShortName()).isEqualTo("OpenDJ");
     }
 
     @Test
