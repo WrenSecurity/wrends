@@ -24,7 +24,7 @@ _Please provide a clear and concise description of what you expected to happen a
 _Please provide a clear and concise description of what actually happened after you followed the Repro Steps outlined above._
 
 **Screenshots**
-If applicable, add screenshots to help explain your problem.
+_If applicable, please add screenshots to help explain your problem._
 
 ## Environment
 - **Product version (include GIT commit ID if using a dev build):**
@@ -33,4 +33,4 @@ If applicable, add screenshots to help explain your problem.
 - **Was instance upgraded from a previous version? If so, what version were you using before?**
 
 ## Additional Notes
-Add any other notes or context about the problem here.
+_Please add any other notes or context about the problem here._
