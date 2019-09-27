@@ -12,6 +12,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2017 Rosie Applications, Inc.
  */
 package org.forgerock.opendj.rest2ldap;
 
@@ -34,6 +35,8 @@ import static org.forgerock.util.Utils.joinAsString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -484,7 +487,7 @@ public final class Resource {
      * @return The unique service ID for this resource, given the specified writability.
      */
     String getServiceId(boolean isReadOnly) {
-        StringBuilder serviceId = new StringBuilder(this.getResourceId());
+        final StringBuilder serviceId = new StringBuilder(this.getResourceId());
 
         if (isReadOnly) {
             serviceId.append(":read-only");
@@ -493,6 +496,21 @@ public final class Resource {
         }
 
         return serviceId.toString();
+    }
+
+    /**
+     * Gets a map of the sub-resources under this resource, keyed by URL template.
+     *
+     * @return  The map of sub-resource URL templates to sub-resources.
+     */
+    Map<String, SubResource> getSubResourceMap() {
+        final Map<String, SubResource> result = new HashMap<>();
+
+        for (SubResource subResource : this.subResources) {
+            result.put(subResource.getUrlTemplate(), subResource);
+        }
+
+        return result;
     }
 
     void build(final Rest2Ldap rest2Ldap) {
