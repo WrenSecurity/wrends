@@ -16,23 +16,25 @@
  */
 package org.opends.server.extensions;
 
+import static org.testng.Assert.assertNull;
+
 import java.util.ArrayList;
-import org.opends.server.TestCaseUtils;
-import org.testng.annotations.BeforeClass;
-import org.forgerock.opendj.server.config.meta.*;
+
+import org.forgerock.opendj.server.config.meta.SoftReferenceEntryCacheCfgDefn;
 import org.forgerock.opendj.server.config.server.SoftReferenceEntryCacheCfg;
+import org.opends.server.TestCaseUtils;
 import org.opends.server.types.Entry;
 import org.opends.server.util.ServerConstants;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterGroups;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
 
 /**
  * A set of test cases for SoftReference entry cache implementation.
  */
-@Test(groups = "entrycache", sequential=true)
+@Test(groups = "entrycache", singleThreaded=true)
 public class SoftReferenceEntryCacheTestCase
        extends CommonEntryCacheTestCase<SoftReferenceEntryCacheCfg>
 {

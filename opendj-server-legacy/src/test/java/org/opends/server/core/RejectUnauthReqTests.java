@@ -16,9 +16,18 @@
  */
 package org.opends.server.core;
 
-import java.util.ArrayList;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServer;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.types.NullOutputStream.nullPrintStream;
+import static org.opends.server.util.ServerConstants.OID_WHO_AM_I_REQUEST;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
 
-import com.forgerock.opendj.ldap.tools.LDAPCompare;
+import java.util.ArrayList;
 
 import org.forgerock.opendj.config.client.ManagementContext;
 import org.forgerock.opendj.ldap.ByteString;
@@ -28,9 +37,6 @@ import org.forgerock.opendj.server.config.client.GlobalCfgClient;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.protocols.internal.InternalClientConnection;
 import org.opends.server.tools.LDAPAuthenticationHandler;
-import com.forgerock.opendj.ldap.tools.LDAPDelete;
-import com.forgerock.opendj.ldap.tools.LDAPModify;
-import com.forgerock.opendj.ldap.tools.LDAPSearch;
 import org.opends.server.tools.RemoteConnection;
 import org.opends.server.types.AuthenticationInfo;
 import org.opends.server.types.Control;
@@ -39,11 +45,10 @@ import org.opends.server.util.Args;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.types.NullOutputStream.nullPrintStream;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
+import com.forgerock.opendj.ldap.tools.LDAPCompare;
+import com.forgerock.opendj.ldap.tools.LDAPDelete;
+import com.forgerock.opendj.ldap.tools.LDAPModify;
+import com.forgerock.opendj.ldap.tools.LDAPSearch;
 
 /**
  * A set of testcases for configuration attribute

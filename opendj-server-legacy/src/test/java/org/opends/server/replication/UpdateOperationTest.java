@@ -16,16 +16,23 @@
  */
 package org.opends.server.replication;
 
-import static java.util.concurrent.TimeUnit.*;
-
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.replication.plugin.LDAPReplicationDomain.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.testng.Assert.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyDNRequest;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getEntryUUIDAttributeType;
+import static org.opends.server.TestCaseUtils.TEST_ROOT_DN_STRING;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServerContext;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.replication.plugin.LDAPReplicationDomain.DS_SYNC_CONFLICT;
+import static org.opends.server.util.CollectionUtils.isEmpty;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;

@@ -16,16 +16,22 @@
  */
 package org.opends.server.replication.protocol;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.opends.messages.ReplicationMessages.*;
-import static org.opends.server.replication.common.AssuredMode.*;
-import static org.opends.server.replication.protocol.OperationContext.*;
-import static org.opends.server.replication.protocol.ProtocolVersion.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.StaticUtils.*;
-import static org.testng.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.ModificationType.ADD;
+import static org.forgerock.opendj.ldap.ModificationType.DELETE;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getDescriptionAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getObjectClassAttributeType;
+import static org.opends.messages.ReplicationMessages.ERR_UNKNOWN_TYPE;
+import static org.opends.server.replication.common.AssuredMode.SAFE_DATA_MODE;
+import static org.opends.server.replication.common.AssuredMode.SAFE_READ_MODE;
+import static org.opends.server.replication.protocol.OperationContext.SYNCHROCONTEXT;
+import static org.opends.server.replication.protocol.ProtocolVersion.getCurrentVersion;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.opends.server.util.CollectionUtils.newHashSet;
+import static org.opends.server.util.StaticUtils.byteToHex;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -245,8 +251,8 @@ public class ProtocolCompatibilityTest extends ReplicationTestCase {
     AddOperationBasis genAddOpBasis = (AddOperationBasis) generatedOperation;
 
     assertEquals(addOpBasis.getRawEntryDN(), genAddOpBasis.getRawEntryDN());
-    assertEquals( addOpBasis.getAttachment(SYNCHROCONTEXT),
-                  genAddOpBasis.getAttachment(SYNCHROCONTEXT));
+    assertEquals(addOpBasis.<Object>getAttachment(SYNCHROCONTEXT),
+            genAddOpBasis.<Object>getAttachment(SYNCHROCONTEXT));
     assertEquals(addOpBasis.getObjectClasses(), genAddOpBasis.getObjectClasses());
     assertEquals(addOpBasis.getOperationalAttributes(), genAddOpBasis.getOperationalAttributes());
     assertEquals(addOpBasis.getUserAttributes(), genAddOpBasis.getUserAttributes());
@@ -293,8 +299,8 @@ public class ProtocolCompatibilityTest extends ReplicationTestCase {
     genAddOpBasis = (AddOperationBasis) generatedOperation;
 
     assertEquals(addOpBasis.getRawEntryDN(), genAddOpBasis.getRawEntryDN());
-    assertEquals( addOpBasis.getAttachment(SYNCHROCONTEXT),
-                  genAddOpBasis.getAttachment(SYNCHROCONTEXT));
+    assertEquals(addOpBasis.<Object>getAttachment(SYNCHROCONTEXT),
+            genAddOpBasis.<Object>getAttachment(SYNCHROCONTEXT));
     assertEquals(addOpBasis.getObjectClasses(), genAddOpBasis.getObjectClasses());
     assertEquals(addOpBasis.getOperationalAttributes(), genAddOpBasis.getOperationalAttributes());
     assertEquals(addOpBasis.getUserAttributes(), genAddOpBasis.getUserAttributes());
@@ -546,8 +552,8 @@ public class ProtocolCompatibilityTest extends ReplicationTestCase {
     ModifyOperationBasis genModOpBasisFromV1 = (ModifyOperationBasis) opFromV1;
 
     assertEquals(modOpBasisFromOrigVlast.getRawEntryDN(), genModOpBasisFromV1.getRawEntryDN());
-    assertEquals( modOpBasisFromOrigVlast.getAttachment(SYNCHROCONTEXT),
-                  genModOpBasisFromV1.getAttachment(SYNCHROCONTEXT));
+    assertEquals(modOpBasisFromOrigVlast.<Object>getAttachment(SYNCHROCONTEXT),
+            genModOpBasisFromV1.<Object>getAttachment(SYNCHROCONTEXT));
     List<Modification> modsvlast = modOpBasisFromOrigVlast.getModifications();
     List<Modification> modsv1 = genModOpBasisFromV1.getModifications();
 
@@ -594,9 +600,9 @@ public class ProtocolCompatibilityTest extends ReplicationTestCase {
     ModifyOperationBasis modOpBasisFromGeneratedVlast = (ModifyOperationBasis) opFromGeneratedVlastMsg;
 
     assertEquals(modOpBasisFromOrigVlast.getRawEntryDN(),
-        modOpBasisFromGeneratedVlast.getRawEntryDN());
-    assertEquals( modOpBasisFromOrigVlast.getAttachment(SYNCHROCONTEXT),
-        modOpBasisFromGeneratedVlast.getAttachment(SYNCHROCONTEXT));
+            modOpBasisFromGeneratedVlast.getRawEntryDN());
+    assertEquals(modOpBasisFromOrigVlast.<Object>getAttachment(SYNCHROCONTEXT),
+            modOpBasisFromGeneratedVlast.<Object>getAttachment(SYNCHROCONTEXT));
     assertEquals(modOpBasisFromOrigVlast.getModifications(),
         modOpBasisFromGeneratedVlast.getModifications());
   }
@@ -719,8 +725,8 @@ public class ProtocolCompatibilityTest extends ReplicationTestCase {
     ModifyDNOperationBasis genModDnOpBasis = (ModifyDNOperationBasis) generatedOperation;
 
     assertEquals(modDnOpBasis.getRawEntryDN(), genModDnOpBasis.getRawEntryDN());
-    assertEquals( modDnOpBasis.getAttachment(SYNCHROCONTEXT),
-                  genModDnOpBasis.getAttachment(SYNCHROCONTEXT));
+    assertEquals(modDnOpBasis.<Object>getAttachment(SYNCHROCONTEXT),
+            genModDnOpBasis.<Object>getAttachment(SYNCHROCONTEXT));
 
     // Check default value for only VLAST fields
     assertEquals(newMsg.getAssuredMode(), AssuredMode.SAFE_DATA_MODE);
@@ -770,8 +776,8 @@ public class ProtocolCompatibilityTest extends ReplicationTestCase {
     genModDnOpBasis = (ModifyDNOperationBasis) generatedOperation;
 
     assertEquals(modDnOpBasis.getRawEntryDN(), genModDnOpBasis.getRawEntryDN());
-    assertEquals( modDnOpBasis.getAttachment(SYNCHROCONTEXT),
-                  genModDnOpBasis.getAttachment(SYNCHROCONTEXT));
+    assertEquals(modDnOpBasis.<Object>getAttachment(SYNCHROCONTEXT),
+            genModDnOpBasis.<Object>getAttachment(SYNCHROCONTEXT));
     assertEquals(modDnOpBasis.getModifications(), genModDnOpBasis.getModifications());
   }
 

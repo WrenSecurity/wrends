@@ -16,6 +16,13 @@
  */
 package org.opends.server.controls;
 
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -35,11 +42,6 @@ import org.opends.server.types.Entry;
 import org.opends.server.types.SearchResultEntry;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.testng.Assert.*;
 
 /**
  * This class contains a number of test cases for the server side sort request

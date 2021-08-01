@@ -17,6 +17,13 @@
 
 package org.forgerock.opendj.ldif;
 
+import static org.forgerock.opendj.ldap.LdapException.newLdapException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
@@ -34,10 +41,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import static org.forgerock.opendj.ldap.LdapException.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * This class tests the ConnectionChangeRecordWriter functionality.

@@ -17,16 +17,20 @@
 
 package org.opends.quicksetup;
 
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 /**
  * Installation Tester.
  */
-@Test(groups = {"slow"}, sequential=true)
+@Test(groups = {"slow"}, singleThreaded = true)
 public class InstallationTest extends QuickSetupTestCase {
 
   Installation installation;

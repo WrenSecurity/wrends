@@ -16,10 +16,23 @@
  */
 package org.opends.server.core;
 
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.core.AddOperationTestCase.setWritabilityMode;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextOperationID;
+import static org.opends.server.protocols.ldap.LDAPConstants.OP_TYPE_DELETE_RESPONSE;
+import static org.opends.server.protocols.ldap.LDAPConstants.OP_TYPE_EXTENDED_RESPONSE;
+import static org.opends.server.types.NullOutputStream.nullPrintStream;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import com.forgerock.opendj.ldap.tools.LDAPDelete;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
@@ -43,12 +56,7 @@ import org.opends.server.workflowelement.localbackend.LocalBackendDeleteOperatio
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.core.AddOperationTestCase.setWritabilityMode;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.ldap.LDAPConstants.*;
-import static org.opends.server.types.NullOutputStream.nullPrintStream;
-import static org.testng.Assert.*;
+import com.forgerock.opendj.ldap.tools.LDAPDelete;
 
 /**
  * A set of test cases for delete operations.

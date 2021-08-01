@@ -16,20 +16,39 @@
  */
 package org.opends.server.core;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.controls.GenericControl.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.opends.server.TestCaseUtils.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.ModificationType.ADD;
+import static org.forgerock.opendj.ldap.ModificationType.DELETE;
+import static org.forgerock.opendj.ldap.ModificationType.INCREMENT;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.controls.GenericControl.newControl;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getDescriptionAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getExtensibleObjectObjectClass;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getOAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getOrganizationalPersonObjectClass;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getPersonObjectClass;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getTopObjectClass;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getUserCertificateAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getUserPasswordAttributeType;
+import static org.opends.server.TestCaseUtils.TEST_BACKEND_ID;
+import static org.opends.server.TestCaseUtils.applyModifications;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServerContext;
 import static org.opends.server.core.AddOperationTestCase.setWritabilityMode;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextOperationID;
 import static org.opends.server.protocols.internal.Requests.newSearchRequest;
-import static org.opends.server.protocols.ldap.LDAPConstants.*;
+import static org.opends.server.protocols.ldap.LDAPConstants.OP_TYPE_EXTENDED_RESPONSE;
+import static org.opends.server.protocols.ldap.LDAPConstants.OP_TYPE_MODIFY_RESPONSE;
 import static org.opends.server.types.NullOutputStream.nullPrintStream;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.opends.server.util.ServerConstants.OID_PERMISSIVE_MODIFY_CONTROL;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,7 +77,6 @@ import org.opends.server.protocols.ldap.LDAPMessage;
 import org.opends.server.protocols.ldap.LDAPModification;
 import org.opends.server.protocols.ldap.ModifyRequestProtocolOp;
 import org.opends.server.protocols.ldap.ModifyResponseProtocolOp;
-import com.forgerock.opendj.ldap.tools.LDAPModify;
 import org.opends.server.tools.RemoteConnection;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.Attributes;
@@ -78,6 +96,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import com.forgerock.opendj.ldap.tools.LDAPModify;
 
 /**
  * A set of test cases for modify operations.

@@ -16,13 +16,13 @@
  */
 package org.opends.server.authorization.dseecompat;
 
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.config.ConfigConstants.ATTR_AUTHZ_GLOBAL_ACI;
+import static org.testng.Assert.assertEquals;
+
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.config.ConfigConstants.ATTR_AUTHZ_GLOBAL_ACI;
-import static org.testng.Assert.*;
 
 /**
  * Test the groupdn keyword using nested groups.

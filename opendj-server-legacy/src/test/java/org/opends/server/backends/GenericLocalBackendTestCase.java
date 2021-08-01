@@ -16,8 +16,10 @@
  */
 package org.opends.server.backends;
 
-import static org.opends.server.TestCaseUtils.*;
-import static org.testng.Assert.*;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -15,9 +15,12 @@
  */
 package org.opends.server.util;
 
-import static java.util.concurrent.TimeUnit.*;
-
-import static org.mockito.Mockito.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.concurrent.Callable;
 
@@ -28,7 +31,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-@Test(groups = "precommit", sequential = true)
+@Test(groups = "precommit", singleThreaded = true)
 public class CronExecutorServiceTest extends DirectoryServerTestCase
 {
   @BeforeClass

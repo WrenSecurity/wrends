@@ -16,7 +16,8 @@
  */
 package org.opends.server.extensions;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ import org.testng.annotations.Test;
 /**
  * A set of test cases for default entry cache implementation.
  */
-@Test(groups = "entrycache", sequential=true)
+@Test(groups = "entrycache", singleThreaded=true)
 public class DefaultEntryCacheTestCase
        extends CommonEntryCacheTestCase<EntryCacheCfg>
 {

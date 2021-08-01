@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -26,12 +27,15 @@ import static org.forgerock.opendj.ldap.responses.Responses.newGenericExtendedRe
 import static org.forgerock.opendj.ldap.responses.Responses.newResult;
 import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
 import static org.forgerock.util.Options.defaultOptions;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNotNull;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.ArrayList;
@@ -218,7 +222,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.add(addRequest);
         }
         verify(expectedFactory).getConnectionAsync();
-        verify(expectedConnection).addAsync(same(addRequest), isNull(IntermediateResponseHandler.class));
+        verify(expectedConnection).addAsync(same(addRequest), isNull());
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -244,7 +248,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.add(addRequest);
         }
         verify(factory3).getConnectionAsync();
-        verify(connection3).addAsync(same(addRequest), isNull(IntermediateResponseHandler.class));
+        verify(connection3).addAsync(same(addRequest), isNull());
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -293,7 +297,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.bind(bindRequest);
         }
         verify(expectedFactory).getConnectionAsync();
-        verify(expectedConnection).bindAsync(same(bindRequest), isNull(IntermediateResponseHandler.class));
+        verify(expectedConnection).bindAsync(same(bindRequest), isNull());
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -319,7 +323,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.bind(bindRequest);
         }
         verify(factory3).getConnectionAsync();
-        verify(connection3).bindAsync(same(bindRequest), isNull(IntermediateResponseHandler.class));
+        verify(connection3).bindAsync(same(bindRequest), isNull());
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -368,7 +372,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.compare(compareRequest);
         }
         verify(expectedFactory).getConnectionAsync();
-        verify(expectedConnection).compareAsync(same(compareRequest), isNull(IntermediateResponseHandler.class));
+        verify(expectedConnection).compareAsync(same(compareRequest), isNull());
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -394,7 +398,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.compare(compareRequest);
         }
         verify(factory3).getConnectionAsync();
-        verify(connection3).compareAsync(same(compareRequest), isNull(IntermediateResponseHandler.class));
+        verify(connection3).compareAsync(same(compareRequest), isNull());
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -443,7 +447,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.delete(deleteRequest);
         }
         verify(expectedFactory).getConnectionAsync();
-        verify(expectedConnection).deleteAsync(same(deleteRequest), isNull(IntermediateResponseHandler.class));
+        verify(expectedConnection).deleteAsync(same(deleteRequest), isNull());
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -469,7 +473,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.delete(deleteRequest);
         }
         verify(factory3).getConnectionAsync();
-        verify(connection3).deleteAsync(same(deleteRequest), isNull(IntermediateResponseHandler.class));
+        verify(connection3).deleteAsync(same(deleteRequest), isNull());
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -519,7 +523,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         }
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).extendedRequestAsync(same(extendedRequest),
-                                                        isNull(IntermediateResponseHandler.class));
+                                                        isNull());
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -546,7 +550,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.extendedRequest(extendedRequest);
         }
         verify(factory3).getConnectionAsync();
-        verify(connection3).extendedRequestAsync(same(extendedRequest), isNull(IntermediateResponseHandler.class));
+        verify(connection3).extendedRequestAsync(same(extendedRequest), isNull());
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -595,7 +599,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.modify(modifyRequest);
         }
         verify(expectedFactory).getConnectionAsync();
-        verify(expectedConnection).modifyAsync(same(modifyRequest), isNull(IntermediateResponseHandler.class));
+        verify(expectedConnection).modifyAsync(same(modifyRequest), isNull());
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -621,7 +625,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.modify(modifyRequest);
         }
         verify(factory3).getConnectionAsync();
-        verify(connection3).modifyAsync(same(modifyRequest), isNull(IntermediateResponseHandler.class));
+        verify(connection3).modifyAsync(same(modifyRequest), isNull());
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -670,7 +674,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.modifyDN(modifyDNRequest);
         }
         verify(expectedFactory).getConnectionAsync();
-        verify(expectedConnection).modifyDNAsync(same(modifyDNRequest), isNull(IntermediateResponseHandler.class));
+        verify(expectedConnection).modifyDNAsync(same(modifyDNRequest), isNull());
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -697,7 +701,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.modifyDN(modifyDNRequest);
         }
         verify(factory3).getConnectionAsync();
-        verify(connection3).modifyDNAsync(same(modifyDNRequest), isNull(IntermediateResponseHandler.class));
+        verify(connection3).modifyDNAsync(same(modifyDNRequest), isNull());
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -747,8 +751,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         }
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).searchAsync(same(searchRequest),
-                                               isNull(IntermediateResponseHandler.class),
-                                               isNotNull(SearchResultHandler.class));
+                                               isNull(),
+                                               any(SearchResultHandler.class));
         verify(expectedConnection).close();
         verifyZeroInteractionsForRemainingFactories(expectedFactory);
     }
@@ -775,8 +779,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         }
         verify(factory3).getConnectionAsync();
         verify(connection3).searchAsync(same(searchRequest),
-                                        isNull(IntermediateResponseHandler.class),
-                                        isNotNull(SearchResultHandler.class));
+                                        isNull(),
+                                        any(SearchResultHandler.class));
         verify(connection3).close();
         verifyZeroInteractions(connection1);
         verifyZeroInteractions(connection2);
@@ -884,21 +888,21 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
     }
 
     private void stub(final Connection connection) {
-        when(connection.addAsync(any(AddRequest.class), any(IntermediateResponseHandler.class)))
+        when(connection.addAsync(any(AddRequest.class), any()))
                 .thenReturn(newSuccessfulLdapPromise(newResult(ResultCode.SUCCESS)));
-        when(connection.bindAsync(any(BindRequest.class), any(IntermediateResponseHandler.class)))
+        when(connection.bindAsync(any(BindRequest.class), any()))
                 .thenReturn(newSuccessfulLdapPromise(newBindResult(ResultCode.SUCCESS)));
-        when(connection.compareAsync(any(CompareRequest.class), any(IntermediateResponseHandler.class)))
+        when(connection.compareAsync(any(CompareRequest.class), any()))
                 .thenReturn(newSuccessfulLdapPromise(newCompareResult(ResultCode.SUCCESS)));
-        when(connection.deleteAsync(any(DeleteRequest.class), any(IntermediateResponseHandler.class)))
+        when(connection.deleteAsync(any(DeleteRequest.class), any()))
                 .thenReturn(newSuccessfulLdapPromise(newResult(ResultCode.SUCCESS)));
-        when(connection.extendedRequestAsync(any(GenericExtendedRequest.class), any(IntermediateResponseHandler.class)))
+        when(connection.extendedRequestAsync(any(GenericExtendedRequest.class), any()))
                 .thenReturn(newSuccessfulLdapPromise(newGenericExtendedResult(ResultCode.SUCCESS)));
-        when(connection.modifyAsync(any(ModifyRequest.class), any(IntermediateResponseHandler.class)))
+        when(connection.modifyAsync(any(ModifyRequest.class), any()))
                 .thenReturn(newSuccessfulLdapPromise(newResult(ResultCode.SUCCESS)));
-        when(connection.modifyDNAsync(any(ModifyDNRequest.class), any(IntermediateResponseHandler.class)))
+        when(connection.modifyDNAsync(any(ModifyDNRequest.class), any()))
                 .thenReturn(newSuccessfulLdapPromise(newResult(ResultCode.SUCCESS)));
-        when(connection.searchAsync(any(SearchRequest.class), any(IntermediateResponseHandler.class),
+        when(connection.searchAsync(any(SearchRequest.class), any(),
                                     any(SearchResultHandler.class)))
                 .thenReturn(newSuccessfulLdapPromise(newResult(ResultCode.SUCCESS)));
     }

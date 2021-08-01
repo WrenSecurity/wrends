@@ -16,14 +16,16 @@
  */
 package org.opends.server.authorization.dseecompat;
 
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.config.ConfigConstants.*;
-import static org.testng.Assert.*;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.config.ConfigConstants.ATTR_AUTHZ_GLOBAL_ACI;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 import java.util.Map;
 
-import org.opends.server.core.DirectoryServer;
 import org.forgerock.opendj.ldap.schema.AttributeType;
+import org.opends.server.core.DirectoryServer;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

@@ -16,15 +16,24 @@
  */
 package org.opends.server.core;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.ldap.LDAPConstants.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.requests.Requests.newAddRequest;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getDescriptionAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getExtensibleObjectObjectClass;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getObjectClassAttributeType;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServer;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextOperationID;
+import static org.opends.server.protocols.ldap.LDAPConstants.OP_TYPE_ADD_RESPONSE;
+import static org.opends.server.protocols.ldap.LDAPConstants.OP_TYPE_EXTENDED_RESPONSE;
 import static org.opends.server.types.NullOutputStream.nullPrintStream;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.testng.Assert.*;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,7 +58,6 @@ import org.opends.server.plugins.UpdatePreOpPlugin;
 import org.opends.server.protocols.ldap.AddRequestProtocolOp;
 import org.opends.server.protocols.ldap.LDAPAttribute;
 import org.opends.server.protocols.ldap.LDAPMessage;
-import com.forgerock.opendj.ldap.tools.LDAPModify;
 import org.opends.server.tools.RemoteConnection;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.Attributes;
@@ -66,6 +74,8 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import com.forgerock.opendj.ldap.tools.LDAPModify;
 
 /** A set of test cases for add operations. */
 @SuppressWarnings("javadoc")

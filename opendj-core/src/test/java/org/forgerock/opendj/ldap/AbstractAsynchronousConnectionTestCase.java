@@ -16,6 +16,29 @@
  */
 package org.forgerock.opendj.ldap;
 
+import static org.fest.assertions.Assertions.assertThat;
+import static org.fest.assertions.Fail.fail;
+import static org.forgerock.opendj.ldap.LdapException.newLdapException;
+import static org.forgerock.opendj.ldap.TestCaseUtils.failWasExpected;
+import static org.forgerock.opendj.ldap.requests.Requests.newAddRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newCompareRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newDeleteRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newGenericExtendedRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyDNRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newSearchRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newSimpleBindRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newSingleEntrySearchRequest;
+import static org.forgerock.opendj.ldap.responses.Responses.newBindResult;
+import static org.forgerock.opendj.ldap.responses.Responses.newCompareResult;
+import static org.forgerock.opendj.ldap.responses.Responses.newResult;
+import static org.forgerock.opendj.ldap.responses.Responses.newSearchResultEntry;
+import static org.forgerock.opendj.ldap.spi.LdapPromises.newFailedLdapPromise;
+import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,16 +61,6 @@ import org.forgerock.opendj.ldap.responses.SearchResultEntry;
 import org.forgerock.util.promise.ExceptionHandler;
 import org.forgerock.util.promise.ResultHandler;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.Assertions.*;
-import static org.fest.assertions.Fail.*;
-import static org.forgerock.opendj.ldap.LdapException.*;
-import static org.forgerock.opendj.ldap.TestCaseUtils.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.forgerock.opendj.ldap.responses.Responses.*;
-import static org.forgerock.opendj.ldap.spi.LdapPromises.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit test for AbstractAsynchronousConnection. The tests verify that all

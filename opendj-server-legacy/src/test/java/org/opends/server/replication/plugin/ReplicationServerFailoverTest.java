@@ -16,8 +16,8 @@
  */
 package org.opends.server.replication.plugin;
 
-import static org.opends.server.TestCaseUtils.*;
-import static org.testng.Assert.*;
+import static org.opends.server.TestCaseUtils.TEST_ROOT_DN_STRING;
+import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.SortedSet;
@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * Test if the replication domain is able to switch of replication server
  * if there is some replication server failure.
  */
-@Test(sequential = true)
+@Test(singleThreaded = true)
 public class ReplicationServerFailoverTest extends ReplicationTestCase
 {
   private static final int DS1_ID = 1;

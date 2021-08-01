@@ -16,14 +16,14 @@
  */
 package org.opends.quicksetup.util;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 import org.opends.server.DirectoryServerTestCase;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /** Utils Tester. */
-@Test(sequential=true)
+@Test(singleThreaded = true)
 @SuppressWarnings("javadoc")
 public class UtilsTest extends DirectoryServerTestCase {
 

@@ -17,11 +17,13 @@
  */
 package org.opends.server.authorization.dseecompat;
 
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.config.ConfigConstants.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.config.ConfigConstants.ATTR_AUTHZ_GLOBAL_ACI;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.opends.server.util.CollectionUtils.newHashSet;
+import static org.opends.server.util.ServerConstants.EOL;
+import static org.opends.server.util.ServerConstants.OID_PROXIED_AUTH_V2;
+import static org.testng.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -41,17 +43,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.forgerock.opendj.ldap.tools.LDAPCompare;
-import com.forgerock.opendj.ldap.tools.LDIFDiff;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.protocols.ldap.LDAPResultCode;
-import com.forgerock.opendj.ldap.tools.LDAPModify;
-import com.forgerock.opendj.ldap.tools.LDAPSearch;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import com.forgerock.opendj.ldap.tools.LDAPCompare;
+import com.forgerock.opendj.ldap.tools.LDAPModify;
+import com.forgerock.opendj.ldap.tools.LDAPSearch;
+import com.forgerock.opendj.ldap.tools.LDIFDiff;
 
 /**
  * These are more functional tests than unit tests.  They go directly over
@@ -75,7 +78,7 @@ import org.testng.annotations.Test;
  * the syntax.
  */
 @SuppressWarnings("javadoc")
-@Test(sequential=true, groups="slow")
+@Test(singleThreaded=true, groups="slow")
 public class AciTests extends AciTestCase {
 // TODO: test modify use cases
 // TODO: test searches where we expect a subset of attributes and entries

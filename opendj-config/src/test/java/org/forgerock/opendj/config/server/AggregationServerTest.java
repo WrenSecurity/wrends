@@ -18,7 +18,7 @@ package org.forgerock.opendj.config.server;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.forgerock.opendj.ldif.LDIF.makeEntry;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;

@@ -15,6 +15,19 @@
  */
 package org.forgerock.opendj.ldif;
 
+import static org.fest.assertions.Assertions.assertThat;
+import static org.fest.assertions.Fail.fail;
+import static org.forgerock.opendj.ldap.LdapException.newLdapException;
+import static org.forgerock.opendj.ldap.responses.Responses.newResult;
+import static org.forgerock.opendj.ldap.responses.Responses.newSearchResultEntry;
+import static org.forgerock.opendj.ldap.responses.Responses.newSearchResultReference;
+import static org.forgerock.opendj.ldap.spi.LdapPromises.newFailedLdapPromise;
+import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.NoSuchElementException;
 
 import org.forgerock.opendj.ldap.Connection;
@@ -32,14 +45,6 @@ import org.forgerock.opendj.ldap.responses.SearchResultReference;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.Assertions.*;
-import static org.fest.assertions.Fail.*;
-import static org.forgerock.opendj.ldap.LdapException.*;
-import static org.forgerock.opendj.ldap.responses.Responses.*;
-import static org.forgerock.opendj.ldap.spi.LdapPromises.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * This class tests the ConnectionEntryReader functionality.

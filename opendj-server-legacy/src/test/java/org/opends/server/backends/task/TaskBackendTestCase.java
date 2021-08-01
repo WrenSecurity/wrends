@@ -16,27 +16,30 @@
  */
 package org.opends.server.backends.task;
 
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.util.ServerConstants.DATE_FORMAT_GMT_TIME;
+import static org.opends.server.util.ServerConstants.TIME_ZONE_UTC;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.backends.BackendTestCase;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.tasks.DummyTask;
 import org.opends.server.tasks.TasksTestCase;
-import org.forgerock.opendj.ldap.DN;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
 
 /** A set of test cases that can be used to test the task backend. */
 public class TaskBackendTestCase

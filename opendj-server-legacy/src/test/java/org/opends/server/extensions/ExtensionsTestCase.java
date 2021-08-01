@@ -17,16 +17,15 @@ package org.opends.server.extensions;
 
 
 
-import org.testng.annotations.Test;
-
 import org.opends.server.DirectoryServerTestCase;
+import org.testng.annotations.Test;
 
 
 
 /**
  * An abstract base class for all extensions test cases.
  */
-@Test(groups = { "precommit", "extensions" }, sequential = true)
+@Test(groups = { "precommit", "extensions" }, singleThreaded = true)
 public abstract class ExtensionsTestCase
        extends DirectoryServerTestCase
 {

@@ -15,9 +15,10 @@
  */
 package org.forgerock.opendj.ldif;
 
-import static org.fest.assertions.Assertions.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.fest.assertions.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,7 @@ import org.forgerock.opendj.ldif.TemplateTag.TagResult;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-public class TemplateTagTestcase extends SdkTestCase {
+public class TemplateTagTestCase extends SdkTestCase {
 
     private static final int LINE_NUMBER = 10;
     private static final TemplateFile NULL_TEMPLATE_FILE = null;

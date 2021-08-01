@@ -15,6 +15,13 @@
  */
 package org.opends.server.replication.server.changelog.file;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.EQUAL_TO_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.GREATER_THAN_OR_EQUAL_TO_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.LESS_THAN_OR_EQUAL_TO_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.AFTER_MATCHING_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.ON_MATCHING_KEY;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -37,12 +44,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.*;
-import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.*;
-
 @SuppressWarnings("javadoc")
-@Test(sequential=true)
+@Test(singleThreaded=true)
 public class LogFileTest extends DirectoryServerTestCase
 {
   private static final File TEST_DIRECTORY = new File(TestCaseUtils.getUnitTestRootPath(), "changelog-unit");

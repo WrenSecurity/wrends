@@ -13,14 +13,14 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2013-2016 ForgeRock AS.
-  Portions Copyright 2017-2018 Wren Security.
+  Portions Copyright 2017-2021 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-parent</artifactId>
-    <version>4.0.0-M3</version>
+    <version>4.0.0-M4-SNAPSHOT</version>
   </parent>
   <artifactId>opendj-config</artifactId>
   <name>Wren:DS Configuration API</name>
@@ -28,7 +28,6 @@
     This module includes Configuration APIs for implementing LDAP Directory
     client and server applications.
   </description>
-  <packaging>bundle</packaging>
   <dependencies>
     <dependency>
       <groupId>org.forgerock.commons</groupId>
@@ -43,8 +42,8 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.forgerock</groupId>
-      <artifactId>forgerock-build-tools</artifactId>
+      <groupId>org.wrensecurity</groupId>
+      <artifactId>wrensec-build-tools</artifactId>
     </dependency>
     <dependency>
       <groupId>org.forgerock.opendj</groupId>
@@ -59,14 +58,6 @@
     <dependency>
       <groupId>org.forgerock.opendj</groupId>
       <artifactId>opendj-cli</artifactId>
-    </dependency>
-
-    <!-- We need to override testNG version to make test works (see OPENDJ-2389) -->
-    <dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
-      <version>6.0.1</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -153,6 +144,7 @@
         <artifactId>opendj-maven-plugin</artifactId>
         <executions>
           <execution>
+            <?m2e execute onConfiguration?>
             <id>generate-config</id>
             <goals>
               <goal>generate-config</goal>

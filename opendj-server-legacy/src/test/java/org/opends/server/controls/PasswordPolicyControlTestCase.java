@@ -16,6 +16,30 @@
  */
 package org.opends.server.controls;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.ResultCode.CONSTRAINT_VIOLATION;
+import static org.forgerock.opendj.ldap.ResultCode.SUCCESS;
+import static org.forgerock.opendj.ldap.requests.Requests.newAddRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newCompareRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newDeleteRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyDNRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newSearchRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newSimpleBindRequest;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServerLdapPort;
+import static org.opends.server.controls.PasswordPolicyErrorType.ACCOUNT_LOCKED;
+import static org.opends.server.controls.PasswordPolicyErrorType.CHANGE_AFTER_RESET;
+import static org.opends.server.controls.PasswordPolicyErrorType.INSUFFICIENT_PASSWORD_QUALITY;
+import static org.opends.server.controls.PasswordPolicyErrorType.MUST_SUPPLY_OLD_PASSWORD;
+import static org.opends.server.controls.PasswordPolicyErrorType.PASSWORD_IN_HISTORY;
+import static org.opends.server.controls.PasswordPolicyErrorType.PASSWORD_MOD_NOT_ALLOWED;
+import static org.opends.server.controls.PasswordPolicyErrorType.PASSWORD_TOO_YOUNG;
+import static org.opends.server.util.ServerConstants.OID_PASSWORD_POLICY_CONTROL;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
 import java.util.List;
 
 import org.forgerock.opendj.ldap.Connection;
@@ -42,15 +66,6 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.ResultCode.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.controls.PasswordPolicyErrorType.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
 
 /**
  * This class contains test cases that verify the appropriate handling of the

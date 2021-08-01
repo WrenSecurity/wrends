@@ -16,9 +16,9 @@
  */
 package org.opends.server.authorization.dseecompat;
 
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.ServerConstants.*;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.opends.server.util.ServerConstants.EOL;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -50,10 +50,6 @@ import org.opends.server.config.ConfigConstants;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ModifyOperation;
 import org.opends.server.protocols.ldap.LDAPResultCode;
-import com.forgerock.opendj.ldap.tools.LDAPDelete;
-import com.forgerock.opendj.ldap.tools.LDAPModify;
-import com.forgerock.opendj.ldap.tools.LDAPPasswordModify;
-import com.forgerock.opendj.ldap.tools.LDAPSearch;
 import org.opends.server.types.Attribute;
 import org.opends.server.types.Entry;
 import org.opends.server.types.Modification;
@@ -63,8 +59,13 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.forgerock.opendj.ldap.tools.LDAPDelete;
+import com.forgerock.opendj.ldap.tools.LDAPModify;
+import com.forgerock.opendj.ldap.tools.LDAPPasswordModify;
+import com.forgerock.opendj.ldap.tools.LDAPSearch;
+
 @SuppressWarnings("javadoc")
-@Test(groups = {"precommit", "dseecompat"}, sequential = true)
+@Test(groups = {"precommit", "dseecompat"}, singleThreaded = true)
 public abstract class  AciTestCase extends DirectoryServerTestCase {
 
   private Attribute globalACIAttribute;

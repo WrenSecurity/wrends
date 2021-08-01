@@ -16,10 +16,17 @@
  */
 package org.opends.server.api;
 
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.testng.Assert.*;
+import static org.forgerock.opendj.ldap.ModificationType.ADD;
+import static org.forgerock.opendj.ldap.ModificationType.DELETE;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServerLdapPort;
+import static org.opends.server.TestCaseUtils.restartServer;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.Set;
 

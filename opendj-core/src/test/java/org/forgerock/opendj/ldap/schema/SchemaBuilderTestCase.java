@@ -15,15 +15,22 @@
  */
 package org.forgerock.opendj.ldap.schema;
 
-import static org.fest.assertions.Assertions.*;
-import static org.fest.assertions.Fail.*;
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.forgerock.opendj.ldap.schema.Schema.*;
-import static org.forgerock.opendj.ldap.schema.SchemaConstants.*;
-import static org.forgerock.opendj.ldap.schema.SchemaOptions.*;
-import static org.forgerock.opendj.ldap.spi.LdapPromises.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.fest.assertions.Assertions.assertThat;
+import static org.fest.assertions.Fail.fail;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getCaseIgnoreMatchingRule;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getDirectoryStringSyntax;
+import static org.forgerock.opendj.ldap.schema.Schema.getDefaultSchema;
+import static org.forgerock.opendj.ldap.schema.SchemaConstants.OMR_OID_GENERIC_ENUM;
+import static org.forgerock.opendj.ldap.schema.SchemaConstants.SCHEMA_PROPERTY_ORIGIN;
+import static org.forgerock.opendj.ldap.schema.SchemaConstants.TOP_OBJECTCLASS_NAME;
+import static org.forgerock.opendj.ldap.schema.SchemaOptions.ALLOW_ATTRIBUTE_TYPES_WITH_NO_SUP_OR_SYNTAX;
+import static org.forgerock.opendj.ldap.schema.SchemaOptions.ALLOW_MALFORMED_NAMES_AND_OPTIONS;
+import static org.forgerock.opendj.ldap.schema.SchemaOptions.DEFAULT_MATCHING_RULE_OID;
+import static org.forgerock.opendj.ldap.schema.SchemaOptions.DEFAULT_SYNTAX_OID;
+import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;

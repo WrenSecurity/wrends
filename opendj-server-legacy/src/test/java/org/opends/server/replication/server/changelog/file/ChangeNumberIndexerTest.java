@@ -15,12 +15,23 @@
  */
 package org.opends.server.replication.server.changelog.file;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.LESS_THAN_OR_EQUAL_TO_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.ON_MATCHING_KEY;
+
 import java.lang.Thread.State;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.forgerock.opendj.ldap.DN;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -35,22 +46,15 @@ import org.opends.server.replication.server.changelog.api.ChangeNumberIndexDB;
 import org.opends.server.replication.server.changelog.api.ChangeNumberIndexRecord;
 import org.opends.server.replication.server.changelog.api.ChangelogDB;
 import org.opends.server.replication.server.changelog.api.ChangelogException;
+import org.opends.server.replication.server.changelog.api.ChangelogStateProvider;
 import org.opends.server.replication.server.changelog.api.DBCursor.CursorOptions;
 import org.opends.server.replication.server.changelog.api.ReplicaId;
 import org.opends.server.replication.server.changelog.api.ReplicationDomainDB;
-import org.opends.server.replication.server.changelog.api.ChangelogStateProvider;
-import org.forgerock.opendj.ldap.DN;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.*;
-import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.*;
 
 /**
  * Test for ChangeNumberIndexer class. All dependencies to the changelog DB

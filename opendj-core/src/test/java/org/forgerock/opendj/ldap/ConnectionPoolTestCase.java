@@ -17,6 +17,24 @@
 
 package org.forgerock.opendj.ldap;
 
+import static org.fest.assertions.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.Connections.newFixedConnectionPool;
+import static org.forgerock.opendj.ldap.LdapException.newLdapException;
+import static org.forgerock.opendj.ldap.TestCaseUtils.mockConnection;
+import static org.forgerock.opendj.ldap.TestCaseUtils.mockConnectionFactory;
+import static org.forgerock.opendj.ldap.TestCaseUtils.mockTimeService;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,13 +50,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.Assertions.*;
-import static org.forgerock.opendj.ldap.Connections.*;
-import static org.forgerock.opendj.ldap.LdapException.*;
-import static org.forgerock.opendj.ldap.TestCaseUtils.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Tests the connection pool implementation..

@@ -16,16 +16,36 @@
  */
 package org.opends.server.backends;
 
-import static org.forgerock.opendj.ldap.ResultCode.*;
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.opends.server.types.ExistingFileBehavior.*;
-import static org.opends.server.types.NullOutputStream.*;
-import static org.opends.server.util.StaticUtils.*;
-import static org.testng.Assert.*;
+import static org.forgerock.opendj.ldap.ResultCode.ATTRIBUTE_OR_VALUE_EXISTS;
+import static org.forgerock.opendj.ldap.ResultCode.CONSTRAINT_VIOLATION;
+import static org.forgerock.opendj.ldap.ResultCode.INVALID_ATTRIBUTE_SYNTAX;
+import static org.forgerock.opendj.ldap.ResultCode.NO_SUCH_ATTRIBUTE;
+import static org.forgerock.opendj.ldap.ResultCode.SUCCESS;
+import static org.forgerock.opendj.ldap.ResultCode.UNWILLING_TO_PERFORM;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getAttributeTypesAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getCreateTimestampAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getCreatorsNameAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getLDAPSyntaxesAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getMatchingRulesAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getModifiersNameAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getModifyTimestampAttributeType;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getObjectClassesAttributeType;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServerContext;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextOperationID;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.opends.server.types.ExistingFileBehavior.OVERWRITE;
+import static org.opends.server.types.NullOutputStream.nullPrintStream;
+import static org.opends.server.util.StaticUtils.createEntry;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

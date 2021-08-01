@@ -16,6 +16,17 @@
  */
 package org.opends.server.tasks;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.opends.server.config.ConfigConstants.ATTR_TASK_COMPLETION_TIME;
+import static org.opends.server.config.ConfigConstants.ATTR_TASK_LOG_MESSAGES;
+import static org.opends.server.config.ConfigConstants.ATTR_TASK_STATE;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -34,15 +45,8 @@ import org.opends.server.types.Entry;
 import org.opends.server.util.TestTimer;
 import org.testng.annotations.Test;
 
-import static java.util.concurrent.TimeUnit.*;
-
-import static org.opends.server.config.ConfigConstants.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.testng.Assert.*;
-
 /** A base class for all tasks test cases. */
-@Test(groups = { "precommit", "tasks" }, sequential = true)
+@Test(groups = { "precommit", "tasks" }, singleThreaded = true)
 public class TasksTestCase extends DirectoryServerTestCase {
 
   /**

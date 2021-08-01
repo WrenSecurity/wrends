@@ -15,15 +15,15 @@
  */
 package org.opends.server.types;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.opends.server.util.CollectionUtils.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.opends.server.util.CollectionUtils.newHashSet;
 
 import java.util.Set;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-@Test(groups = { "precommit", "types" }, sequential = true)
+@Test(groups = { "precommit", "types" }, singleThreaded = true)
 @SuppressWarnings("javadoc")
 public class HostPortTest extends TypesTestCase
 {

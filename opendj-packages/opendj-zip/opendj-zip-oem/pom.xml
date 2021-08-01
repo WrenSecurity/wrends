@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
-  Portions Copyright 2018 Wren Security.
+  Portions Copyright 2018-2021 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-zip</artifactId>
-        <version>4.0.0-M3</version>
+        <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-zip-oem</artifactId>
@@ -39,7 +39,7 @@
             ${product.name.lowercase}/lib/bootstrap.jar,
             ${product.name.lowercase}/lib/bootstrap-client.jar,
             ${product.name.lowercase}/lib/je.jar,
-            ${product.name.lowercase}/lib/opendj-je-backend.jar,
+            ${product.name.lowercase}/lib/${product.name.lowercase}-je-backend.jar,
             ${product.name.lowercase}/legal-notices/THIRDPARTYREADME.txt
         </oem.file.exclusion.list>
         <product.archive.name>${product.name.lowercase}-oem-${project.version}</product.archive.name>
@@ -70,6 +70,7 @@
     </dependencies>
 
     <build>
+        <finalName>${product.name.lowercase}</finalName>
         <plugins>
             <!-- Generates bootstrap.jar and bootstrap-client.jar for OEM archive edition --> 
             <plugin>
@@ -124,7 +125,7 @@
                             <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <finalName>bootstrap</finalName>
+                            <classifier>bootstrap</classifier>
                             <archive>
                                 <index>false</index>
                                 <manifestFile>
@@ -142,7 +143,7 @@
                             <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <finalName>bootstrap-client</finalName>
+                            <classifier>bootstrap-client</classifier>
                             <archive>
                                 <index>false</index>
                                 <manifestFile>

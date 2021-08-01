@@ -16,6 +16,17 @@
  */
 package org.opends.server.crypto;
 
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.config.ConfigConstants.ATTR_CRYPTO_CIPHER_TRANSFORMATION_NAME;
+import static org.opends.server.config.ConfigConstants.ATTR_CRYPTO_KEY_COMPROMISED_TIME;
+import static org.opends.server.config.ConfigConstants.ATTR_CRYPTO_KEY_LENGTH_BITS;
+import static org.opends.server.config.ConfigConstants.ATTR_CRYPTO_SYMMETRIC_KEY;
+import static org.opends.server.config.ConfigConstants.OC_CRYPTO_CIPHER_KEY;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
@@ -32,12 +43,6 @@ import org.opends.server.types.Entry;
 import org.opends.server.util.ServerConstants;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.config.ConfigConstants.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.testng.Assert.*;
 
 /**
  * A set of test cases for the symmetric key extended operation.

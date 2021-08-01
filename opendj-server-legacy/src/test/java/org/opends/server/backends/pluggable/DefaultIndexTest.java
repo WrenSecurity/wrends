@@ -15,12 +15,15 @@
  */
 package org.opends.server.backends.pluggable;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.ByteString.valueOfUtf8;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.backends.pluggable.EntryIDSet.*;
-import static org.opends.server.backends.pluggable.State.IndexFlag.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.opends.server.backends.pluggable.EntryIDSet.CODEC_V2;
+import static org.opends.server.backends.pluggable.EntryIDSet.newDefinedSet;
+import static org.opends.server.backends.pluggable.State.IndexFlag.COMPACTED;
+import static org.opends.server.backends.pluggable.State.IndexFlag.TRUSTED;
 import static org.opends.server.backends.pluggable.Utils.assertIdsEquals;
 
 import java.util.EnumSet;
@@ -46,7 +49,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "pluggablebackend" }, sequential = true)
+@Test(groups = { "precommit", "pluggablebackend" }, singleThreaded = true)
 public class DefaultIndexTest extends DirectoryServerTestCase
 {
   private DefaultIndex index;

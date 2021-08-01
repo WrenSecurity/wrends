@@ -15,7 +15,9 @@
  */
 package org.opends.server.extensions;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
 
 import java.io.BufferedInputStream;
 import java.net.URL;
@@ -41,7 +43,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 /** Tests for {@link TLSByteChannel} class. */
-@Test(groups = "slow", sequential = true)
+@Test(groups = "slow", singleThreaded = true)
 public class TLSByteChannelTestCase extends DirectoryServerTestCase
 {
   /** Cipher suite hardcoded from the IANA registry on internet. */
