@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.forgerock.opendj.server.embedded;
 
@@ -46,7 +47,8 @@ public final class RebuildIndexParameters
       "--configFile", configurationFile,
       "--baseDN", baseDN,
       "--rebuildAll",
-      "--noPropertiesFile"
+      "--noPropertiesFile",
+      "--offline"
     };
   }
 
