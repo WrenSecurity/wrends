@@ -13,6 +13,7 @@
  *
  * Copyright 2008 Sun Microsystems, Inc.
  * Portions Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.forgerock.opendj.config;
 
@@ -59,6 +60,13 @@ public final class TestCfg {
      *             If an unexpected error occurred.
      */
     public static synchronized void setUp() throws Exception {
+        // Make sure everything is initialized to prevent corrupted context. This is needed as
+        // PropertyDefinition#getInstance() has side-effects and a single test can corrupt shared
+        // object class definitions (e.g. ManagedObjectPathTest + AggregationServerTest).
+        if (!ConfigurationFramework.getInstance().isInitialized()) {
+            ConfigurationFramework.getInstance().initialize();
+        }
+
         initializeAndRegisterBundle(TestParentCfgDefn.getInstance());
         initializeAndRegisterBundle(TestChildCfgDefn.getInstance());
 
