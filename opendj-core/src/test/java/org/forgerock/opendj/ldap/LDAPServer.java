@@ -13,16 +13,20 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 
 package org.forgerock.opendj.ldap;
 
-import static org.forgerock.opendj.ldap.LDAPListener.*;
+import static org.forgerock.opendj.ldap.CommonLDAPOptions.LDAP_DECODE_OPTIONS;
+import static org.forgerock.opendj.ldap.LDAPListener.CONNECT_MAX_BACKLOG;
 import static org.forgerock.opendj.ldap.LdapException.newLdapException;
 import static org.forgerock.opendj.ldap.TestCaseUtils.loopbackWithDynamicPort;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.security.KeyStore;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -518,12 +522,27 @@ public class LDAPServer implements ServerConnectionFactory<LDAPClientContext, In
         if (isRunning) {
             return;
         }
-        sslContext = new SSLContextBuilder().getSSLContext();
+        sslContext = createSslContext();
         listener = new LDAPListener(Collections.singleton(loopbackWithDynamicPort()),
                 new ServerConnectionFactoryAdapter(Options.defaultOptions().get(LDAP_DECODE_OPTIONS),
                         getInstance()),
                 Options.defaultOptions().set(CONNECT_MAX_BACKLOG, 4096));
         isRunning = true;
+    }
+
+    private SSLContext createSslContext() throws Exception {
+        SSLContextBuilder builder = new SSLContextBuilder();
+
+        // Keystore keystore.pfx was generated with the following commands:
+        // openssl req -new -x509 -days 10000 -nodes -out server.pem -keyout server.key
+        // openssl pkcs12 -export -inkey server.key -in server.pem -name localhost -out keystore.pfx
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (InputStream input = getClass().getResourceAsStream("keystore.pfx")) {
+            keyStore.load(input, "changeit".toCharArray());
+        }
+        builder.setKeyManager(KeyManagers.getX509KeyManager(keyStore, "changeit".toCharArray()));
+
+        return builder.getSSLContext();
     }
 
     /**
