@@ -14,16 +14,29 @@
  * Copyright 2008-2009 Sun Microsystems, Inc.
  * Portions copyright 2011-2016 ForgeRock AS.
  * Portions copyright 2011 Nemanja Lukić
+ * Portions Copyright 2021 Wren Security.
  */
 package com.forgerock.opendj.cli;
 
-import static com.forgerock.opendj.cli.CliMessages.*;
-import static com.forgerock.opendj.cli.Utils.*;
-import static com.forgerock.opendj.util.StaticUtils.*;
+import static com.forgerock.opendj.cli.CliMessages.ERR_CONFIRMATION_TRIES_LIMIT_REACHED;
+import static com.forgerock.opendj.cli.CliMessages.ERR_CONSOLE_APP_CONFIRM;
+import static com.forgerock.opendj.cli.CliMessages.ERR_TRIES_LIMIT_REACHED;
+import static com.forgerock.opendj.cli.CliMessages.INFO_ERROR_EMPTY_RESPONSE;
+import static com.forgerock.opendj.cli.CliMessages.INFO_GENERAL_NO;
+import static com.forgerock.opendj.cli.CliMessages.INFO_GENERAL_YES;
+import static com.forgerock.opendj.cli.CliMessages.INFO_MENU_PROMPT_CONFIRM;
+import static com.forgerock.opendj.cli.CliMessages.INFO_MENU_PROMPT_RETURN_TO_CONTINUE;
+import static com.forgerock.opendj.cli.CliMessages.INFO_PROMPT_SINGLE_DEFAULT;
+import static com.forgerock.opendj.cli.Utils.CONFIRMATION_MAX_TRIES;
+import static com.forgerock.opendj.cli.Utils.LINE_SEPARATOR;
+import static com.forgerock.opendj.cli.Utils.MAX_LINE_WIDTH;
+import static com.forgerock.opendj.cli.Utils.wrapText;
+import static com.forgerock.opendj.util.StaticUtils.EOL;
 
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.EOFException;
+import java.io.FilterInputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +54,7 @@ public abstract class ConsoleApplication {
     private static final int PROGRESS_LINE = 70;
 
     private final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-    private final InputStream in = System.in;
+    private final InputStream in;
     private final PrintStream out;
     private final PrintStream err;
     private final Console console = System.console();
@@ -80,6 +93,14 @@ public abstract class ConsoleApplication {
      *            The error stream.
      */
     public ConsoleApplication(PrintStream out, PrintStream err) {
+        // Wrap standard input as a temporary workaround against components that
+        // are incorrectly using try-with-resources on this input stream.
+        this.in = new FilterInputStream(System.in) {
+            @Override
+            public void close() throws IOException {
+                // ignore as this effectively means illegal state
+            }
+        };
         this.out = out;
         this.err = err;
     }
