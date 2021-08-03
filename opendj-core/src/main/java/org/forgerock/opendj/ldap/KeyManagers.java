@@ -262,8 +262,12 @@ public final class KeyManagers {
             throws GeneralSecurityException, IOException {
         final KeyStore keyStore = KeyStore.getInstance("PKCS11");
         keyStore.load(null, password);
-        final KeyManagerFactory kmf =
-                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        return getX509KeyManager(keyStore, password);
+    }
+
+    static X509KeyManager getX509KeyManager(final KeyStore keyStore, final char[] password)
+            throws GeneralSecurityException {
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(keyStore, password);
 
         X509KeyManager x509km = null;

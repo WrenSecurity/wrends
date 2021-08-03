@@ -30,26 +30,30 @@ package org.forgerock.opendj.grizzly;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.CommonLDAPOptions.LDAP_DECODE_OPTIONS;
 import static org.forgerock.opendj.ldap.Connections.newFailoverLoadBalancer;
 import static org.forgerock.opendj.ldap.Connections.newFixedConnectionPool;
 import static org.forgerock.opendj.ldap.Connections.newRoundRobinLoadBalancer;
-import static org.forgerock.opendj.ldap.LDAPConnectionFactory.*;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.AUTHN_BIND_REQUEST;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.HEARTBEAT_ENABLED;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.HEARTBEAT_INTERVAL;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.HEARTBEAT_SEARCH_REQUEST;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.HEARTBEAT_TIMEOUT;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.SSL_CONTEXT;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.SSL_USE_STARTTLS;
 import static org.forgerock.opendj.ldap.LdapException.newLdapException;
 import static org.forgerock.opendj.ldap.TestCaseUtils.findFreeSocketAddress;
 import static org.forgerock.opendj.ldap.TestCaseUtils.getServerSocketAddress;
+import static org.forgerock.opendj.ldap.TestCaseUtils.loopbackWithDynamicPort;
 import static org.forgerock.opendj.ldap.requests.Requests.newCRAMMD5SASLBindRequest;
 import static org.forgerock.opendj.ldap.requests.Requests.newDigestMD5SASLBindRequest;
 import static org.forgerock.opendj.ldap.requests.Requests.newSimpleBindRequest;
 import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
 import static org.forgerock.util.Options.defaultOptions;
 import static org.forgerock.util.time.Duration.duration;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
+import static org.testng.Assert.*;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -190,15 +194,7 @@ public class ConnectionFactoryTestCase extends SdkTestCase {
         SSLContext sslContext = new SSLContextBuilder().setTrustManager(TrustManagers.trustAll()).getSSLContext();
         final Options startTlsOptions = defaultOptions()
                                    .set(SSL_CONTEXT, sslContext)
-                                   .set(SSL_USE_STARTTLS, true)
-                                   .set(SSL_ENABLED_CIPHER_SUITES,
-                                        asList("SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-                                                      "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-                                                      "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
-                                                      "SSL_DH_anon_WITH_DES_CBC_SHA",
-                                                      "SSL_DH_anon_WITH_RC4_128_MD5",
-                                                      "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-                                                      "TLS_DH_anon_WITH_AES_256_CBC_SHA"));
+                                   .set(SSL_USE_STARTTLS, true);
         factories[5][0] = new LDAPConnectionFactory(serverAddress.getHostName(),
                                                     serverAddress.getPort(),
                                                     startTlsOptions);

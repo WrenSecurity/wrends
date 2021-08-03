@@ -29,6 +29,7 @@ package org.forgerock.opendj.ldap;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
@@ -93,6 +94,15 @@ public final class TestCaseUtils {
     public static String getTestFilePath(String relativePathFromClasspath) throws Exception {
         return new File(TestCaseUtils.class.getClassLoader().getResource(relativePathFromClasspath).toURI())
                 .getCanonicalPath();
+    }
+
+    /**
+     * Create a new {@link InetSocketAddress} configured with loopback address and dynamic port 0
+     *
+     * @return A new loopback {@link InetSocketAddress}
+     */
+    public static InetSocketAddress loopbackWithDynamicPort() {
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
     }
 
     /**

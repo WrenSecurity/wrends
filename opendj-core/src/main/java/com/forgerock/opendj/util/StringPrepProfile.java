@@ -441,7 +441,7 @@ public final class StringPrepProfile {
      */
     public static void prepareUnicode(final StringBuilder buffer, final ByteSequence sequence,
             final boolean trim, final boolean foldCase) {
-        Reject.ifNull(buffer, sequence);
+        Reject.<Object>ifNull(buffer, sequence);
 
         // Optimize in the case of purely ascii characters which is the most
         // common case.
