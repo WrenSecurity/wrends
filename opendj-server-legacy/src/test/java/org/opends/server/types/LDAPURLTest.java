@@ -15,17 +15,18 @@
  */
 package org.opends.server.types;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+
 import org.forgerock.opendj.ldap.SearchScope;
 import org.opends.server.TestCaseUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.testng.Assert.*;
-
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "types" }, sequential = true)
+@Test(groups = { "precommit", "types" }, singleThreaded = true)
 public class LDAPURLTest extends TypesTestCase
 {
 

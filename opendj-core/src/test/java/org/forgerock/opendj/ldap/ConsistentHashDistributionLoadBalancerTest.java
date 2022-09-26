@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -53,6 +54,7 @@ import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
 public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
+
     private static final DN PARTITION_BASE_DN = DN.valueOf("ou=people,dc=example,dc=com");
     private static final DN DN_1_BELOW_PARTITION_BASE_DN = PARTITION_BASE_DN.child("uid=bjensen");
     private static final DN DN_2_BELOW_PARTITION_BASE_DN = DN_1_BELOW_PARTITION_BASE_DN.child("cn=prefs");
@@ -91,45 +93,45 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
         loadBalancer = newFixedSizeDistributionLoadBalancer(PARTITION_BASE_DN, partitions, defaultOptions());
 
         when(partition1Conn.addAsync(any(AddRequest.class),
-                                     any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                     any())).thenReturn(SUCCESS);
         when(partition2Conn.addAsync(any(AddRequest.class),
-                                     any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                     any())).thenReturn(SUCCESS);
 
         when(partition1Conn.bindAsync(any(BindRequest.class),
-                                      any(IntermediateResponseHandler.class))).thenReturn(BIND_SUCCESS);
+                                      any())).thenReturn(BIND_SUCCESS);
         when(partition2Conn.bindAsync(any(BindRequest.class),
-                                      any(IntermediateResponseHandler.class))).thenReturn(BIND_SUCCESS);
+                                      any())).thenReturn(BIND_SUCCESS);
 
         when(partition1Conn.compareAsync(any(CompareRequest.class),
-                                         any(IntermediateResponseHandler.class))).thenReturn(COMPARE_SUCCESS);
+                                         any())).thenReturn(COMPARE_SUCCESS);
         when(partition2Conn.compareAsync(any(CompareRequest.class),
-                                         any(IntermediateResponseHandler.class))).thenReturn(COMPARE_SUCCESS);
+                                         any())).thenReturn(COMPARE_SUCCESS);
 
         when(partition1Conn.deleteAsync(any(DeleteRequest.class),
-                                        any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                        any())).thenReturn(SUCCESS);
         when(partition2Conn.deleteAsync(any(DeleteRequest.class),
-                                        any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                        any())).thenReturn(SUCCESS);
 
         when(partition1Conn.extendedRequestAsync(any(ExtendedRequest.class),
-                                                 any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                                 any())).thenReturn(SUCCESS);
         when(partition2Conn.extendedRequestAsync(any(ExtendedRequest.class),
-                                                 any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                                 any())).thenReturn(SUCCESS);
 
         when(partition1Conn.modifyAsync(any(ModifyRequest.class),
-                                        any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                        any())).thenReturn(SUCCESS);
         when(partition2Conn.modifyAsync(any(ModifyRequest.class),
-                                        any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                        any())).thenReturn(SUCCESS);
 
         when(partition1Conn.modifyDNAsync(any(ModifyDNRequest.class),
-                                          any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                          any())).thenReturn(SUCCESS);
         when(partition2Conn.modifyDNAsync(any(ModifyDNRequest.class),
-                                          any(IntermediateResponseHandler.class))).thenReturn(SUCCESS);
+                                          any())).thenReturn(SUCCESS);
 
         when(partition1Conn.searchAsync(any(SearchRequest.class),
-                                        any(IntermediateResponseHandler.class),
+                                        any(),
                                         any(SearchResultHandler.class))) .thenReturn(SUCCESS);
         when(partition2Conn.searchAsync(any(SearchRequest.class),
-                                        any(IntermediateResponseHandler.class),
+                                        any(),
                                         any(SearchResultHandler.class))).thenReturn(SUCCESS);
     }
 
@@ -177,7 +179,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
         try (final Connection connection = loadBalancer.getConnection()) {
             connection.addAsync(newAddRequest(requestDN));
         }
-        verify(hitPartition(isSecondPartition)).addAsync(any(AddRequest.class), any(IntermediateResponseHandler.class));
+        verify(hitPartition(isSecondPartition)).addAsync(any(AddRequest.class), any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
         verifyZeroInteractions(missPartition(isSecondPartition));
@@ -191,7 +193,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             connection.bindAsync(Requests.newSimpleBindRequest(requestDN.toString(), "password".toCharArray()));
         }
         verify(hitPartition(isSecondPartition)).bindAsync(any(BindRequest.class),
-                                                          any(IntermediateResponseHandler.class));
+                                                          any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
         verifyZeroInteractions(missPartition(isSecondPartition));
@@ -205,7 +207,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             connection.compareAsync(newCompareRequest(requestDN.toString(), "cn", "test"));
         }
         verify(hitPartition(isSecondPartition)).compareAsync(any(CompareRequest.class),
-                                                             any(IntermediateResponseHandler.class));
+                                                             any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
         verifyZeroInteractions(missPartition(isSecondPartition));
@@ -219,7 +221,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             connection.deleteAsync(newDeleteRequest(requestDN));
         }
         verify(hitPartition(isSecondPartition)).deleteAsync(any(DeleteRequest.class),
-                                                            any(IntermediateResponseHandler.class));
+                                                            any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
         verifyZeroInteractions(missPartition(isSecondPartition));
@@ -233,7 +235,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             connection.extendedRequestAsync(newPasswordModifyExtendedRequest().setUserIdentity("dn:" + requestDN));
         }
         verify(hitPartition(isSecondPartition)).extendedRequestAsync(any(ExtendedRequest.class),
-                                                                     any(IntermediateResponseHandler.class));
+                                                                     any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
         verifyZeroInteractions(missPartition(isSecondPartition));
@@ -247,7 +249,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             connection.modifyAsync(newModifyRequest(requestDN));
         }
         verify(hitPartition(isSecondPartition)).modifyAsync(any(ModifyRequest.class),
-                                                            any(IntermediateResponseHandler.class));
+                                                            any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
         verifyZeroInteractions(missPartition(isSecondPartition));
@@ -261,7 +263,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             connection.modifyDNAsync(newModifyDNRequest(requestDN, RDN.valueOf("cn=changed")));
         }
         verify(hitPartition(isSecondPartition)).modifyDNAsync(any(ModifyDNRequest.class),
-                                                              any(IntermediateResponseHandler.class));
+                                                              any());
         verify(hashFunction, atLeastOnce()).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
         verifyZeroInteractions(missPartition(isSecondPartition));
@@ -276,7 +278,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                    mock(SearchResultHandler.class));
         }
         verify(hitPartition(isSecondPartition)).searchAsync(any(SearchRequest.class),
-                                                            any(IntermediateResponseHandler.class),
+                                                            any(),
                                                             any(SearchResultHandler.class));
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
@@ -350,7 +352,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                    mock(SearchResultHandler.class));
         }
         verify(partition1Conn).searchAsync(any(SearchRequest.class),
-                                           any(IntermediateResponseHandler.class),
+                                           any(),
                                            any(SearchResultHandler.class));
         verify(hashFunction).apply(dn.toNormalizedUrlSafeString());
         verify(partition1Conn).close();
@@ -363,10 +365,10 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             connection.searchAsync(newSearchRequest(dn, scope, alwaysTrue()), mock(SearchResultHandler.class));
         }
         verify(partition1Conn).searchAsync(any(SearchRequest.class),
-                                           any(IntermediateResponseHandler.class),
+                                           any(),
                                            any(SearchResultHandler.class));
         verify(partition2Conn).searchAsync(any(SearchRequest.class),
-                                           any(IntermediateResponseHandler.class),
+                                           any(),
                                            any(SearchResultHandler.class));
         verify(partition1Conn).close();
         verify(partition2Conn).close();

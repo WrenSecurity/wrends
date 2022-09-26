@@ -15,6 +15,7 @@
  */
 package org.forgerock.server.embedded;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.server.embedded.ConfigParameters.configParams;
 import static org.forgerock.opendj.server.embedded.ConnectionParameters.connectionParams;
 import static org.forgerock.opendj.server.embedded.EmbeddedDirectoryServer.manageEmbeddedDirectoryServer;
@@ -22,9 +23,10 @@ import static org.forgerock.opendj.server.embedded.ImportParameters.importParams
 import static org.forgerock.opendj.server.embedded.RebuildIndexParameters.rebuildIndexParams;
 import static org.forgerock.opendj.server.embedded.SetupParameters.setupParams;
 import static org.forgerock.opendj.server.embedded.UpgradeParameters.upgradeParams;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.opends.server.TestCaseUtils.getServer;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import java.io.File;
 import java.util.SortedSet;
@@ -48,7 +50,7 @@ import org.testng.annotations.Test;
 /**
  * Tests for an embedded directory server.
  */
-@Test(groups = "slow", sequential=true)
+@Test(groups = "slow", singleThreaded = true)
 @SuppressWarnings("javadoc")
 public class EmbeddedDirectoryServerTestCase extends UtilTestCase
 {

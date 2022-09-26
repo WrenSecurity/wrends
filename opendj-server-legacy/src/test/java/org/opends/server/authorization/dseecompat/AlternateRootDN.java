@@ -16,10 +16,11 @@
  */
 package org.opends.server.authorization.dseecompat;
 
-import static org.testng.Assert.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.config.ConfigConstants.*;
-import static org.opends.server.util.ServerConstants.*;
+import static org.opends.server.config.ConfigConstants.ATTR_AUTHZ_GLOBAL_ACI;
+import static org.opends.server.util.ServerConstants.ATTR_USER_PASSWORD;
+import static org.opends.server.util.ServerConstants.OID_PROXIED_AUTH_V2;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertTrue;
 
 import java.util.Map;
 

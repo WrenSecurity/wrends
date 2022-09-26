@@ -15,11 +15,13 @@
  */
 package org.opends.server.backends.pluggable;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.config.ConfigurationMock.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.backends.pluggable.State.IndexFlag.*;
-import static org.opends.server.util.CollectionUtils.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.config.ConfigurationMock.mockCfg;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.opends.server.backends.pluggable.State.IndexFlag.COMPACTED;
+import static org.opends.server.backends.pluggable.State.IndexFlag.TRUSTED;
+import static org.opends.server.util.CollectionUtils.newTreeSet;
 
 import java.util.UUID;
 
@@ -49,7 +51,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "pluggablebackend" }, sequential = true)
+@Test(groups = { "precommit", "pluggablebackend" }, singleThreaded = true)
 public class StateTest extends DirectoryServerTestCase
 {
   private static final IndexFlag DEFAULT_FLAG = COMPACTED;

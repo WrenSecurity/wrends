@@ -16,6 +16,31 @@
  */
 package org.opends.server.types;
 
+import static org.forgerock.opendj.ldap.ModificationType.ADD;
+import static org.forgerock.opendj.ldap.ModificationType.DELETE;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.ResultCode.AUTHORIZATION_DENIED;
+import static org.forgerock.opendj.ldap.ResultCode.COMPARE_TRUE;
+import static org.forgerock.opendj.ldap.ResultCode.INSUFFICIENT_ACCESS_RIGHTS;
+import static org.forgerock.opendj.ldap.ResultCode.SUCCESS;
+import static org.forgerock.opendj.ldap.ResultCode.UNWILLING_TO_PERFORM;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyDNRequest;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextOperationID;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.opends.server.types.NullOutputStream.nullPrintStream;
+import static org.opends.server.types.Privilege.PASSWORD_RESET;
+import static org.opends.server.types.Privilege.SUBENTRY_WRITE;
+import static org.opends.server.types.Privilege.UPDATE_SCHEMA;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -60,25 +85,15 @@ import org.opends.server.protocols.internal.InternalClientConnection;
 import org.opends.server.protocols.internal.InternalSearchOperation;
 import org.opends.server.protocols.internal.Requests;
 import org.opends.server.protocols.internal.SearchRequest;
-import com.forgerock.opendj.ldap.tools.LDAPModify;
-import com.forgerock.opendj.ldap.tools.LDAPPasswordModify;
-import com.forgerock.opendj.ldap.tools.LDAPSearch;
 import org.opends.server.tools.RemoteConnection;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.ResultCode.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.opends.server.types.NullOutputStream.nullPrintStream;
-import static org.opends.server.types.Privilege.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.testng.Assert.*;
+import com.forgerock.opendj.ldap.tools.LDAPModify;
+import com.forgerock.opendj.ldap.tools.LDAPPasswordModify;
+import com.forgerock.opendj.ldap.tools.LDAPSearch;
 
 /**
  * This class provides a set of test cases for the Directory Server privilege

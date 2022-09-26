@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2017-2018 Wren Security.
+  Portions Copyright 2017-2021 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -21,13 +21,13 @@
     <parent>
         <groupId>org.wrensecurity</groupId>
         <artifactId>wrensec-parent</artifactId>
-        <version>2.2.0</version>
+        <version>3.3.0</version>
         <relativePath />
     </parent>
 
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-bom</artifactId>
-    <version>4.0.0-M3</version>
+    <version>4.0.0-M4-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -36,9 +36,41 @@
         Provides a list of Wren:DS dependencies which are known to be compatible with each other.
     </description>
 
+    <repositories>
+        <!-- Needed to retrieve parent POM -->
+        <repository>
+            <id>wrensecurity-releases</id>
+            <name>Wren Security Release Repository</name>
+            <url>https://wrensecurity.jfrog.io/wrensecurity/releases</url>
+
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+
+        <!-- Needed to retrieve parent POM -->
+        <repository>
+            <id>wrensecurity-snapshots</id>
+            <name>Wren Security Snapshot Repository</name>
+            <url>https://wrensecurity.jfrog.io/wrensecurity/snapshots</url>
+
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
     <properties>
         <i18n-framework.version>1.4.2</i18n-framework.version>
-        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.3.0</pgpWhitelistArtifact>
+        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.5.5</pgpWhitelistArtifact>
     </properties>
 
     <dependencyManagement>
@@ -47,7 +79,7 @@
             <dependency>
                 <groupId>org.forgerock.commons</groupId>
                 <artifactId>commons-bom</artifactId>
-                <version>21.0.0-alpha-17</version>
+                <version>22.1.0-SNAPSHOT</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -99,21 +131,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <repositories>
-        <!-- Needed to retrieve parent POM -->
-        <repository>
-            <id>wrensecurity-releases</id>
-            <name>Wren Security Release Repository</name>
-            <url>https://wrensecurity.jfrog.io/wrensecurity/releases</url>
-
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-    </repositories>
 </project>

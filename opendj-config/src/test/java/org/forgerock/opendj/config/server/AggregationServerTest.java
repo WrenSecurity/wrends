@@ -13,12 +13,13 @@
  *
  * Copyright 2007-2008 Sun Microsystems, Inc.
  * Portions copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.forgerock.opendj.config.server;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.forgerock.opendj.ldif.LDIF.makeEntry;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
@@ -131,7 +132,7 @@ public final class AggregationServerTest extends AdminTestCase {
         "ds-cfg-attribute-type: description",
         "ds-cfg-conflict-behavior: virtual-overrides-real",
         "ds-cfg-rotation-policy: cn=LDAP Connection Handler, cn=connection handlers, cn=config",
-        "ds-cfg-rotation-policy: cn=LDAPS Connection Handler, cn=connection handlers, cn=config");
+        "ds-cfg-rotation-policy: cn=Test Connection Handler, cn=connection handlers, cn=config");
 
     private static final Entry TEST_CHILD_5 = makeEntry(
         "dn: cn=test child 5,cn=test children,cn=test parent 1,cn=test parents,cn=config",
@@ -189,22 +190,22 @@ public final class AggregationServerTest extends AdminTestCase {
 
     /** This handler is disabled - see ds-cfg-enabled property. */
     protected static final Entry TEST_CONNECTION_HANDLER_ENTRY_DISABLED = LDIF.makeEntry(
-        "dn: cn=" + "Test Connection Handler" + ",cn=Connection Handlers,cn=config",
+        "dn: cn=Test Connection Handler,cn=Connection Handlers,cn=config",
         "objectClass: top",
         "objectClass: ds-cfg-connection-handler",
         "objectClass: ds-cfg-ldap-connection-handler",
-        "cn: LDAP Connection Handler",
+        "cn: Test Connection Handler",
         "ds-cfg-java-class: org.opends.server.protocols.ldap.LDAPConnectionHandler",
         "ds-cfg-enabled: false",
         "ds-cfg-listen-address: 0.0.0.0", "ds-cfg-listen-port: 389");
 
     /** This handler is enabled - see ds-cfg-enabled property. */
     protected static final Entry TEST_CONNECTION_HANDLER_ENTRY_ENABLED = LDIF.makeEntry(
-        "dn: cn=" + "Test Connection Handler" + ",cn=Connection Handlers,cn=config",
+        "dn: cn=Test Connection Handler,cn=Connection Handlers,cn=config",
         "objectClass: top",
         "objectClass: ds-cfg-connection-handler",
         "objectClass: ds-cfg-ldap-connection-handler",
-        "cn: LDAP Connection Handler",
+        "cn: Test Connection Handler",
         "ds-cfg-java-class: org.opends.server.protocols.ldap.LDAPConnectionHandler",
         "ds-cfg-enabled: true",
         "ds-cfg-listen-address: 0.0.0.0", "ds-cfg-listen-port: 389");
@@ -446,7 +447,7 @@ public final class AggregationServerTest extends AdminTestCase {
     public void testAggregationMultipleValues() throws Exception {
         ConfigurationRepository configRepository =
             createConfigRepositoryWithEntries(TEST_PARENT_1, TEST_CHILD_4, LDAP_CONN_HANDLER_ENTRY,
-                LDAPS_CONN_HANDLER_ENTRY);
+                TEST_CONNECTION_HANDLER_ENTRY_ENABLED);
         ServerManagementContext context =
             new ServerManagementContext(configRepository);
         TestParentCfg parentCfg = getParentCfg(TEST_PARENT_1, context);
@@ -456,7 +457,7 @@ public final class AggregationServerTest extends AdminTestCase {
             "org.opends.server.extensions.UserDefinedVirtualAttributeProvider");
         assertEquals(testChildCfg.getMandatoryReadOnlyAttributeTypeProperty(), Schema.getDefaultSchema()
             .getAttributeType("description"));
-        assertSetEquals(testChildCfg.getAggregationProperty(), "LDAPS Connection Handler", "LDAP Connection Handler");
+        assertSetEquals(testChildCfg.getAggregationProperty(), "LDAP Connection Handler", "Test Connection Handler");
     }
 
     /**

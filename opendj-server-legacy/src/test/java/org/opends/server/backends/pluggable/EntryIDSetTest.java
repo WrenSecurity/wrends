@@ -15,19 +15,26 @@
  */
 package org.opends.server.backends.pluggable;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.opends.server.backends.pluggable.EntryIDSet.*;
-import static org.opends.server.backends.pluggable.Utils.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.opends.server.backends.pluggable.EntryIDSet.CODEC_V1;
+import static org.opends.server.backends.pluggable.EntryIDSet.CODEC_V2;
+import static org.opends.server.backends.pluggable.EntryIDSet.newDefinedSet;
+import static org.opends.server.backends.pluggable.EntryIDSet.newSetFromUnion;
+import static org.opends.server.backends.pluggable.EntryIDSet.newUndefinedSet;
+import static org.opends.server.backends.pluggable.EntryIDSet.newUndefinedSetWithKey;
+import static org.opends.server.backends.pluggable.Utils.assertIdsEquals;
+import static org.opends.server.backends.pluggable.Utils.id;
 
 import java.util.Arrays;
 
 import org.forgerock.opendj.ldap.ByteString;
 import org.opends.server.DirectoryServerTestCase;
+import org.opends.server.backends.pluggable.EntryIDSet.EntryIDSetCodec;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "pluggablebackend", "unit" }, sequential=true)
+@Test(groups = { "precommit", "pluggablebackend", "unit" }, singleThreaded=true)
 public class EntryIDSetTest extends DirectoryServerTestCase
 {
   private final static ByteString KEY = ByteString.valueOfUtf8("test");

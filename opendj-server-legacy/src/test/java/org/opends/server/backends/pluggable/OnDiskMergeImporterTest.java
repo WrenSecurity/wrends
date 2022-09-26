@@ -15,19 +15,24 @@
  */
 package org.opends.server.backends.pluggable;
 
-import static java.util.Arrays.*;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.config.ConfigurationMock.*;
-import static org.forgerock.opendj.ldap.ResultCode.*;
-import static org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn.IndexType.*;
-import static org.forgerock.util.Pair.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.backends.pluggable.DnKeyFormat.*;
-import static org.opends.server.backends.pluggable.EntryIDSet.*;
-import static org.opends.server.util.CollectionUtils.*;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.forgerock.opendj.config.ConfigurationMock.mockCfg;
+import static org.forgerock.opendj.ldap.ResultCode.ENTRY_ALREADY_EXISTS;
+import static org.forgerock.opendj.ldap.ResultCode.NO_SUCH_OBJECT;
+import static org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn.IndexType.EQUALITY;
+import static org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn.IndexType.PRESENCE;
+import static org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn.IndexType.SUBSTRING;
+import static org.forgerock.util.Pair.of;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.opends.server.TestCaseUtils.getServerContext;
+import static org.opends.server.backends.pluggable.DnKeyFormat.dnToDNKey;
+import static org.opends.server.backends.pluggable.EntryIDSet.newDefinedSet;
+import static org.opends.server.backends.pluggable.EntryIDSet.newUndefinedSet;
+import static org.opends.server.util.CollectionUtils.newTreeSet;
 
 import java.io.File;
 import java.nio.ByteBuffer;

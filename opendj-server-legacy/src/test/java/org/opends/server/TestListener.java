@@ -13,8 +13,12 @@
  *
  * Copyright 2008 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.opends.server;
+
+import static org.opends.server.TestCaseUtils.originalSystemErr;
+import static org.opends.server.util.ServerConstants.EOL;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -47,9 +51,6 @@ import org.testng.TestListenerAdapter;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.xml.XmlSuite;
-
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.util.ServerConstants.*;
 
 /**
  * This class is our replacement for the test results that TestNG generates.
@@ -516,28 +517,24 @@ public class TestListener extends TestListenerAdapter implements IReporter {
 
     // Read the comments in DirectoryServerTestCase to understand what's
     // going on here.
-    Object[] testInstances = result.getMethod().getInstances();
-    for (Object testInstance : testInstances)
-    {
-      if (testInstance instanceof DirectoryServerTestCase) {
-        DirectoryServerTestCase dsTestCase = (DirectoryServerTestCase)testInstance;
-        Object[] parameters = result.getParameters();
-        if (result.getStatus() == ITestResult.SUCCESS) {
-          dsTestCase.addParamsFromSuccessfulTests(parameters);
-          // This can eat up a bunch of memory for tests that are expected to throw
-          result.setThrowable(null);
-        } else {
-          dsTestCase.addParamsFromFailedTest(parameters);
+    Object testInstance = result.getMethod().getInstance();
+    if (testInstance instanceof DirectoryServerTestCase) {
+      DirectoryServerTestCase dsTestCase = (DirectoryServerTestCase)testInstance;
+      Object[] parameters = result.getParameters();
+      if (result.getStatus() == ITestResult.SUCCESS) {
+        dsTestCase.addParamsFromSuccessfulTests(parameters);
+        // This can eat up a bunch of memory for tests that are expected to throw
+        result.setThrowable(null);
+      } else {
+        dsTestCase.addParamsFromFailedTest(parameters);
 
-          // When the test finishes later on, we might not have everything
-          // that we need to print the result (e.g. the Schema for an Entry
-          // or DN), so go ahead and convert it to a String now.
-          result.setParameters(convertToStringParameters(parameters));
-        }
-      } // else we already warned about it.
-    }
+        // When the test finishes later on, we might not have everything
+        // that we need to print the result (e.g. the Schema for an Entry
+        // or DN), so go ahead and convert it to a String now.
+        result.setParameters(convertToStringParameters(parameters));
+      }
+    } // else we already warned about it.
   }
-
 
   private String[] convertToStringParameters(Object[] parameters) {
     if (parameters == null) {
@@ -585,7 +582,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
     }
 
     Test testAnnotation = annotatedClass.getAnnotation(Test.class);
-    if (!testAnnotation.sequential()) {
+    if (!testAnnotation.singleThreaded()) {
       // Give an error message that is as specific as possible.
       boolean isTestClass = annotatedClass.equals(testClass);
       String errorMessage =
@@ -601,13 +598,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
   private Object _lastTestObject;
   private final IdentityHashMap<Object,Object> _previousTestObjects = new IdentityHashMap<>();
   private void checkForInterleavedBetweenClasses(ITestResult tr) {
-    Object[] testInstances = tr.getMethod().getInstances();
-    // This will almost always have a single element.  If it doesn't, just skip it.
-    if (testInstances.length != 1) {
-      return;
-    }
-
-    Object testInstance = testInstances[0];
+    Object testInstance = tr.getMethod().getInstance();
 
     // We're running another test on the same test object.  Everything is fine.
     if (_lastTestObject == testInstance) {
@@ -634,7 +625,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
   private Set<Method> _checkedForAnnotation = new HashSet<>();
   private void enforceMethodHasAnnotation(ITestResult tr) {
     // Only warn once per method.
-    Method testMethod = tr.getMethod().getMethod();
+    Method testMethod = tr.getMethod().getConstructorOrMethod().getMethod();
     if (_checkedForAnnotation.contains(testMethod)) {
       return;
     }

@@ -15,7 +15,7 @@
  */
 package org.opends.server.types;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.LinkedList;
 import java.util.Random;
@@ -33,7 +33,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-@Test(timeOut = 20000, sequential = true)
+@Test(timeOut = 20000, singleThreaded = true)
 @SuppressWarnings("javadoc")
 public class LockManagerTest extends TypesTestCase
 {

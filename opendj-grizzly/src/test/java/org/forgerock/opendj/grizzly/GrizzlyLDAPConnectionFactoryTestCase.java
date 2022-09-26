@@ -17,13 +17,22 @@ package org.forgerock.opendj.grizzly;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
-import static org.forgerock.opendj.ldap.LDAPListener.*;
-import static org.forgerock.opendj.ldap.LDAPConnectionFactory.*;
-import static org.forgerock.opendj.ldap.TestCaseUtils.*;
+import static org.forgerock.opendj.ldap.CommonLDAPOptions.LDAP_DECODE_OPTIONS;
+import static org.forgerock.opendj.ldap.CommonLDAPOptions.TRANSPORT_PROVIDER;
+import static org.forgerock.opendj.ldap.CommonLDAPOptions.TRANSPORT_PROVIDER_CLASS_LOADER;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.CONNECT_TIMEOUT;
+import static org.forgerock.opendj.ldap.LDAPConnectionFactory.REQUEST_TIMEOUT;
+import static org.forgerock.opendj.ldap.TestCaseUtils.findFreeSocketAddress;
+import static org.forgerock.opendj.ldap.TestCaseUtils.loopbackWithDynamicPort;
 import static org.forgerock.opendj.ldap.requests.Requests.newSimpleBindRequest;
 import static org.forgerock.util.time.Duration.duration;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

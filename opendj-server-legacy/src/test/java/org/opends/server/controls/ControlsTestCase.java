@@ -18,14 +18,13 @@ package org.opends.server.controls;
 
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
-import org.testng.annotations.Test;
-
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 /**
  * An abstract class that all control unit test should extend.
  */
-@Test(groups = { "precommit", "controls" }, sequential = true)
+@Test(groups = { "precommit", "controls" }, singleThreaded = true)
 public abstract class ControlsTestCase extends DirectoryServerTestCase
 {
 

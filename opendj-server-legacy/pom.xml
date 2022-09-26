@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2017-2018 Wren Security.
+  Portions Copyright 2017-2021 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.forgerock.opendj</groupId>
     <artifactId>opendj-parent</artifactId>
-    <version>4.0.0-M3</version>
+    <version>4.0.0-M4-SNAPSHOT</version>
   </parent>
   <artifactId>opendj-server-legacy</artifactId>
   <packaging>jar</packaging>
@@ -30,20 +30,6 @@
     This module provides the Wren:DS LDAP Directory Server.
   </description>
   <inceptionYear>2010</inceptionYear>
-
-  <repositories>
-    <repository>
-      <id>oracle-repository</id>
-      <name>Oracle Maven Repository</name>
-      <url>http://download.oracle.com/maven</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 
   <properties>
     <!-- General server-wide properties -->
@@ -114,8 +100,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock</groupId>
-      <artifactId>forgerock-build-tools</artifactId>
+      <groupId>org.wrensecurity</groupId>
+      <artifactId>wrensec-build-tools</artifactId>
     </dependency>
 
     <dependency>
@@ -207,14 +193,6 @@
       <version>1.5.1</version>
     </dependency>
 
-    <!-- We need to override testNG version to make test works (see OPENDJ-2389) -->
-    <dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
-      <version>6.0.1</version>
-      <scope>test</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.freemarker</groupId>
       <artifactId>freemarker</artifactId>
@@ -255,6 +233,7 @@
   </dependencies>
 
   <build>
+    <finalName>${product.name.lowercase}</finalName>
     <resources>
       <!-- Main resources -->
       <resource>
@@ -308,58 +287,11 @@
 
     <pluginManagement>
       <plugins>
-        <!--This plugin's configuration is used to store Eclipse m2e settings only. It
-            has no influence on the Maven build itself. This section instructs Eclipse's
-            Maven builder to invoke the antrun plugin for generating the configuration
-            framework files, e.g. core.manifest, during a *clean* build. Execution
-            during an incremental build is not supported. -->
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-antrun-plugin</artifactId>
-                    <versionRange>[1.7,)</versionRange>
-                    <goals>
-                      <goal>run</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <execute>
-                      <runOnIncremental>false</runOnIncremental>
-                    </execute>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                	<pluginExecutionFilter>
-                		<groupId>org.forgerock.opendj</groupId>
-                		<artifactId>opendj-maven-plugin</artifactId>
-                		<versionRange>[4.0.0-SNAPSHOT,)</versionRange>
-                		<goals>
-                			<goal>generate-manifest</goal>
-                			<goal>concat</goal>
-                		</goals>
-                	</pluginExecutionFilter>
-                	<action>
-                		<ignore />
-                	</action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
-
         <!-- Define template for jar generation -->
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <configuration>
             <outputDirectory>${jars.dir}</outputDirectory>
-            <finalName>${product.name.lowercase}</finalName>
             <archive>
               <addMavenDescriptor>false</addMavenDescriptor>
               <index>true</index>
@@ -388,6 +320,7 @@
 
       <!-- Generate i18n messages -->
       <plugin>
+        <?m2e execute onConfiguration?>
         <groupId>org.forgerock.commons</groupId>
         <artifactId>i18n-maven-plugin</artifactId>
         <executions>
@@ -483,6 +416,7 @@
       </plugin>
 
       <plugin>
+        <?m2e ignore?>
         <groupId>org.forgerock.opendj</groupId>
         <artifactId>opendj-maven-plugin</artifactId>
 
@@ -535,6 +469,7 @@
 
           <!-- Take into account several sources directories for the build -->
           <execution>
+            <?m2e execute onConfiguration?>
             <id>main-java-sources</id>
             <phase>generate-sources</phase>
             <goals>
@@ -548,63 +483,6 @@
                 <source>${project.build.directory}/java-stubs</source>
                 <source>../opendj-legacy/src/main/java</source>
               </sources>
-            </configuration>
-          </execution>
-
-          <!-- Attach localized jars to this module -->
-          <execution>
-            <id>attach-localized-jars</id>
-            <phase>package</phase>
-            <goals>
-              <goal>attach-artifact</goal>
-            </goals>
-            <configuration>
-              <artifacts>
-                <artifact>
-                  <file>${jars.dir}/opendj_ca_ES.jar</file>
-                  <classifier>${localized.jars.classifier}-ca_ES</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_de.jar</file>
-                  <classifier>${localized.jars.classifier}-de</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_es.jar</file>
-                  <classifier>${localized.jars.classifier}-es</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_fr.jar</file>
-                  <classifier>${localized.jars.classifier}-fr</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_ja.jar</file>
-                  <classifier>${localized.jars.classifier}-ja</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_ko.jar</file>
-                  <classifier>${localized.jars.classifier}-ko</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_pl.jar</file>
-                  <classifier>${localized.jars.classifier}-pl</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_zh_CN.jar</file>
-                  <classifier>${localized.jars.classifier}-zh_CN</classifier>
-                </artifact>
-
-                <artifact>
-                  <file>${jars.dir}/opendj_zh_TW.jar</file>
-                  <classifier>${localized.jars.classifier}-zh_TW</classifier>
-                </artifact>
-              </artifacts>
             </configuration>
           </execution>
         </executions>
@@ -721,7 +599,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>bootstrap</finalName>
+              <classifier>bootstrap</classifier>
               <includes>
                 <include>nothing</include>
               </includes>
@@ -740,7 +618,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>bootstrap-client</finalName>
+              <classifier>bootstrap-client</classifier>
               <includes>
                 <include>nothing</include>
               </includes>
@@ -759,7 +637,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>build-tools</finalName>
+              <classifier>build-tools</classifier>
               <includes>
                 <include>**/messages/Severity.class</include>
                 <include>**/messages/Category.class</include>
@@ -784,7 +662,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>quicksetup</finalName>
+              <classifier>quicksetup</classifier>
               <includes>
                 <include>**/quicksetup/**</include>
                 <include>**/org/opends/admin/ads/*</include>
@@ -814,7 +692,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj-slf4j-adapter</finalName>
+              <classifier>slf4j-adapter</classifier>
               <includes>
                 <include>**/org/slf4j/**</include>
                 <include>**/org/opends/server/loggers/slf4j/**</include>
@@ -834,7 +712,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj-je-backend</finalName>
+              <classifier>je-backend</classifier>
               <includes>
                 <include>org/opends/server/backends/jeb/**</include>
                 <include>org/opends/server/replication/server/changelog/je/**</include>
@@ -854,7 +732,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_ca_ES</finalName>
+              <classifier>${localized.jars.classifier}-ca_ES</classifier>
               <includes>
                 <include>**/*_ca_ES.properties</include>
               </includes>
@@ -868,7 +746,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_de</finalName>
+              <classifier>${localized.jars.classifier}-de</classifier>
               <includes>
                 <include>**/*_de.properties</include>
               </includes>
@@ -882,7 +760,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_es</finalName>
+              <classifier>${localized.jars.classifier}-es</classifier>
               <includes>
                 <include>**/*_es.properties</include>
               </includes>
@@ -896,7 +774,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_fr</finalName>
+              <classifier>${localized.jars.classifier}-fr</classifier>
               <includes>
                 <include>**/*_fr.properties</include>
               </includes>
@@ -910,7 +788,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_ja</finalName>
+              <classifier>${localized.jars.classifier}-ja</classifier>
               <includes>
                 <include>**/*_ja.properties</include>
               </includes>
@@ -924,7 +802,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_ko</finalName>
+              <classifier>${localized.jars.classifier}-ko</classifier>
               <includes>
                 <include>**/*_ko.properties</include>
               </includes>
@@ -938,7 +816,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_pl</finalName>
+              <classifier>${localized.jars.classifier}-pl</classifier>
               <includes>
                 <include>**/*_pl.properties</include>
               </includes>
@@ -952,7 +830,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_zh_CN</finalName>
+              <classifier>${localized.jars.classifier}-zh_CN</classifier>
               <includes>
                 <include>**/*_zh_CN.properties</include>
               </includes>
@@ -966,7 +844,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <finalName>opendj_zh_TW</finalName>
+              <classifier>${localized.jars.classifier}-zh_TW</classifier>
               <includes>
                 <include>**/*_zh_TW.properties</include>
               </includes>
@@ -1087,6 +965,7 @@
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
+            <?m2e execute onConfiguration?>
             <!-- Copy config.ldif in build dir (needed if snmp config merge is needed) -->
             <id>copy-config-ldif</id>
             <phase>generate-resources</phase>
@@ -1102,6 +981,7 @@
 
           <!-- Generate final zip and attach artefact -->
           <execution>
+            <?m2e ignore?>
             <id>attach-artifact</id>
             <phase>package</phase>
             <goals>
@@ -1110,11 +990,11 @@
             <configuration>
               <target>
                 <zip destfile="${project.build.directory}/package/${product.archive.name}.zip">
-                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="**/*" excludes="bin/*,template/**/*,lib/_client-script.sh,lib/_script-util.sh,lib/_server-script.sh,lib/_mixed-script.sh,setup,uninstall,upgrade,QuickSetup.app/Contents/MacOS/universalJavaApplicationStub,Uninstall.app/Contents/MacOS/universalJavaApplicationStub,bin/ControlPanel.app/Contents/MacOS/universalJavaApplicationStub" filemode="644" dirmode="755" prefix="opendj" />
-                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="lib/_client-script.sh,lib/_script-util.sh,lib/_server-script.sh,lib/_mixed-script.sh" filemode="755" dirmode="755" prefix="opendj" />
-                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="bin/*" filemode="755" dirmode="755" prefix="opendj" />
-                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="setup,uninstall,upgrade,QuickSetup.app/Contents/MacOS/universalJavaApplicationStub,Uninstall.app/Contents/MacOS/universalJavaApplicationStub,bin/ControlPanel.app/Contents/MacOS/universalJavaApplicationStub" filemode="755" dirmode="755" prefix="opendj" />
-                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="template/**/*" filemode="444" dirmode="744" prefix="opendj" />
+                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="**/*" excludes="bin/*,template/**/*,lib/_client-script.sh,lib/_script-util.sh,lib/_server-script.sh,lib/_mixed-script.sh,setup,uninstall,upgrade,QuickSetup.app/Contents/MacOS/universalJavaApplicationStub,Uninstall.app/Contents/MacOS/universalJavaApplicationStub,bin/ControlPanel.app/Contents/MacOS/universalJavaApplicationStub" filemode="644" dirmode="755" prefix="${product.name.lowercase}" />
+                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="lib/_client-script.sh,lib/_script-util.sh,lib/_server-script.sh,lib/_mixed-script.sh" filemode="755" dirmode="755" prefix="${product.name.lowercase}" />
+                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="bin/*" filemode="755" dirmode="755" prefix="${product.name.lowercase}" />
+                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="setup,uninstall,upgrade,QuickSetup.app/Contents/MacOS/universalJavaApplicationStub,Uninstall.app/Contents/MacOS/universalJavaApplicationStub,bin/ControlPanel.app/Contents/MacOS/universalJavaApplicationStub" filemode="755" dirmode="755" prefix="${product.name.lowercase}" />
+                  <zipfileset dir="${project.build.directory}/package/${product.name.lowercase}" includes="template/**/*" filemode="444" dirmode="744" prefix="${product.name.lowercase}" />
                 </zip>
                 <attachartifact file="${project.build.directory}/package/${product.archive.name}.zip" type="zip" />
               </target>

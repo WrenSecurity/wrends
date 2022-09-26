@@ -258,7 +258,7 @@ public final class KeyManagers {
         return getX509KeyManager(keyStore, password);
     }
 
-    private static X509KeyManager getX509KeyManager(final KeyStore keyStore, final char[] password)
+    static X509KeyManager getX509KeyManager(final KeyStore keyStore, final char[] password)
             throws GeneralSecurityException {
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(keyStore, password);

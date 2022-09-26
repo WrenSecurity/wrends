@@ -269,10 +269,11 @@ public final class TestCaseUtils {
     TestPaths()
     {
       installedRoot = System.getProperty(PROPERTY_INSTALLED_ROOT);
-      buildRoot = System.getProperty(PROPERTY_BUILD_ROOT);
+      buildRoot = System.getProperty(PROPERTY_BUILD_ROOT, System.getProperty("user.dir"));
       String buildDirStr = System.getProperty(PROPERTY_BUILD_DIR, buildRoot + File.separator + "target");
       buildDir = new File(buildDirStr);
       unitRoot  = new File(buildDir, "unit-tests");
+      System.out.println(System.getProperties());
       if (installedRoot == null)
       {
          testInstallRoot = new File(unitRoot, "package-install");

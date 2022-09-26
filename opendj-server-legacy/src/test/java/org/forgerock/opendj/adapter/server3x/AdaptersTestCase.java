@@ -15,7 +15,8 @@
  */
 package org.forgerock.opendj.adapter.server3x;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.forgerock.opendj.ldap.LDAPConnectionFactory.AUTHN_BIND_REQUEST;
 import static org.forgerock.opendj.ldap.requests.Requests.newSimpleBindRequest;
 
@@ -72,7 +73,7 @@ import org.testng.annotations.Test;
 
 /** This class defines a set of tests for the Adapters.class. */
 @SuppressWarnings("javadoc")
-@Test(sequential=true)
+@Test(singleThreaded=true)
 public class AdaptersTestCase extends DirectoryServerTestCase {
     private static final String USER_0_DN_STRING = "uid=user.0,o=test";
 

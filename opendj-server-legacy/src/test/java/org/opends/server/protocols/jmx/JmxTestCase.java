@@ -16,12 +16,14 @@
  */
 package org.opends.server.protocols.jmx;
 
-import static java.util.concurrent.TimeUnit.*;
-
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.testng.Assert.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
+import static org.opends.server.protocols.internal.InternalClientConnection.nextOperationID;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.testng.Assert.assertNotNull;
 
 import java.util.List;
 
@@ -41,7 +43,7 @@ import org.testng.annotations.Test;
 
 /** An abstract class that all JMX unit test should extend. */
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "jmx" }, sequential = true)
+@Test(groups = { "precommit", "jmx" }, singleThreaded = true)
 public abstract class JmxTestCase extends DirectoryServerTestCase
 {
   /**

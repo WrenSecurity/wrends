@@ -18,6 +18,15 @@
 
 package org.forgerock.opendj.ldif;
 
+import static org.fest.assertions.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyListOf;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -45,10 +54,6 @@ import org.forgerock.opendj.ldap.schema.Schema;
 import org.forgerock.opendj.ldap.schema.SchemaValidationPolicy;
 import org.forgerock.opendj.ldap.schema.SchemaValidationPolicy.Action;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.Assertions.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * This class tests the LDIFChangeRecordReader functionality.

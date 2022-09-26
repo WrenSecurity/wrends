@@ -16,21 +16,21 @@
  */
 package org.opends.server;
 
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.Test;
-import org.testng.annotations.AfterClass;
-import org.forgerock.i18n.LocalizableMessage;
-import org.forgerock.testng.ForgeRockTestCase;
-
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+
+import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.testng.ForgeRockTestCase;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
 
 /**
  * This class defines a base test case that should be subclassed by all
@@ -39,7 +39,7 @@ import java.lang.reflect.Modifier;
  * This class adds the ability to print error messages and automatically
  * have them include the class name.
  */
-@Test(sequential=true)
+@Test(singleThreaded=true)
 @SuppressWarnings("javadoc")
 public abstract class DirectoryServerTestCase extends ForgeRockTestCase {
 

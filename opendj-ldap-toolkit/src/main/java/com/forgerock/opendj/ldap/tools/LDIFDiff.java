@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2012-2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package com.forgerock.opendj.ldap.tools;
 
@@ -141,7 +142,7 @@ public final class LDIFDiff extends ToolConsoleApplication {
             targetInputStream = getLDIFToolInputStream(this, trailingArguments.get(1));
             outputStream = getLDIFToolOutputStream(this, outputFilename);
 
-            if (System.in == sourceInputStream && System.in == targetInputStream) {
+            if (getInputStream() == sourceInputStream && getInputStream() == targetInputStream) {
                 throw newToolParamException(ERR_LDIFDIFF_MULTIPLE_USES_OF_STDIN.get());
             }
 

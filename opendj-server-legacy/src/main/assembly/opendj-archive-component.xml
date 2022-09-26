@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
+  Portions Copyright 2021 Wren Security.
 -->
 <!-- OpenDJ final archive content descriptor -->
 <component>
@@ -292,7 +293,10 @@
       <directory>${jars.dir}</directory>
       <outputDirectory>lib</outputDirectory>
       <excludes>
-        <exclude>build-tools.jar</exclude>
+        <exclude>${product.name.lowercase}-bootstrap.jar</exclude>
+        <exclude>${product.name.lowercase}-bootstrap-client.jar</exclude>
+        <exclude>${product.name.lowercase}-quicksetup.jar</exclude>
+        <exclude>${product.name.lowercase}-build-tools.jar</exclude>
         <exclude>${snmp.jar.name}.jar</exclude>
       </excludes>
     </fileSet>
@@ -305,6 +309,23 @@
     </fileSet>
   </fileSets>
   <files>
+    <file>
+      <source>${jars.dir}/${product.name.lowercase}-bootstrap.jar</source>
+      <destName>bootstrap.jar</destName>
+      <outputDirectory>lib</outputDirectory>
+    </file>
+
+    <file>
+      <source>${jars.dir}/${product.name.lowercase}-bootstrap-client.jar</source>
+      <destName>bootstrap-client.jar</destName>
+      <outputDirectory>lib</outputDirectory>
+    </file>
+
+    <file>
+      <source>${jars.dir}/${product.name.lowercase}-quicksetup.jar</source>
+      <destName>quicksetup.jar</destName>
+      <outputDirectory>lib</outputDirectory>
+    </file>
 
     <!-- Adds Generated config.ldif file -->
     <file>

@@ -15,9 +15,11 @@
  */
 package org.opends.server.util;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.util.StaticUtils.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.opends.server.util.StaticUtils.close;
+import static org.opends.server.util.StaticUtils.recursiveDelete;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,7 +44,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-@Test(groups = "precommit", sequential = true)
+@Test(groups = "precommit", singleThreaded = true)
 public class BackupManagerTestCase extends DirectoryServerTestCase
 {
   private static final String ENTRY_DN = "dc=example,dc=com";

@@ -16,7 +16,7 @@
  */
 package org.opends.server.backends.jeb;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,6 +24,7 @@ import java.util.Random;
 import java.util.TreeMap;
 
 import org.forgerock.i18n.LocalizableMessage;
+import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
@@ -32,14 +33,13 @@ import org.opends.server.core.DeleteOperation;
 import org.opends.server.protocols.internal.InternalClientConnection;
 import org.opends.server.tools.makeldif.MakeLDIFInputStream;
 import org.opends.server.tools.makeldif.TemplateFile;
-import org.forgerock.opendj.ldap.DN;
 import org.opends.server.types.Entry;
 import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.util.LDIFReader;
 import org.testng.annotations.Test;
 
 /** An abstract base class for all JE backend test cases. */
-@Test(groups = { "precommit", "jeb" }, sequential = true)
+@Test(groups = { "precommit", "jeb" }, singleThreaded = true)
 public abstract class JebTestCase extends DirectoryServerTestCase {
     private TreeMap<DN,Entry> entryTreeMap = new TreeMap<>();
     private int numEntries;

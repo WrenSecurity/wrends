@@ -15,10 +15,11 @@
  */
 package org.opends.server.backends.pluggable;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.config.ConfigurationMock.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.util.CollectionUtils.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.config.ConfigurationMock.mockCfg;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.opends.server.util.CollectionUtils.newTreeSet;
 
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -53,7 +54,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "pluggablebackend" }, sequential = true)
+@Test(groups = { "precommit", "pluggablebackend" }, singleThreaded = true)
 public class ID2ChildrenCountTest extends DirectoryServerTestCase
 {
   private final TreeName id2CountTreeName = new TreeName("base-dn", "index-id");

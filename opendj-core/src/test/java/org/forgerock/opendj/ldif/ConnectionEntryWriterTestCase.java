@@ -16,6 +16,12 @@
  */
 package org.forgerock.opendj.ldif;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.forgerock.opendj.ldap.Connection;
 import org.forgerock.opendj.ldap.Entry;
 import org.forgerock.opendj.ldap.LinkedHashMapEntry;
@@ -26,10 +32,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * This class tests the ConnectionEntryWriter functionality.

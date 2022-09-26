@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2018 Wren Security.
+  Portions Copyright 2018-2021 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -21,7 +21,7 @@
     <parent>
         <artifactId>opendj-parent</artifactId>
         <groupId>org.forgerock.opendj</groupId>
-        <version>4.0.0-M3</version>
+        <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-core</artifactId>
@@ -31,8 +31,6 @@
         client and server applications. Unlike the SDK this module does not
         include a default network transport which must be obtained separately.
     </description>
-
-    <packaging>bundle</packaging>
 
     <dependencies>
         <dependency>
@@ -73,8 +71,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.forgerock</groupId>
-            <artifactId>forgerock-build-tools</artifactId>
+            <groupId>org.wrensecurity</groupId>
+            <artifactId>wrensec-build-tools</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -150,6 +148,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

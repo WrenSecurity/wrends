@@ -16,6 +16,24 @@
  */
 package org.opends.server.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
+import static org.mockito.Mockito.mock;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.TestCaseUtils.getServerContext;
+import static org.opends.server.core.BackendConfigManager.NamingContextFilter.LOCAL;
+import static org.opends.server.core.BackendConfigManager.NamingContextFilter.PRIVATE;
+import static org.opends.server.core.BackendConfigManager.NamingContextFilter.PUBLIC;
+import static org.opends.server.core.BackendConfigManager.NamingContextFilter.TOP_LEVEL;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,19 +68,6 @@ import org.opends.server.types.RestoreConfig;
 import org.opends.server.util.StaticUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import static org.mockito.Mockito.*;
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.core.BackendConfigManager.NamingContextFilter.LOCAL;
-import static org.opends.server.core.BackendConfigManager.NamingContextFilter.PRIVATE;
-import static org.opends.server.core.BackendConfigManager.NamingContextFilter.PUBLIC;
-import static org.opends.server.core.BackendConfigManager.NamingContextFilter.TOP_LEVEL;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.testng.Assert.*;
-import static org.assertj.core.api.Assertions.*;
 
 /**
  * A set of generic test cases that cover adding, modifying, and removing

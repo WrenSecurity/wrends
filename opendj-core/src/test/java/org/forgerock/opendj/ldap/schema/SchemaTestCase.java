@@ -15,6 +15,12 @@
  */
 package org.forgerock.opendj.ldap.schema;
 
+import static org.fest.assertions.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.forgerock.opendj.ldap.Connection;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.LdapPromise;
@@ -22,11 +28,6 @@ import org.forgerock.opendj.ldap.requests.SearchRequest;
 import org.forgerock.opendj.ldap.responses.Responses;
 import org.forgerock.opendj.ldap.responses.SearchResultEntry;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.Assertions.*;
-import static org.forgerock.opendj.ldap.spi.LdapPromises.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /** Tests the Schema class. */
 @SuppressWarnings("javadoc")

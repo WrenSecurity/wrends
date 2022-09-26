@@ -15,11 +15,15 @@
  */
 package org.opends.server.replication.server.changelog.file;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.*;
-import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.*;
-import static org.opends.server.replication.server.changelog.file.LogFileTest.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.EQUAL_TO_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.GREATER_THAN_OR_EQUAL_TO_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.KeyMatchingStrategy.LESS_THAN_OR_EQUAL_TO_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.AFTER_MATCHING_KEY;
+import static org.opends.server.replication.server.changelog.api.DBCursor.PositionStrategy.ON_MATCHING_KEY;
+import static org.opends.server.replication.server.changelog.file.LogFileTest.RECORD_PARSER;
 
 import java.io.File;
 
@@ -39,7 +43,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("javadoc")
-@Test(sequential=true)
+@Test(singleThreaded=true)
 public class LogTest extends DirectoryServerTestCase
 {
   /** Use a directory dedicated to this test class. */

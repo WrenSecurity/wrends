@@ -16,17 +16,27 @@
  */
 package org.opends.server.replication;
 
-import static java.util.concurrent.TimeUnit.*;
-
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.forgerock.opendj.ldap.ResultCode.*;
-import static org.forgerock.opendj.ldap.SearchScope.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.backends.task.TaskState.*;
-import static org.opends.server.config.ConfigConstants.*;
-import static org.opends.server.protocols.internal.Requests.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.testng.Assert.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.forgerock.opendj.ldap.ResultCode.NO_SUCH_OBJECT;
+import static org.forgerock.opendj.ldap.ResultCode.SUCCESS;
+import static org.forgerock.opendj.ldap.SearchScope.WHOLE_SUBTREE;
+import static org.opends.server.TestCaseUtils.getServerContext;
+import static org.opends.server.backends.task.TaskState.COMPLETED_SUCCESSFULLY;
+import static org.opends.server.backends.task.TaskState.RUNNING;
+import static org.opends.server.backends.task.TaskState.STOPPED_BY_ERROR;
+import static org.opends.server.config.ConfigConstants.ATTR_TASK_COMPLETION_TIME;
+import static org.opends.server.config.ConfigConstants.ATTR_TASK_LOG_MESSAGES;
+import static org.opends.server.config.ConfigConstants.ATTR_TASK_STATE;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
+import static org.opends.server.util.CollectionUtils.newArrayList;
+import static org.opends.server.util.CollectionUtils.newTreeSet;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,7 +93,7 @@ import org.testng.annotations.Test;
 
 /** An abstract class that all Replication unit test should extend. */
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "replication" }, sequential = true)
+@Test(groups = { "precommit", "replication" }, singleThreaded = true)
 public abstract class ReplicationTestCase extends DirectoryServerTestCase
 {
 

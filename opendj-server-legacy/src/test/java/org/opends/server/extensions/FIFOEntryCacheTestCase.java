@@ -16,26 +16,28 @@
  */
 package org.opends.server.extensions;
 
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+
 import java.util.ArrayList;
 
-import org.opends.server.TestCaseUtils;
-import org.testng.annotations.BeforeClass;
-import org.forgerock.opendj.server.config.meta.*;
-import org.forgerock.opendj.server.config.server.FIFOEntryCacheCfg;
 import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.server.config.meta.FIFOEntryCacheCfgDefn;
+import org.forgerock.opendj.server.config.server.FIFOEntryCacheCfg;
+import org.opends.server.TestCaseUtils;
 import org.opends.server.types.Entry;
 import org.opends.server.util.ServerConstants;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterGroups;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
 
 /**
  * A set of test cases for FIFO entry cache implementation.
  */
-@Test(groups = "entrycache", sequential=true)
+@Test(groups = "entrycache", singleThreaded=true)
 public class FIFOEntryCacheTestCase
        extends CommonEntryCacheTestCase<FIFOEntryCacheCfg>
 {

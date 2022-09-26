@@ -15,10 +15,13 @@
  */
 package org.opends.server.replication.plugin;
 
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-import static org.opends.server.util.CollectionUtils.*;
+import static org.forgerock.opendj.ldap.ModificationType.ADD;
+import static org.forgerock.opendj.ldap.ModificationType.DELETE;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.opends.server.util.CollectionUtils.newArrayList;
 
 import java.util.ArrayList;
 import java.util.Arrays;

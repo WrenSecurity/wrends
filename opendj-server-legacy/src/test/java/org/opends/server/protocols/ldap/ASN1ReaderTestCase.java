@@ -16,6 +16,10 @@
  */
 package org.opends.server.protocols.ldap;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
 import java.io.IOException;
 
 import org.forgerock.opendj.io.ASN1;
@@ -27,12 +31,10 @@ import org.opends.server.DirectoryServerTestCase;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
-
 /**
  * An abstract base class for all ASN1Reader test cases.
  */
-@Test(groups = { "precommit", "asn1" }, sequential = true)
+@Test(groups = { "precommit", "asn1" }, singleThreaded = true)
 public abstract class ASN1ReaderTestCase extends DirectoryServerTestCase
 {
 

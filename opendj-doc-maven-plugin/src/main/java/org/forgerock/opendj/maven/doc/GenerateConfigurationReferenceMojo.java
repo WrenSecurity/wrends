@@ -12,10 +12,21 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.forgerock.opendj.maven.doc;
 
-import static org.forgerock.opendj.maven.doc.Utils.*;
+import static org.forgerock.opendj.maven.doc.Utils.EOL;
+import static org.forgerock.opendj.maven.doc.Utils.copyInputStreamToFile;
+import static org.forgerock.opendj.maven.doc.Utils.createDirectory;
+import static org.forgerock.opendj.maven.doc.Utils.getJavaCommand;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -24,13 +35,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Generates the configuration reference, a set of HTML documents describing the server configuration.
@@ -44,7 +48,7 @@ public class GenerateConfigurationReferenceMojo extends AbstractMojo {
     private MavenProject project;
 
     /** Archive directory of the server to use to generate reference configuration documentation. */
-    @Parameter(property = "docServerArchivePath", defaultValue = "${project.build.directory}/opendj", required = true)
+    @Parameter(property = "docServerArchivePath", defaultValue = "${project.build.directory}/wrends", required = true)
     private String serverArchiveDirectory;
 
     /**

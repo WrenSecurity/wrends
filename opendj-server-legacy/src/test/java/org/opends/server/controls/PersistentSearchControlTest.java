@@ -16,15 +16,23 @@
  */
 package org.opends.server.controls;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.requests.Requests.*;
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.controls.PersistentSearchChangeType.*;
-import static org.opends.server.protocols.internal.InternalClientConnection.*;
-import static org.opends.server.protocols.internal.Requests.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.controls.PersistentSearchChangeType.ADD;
+import static org.opends.server.controls.PersistentSearchChangeType.DELETE;
+import static org.opends.server.controls.PersistentSearchChangeType.MODIFY;
+import static org.opends.server.controls.PersistentSearchChangeType.MODIFY_DN;
+import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
+import static org.opends.server.protocols.internal.Requests.newSearchRequest;
 import static org.opends.server.types.NullOutputStream.nullPrintStream;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
+import static org.opends.server.util.ServerConstants.OID_ENTRY_CHANGE_NOTIFICATION;
+import static org.opends.server.util.ServerConstants.OID_PERSISTENT_SEARCH;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -49,12 +57,13 @@ import org.opends.server.protocols.internal.InternalSearchOperation;
 import org.opends.server.protocols.internal.SearchRequest;
 import org.opends.server.protocols.ldap.LDAPControl;
 import org.opends.server.protocols.ldap.LDAPReader;
-import com.forgerock.opendj.ldap.tools.LDAPSearch;
 import org.opends.server.types.CancelRequest;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.LDAPException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import com.forgerock.opendj.ldap.tools.LDAPSearch;
 
 @SuppressWarnings("javadoc")
 public class PersistentSearchControlTest extends ControlsTestCase

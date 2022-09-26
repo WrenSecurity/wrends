@@ -16,14 +16,23 @@
 package org.opends.server.backends.pluggable;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.mockito.Mockito.*;
+import static org.forgerock.opendj.ldap.ModificationType.ADD;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
 import static org.opends.server.protocols.internal.Requests.newSearchRequest;
 import static org.opends.server.types.Attributes.create;
-import static org.opends.server.types.IndexType.*;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.testng.Assert.*;
+import static org.opends.server.types.IndexType.EQUALITY;
+import static org.opends.server.util.CollectionUtils.newTreeSet;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -96,7 +105,7 @@ import org.testng.annotations.Test;
  * Unit tests for pluggable backend implementations. The test methods have side-effects and must be run in-order.
  */
 @SuppressWarnings("javadoc")
-@Test(groups = { "precommit", "pluggablebackend" }, sequential = true)
+@Test(groups = { "precommit", "pluggablebackend" }, singleThreaded = true)
 public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg> extends DirectoryServerTestCase
 {
   private BackendImpl<C> backend;
@@ -705,7 +714,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
       @Override
       public Object answer(InvocationOnMock invocation) throws Throwable
       {
-        returnedEntries.add(invocation.getArgumentAt(0, Entry.class));
+        returnedEntries.add(invocation.getArgument(0));
         return null;
       }
     }).when(searchOp).returnEntry(any(Entry.class), any(List.class));

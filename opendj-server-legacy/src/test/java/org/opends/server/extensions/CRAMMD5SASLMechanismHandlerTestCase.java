@@ -16,27 +16,32 @@
  */
 package org.opends.server.extensions;
 
+import static org.opends.server.TestCaseUtils.assertNotEquals;
+import static org.opends.server.types.NullOutputStream.nullPrintStream;
+import static org.opends.server.util.ServerConstants.SASL_MECHANISM_CRAM_MD5;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
 import java.util.List;
 
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
-import org.opends.server.TestCaseUtils;
 import org.forgerock.opendj.server.config.meta.CramMD5SASLMechanismHandlerCfgDefn;
+import org.opends.server.TestCaseUtils;
 import org.opends.server.core.BindOperation;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.protocols.internal.InternalClientConnection;
-import com.forgerock.opendj.ldap.tools.LDAPSearch;
-import org.opends.server.types.*;
+import org.opends.server.types.AuthenticationInfo;
+import org.opends.server.types.Entry;
+import org.opends.server.types.InitializationException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.opends.server.TestCaseUtils.*;
-import static org.opends.server.types.NullOutputStream.nullPrintStream;
-import static org.opends.server.util.ServerConstants.*;
-import static org.testng.Assert.*;
+import com.forgerock.opendj.ldap.tools.LDAPSearch;
 
 /** A set of test cases for the CRAM-MD5 SASL mechanism handler. */
 @SuppressWarnings("javadoc")

@@ -15,10 +15,16 @@
  */
 package org.forgerock.opendj.adapter.server3x;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.adapter.server3x.Converters.*;
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.adapter.server3x.Converters.from;
+import static org.forgerock.opendj.adapter.server3x.Converters.getCredentials;
+import static org.forgerock.opendj.adapter.server3x.Converters.getResponseResult;
+import static org.forgerock.opendj.adapter.server3x.Converters.to;
+import static org.forgerock.opendj.adapter.server3x.Converters.toAttribute;
+import static org.forgerock.opendj.adapter.server3x.Converters.toModification;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getCNAttributeType;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -88,7 +94,7 @@ import org.testng.annotations.Test;
  * </pre>
  */
 @SuppressWarnings("javadoc")
-@Test(sequential=true)
+@Test(singleThreaded=true)
 public class ConvertersTestCase extends DirectoryServerTestCase {
 
     /**
@@ -123,8 +129,8 @@ public class ConvertersTestCase extends DirectoryServerTestCase {
     }
 
     /**
-     * Converts a SDK {@link Entry} to an LDAP Server
-     * {@link Entry}.
+     * Converts a SDK {@link org.forgerock.opendj.ldap.Entry} to an LDAP Server
+     * {@link org.opends.server.types.Entry}.
      */
     @Test
     public final void testToEntry() throws Exception {

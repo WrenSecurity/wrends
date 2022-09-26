@@ -16,6 +16,13 @@
  */
 package org.forgerock.opendj.ldap;
 
+import static org.fest.assertions.Fail.fail;
+import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,16 +34,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.forgerock.util.promise.Promise;
+import org.forgerock.util.time.TimeService;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.mockito.stubbing.OngoingStubbing;
-
-import org.forgerock.util.time.TimeService;
-
-import static org.fest.assertions.Fail.*;
-import static org.forgerock.opendj.ldap.spi.LdapPromises.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * This class defines some utility functions which can be used by test cases.

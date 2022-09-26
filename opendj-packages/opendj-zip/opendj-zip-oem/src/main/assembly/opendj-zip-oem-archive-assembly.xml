@@ -12,6 +12,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015 ForgeRock AS.
+  Portions Copyright 2021 Wren Security.
 -->
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -35,14 +36,16 @@
 
         <!-- bootstrap.jar OEM file -->
         <file>
-            <source>${project.build.directory}/bootstrap.jar</source>
+            <source>${project.build.directory}/${product.name.lowercase}-bootstrap.jar</source>
             <outputDirectory>${lib.folder}</outputDirectory>
+            <destName>bootstrap.jar</destName>
         </file>
 
         <!-- bootstrap-client OEM file -->
         <file>
-            <source>${project.build.directory}/bootstrap-client.jar</source>
+            <source>${project.build.directory}/${product.name.lowercase}-bootstrap-client.jar</source>
             <outputDirectory>${lib.folder}</outputDirectory>
+            <destName>bootstrap-client.jar</destName>
         </file>
     </files>
 </assembly>

@@ -12,15 +12,16 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2021 Wren Security.
  */
 package org.forgerock.opendj.rest2ldap;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.http.util.Json.*;
-import static org.forgerock.json.resource.Requests.*;
-import static org.forgerock.json.resource.ResourcePath.*;
-import static org.forgerock.opendj.rest2ldap.Rest2Ldap.*;
-import static org.forgerock.util.Options.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.http.util.Json.readJsonLenient;
+import static org.forgerock.json.resource.Requests.newApiRequest;
+import static org.forgerock.json.resource.ResourcePath.resourcePath;
+import static org.forgerock.opendj.rest2ldap.Rest2Ldap.rest2Ldap;
+import static org.forgerock.util.Options.defaultOptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,11 +59,8 @@ public class Rest2LdapJsonConfiguratorTest extends ForgeRockTestCase {
     private static final String ID = "frapi:opendj:rest2ldap";
     private static final String VERSION = "4.0.0";
 
-    private static final Path SERVLET_MODULE_PATH =
-        getPathToMavenModule("opendj-rest2ldap-servlet");
-
     private static final Path CONFIG_DIR = Paths.get(
-        SERVLET_MODULE_PATH.toString(), "src", "main", "webapp", "WEB-INF", "classes", "rest2ldap");
+            "../opendj-rest2ldap-servlet/src/main/webapp/WEB-INF/classes/rest2ldap");
 
     @Test
     public void testConfigureEndpointsWithApiDescription() throws Exception {
@@ -180,13 +178,4 @@ public class Rest2LdapJsonConfiguratorTest extends ForgeRockTestCase {
         }
     }
 
-    private static Path getPathToClass(Class<?> clazz) {
-        return Paths.get(clazz.getProtectionDomain().getCodeSource().getLocation().getPath());
-    }
-
-    private static Path getPathToMavenModule(String moduleName) {
-        final Path testClassPath = getPathToClass(Rest2LdapJsonConfiguratorTest.class);
-
-        return Paths.get(testClassPath.toString(), "..", "..", "..", moduleName);
-    }
 }
