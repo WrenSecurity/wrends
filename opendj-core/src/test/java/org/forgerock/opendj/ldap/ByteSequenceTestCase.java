@@ -13,13 +13,13 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions copyright 2014 ForgeRock AS.
+ * Portions copyright 2022 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
-
-import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -153,8 +153,8 @@ public abstract class ByteSequenceTestCase extends SdkTestCase {
     }
 
     @Test(dataProvider = "byteSequenceProvider")
-    public void testToBase64String(final ByteSequence bs, final byte[] ba) throws Exception {
+    public void testToBase64String(final ByteSequence bs, final byte[] ba) {
         final String base64 = bs.toBase64String();
-        Assert.assertEquals(base64, DatatypeConverter.printBase64Binary(ba));
+        Assert.assertEquals(base64, new String(Base64.getEncoder().encode(ba)));
     }
 }

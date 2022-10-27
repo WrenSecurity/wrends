@@ -13,6 +13,7 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions copyright 2011-2016 ForgeRock AS.
+ * Portions copyright 2022 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -22,8 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.Arrays;
 
-import javax.xml.bind.DatatypeConverter;
-
+import com.google.common.io.BaseEncoding;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -247,8 +247,8 @@ public class ByteStringTestCase extends ByteSequenceTestCase {
     }
 
     @Test(dataProvider = "validBase64Data")
-    public void testValueOfBase64(final String hexData, final String encodedData) throws Exception {
-        final byte[] data = DatatypeConverter.parseHexBinary(hexData);
+    public void testValueOfBase64(final String hexData, final String encodedData) {
+        final byte[] data = BaseEncoding.base16().lowerCase().decode(hexData);
         final byte[] decodedData = ByteString.valueOfBase64(encodedData).toByteArray();
         Assert.assertEquals(decodedData, data);
     }
