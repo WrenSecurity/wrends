@@ -718,6 +718,7 @@ public class GrizzlyLDAPListenerTestCase extends SdkTestCase {
             final Connection failedConnection =
                     new LDAPConnectionFactory(listenerAddr.getHostName(),
                         listenerAddr.getPort()).getConnection();
+            failedConnection.bind("cn=test", "password".toCharArray());
             failedConnection.close();
             connection.close();
             fail("Connection attempt to closed listener succeeded unexpectedly");
