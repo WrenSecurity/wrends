@@ -61,12 +61,14 @@ Copyright (c) 2004 Mikael Grev, MiG InfoCom AB. (base64 @ miginfocom . com)
 Version: grizzly-http-server.jar (2.3.24)
 Copyright: Copyright (c) 1997-2016 Oracle and/or its affiliates. All rights reserved.
 
-Version: i18n-core.jar (1.4.2)
+Version: i18n-core.jar (22.3.0)
 Copyright: Copyright 2011 ForgeRock AS
            Copyright 2007-2009 Sun Microsystems, Inc.
+           Portions Copyright 2022 Wren Security
 
-Version: i18n-slf4j.jar (1.4.2)
+Version: i18n-slf4j.jar (22.3.0)
 Copyright: Copyright 2011-2014 ForgeRock AS
+           Portions Copyright 2022 Wren Security
 
 Version: javax.mail.jar (1.5.1)
 Copyright: Copyright (c) 2005-2010 Oracle and/or its affiliates. All rights reserved.

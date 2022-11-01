@@ -30,11 +30,11 @@
   </description>
   <dependencies>
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>i18n-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>i18n-slf4j</artifactId>
     </dependency>
     <dependency>
@@ -121,7 +121,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.forgerock.commons</groupId>
+        <groupId>org.wrensecurity.commons</groupId>
         <artifactId>i18n-maven-plugin</artifactId>
         <executions>
           <execution>

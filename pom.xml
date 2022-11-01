@@ -261,9 +261,9 @@
                 </plugin>
 
                 <plugin>
-                    <groupId>org.forgerock.commons</groupId>
+                    <groupId>org.wrensecurity.commons</groupId>
                     <artifactId>i18n-maven-plugin</artifactId>
-                    <version>${i18n-framework.version}</version>
+                    <version>${wrensec-commons.version}</version>
                 </plugin>
 
                 <plugin>
