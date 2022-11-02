@@ -7,25 +7,28 @@ COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
 Version: activation.jar (1.1)
 Copyright: Copyright 1997-2007 Sun Microsystems, Inc. All rights reserved.
 
-Version: chf-client-apache-async.jar (20.0.0)
+Version: chf-client-apache-async.jar (22.3.0)
 Copyright: Copyright 2015 ForgeRock AS.
            Copyright 2009 Sun Microsystems Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2010-2011 ApexIdentity Inc.
            Portions Copyright 2011-2016 ForgeRock AS.
 
 Version: chf-client-apache-common.jar (20.0.0)
 Copyright: Copyright 2015 ForgeRock AS.
 
-Version: chf-http-core.jar (20.0.0)
+Version: chf-http-core.jar (22.3.0)
 Copyright: Copyright 2012-2016 ForgeRock AS.
            Copyright 2010-2011 ApexIdentity Inc.
            Copyright 2009 Sun Microsystems Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
            Portions Copyright 2010-2011 ApexIdentity Inc.
 
-Version: chf-http-servlet.jar (20.0.0)
+Version: chf-http-servlet.jar (22.3.0)
 Copyright: Copyright 2012-2015 ForgeRock AS.
            Copyright 2010-2011 ApexIdentity Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
 
 Version: forgerock-util.jar (22.3.0)

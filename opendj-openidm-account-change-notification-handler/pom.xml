@@ -72,13 +72,13 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.http</groupId>
+      <groupId>org.wrensecurity.http</groupId>
       <artifactId>chf-http-core</artifactId>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.http</groupId>
+      <groupId>org.wrensecurity.http</groupId>
       <artifactId>chf-client-apache-async</artifactId>
     </dependency>
   </dependencies>
