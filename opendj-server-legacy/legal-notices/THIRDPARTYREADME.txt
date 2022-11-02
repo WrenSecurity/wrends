@@ -73,11 +73,13 @@ Copyright: Copyright 2011-2014 ForgeRock AS
 Version: javax.mail.jar (1.5.1)
 Copyright: Copyright (c) 2005-2010 Oracle and/or its affiliates. All rights reserved.
 
-Version: json-resource.jar (20.0.0)
+Version: json-resource.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: json-resource-http.jar (20.0.0)
+Version: json-resource-http.jar (22.3.0)
 Copyright: Copyright 2012-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
 Version: opendj-cli.jar (4.0.0)
 Copyright: Copyright 2014-2016 ForgeRock AS.
