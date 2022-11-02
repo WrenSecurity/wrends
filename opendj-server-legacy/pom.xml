@@ -131,47 +131,47 @@
 
     <!-- ForgeRock Common Audit libraries -->
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-core</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-handler-csv</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-handler-json</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-handler-elasticsearch</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-handler-splunk</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-handler-jms</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-json</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-handler-syslog</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>forgerock-audit-handler-jdbc</artifactId>
     </dependency>
 

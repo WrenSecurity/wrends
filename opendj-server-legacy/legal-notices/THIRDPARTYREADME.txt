@@ -26,28 +26,34 @@ Version: chf-http-grizzly.jar (22.3.0)
 Copyright: Copyright 2016 ForgeRock AS.
            Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-core.jar (20.0.0)
+Version: forgerock-audit-core.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
            Copyright 2013 Cybernetica AS
            Copyright 2006-2008 Sun Microsystems, Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2013-2015 ForgeRock AS.
 
-Version: forgerock-audit-handler-csv.jar (20.0.0)
+Version: forgerock-audit-handler-csv.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-handler-elasticsearch.jar (20.0.0)
+Version: forgerock-audit-handler-elasticsearch.jar (22.3.0)
 Copyright: Copyright 2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-handler-jdbc.jar (20.0.0)
+Version: forgerock-audit-handler-jdbc.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
-Portions Copyright 2016 Nomura Research Institute, Ltd.
+           Portions Copyright 2022 Wren Security
+           Portions Copyright 2016 Nomura Research Institute, Ltd.
 
-Version: forgerock-audit-handler-syslog.jar (20.0.0)
+Version: forgerock-audit-handler-syslog.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
            Copyright 2013 Cybernetica AS
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-json.jar (20.0.0)
+Version: forgerock-audit-json.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
 Version: forgerock-util.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
