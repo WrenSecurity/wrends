@@ -67,7 +67,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>json-crypto-core</artifactId>
     </dependency>
 

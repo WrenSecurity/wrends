@@ -13,8 +13,9 @@ Copyright: Copyright 2015 ForgeRock AS.
            Portions Copyright 2010-2011 ApexIdentity Inc.
            Portions Copyright 2011-2016 ForgeRock AS.
 
-Version: json-crypto-core.jar (20.0.0)
+Version: json-crypto-core.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
 
 ==================
