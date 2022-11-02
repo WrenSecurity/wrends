@@ -28,9 +28,10 @@ Copyright: Copyright 2012-2015 ForgeRock AS.
            Copyright 2010-2011 ApexIdentity Inc.
            Portions Copyright 2011-2016 ForgeRock AS.
 
-Version: forgerock-util.jar (20.0.0)
+Version: forgerock-util.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
            Copyright (c) 2010-2011 ApexIdentity Inc. All rights reserved.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
 
 Version: grizzly-framework.jar (2.3.24)
