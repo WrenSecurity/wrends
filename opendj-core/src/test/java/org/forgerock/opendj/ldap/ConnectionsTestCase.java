@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.forgerock.opendj.ldap;
 
@@ -20,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.Connections.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import org.forgerock.opendj.ldap.Connections.LeastRequestsDispatcher;
@@ -54,7 +55,7 @@ public class ConnectionsTestCase extends SdkTestCase {
         final Connection connection = mock(Connection.class);
         final Connection uncloseable = Connections.uncloseable(connection);
         uncloseable.close();
-        verifyZeroInteractions(connection);
+        verifyNoInteractions(connection);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class ConnectionsTestCase extends SdkTestCase {
         final Connection connection = mock(Connection.class);
         final Connection uncloseable = Connections.uncloseable(connection);
         uncloseable.close(null, null);
-        verifyZeroInteractions(connection);
+        verifyNoInteractions(connection);
     }
 
     @Test

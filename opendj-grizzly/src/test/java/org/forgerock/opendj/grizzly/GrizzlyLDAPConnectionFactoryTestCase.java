@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.forgerock.opendj.grizzly;
 
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -282,7 +283,7 @@ public class GrizzlyLDAPConnectionFactoryTestCase extends SdkTestCase {
 
                 // The connection should still be valid.
                 assertThat(connection.isValid()).isTrue();
-                verifyZeroInteractions(listener);
+                verifyNoInteractions(listener);
                 /*
                  * FIXME: The search should have been abandoned (see comment in
                  * LDAPConnection for explanation).

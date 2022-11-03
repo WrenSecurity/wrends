@@ -13,9 +13,14 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions copyright 2012-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.forgerock.opendj.ldif;
 
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertNotNull;
 
 import java.io.File;
@@ -43,10 +48,9 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 
 /** This class tests the LDIFEntryReader functionality. */
 @SuppressWarnings("javadoc")
@@ -615,7 +619,7 @@ public final class LDIFEntryReaderTestCase extends AbstractLDIFTestCase {
                 eq(1L),
                 eq(Arrays.asList("dn: dc=example,dc=com", "changetype: add", "objectClass: top",
                         "objectClass: domainComponent", "dc: example", "xxx: unknown attribute")),
-                anyListOf(LocalizableMessage.class));
+                anyList());
         reader.close();
     }
 
@@ -649,7 +653,7 @@ public final class LDIFEntryReaderTestCase extends AbstractLDIFTestCase {
                 eq(1L),
                 eq(Arrays.asList("dn: dc=example,dc=com", "changetype: add", "objectClass: top",
                         "objectClass: domainComponent", "dc: example", "xxx: unknown attribute")),
-                anyListOf(LocalizableMessage.class));
+                anyList());
         reader.close();
     }
 

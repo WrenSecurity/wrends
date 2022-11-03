@@ -14,13 +14,14 @@
  * Copyright 2011-2016 ForgeRock AS.
  * Portions Copyright 2014 Manuel Gaupp
  * Portions copyright 2016 Matthew Stevenson
+ * Portions Copyright 2022 Wren Security
  */
 
 package org.forgerock.opendj.ldif;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyListOf;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -925,7 +926,7 @@ public final class LDIFChangeRecordReaderTestCase extends AbstractLDIFTestCase {
                 eq(1L),
                 eq(Arrays.asList("dn: dc=example,dc=com", "changetype: add", "objectClass: top",
                         "objectClass: domainComponent", "dc: example", "xxx: unknown attribute")),
-                anyListOf(LocalizableMessage.class));
+                anyList());
         reader.close();
     }
 
@@ -969,7 +970,7 @@ public final class LDIFChangeRecordReaderTestCase extends AbstractLDIFTestCase {
                 eq(1L),
                 eq(Arrays.asList("dn: dc=example,dc=com", "changetype: add", "objectClass: top",
                         "objectClass: domainComponent", "dc: example", "xxx: unknown attribute")),
-                anyListOf(LocalizableMessage.class));
+                anyList());
         reader.close();
     }
 
