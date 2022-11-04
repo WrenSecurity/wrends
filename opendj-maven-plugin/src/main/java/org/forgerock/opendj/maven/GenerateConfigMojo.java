@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2013-2016 ForgeRock AS.
+ * Portions copyright 2022 Wren Security.
  */
 package org.forgerock.opendj.maven;
 
@@ -395,6 +396,9 @@ public final class GenerateConfigMojo extends AbstractMojo {
     private void initializeStylesheets() throws TransformerConfigurationException {
         getLog().info("Loading XSLT stylesheets...");
         stylesheetFactory = TransformerFactory.newInstance();
+        stylesheetFactory.setAttribute("jdk.xml.xpathExprGrpLimit", "0");
+        stylesheetFactory.setAttribute("jdk.xml.xpathExprOpLimit", "0");
+        stylesheetFactory.setAttribute("jdk.xml.xpathTotalOpLimit", "0");
         stylesheetFactory.setURIResolver(resolver);
         stylesheetMetaJava = loadStylesheet("metaMO.xsl");
         stylesheetMetaPackageInfo = loadStylesheet("package-info.xsl");
