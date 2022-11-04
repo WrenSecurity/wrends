@@ -70,7 +70,7 @@
 
     <properties>
         <wrensec-commons.version>22.3.0</wrensec-commons.version>
-        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.5.5</pgpWhitelistArtifact>
+        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.6.0</pgpWhitelistArtifact>
     </properties>
 
     <dependencyManagement>
