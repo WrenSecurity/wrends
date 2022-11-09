@@ -99,7 +99,7 @@ import org.opends.server.schema.ObjectClassSyntax;
 import org.opends.server.schema.SchemaUpdater;
 import org.opends.server.types.*;
 import org.opends.server.util.BackupManager;
-import org.opends.server.util.DynamicConstants;
+import org.opends.server.util.BuildVersion;
 import org.opends.server.util.LDIFException;
 import org.opends.server.util.LDIFReader;
 import org.opends.server.util.LDIFWriter;
@@ -338,7 +338,8 @@ public class SchemaBackend extends Backend<SchemaBackendCfg>
       }
       else
       {
-        concatFile = new File(upgradeDirectory, SCHEMA_BASE_FILE_NAME_WITHOUT_REVISION + DynamicConstants.REVISION);
+        concatFile = new File(upgradeDirectory, SCHEMA_BASE_FILE_NAME_WITHOUT_REVISION +
+            BuildVersion.instanceVersion().getRevision());
         if (concatFile.exists())
         {
           concatFilePath = concatFile.getAbsolutePath();

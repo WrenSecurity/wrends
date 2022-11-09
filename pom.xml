@@ -144,7 +144,7 @@
     </modules>
 
     <properties>
-        <product.name>Wren:DS</product.name>
+        <product.name>OpenDJ</product.name>
         <opendj.core.test.jar.version>3.0.0</opendj.core.test.jar.version>
     </properties>
 
