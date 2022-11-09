@@ -29,10 +29,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>opendj-sdk-parent</artifactId>
         <groupId>org.forgerock.opendj</groupId>
+        <artifactId>opendj-parent</artifactId>
         <version>3.0.1-SNAPSHOT</version>
-        <relativePath>../opendj-sdk-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>opendj-core</artifactId>
