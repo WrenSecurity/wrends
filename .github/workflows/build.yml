@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [8, 11]
+        java: [8]
     name: "Java ${{ matrix.java }} build"
     steps:
       - uses: actions/checkout@v2
@@ -21,5 +21,7 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: Run the Maven verify phase
-        run: mvn -s settings.xml -B package -Dclirr.skip
+      - name: Install Maven Plugin
+        run: mvn -s .mvn/settings.xml -B -Dignore-artifact-sigs install -pl opendj-maven-plugin -am
+      - name: Build the project
+        run: mvn -s .mvn/settings.xml -B -Dclirr.skip -Dignore-artifact-sigs verify
