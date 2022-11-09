@@ -148,7 +148,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             assertThat(connection).isNotNull();
             connection.close();
         }
-        verifyZeroInteractions(partition1, partition2);
+        verifyNoInteractions(partition1, partition2);
     }
 
     @Test
@@ -157,7 +157,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
             assertThat(connection).isNotNull();
             connection.close();
         }
-        verifyZeroInteractions(partition1, partition2);
+        verifyNoInteractions(partition1, partition2);
     }
 
     @DataProvider
@@ -182,7 +182,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
         verify(hitPartition(isSecondPartition)).addAsync(any(AddRequest.class), any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test(dataProvider = "requests")
@@ -196,7 +196,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                                           any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test(dataProvider = "requests")
@@ -210,7 +210,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                                              any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test(dataProvider = "requests")
@@ -224,7 +224,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                                             any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test(dataProvider = "requests")
@@ -238,7 +238,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                                                      any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test(dataProvider = "requests")
@@ -252,7 +252,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                                             any());
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test(dataProvider = "requests")
@@ -266,7 +266,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                                               any());
         verify(hashFunction, atLeastOnce()).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test(dataProvider = "requests")
@@ -282,7 +282,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                                             any(SearchResultHandler.class));
         verify(hashFunction).apply(partitionDN.toNormalizedUrlSafeString());
         verify(hitPartition(isSecondPartition)).close();
-        verifyZeroInteractions(missPartition(isSecondPartition));
+        verifyNoInteractions(missPartition(isSecondPartition));
     }
 
     @Test
@@ -356,7 +356,7 @@ public class ConsistentHashDistributionLoadBalancerTest extends SdkTestCase {
                                            any(SearchResultHandler.class));
         verify(hashFunction).apply(dn.toNormalizedUrlSafeString());
         verify(partition1Conn).close();
-        verifyZeroInteractions(partition2Conn);
+        verifyNoInteractions(partition2Conn);
     }
 
     private void verifySearchAgainstAllPartitions(final DN dn, final SearchScope scope) throws Exception {

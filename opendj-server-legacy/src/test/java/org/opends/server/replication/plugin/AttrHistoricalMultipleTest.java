@@ -13,13 +13,20 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.replication.plugin;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.forgerock.opendj.ldap.ModificationType.*;
-import static org.mockito.Mockito.*;
-import static org.testng.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.forgerock.opendj.ldap.ModificationType.ADD;
+import static org.forgerock.opendj.ldap.ModificationType.DELETE;
+import static org.forgerock.opendj.ldap.ModificationType.REPLACE;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.testng.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -398,7 +405,7 @@ public class AttrHistoricalMultipleTest extends ReplicationTestCase
   {
     Iterator<Modification> itMod = mock(Iterator.class);
     replayOperation(itMod, csn, entry, mod, shouldConflict);
-    verifyZeroInteractions(itMod);
+    verifyNoInteractions(itMod);
   }
 
   private void replayOperation(Iterator<Modification> modsIterator, CSN csn, Entry entry, Modification mod,

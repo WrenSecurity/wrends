@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 
 package org.forgerock.opendj.grizzly;
@@ -20,7 +21,9 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.LDAPListener.LDAP_DECODE_OPTIONS;
 import static org.forgerock.opendj.ldap.LDAPConnectionFactory.REQUEST_TIMEOUT;
 import static org.forgerock.util.time.Duration.duration;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -102,7 +105,7 @@ public class GrizzlyLDAPConnectionTestCase extends SdkTestCase {
             // Pass in a time which is guaranteed to trigger expiration.
             connection.handleTimeout(System.currentTimeMillis() + 1000000);
             if (isPersistentSearch) {
-                verifyZeroInteractions(searchHandler);
+                verifyNoInteractions(searchHandler);
             } else {
                 ArgumentCaptor<LdapException> arg = ArgumentCaptor.forClass(LdapException.class);
                 verify(exceptionHandler).handleException(arg.capture());

@@ -13,12 +13,13 @@
  *
  * Copyright 2008 Sun Microsystems, Inc.
  * Portions copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.forgerock.opendj.config.server;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.forgerock.opendj.ldif.LDIF.makeEntry;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;

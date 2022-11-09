@@ -13,6 +13,7 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2015 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 
 package org.forgerock.opendj.ldap;
@@ -31,8 +32,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -169,9 +170,9 @@ public class ConnectionPoolTestCase extends SdkTestCase {
         final ConnectionFactory factory = mockConnectionFactory(connection1, connection2);
         final ConnectionPool pool = Connections.newFixedConnectionPool(factory, 2);
 
-        verifyZeroInteractions(factory);
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(factory);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
 
         /*
          * Obtain connections and verify that the correct underlying connection
@@ -183,7 +184,7 @@ public class ConnectionPoolTestCase extends SdkTestCase {
         assertThat(pc1.bind(bind1).getResultCode()).isEqualTo(ResultCode.SUCCESS);
         verify(factory, times(1)).getConnection();
         verify(connection1).bind(bind1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection2);
 
         final Connection pc2 = pool.getConnection();
         assertThat(pc2.bind(bind2).getResultCode()).isEqualTo(ResultCode.SUCCESS);

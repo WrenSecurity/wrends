@@ -12,7 +12,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
- *
+ * Portions Copyright 2022 Wren Security
  */
 
 package org.forgerock.opendj.ldap.schema;
@@ -22,7 +22,7 @@ import static org.forgerock.opendj.ldap.ConditionResult.FALSE;
 import static org.forgerock.opendj.ldap.ConditionResult.TRUE;
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.EMR_OID_NAME;
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.EMR_OID_OID;
-import static org.mockito.Matchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;

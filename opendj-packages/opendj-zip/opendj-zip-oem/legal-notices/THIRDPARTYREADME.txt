@@ -4,51 +4,61 @@ DO NOT TRANSLATE OR LOCALIZE
 COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
 ***************************************************************************
 
-Version: chf-client-apache-async.jar (20.0.0)
+Version: chf-client-apache-async.jar (22.3.0)
 Copyright: Copyright 2015 ForgeRock AS.
            Copyright 2009 Sun Microsystems Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2010-2011 ApexIdentity Inc.
            Portions Copyright 2011-2016 ForgeRock AS.
 
 Version: chf-client-apache-common.jar (20.0.0)
 Copyright: Copyright 2015 ForgeRock AS.
 
-Version: chf-http-core.jar (20.0.0)
+Version: chf-http-core.jar (22.3.0)
 Copyright: Copyright 2012-2016 ForgeRock AS.
            Copyright 2010-2011 ApexIdentity Inc.
            Copyright 2009 Sun Microsystems Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
            Portions Copyright 2010-2011 ApexIdentity Inc.
 
-Version: chf-http-grizzly.jar (20.0.0)
+Version: chf-http-grizzly.jar (22.3.0)
 Copyright: Copyright 2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-core.jar (20.0.0)
+Version: forgerock-audit-core.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
            Copyright 2013 Cybernetica AS
            Copyright 2006-2008 Sun Microsystems, Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2013-2015 ForgeRock AS.
 
-Version: forgerock-audit-handler-csv.jar (20.0.0)
+Version: forgerock-audit-handler-csv.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-handler-elasticsearch.jar (20.0.0)
+Version: forgerock-audit-handler-elasticsearch.jar (22.3.0)
 Copyright: Copyright 2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-handler-jdbc.jar (20.0.0)
+Version: forgerock-audit-handler-jdbc.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
-Portions Copyright 2016 Nomura Research Institute, Ltd.
+           Portions Copyright 2022 Wren Security
+           Portions Copyright 2016 Nomura Research Institute, Ltd.
 
-Version: forgerock-audit-handler-syslog.jar (20.0.0)
+Version: forgerock-audit-handler-syslog.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
            Copyright 2013 Cybernetica AS
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-audit-json.jar (20.0.0)
+Version: forgerock-audit-json.jar (22.3.0)
 Copyright: Copyright 2015-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: forgerock-util.jar (20.0.0)
+Version: forgerock-util.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
            Copyright (c) 2010-2011 ApexIdentity Inc. All rights reserved.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
 
 Version: grizzly-framework.jar (2.3.24)
@@ -61,21 +71,25 @@ Copyright (c) 2004 Mikael Grev, MiG InfoCom AB. (base64 @ miginfocom . com)
 Version: grizzly-http-server.jar (2.3.24)
 Copyright: Copyright (c) 1997-2016 Oracle and/or its affiliates. All rights reserved.
 
-Version: i18n-core.jar (1.4.2)
+Version: i18n-core.jar (22.3.0)
 Copyright: Copyright 2011 ForgeRock AS
            Copyright 2007-2009 Sun Microsystems, Inc.
+           Portions Copyright 2022 Wren Security
 
-Version: i18n-slf4j.jar (1.4.2)
+Version: i18n-slf4j.jar (22.3.0)
 Copyright: Copyright 2011-2014 ForgeRock AS
+           Portions Copyright 2022 Wren Security
 
 Version: javax.mail.jar (1.5.1)
 Copyright: Copyright (c) 2005-2010 Oracle and/or its affiliates. All rights reserved.
 
-Version: json-resource.jar (20.0.0)
+Version: json-resource.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: json-resource-http.jar (20.0.0)
+Version: json-resource-http.jar (22.3.0)
 Copyright: Copyright 2012-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
 Version: opendj-cli.jar (4.0.0)
 Copyright: Copyright 2014-2016 ForgeRock AS.

@@ -48,7 +48,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>i18n-slf4j</artifactId>
       <scope>provided</scope>
     </dependency>
@@ -67,18 +67,18 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.commons</groupId>
+      <groupId>org.wrensecurity.commons</groupId>
       <artifactId>json-crypto-core</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.http</groupId>
+      <groupId>org.wrensecurity.http</groupId>
       <artifactId>chf-http-core</artifactId>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.http</groupId>
+      <groupId>org.wrensecurity.http</groupId>
       <artifactId>chf-client-apache-async</artifactId>
     </dependency>
   </dependencies>
@@ -86,7 +86,7 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.forgerock.commons</groupId>
+        <groupId>org.wrensecurity.commons</groupId>
         <artifactId>i18n-maven-plugin</artifactId>
 
         <executions>

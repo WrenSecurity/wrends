@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.replication.plugin;
 
@@ -292,7 +293,7 @@ public class AttrHistoricalSingleTest extends ReplicationTestCase
   {
     Iterator<Modification> itMod = mock(Iterator.class);
     replayOperation(itMod, csn, entry, mod, shouldConflict);
-    verifyZeroInteractions(itMod);
+    verifyNoInteractions(itMod);
   }
 
   private void replayOperationSuppressMod(CSN csn, Entry entry, Modification mod, boolean shouldConflict)

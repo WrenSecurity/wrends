@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.wrensecurity</groupId>
         <artifactId>wrensec-parent</artifactId>
-        <version>3.3.0</version>
+        <version>3.4.0</version>
         <relativePath />
     </parent>
 
@@ -69,34 +69,27 @@
     </repositories>
 
     <properties>
-        <i18n-framework.version>1.4.2</i18n-framework.version>
-        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.5.5</pgpWhitelistArtifact>
+        <wrensec-commons.version>22.3.0</wrensec-commons.version>
+        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.6.0</pgpWhitelistArtifact>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- ForgeRock BOM -->
+            <!-- Wren Security BOM -->
             <dependency>
-                <groupId>org.forgerock.commons</groupId>
+                <groupId>org.wrensecurity.commons</groupId>
                 <artifactId>commons-bom</artifactId>
-                <version>22.1.0-SNAPSHOT</version>
+                <version>${wrensec-commons.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
 
             <!-- I18N framework -->
             <dependency>
-                <groupId>org.forgerock.commons</groupId>
-                <artifactId>i18n-core</artifactId>
-                <version>${i18n-framework.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.forgerock.commons</groupId>
+                <groupId>org.wrensecurity.commons</groupId>
                 <artifactId>i18n-slf4j</artifactId>
-                <version>${i18n-framework.version}</version>
+                <version>${wrensec-commons.version}</version>
             </dependency>
-
 
             <!-- Wren:DS SDK -->
             <dependency>

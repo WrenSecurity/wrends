@@ -13,6 +13,7 @@
  *
  * Copyright 2016 ForgeRock AS.
  * Portions Copyright 2021 Wren Security.
+ * Portions Copyright 2022 Wren Security
  */
 package org.forgerock.opendj.ldap;
 
@@ -34,7 +35,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -77,9 +78,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         configureAllFactoriesOnline();
         try (Connection connection = loadBalancer.getConnection()) {
             assertThat(connection).isNotNull();
-            verifyZeroInteractions(factory1, factory2, factory3);
+            verifyNoInteractions(factory1, factory2, factory3);
         }
-        verifyZeroInteractions(factory1, factory2, factory3);
+        verifyNoInteractions(factory1, factory2, factory3);
         loadBalancer.close();
     }
 
@@ -108,9 +109,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         configureAllFactoriesOnline();
         try (Connection connection = loadBalancer.getConnectionAsync().get()) {
             assertThat(connection).isNotNull();
-            verifyZeroInteractions(factory1, factory2, factory3);
+            verifyNoInteractions(factory1, factory2, factory3);
         }
-        verifyZeroInteractions(factory1, factory2, factory3);
+        verifyNoInteractions(factory1, factory2, factory3);
     }
 
     @Test
@@ -148,7 +149,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
             connection.addConnectionEventListener(listener);
             connection.removeConnectionEventListener(listener);
         }
-        verifyZeroInteractions(listener);
+        verifyNoInteractions(listener);
     }
 
     @Test
@@ -192,7 +193,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         try (Connection connection = loadBalancer.getConnectionAsync().get()) {
             connection.abandonAsync(mock(AbandonRequest.class));
         }
-        verifyZeroInteractions(factory1, factory2, factory3);
+        verifyNoInteractions(factory1, factory2, factory3);
     }
 
     // We can't use a DataProviders here because the mocks will be re-initialized for each test method call.
@@ -224,7 +225,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).addAsync(same(addRequest), isNull());
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -250,8 +251,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory3).getConnectionAsync();
         verify(connection3).addAsync(same(addRequest), isNull());
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -267,9 +268,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     // ################## Bind Requests ####################
@@ -299,7 +300,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).bindAsync(same(bindRequest), isNull());
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -325,8 +326,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory3).getConnectionAsync();
         verify(connection3).bindAsync(same(bindRequest), isNull());
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -342,9 +343,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     // ################## Compare Requests ####################
@@ -374,7 +375,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).compareAsync(same(compareRequest), isNull());
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -400,8 +401,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory3).getConnectionAsync();
         verify(connection3).compareAsync(same(compareRequest), isNull());
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -417,9 +418,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     // ################## Delete Requests ####################
@@ -449,7 +450,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).deleteAsync(same(deleteRequest), isNull());
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -475,8 +476,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory3).getConnectionAsync();
         verify(connection3).deleteAsync(same(deleteRequest), isNull());
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -492,9 +493,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     // ################## Extended Requests ####################
@@ -525,7 +526,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(expectedConnection).extendedRequestAsync(same(extendedRequest),
                                                         isNull());
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -552,8 +553,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory3).getConnectionAsync();
         verify(connection3).extendedRequestAsync(same(extendedRequest), isNull());
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -569,9 +570,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     // ################## Modify Requests ####################
@@ -601,7 +602,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).modifyAsync(same(modifyRequest), isNull());
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -627,8 +628,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory3).getConnectionAsync();
         verify(connection3).modifyAsync(same(modifyRequest), isNull());
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -644,9 +645,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     // ################## ModifyDN Requests ####################
@@ -676,7 +677,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(expectedFactory).getConnectionAsync();
         verify(expectedConnection).modifyDNAsync(same(modifyDNRequest), isNull());
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -703,8 +704,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory3).getConnectionAsync();
         verify(connection3).modifyDNAsync(same(modifyDNRequest), isNull());
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -720,9 +721,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     // ################## Search Requests ####################
@@ -754,7 +755,7 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
                                                isNull(),
                                                any(SearchResultHandler.class));
         verify(expectedConnection).close();
-        verifyZeroInteractionsForRemainingFactories(expectedFactory);
+        verifyNoInteractionsForRemainingFactories(expectedFactory);
     }
 
     @Test
@@ -782,8 +783,8 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
                                         isNull(),
                                         any(SearchResultHandler.class));
         verify(connection3).close();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
     }
 
     @Test
@@ -799,9 +800,9 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
         verify(factory1, atLeastOnce()).getConnectionAsync();
         verify(factory2, atLeastOnce()).getConnectionAsync();
         verify(factory3, atLeastOnce()).getConnectionAsync();
-        verifyZeroInteractions(connection1);
-        verifyZeroInteractions(connection2);
-        verifyZeroInteractions(connection3);
+        verifyNoInteractions(connection1);
+        verifyNoInteractions(connection2);
+        verifyNoInteractions(connection3);
     }
 
     @Mock private ConnectionFactory factory1;
@@ -942,15 +943,15 @@ public class RequestLoadBalancerTestCase extends SdkTestCase {
                 .thenReturn(Promises.<Connection, LdapException>newExceptionPromise(connectionFailure));
     }
 
-    private void verifyZeroInteractionsForRemainingFactories(final ConnectionFactory expectedFactory) {
+    private void verifyNoInteractionsForRemainingFactories(final ConnectionFactory expectedFactory) {
         if (expectedFactory != factory1) {
-            verifyZeroInteractions(factory1);
+            verifyNoInteractions(factory1);
         }
         if (expectedFactory != factory2) {
-            verifyZeroInteractions(factory2);
+            verifyNoInteractions(factory2);
         }
         if (expectedFactory != factory3) {
-            verifyZeroInteractions(factory3);
+            verifyNoInteractions(factory3);
         }
     }
 }

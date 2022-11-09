@@ -7,50 +7,58 @@ COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
 Version: activation.jar (1.1)
 Copyright: Copyright 1997-2007 Sun Microsystems, Inc. All rights reserved.
 
-Version: chf-client-apache-async.jar (20.0.0)
+Version: chf-client-apache-async.jar (22.3.0)
 Copyright: Copyright 2015 ForgeRock AS.
            Copyright 2009 Sun Microsystems Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2010-2011 ApexIdentity Inc.
            Portions Copyright 2011-2016 ForgeRock AS.
 
 Version: chf-client-apache-common.jar (20.0.0)
 Copyright: Copyright 2015 ForgeRock AS.
 
-Version: chf-http-core.jar (20.0.0)
+Version: chf-http-core.jar (22.3.0)
 Copyright: Copyright 2012-2016 ForgeRock AS.
            Copyright 2010-2011 ApexIdentity Inc.
            Copyright 2009 Sun Microsystems Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
            Portions Copyright 2010-2011 ApexIdentity Inc.
 
-Version: chf-http-servlet.jar (20.0.0)
+Version: chf-http-servlet.jar (22.3.0)
 Copyright: Copyright 2012-2015 ForgeRock AS.
            Copyright 2010-2011 ApexIdentity Inc.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
 
-Version: forgerock-util.jar (20.0.0)
+Version: forgerock-util.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
            Copyright (c) 2010-2011 ApexIdentity Inc. All rights reserved.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
 
 Version: grizzly-framework.jar (2.3.24)
 Copyright: Copyright (c) 2007-2015 Oracle and/or its affiliates. All rights reserved.
 
-Version: i18n-core.jar (1.4.2)
+Version: i18n-core.jar (22.3.0)
 Copyright: Copyright 2011 ForgeRock AS
            Copyright 2007-2009 Sun Microsystems, Inc.
+           Portions Copyright 2022 Wren Security
 
-Version: i18n-slf4j.jar (1.4.2)
+Version: i18n-slf4j.jar (22.3.0)
 Copyright: Copyright 2011-2014 ForgeRock AS
+           Portions Copyright 2022 Wren Security
 
 Version: javax.mail.jar (1.5.1)
 Copyright: Copyright (c) 2005-2010 Oracle and/or its affiliates. All rights reserved.
 
-Version: json-resource.jar (20.0.0)
+Version: json-resource.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
-Version: json-resource-http.jar (20.0.0)
+Version: json-resource-http.jar (22.3.0)
 Copyright: Copyright 2012-2016 ForgeRock AS.
+           Portions Copyright 2022 Wren Security
 
 Version: opendj-core.jar (4.0.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.

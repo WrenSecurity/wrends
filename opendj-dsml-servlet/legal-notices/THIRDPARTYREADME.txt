@@ -4,17 +4,20 @@ DO NOT TRANSLATE OR LOCALIZE
 COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
 ***************************************************************************
 
-Version: forgerock-util.jar (20.0.0)
+Version: forgerock-util.jar (22.3.0)
 Copyright: Copyright 2011-2016 ForgeRock AS.
            Copyright (c) 2010-2011 ApexIdentity Inc. All rights reserved.
+           Portions Copyright 2022 Wren Security
            Portions Copyright 2011-2016 ForgeRock AS.
 
-Version: i18n-core.jar (1.4.2)
+Version: i18n-core.jar (22.3.0)
 Copyright: Copyright 2011 ForgeRock AS
            Copyright 2007-2009 Sun Microsystems, Inc.
+           Portions Copyright 2022 Wren Security
 
-Version: i18n-slf4j.jar (1.4.2)
+Version: i18n-slf4j.jar (22.3.0)
 Copyright: Copyright 2011-2014 ForgeRock AS
+           Portions Copyright 2022 Wren Security
 
 Version: opendj-cli.jar (4.0.0)
 Copyright: Copyright 2014-2016 ForgeRock AS.
