@@ -9,4 +9,10 @@ This branch is fully compatible with last fully OSS version released by ForgeRoc
 
 ## Building from sources
 
-TODO
+```console
+mvn -s .mvn/settings.xml install -pl opendj-maven-plugin/ -Dignore-artifact-sigs
+```
+
+```console
+
+```
