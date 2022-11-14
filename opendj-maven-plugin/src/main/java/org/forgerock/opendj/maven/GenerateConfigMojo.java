@@ -11,17 +11,8 @@
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at legal-notices/CDDLv1_0.txt.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information:
- *      Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
- *
- *
- *      Copyright 2013-2015 ForgeRock AS.
+ * Copyright 2013-2016 ForgeRock AS.
+ * Portions copyright 2022 Wren Security.
  */
 package org.forgerock.opendj.maven;
 
@@ -401,6 +392,9 @@ public final class GenerateConfigMojo extends AbstractMojo {
     private void initializeStylesheets() throws TransformerConfigurationException {
         getLog().info("Loading XSLT stylesheets...");
         stylesheetFactory = TransformerFactory.newInstance();
+        stylesheetFactory.setAttribute("jdk.xml.xpathExprGrpLimit", "0");
+        stylesheetFactory.setAttribute("jdk.xml.xpathExprOpLimit", "0");
+        stylesheetFactory.setAttribute("jdk.xml.xpathTotalOpLimit", "0");
         stylesheetFactory.setURIResolver(resolver);
         stylesheetMetaJava = loadStylesheet("metaMO.xsl");
         stylesheetMetaPackageInfo = loadStylesheet("package-info.xsl");
