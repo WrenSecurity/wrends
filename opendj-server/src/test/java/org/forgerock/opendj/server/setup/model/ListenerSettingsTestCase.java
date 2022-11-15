@@ -22,6 +22,7 @@
  *
  *
  *      Copyright 2014 ForgeRock AS.
+ *      Portions Copyright 2019 Wren Security.
  */
 package org.forgerock.opendj.server.setup.model;
 
@@ -72,13 +73,23 @@ public class ListenerSettingsTestCase extends AbstractSetupTestCase {
     public void testGetFreePort() throws Exception {
         // Finds a free socket
         final InetSocketAddress isa = TestCaseUtils.findFreeSocketAddress();
-        // Bound the free socket
-        final int port = isa.getPort();
-        final ServerSocket boundSocket = new ServerSocket(port);
-        // Verify the new port number is different from the free socket and verify it's free.
-        final int newPort = ListenerSettings.getFreeSocketPort(port);
-        assertThat(newPort).isNotEqualTo(port);
-        assertTrue(Math.abs(newPort - port) % PORT_INCREMENT == 0);
+
+        // Bind the free socket
+        final int boundPort = isa.getPort();
+        final ServerSocket boundSocket = new ServerSocket();
+
+        // NOTE: This seems to work for JDK 8+; but, in JDK 9+, the next code line should switch to
+        // being the following instead (which is more precise):
+        //
+        // boundSocket.setOption(StandardSocketOptions.SO_REUSEPORT, false);
+        //
+        boundSocket.setReuseAddress(false);
+        boundSocket.bind(new InetSocketAddress(boundPort));
+
+        // Verify the new port number is different from the bound socket and verify it's free.
+        final int newPort = ListenerSettings.getFreeSocketPort(boundPort);
+        assertThat(newPort).isNotEqualTo(boundPort);
+        assertTrue(Math.abs(newPort - boundPort) % PORT_INCREMENT == 0);
 
         boundSocket.close();
     }
