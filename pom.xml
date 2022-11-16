@@ -359,7 +359,7 @@
                                     <exclude>org.forgerock.opendj:opendj-server-legacy</exclude>
                                 </excludes>
                                 <additionalJars>
-                                    <additionalJar>opendj-slf4j-adapter.jar</additionalJar>
+                                    <additionalJar>wrends-slf4j-adapter.jar</additionalJar>
                                 </additionalJars>
                             </configuration>
                         </execution>

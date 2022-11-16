@@ -624,7 +624,7 @@ public final class Upgrade
     return conditionalUpgradeTasks(
         isOemVersionAndNewerThan3dot0(),
         deleteFile(new File(libDirectory, "je.jar")),
-        deleteFile(new File(libDirectory, "opendj-je-backend.jar")),
+        deleteFile(new File(libDirectory, "wrends-je-backend.jar")),
         conditionalUpgradeTasks(
             new UpgradeCondition() {
                 @Override
