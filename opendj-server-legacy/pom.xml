@@ -204,7 +204,7 @@
     <dependency>
       <groupId>com.sleepycat</groupId>
       <artifactId>je</artifactId>
-      <version>5.0.104</version>
+      <version>18.3.12</version>
     </dependency>
 
     <dependency>
@@ -428,8 +428,8 @@
             </goals>
             <configuration>
               <additionalJars>
-                 <additionalJar>opendj-slf4j-adapter.jar</additionalJar>
-                 <additionalJar>opendj-je-backend.jar</additionalJar>
+                 <additionalJar>wrends-slf4j-adapter.jar</additionalJar>
+                 <additionalJar>wrends-je-backend.jar</additionalJar>
               </additionalJars>
             </configuration>
           </execution>
@@ -441,7 +441,7 @@
             </goals>
             <configuration>
               <additionalJars>
-                 <additionalJar>opendj-je-backend.jar</additionalJar>
+                 <additionalJar>wrends-je-backend.jar</additionalJar>
               </additionalJars>
             </configuration>
           </execution>
@@ -706,7 +706,7 @@
 
           <!-- Package JE backend jar -->
           <execution>
-            <id>build-opendj-je-backend-jar</id>
+            <id>build-wrends-je-backend-jar</id>
             <phase>prepare-package</phase>
             <goals>
               <goal>jar</goal>
