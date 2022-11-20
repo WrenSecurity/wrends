@@ -13,14 +13,14 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
-  Portions Copyright 2017-2021 Wren Security.
+  Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.forgerock.opendj</groupId>
-        <artifactId>opendj-parent</artifactId>
+        <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
 
@@ -63,18 +63,18 @@
 
         <!-- Wren:DS SDK dependency -->
         <dependency>
-            <groupId>org.forgerock.opendj</groupId>
+            <groupId>org.wrensecurity.wrends</groupId>
             <artifactId>opendj-core</artifactId>
         </dependency>
 
         <!-- Wren:DS Server dependencies -->
         <dependency>
-            <groupId>org.forgerock.opendj</groupId>
+            <groupId>org.wrensecurity.wrends</groupId>
             <artifactId>opendj-config</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.forgerock.opendj</groupId>
+            <groupId>org.wrensecurity.wrends</groupId>
             <artifactId>${opendj.server.module.name}</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -101,7 +101,7 @@
                             <artifactItems>
                                 <!-- Copy and rename opendj main jar -->
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <outputDirectory>${project.build.directory}/${opendj.jars.folder}</outputDirectory>
@@ -110,7 +110,7 @@
 
                                 <!-- Copy and rename opendj localized jars -->
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-ca_ES</classifier>
@@ -119,7 +119,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-de</classifier>
@@ -128,7 +128,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-es</classifier>
@@ -137,7 +137,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-fr</classifier>
@@ -146,7 +146,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-ja</classifier>
@@ -155,7 +155,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-ko</classifier>
@@ -164,7 +164,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-pl</classifier>
@@ -173,7 +173,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-zh_CN</classifier>
@@ -182,7 +182,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>${opendj.server.module.name}</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>${localized.jars.classifier}-zh_TW</classifier>

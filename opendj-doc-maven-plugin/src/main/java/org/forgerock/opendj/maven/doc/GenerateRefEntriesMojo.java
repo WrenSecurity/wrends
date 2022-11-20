@@ -64,7 +64,7 @@ public final class GenerateRefEntriesMojo extends AbstractMojo {
     private MavenProject project;
 
     /** Archive directory of the artifact (server or toolkit) to use to generate documentation. */
-    @Parameter(property = "docArchiveDir", defaultValue = "${project.build.directory}/opendj", required = true)
+    @Parameter(property = "docArchiveDir", defaultValue = "${project.build.directory}/wrends", required = true)
     private String archiveDir;
 
     /** Whether the plugin should use the server or the toolkit classpath. */

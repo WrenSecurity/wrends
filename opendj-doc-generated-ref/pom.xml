@@ -13,14 +13,14 @@
   ~ information: "Portions Copyright [year] [name of copyright owner]".
   ~
   ~ Copyright 2016 ForgeRock AS.
-  ~ Portions Copyright 2018-2021 Wren Security.
+  ~ Portions Copyright 2018-2022 Wren Security.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>opendj-parent</artifactId>
-        <groupId>org.forgerock.opendj</groupId>
+        <artifactId>opendj-project</artifactId>
+        <groupId>org.wrensecurity.wrends</groupId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
 
@@ -50,14 +50,14 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>opendj-core</artifactId>
                                     <version>${project.version}</version>
                                     <classifier>sources</classifier>
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>opendj-server-legacy</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
@@ -66,7 +66,7 @@
                                 </artifactItem>
 
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>opendj-ldap-toolkit</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
@@ -97,7 +97,7 @@
             </plugin>
 
             <plugin>
-                <groupId>org.forgerock.opendj</groupId>
+                <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-doc-maven-plugin</artifactId>
 
                 <executions>
@@ -366,7 +366,7 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.forgerock.opendj</groupId>
+                        <groupId>org.wrensecurity.wrends</groupId>
                         <artifactId>opendj-doc-maven-plugin</artifactId>
 
                         <executions>
@@ -377,7 +377,7 @@
                                 </goals>
                                 <phase>generate-sources</phase>
                                 <configuration>
-                                    <archiveDir>${project.build.directory}/opendj</archiveDir>
+                                    <archiveDir>${project.build.directory}/wrends</archiveDir>
                                     <mode>SERVER</mode>
                                     <extendedClasspath>
                                         ${project.build.directory}/dependency/freemarker-${freemarker.version}.jar
@@ -581,9 +581,9 @@
 
                     <!-- Format man pages -->
                     <plugin>
-                        <groupId>org.forgerock.commons</groupId>
+                        <groupId>org.wrensecurity.commons</groupId>
                         <artifactId>forgerock-doc-maven-plugin</artifactId>
-                        <version>${forgerock-doc-plugin.version}</version>
+                        <version>22.4.0-SNAPSHOT</version>
                         <executions>
                             <execution>
                                 <id>build-man-pages</id>

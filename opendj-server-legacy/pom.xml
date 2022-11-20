@@ -13,14 +13,14 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2017-2021 Wren Security.
+  Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.forgerock.opendj</groupId>
-    <artifactId>opendj-parent</artifactId>
+    <groupId>org.wrensecurity.wrends</groupId>
+    <artifactId>opendj-project</artifactId>
     <version>4.0.0-M4-SNAPSHOT</version>
   </parent>
   <artifactId>opendj-server-legacy</artifactId>
@@ -39,7 +39,7 @@
     <!-- Product information properties -->
     <patchFixIds />
     <isDebugBuild>false</isDebugBuild>
-    <docHomepageUrl>http://opendj.forgerock.org/</docHomepageUrl>
+    <docHomepageUrl>https://opendj.forgerock.org/</docHomepageUrl>
     <docWikiUrl>http://opendj.forgerock.org/docs.html</docWikiUrl>
     <docGuideRefUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideRefUrl>
     <docGuideAdminUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideAdminUrl>
@@ -61,12 +61,12 @@
   <dependencies>
     <!-- ForgeRock libraries -->
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-cli</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-rest2ldap</artifactId>
     </dependency>
 
@@ -76,12 +76,12 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-config</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-config</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
@@ -89,12 +89,12 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-server</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-ldap-toolkit</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -417,7 +417,7 @@
 
       <plugin>
         <?m2e ignore?>
-        <groupId>org.forgerock.opendj</groupId>
+        <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-maven-plugin</artifactId>
 
         <executions>
@@ -900,7 +900,7 @@
             <configuration>
               <artifactItems>
                 <artifactItem>
-                  <groupId>org.forgerock.opendj</groupId>
+                  <groupId>org.wrensecurity.wrends</groupId>
                   <artifactId>opendj-ldap-toolkit</artifactId>
                   <version>${project.version}</version>
                   <type>zip</type>
@@ -1032,14 +1032,6 @@
           <arguments>-Penforce -Dopendmk.lib.dir=${opendmk.lib.dir}</arguments>
         </configuration>
       </plugin>
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <configuration>
-            <skip>true</skip>
-        </configuration>
-        </plugin>
     </plugins>
   </build>
 

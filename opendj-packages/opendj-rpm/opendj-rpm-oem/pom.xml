@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.forgerock.opendj</groupId>
+        <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-rpm</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
@@ -57,7 +57,7 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.forgerock.opendj</groupId>
+                                    <groupId>org.wrensecurity.wrends</groupId>
                                     <artifactId>opendj-zip-oem</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>

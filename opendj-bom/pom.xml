@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2017-2021 Wren Security.
+  Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -25,10 +25,9 @@
         <relativePath />
     </parent>
 
-    <groupId>org.forgerock.opendj</groupId>
+    <groupId>org.wrensecurity.wrends</groupId>
     <artifactId>opendj-bom</artifactId>
     <version>4.0.0-M4-SNAPSHOT</version>
-
     <packaging>pom</packaging>
 
     <name>Wren:DS BOM</name>
@@ -37,7 +36,6 @@
     </description>
 
     <repositories>
-        <!-- Needed to retrieve parent POM -->
         <repository>
             <id>wrensecurity-releases</id>
             <name>Wren Security Release Repository</name>
@@ -52,7 +50,6 @@
             </releases>
         </repository>
 
-        <!-- Needed to retrieve parent POM -->
         <repository>
             <id>wrensecurity-snapshots</id>
             <name>Wren Security Snapshot Repository</name>
@@ -70,7 +67,6 @@
 
     <properties>
         <wrensec-commons.version>22.3.0</wrensec-commons.version>
-        <pgpWhitelistArtifact>org.wrensecurity:wrensec-pgp-whitelist:1.6.0</pgpWhitelistArtifact>
     </properties>
 
     <dependencyManagement>
@@ -93,25 +89,25 @@
 
             <!-- Wren:DS SDK -->
             <dependency>
-                <groupId>org.forgerock.opendj</groupId>
+                <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.forgerock.opendj</groupId>
+                <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.forgerock.opendj</groupId>
+                <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-grizzly</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.forgerock.opendj</groupId>
+                <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-rest2ldap</artifactId>
                 <version>${project.version}</version>
             </dependency>

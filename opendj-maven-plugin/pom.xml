@@ -13,42 +13,44 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
-  Portions Copyright 2017-2018 Wren Security.
+  Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.forgerock.opendj</groupId>
-    <artifactId>opendj-parent</artifactId>
-    <version>4.0.0-M4-SNAPSHOT</version>
-  </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>opendj-maven-plugin</artifactId>
-  <name>Wren:DS Maven Plugin</name>
-  <description>
-    Set of build tools for Wren:DS project.
-  </description>
-  <packaging>maven-plugin</packaging>
+    <parent>
+        <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
+        <version>4.0.0-M4-SNAPSHOT</version>
+    </parent>
 
-  <properties>
-    <mavenVersion>3.0.4</mavenVersion>
-  </properties>
+    <artifactId>opendj-maven-plugin</artifactId>
 
-  <dependencies>
-    <dependency>
-        <groupId>org.wrensecurity.commons</groupId>
-        <artifactId>forgerock-util</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.twdata.maven</groupId>
-        <artifactId>mojo-executor</artifactId>
-        <version>2.2.0</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.maven.plugin-tools</groupId>
-        <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.2</version>
-        <scope>provided</scope>
-    </dependency>
-  </dependencies>
+    <name>Wren:DS Maven Plugin</name>
+    <description>
+        Set of build tools for Wren:DS project.
+    </description>
+    <packaging>maven-plugin</packaging>
+
+    <properties>
+        <mavenVersion>3.0.4</mavenVersion>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.twdata.maven</groupId>
+            <artifactId>mojo-executor</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugin-tools</groupId>
+            <artifactId>maven-plugin-annotations</artifactId>
+            <version>3.2</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 </project>
