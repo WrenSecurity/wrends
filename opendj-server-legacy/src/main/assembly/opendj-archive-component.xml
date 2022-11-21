@@ -335,7 +335,7 @@
 
     <!-- Adds logo png to root directory -->
     <file>
-      <source>${basedir}/resource/images/opendj_logo.png</source>
+      <source>${basedir}/resource/images/wrends_logo.png</source>
       <outputDirectory></outputDirectory>
     </file>
     <!-- Adds buildinfo to configuration template/config -->

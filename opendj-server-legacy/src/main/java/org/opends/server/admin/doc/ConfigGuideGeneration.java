@@ -996,11 +996,11 @@ public class ConfigGuideGeneration {
     /*
     htmlBuff.append("  <td valign=\"bottom\" width=\"10%\">" +
       "<a href=\"" + OpenDJHome + "\" target=\"_parent\">" +
-      "<img src=\"opendj_logo_sm.png\" alt=\"OpenDJ Logo\" align=\"bottom\" " +
+      "<img src=\"wrends_logo_sm.png\" alt=\"Wren:DS Logo\" align=\"bottom\" " +
       "border=\"0\" height=\"33\" width=\"114\"></a></td>\n");
     */
     htmlBuff.append("  <td valign=\"bottom\" width=\"10%\">" +
-            "<img src=\"opendj_logo_sm.png\" alt=\"OpenDJ Logo\" align=\"bottom\" " +
+            "<img src=\"wrends_logo_sm.png\" alt=\"Wren:DS Logo\" align=\"bottom\" " +
             "border=\"0\" height=\"33\" width=\"114\"></td>\n");
     htmlBuff.append("</tr>\n");
     htmlBuff.append("</tbody></table>\n");
