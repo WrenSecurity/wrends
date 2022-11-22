@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.forgerock.opendj</groupId>
+        <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-packages</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
@@ -52,7 +52,7 @@
     <properties>
         <rpm.prefix>/opt/${product.name.lowercase}</rpm.prefix>
         <manpage.dir>${project.build.directory}/dependency/man</manpage.dir>
-        <doc.homepage.url>http://opendj.forgerock.org/</doc.homepage.url>
+        <doc.homepage.url>https://wrensecurity.org/</doc.homepage.url>
         <rpm.license />
         <rpm.product.name />
         <rpm.product.name.lowercase />
@@ -78,7 +78,7 @@
                             <configuration>
                                 <artifactItems>
                                     <artifactItem>
-                                        <groupId>org.forgerock.opendj</groupId>
+                                        <groupId>org.wrensecurity.wrends</groupId>
                                         <artifactId>opendj-doc-generated-ref</artifactId>
                                         <version>${project.version}</version>
                                         <outputDirectory>${project.build.directory}/dependency/man</outputDirectory>

@@ -13,14 +13,14 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2014-2016 ForgeRock AS.
-  Portions Copyright 2018 Wren Security.
+  Portions Copyright 2018-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.forgerock.opendj</groupId>
-    <artifactId>opendj-parent</artifactId>
+    <groupId>org.wrensecurity.wrends</groupId>
+    <artifactId>opendj-project</artifactId>
     <version>4.0.0-M4-SNAPSHOT</version>
   </parent>
 
@@ -33,16 +33,16 @@
   </description>
 
   <packaging>jar</packaging>
-  
+
   <dependencies>
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-core</artifactId>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-config</artifactId>
       <scope>provided</scope>
     </dependency>
@@ -60,7 +60,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.forgerock.opendj</groupId>
+      <groupId>org.wrensecurity.wrends</groupId>
       <artifactId>opendj-server-legacy</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -82,7 +82,7 @@
       <artifactId>chf-client-apache-async</artifactId>
     </dependency>
   </dependencies>
-  
+
   <build>
     <plugins>
       <plugin>
@@ -109,7 +109,7 @@
       </plugin>
 
       <plugin>
-        <groupId>org.forgerock.opendj</groupId>
+        <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-maven-plugin</artifactId>
 
         <executions>
@@ -191,7 +191,7 @@
       </plugin>
     </plugins>
   </build>
-  
+
   <reporting>
     <plugins>
       <plugin>

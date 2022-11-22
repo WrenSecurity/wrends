@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.forgerock.opendj</groupId>
+        <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-zip</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
@@ -51,7 +51,7 @@
           ! our classpath to build boostrap.jar and boostrap-client.jar
         -->
         <dependency>
-            <groupId>org.forgerock.opendj</groupId>
+            <groupId>org.wrensecurity.wrends</groupId>
             <artifactId>opendj-server-legacy</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -74,7 +74,7 @@
         <plugins>
             <!-- Generates bootstrap.jar and bootstrap-client.jar for OEM archive edition --> 
             <plugin>
-                <groupId>org.forgerock.opendj</groupId>
+                <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-maven-plugin</artifactId>
             </plugin>
 

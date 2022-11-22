@@ -21,7 +21,7 @@
     <packaging>pom</packaging>
 
     <parent>
-        <groupId>org.forgerock.opendj</groupId>
+        <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-packages</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
@@ -53,9 +53,9 @@
         <deb.prefix>/opt/${product.name.lowercase}</deb.prefix>
         <deb.docprefix>/usr/share/doc/${product.name.lowercase}</deb.docprefix>
         <deb.release>1</deb.release>
-        <deb.maintainer>opendj@forgerock.org</deb.maintainer>
+        <deb.maintainer>info@wrensecurity.org</deb.maintainer>
         <manpage.dir>${project.build.directory}/dependency/man</manpage.dir>
-        <deb.doc.homepage.url>http://opendj.forgerock.org/</deb.doc.homepage.url>
+        <deb.doc.homepage.url>https://wrensecurity.org/</deb.doc.homepage.url>
         <deb.product.name />
         <deb.product.name.lowercase />
         <deb.resources.path />
@@ -78,7 +78,7 @@
                             <configuration>
                                 <artifactItems>
                                     <artifactItem>
-                                        <groupId>org.forgerock.opendj</groupId>
+                                        <groupId>org.wrensecurity.wrends</groupId>
                                         <artifactId>opendj-doc-generated-ref</artifactId>
                                         <version>${project.version}</version>
                                         <outputDirectory>${project.build.directory}/dependency/man</outputDirectory>
