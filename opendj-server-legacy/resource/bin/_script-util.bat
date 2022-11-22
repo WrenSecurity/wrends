@@ -13,6 +13,7 @@ rem information: "Portions Copyright [year] [name of copyright owner]".
 rem
 rem Copyright 2008-2010 Sun Microsystems, Inc.
 rem Portions Copyright 2011-2016 ForgeRock AS.
+rem Portions Copyright 2022 Wren Security
 
 set SET_JAVA_HOME_AND_ARGS_DONE=false
 set SET_ENVIRONMENT_VARS_DONE=false
@@ -155,9 +156,9 @@ goto endJavaHomeAndArgs
 
 :noJavaFound
 echo ERROR:  Could not find a valid Java binary to be used.
-echo You must specify the path to a valid Java 7 or higher version.
+echo You must specify the path to a valid Java 8 or higher version.
 echo The procedure to follow is to set the environment variable OPENDJ_JAVA_HOME
-echo to the root of a valid Java 7 installation.
+echo to the root of a valid Java 8 installation.
 echo If you want to have specific Java settings for each command line you must
 echo edit the properties file specifying the Java binary and the Java arguments
 echo for each command line.  The Java properties file is located in:
@@ -170,6 +171,9 @@ if %SET_ENVIRONMENT_VARS_DONE% == "true" goto end
 set PATH=%SystemRoot%;%PATH%
 set SCRIPT_NAME_ARG=-Dorg.opends.server.scriptName=%SCRIPT_NAME%
 set SET_ENVIRONMENT_VARS_DONE=true
+"%OPENDJ_JAVA_BIN%" --add-exports java.base/sun.security.x509=ALL-UNNAMED --add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED --version > NUL 2>&1
+set RESULT_CODE=%errorlevel%
+if %RESULT_CODE% == 0 set OPENDJ_JAVA_ARGS=%OPENDJ_JAVA_ARGS% --add-exports java.base/sun.security.x509=ALL-UNNAMED --add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED
 goto scriptBegin
 
 :testJava
@@ -191,9 +195,9 @@ if NOT "%OPENDJ_JAVA_ARGS%" == "" goto noValidHomeWithArgs
 echo ERROR:  The detected Java version could not be used.  The detected
 echo Java binary is:
 echo %OPENDJ_JAVA_BIN%
-echo You must specify the path to a valid Java 7 or higher version.
+echo You must specify the path to a valid Java 8 or higher version.
 echo The procedure to follow is to set the environment variable OPENDJ_JAVA_HOME
-echo to the root of a valid Java 7 installation.
+echo to the root of a valid Java 8 installation.
 echo If you want to have specific Java settings for each command line you must
 echo edit the properties file specifying the Java binary and the Java arguments
 echo for each command line.  The Java properties file is located in:

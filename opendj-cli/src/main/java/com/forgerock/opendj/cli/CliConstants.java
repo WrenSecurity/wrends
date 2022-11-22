@@ -22,7 +22,7 @@ package com.forgerock.opendj.cli;
 public final class CliConstants {
 
     /** The minimum java specification supported string version. */
-    public static final float MINIMUM_JAVA_VERSION = 1.7F;
+    public static final float MINIMUM_JAVA_VERSION = 1.8F;
 
     /** Default value for LDAP connection timeout. */
     public static final int DEFAULT_LDAP_CONNECT_TIMEOUT = 30000;
