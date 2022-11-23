@@ -14,12 +14,13 @@
 #
 # Copyright 2008-2010 Sun Microsystems, Inc.
 # Portions Copyright 2010-2016 ForgeRock AS.
+# Portions Copyright 2022 Wren Security
 
 #
 # Display an error message
 #
 display_java_not_found_error() {
-  echo "Please set OPENDJ_JAVA_HOME to the root of a Java 7 (or higher) installation"
+  echo "Please set OPENDJ_JAVA_HOME to the root of a Java 8 (or higher) installation"
   echo "or edit the java.properties file to specify the Java version to be used"
 }
 
@@ -42,7 +43,7 @@ get_property() {
 #                                      is defined and 'default.java-home'/bin/java points to a regular file
 # 5 - use `which java` command to find java path
 # 6 - use JAVA_BIN if defined and points to an existing regular file
-# 7 - use JAVA_HOME if defined and JAVA_HOME/bin/java points to a regural file
+# 7 - use JAVA_HOME if defined and JAVA_HOME/bin/java points to a regular file
 # 8 - Displays an error message which says that java was not found on the running machine
 set_opendj_java_bin() {
   if test ! -z "${OPENDJ_JAVA_BIN}" -a -f "${OPENDJ_JAVA_BIN}"
@@ -123,9 +124,9 @@ print_error_message() {
   else
     echo "The detected Java binary is: ${OPENDJ_JAVA_BIN}"
   fi
-  echo "You must specify the path to a valid Java 7 or higher version."
+  echo "You must specify the path to a valid Java 8 or higher version."
   echo "The procedure to follow is to set the environment variable OPENDJ_JAVA_HOME"
-  echo "to the root of a valid Java 7 installation."
+  echo "to the root of a valid Java 8 installation."
   echo "If you want to have specific Java settings for each command line you must"
   echo "edit the properties file specifying the Java binary and/or the Java arguments"
   echo "for each command line.  The Java properties file is located in:"
@@ -183,6 +184,10 @@ set_environment_vars() {
        LD_PRELOAD LD_PRELOAD_32 LD_PRELOAD_64
   SCRIPT_NAME_ARG=-Dorg.opends.server.scriptName=${SCRIPT_NAME}
 	export SCRIPT_NAME_ARG
+  JAVA_MAJOR_VERSION=$("$OPENDJ_JAVA_BIN" -version 2>&1 | sed -E 's/.*version "([0-9]+).*/\1/; 1q')
+  if [ "$JAVA_MAJOR_VERSION" -ge 11 ]; then
+    export OPENDJ_JAVA_ARGS="$OPENDJ_JAVA_ARGS --add-exports java.base/sun.security.x509=ALL-UNNAMED --add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED"
+  fi
 }
 
 # Configure the appropriate CLASSPATH for server, using Opend DJ logger.
