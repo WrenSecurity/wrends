@@ -94,6 +94,9 @@ local.properties
 # TestNG Eclipse plugin default output directory
 test-output/
 
+# OSX Finder garbage
+.DS_Store
+
 # OpenDJ specific ignores
 /opendj-server-legacy/bin/
 /opendj-server-legacy/src/snmp/generated/

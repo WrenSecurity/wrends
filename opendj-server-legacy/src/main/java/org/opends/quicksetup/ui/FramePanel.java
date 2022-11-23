@@ -35,7 +35,7 @@ import javax.swing.JPanel;
  * <p>
  * The only remarkable thing of this class is that is responsible for
  * implementing the background.  The three subpanels are transparent and
- * this class sets a background (with the OpenDJ logo) and uses some basic
+ * this class sets a background (with the Wren:DS logo) and uses some basic
  * transparency effects.
  */
 public class FramePanel extends JPanel
@@ -136,7 +136,7 @@ public class FramePanel extends JPanel
    * {@inheritDoc}
    *
    * This method has been overwritten to be able to have a transparency effect
-   * with the OpenDJ logo background.
+   * with the Wren:DS logo background.
    */
   @Override
   protected void paintComponent(Graphics g)

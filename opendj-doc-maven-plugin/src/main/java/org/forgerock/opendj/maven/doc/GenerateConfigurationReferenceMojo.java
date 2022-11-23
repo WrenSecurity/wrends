@@ -143,7 +143,7 @@ public class GenerateConfigurationReferenceMojo extends AbstractMojo {
     private static String[] resourceFiles = {
         "duration-syntax.html",
         "opendj-config.css",
-        "opendj_logo_sm.png",
+        "wrends_logo_sm.png",
         "pageaction.gif",
         "tab_deselected.jpg",
         "tab_selected.gif"
