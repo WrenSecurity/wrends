@@ -23,3 +23,31 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: Run the Maven verify phase
         run: mvn -B verify -Dclirr.skip
+      - name: Test setup
+        run: |
+          opendj-server-legacy/target/package/wrends/setup \
+            --cli \
+            --backendType je \
+            --baseDN dc=example,dc=com \
+            --sampleData 200 \
+            --ldapPort 1389 \
+            --adminConnectorPort 4444 \
+            --rootUserDN "cn=Directory Manager" \
+            --rootUserPassword password \
+            --no-prompt \
+            --noPropertiesFile
+      - name: Test status
+        run: |
+          opendj-server-legacy/target/package/wrends/bin/status \
+            --bindDN "cn=Directory Manager" \
+            --bindPassword password \
+            > /tmp/wrends-status.txt
+          grep -q "Server Run Status:\s\+Started" /tmp/wrends-status.txt
+          grep -q "Entries:\s\+202" /tmp/wrends-status.txt
+      - name: Test ldapsearch
+        run: |
+          opendj-server-legacy/target/package/wrends/bin/ldapsearch \
+            --port 1389 \
+            --baseDN dc=example,dc=com \
+            "(uid=user.0)" | \
+            grep -q "dn: uid=user.0,ou=People,dc=example,dc=com"
