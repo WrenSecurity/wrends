@@ -582,7 +582,7 @@
                     <!-- Format man pages -->
                     <plugin>
                         <groupId>org.wrensecurity.commons</groupId>
-                        <artifactId>forgerock-doc-maven-plugin</artifactId>
+                        <artifactId>doc-maven-plugin</artifactId>
                         <version>22.4.0-SNAPSHOT</version>
                         <executions>
                             <execution>
@@ -599,6 +599,11 @@
                                     <formats combine.self="override">
                                         <format>man</format>
                                     </formats>
+                                    <mavenAssemblyVersion>2.5.3</mavenAssemblyVersion>
+                                    <mavenFilteringVersion>1.3</mavenFilteringVersion>
+                                    <mavenDependencyVersion>2.10</mavenDependencyVersion>
+                                    <mavenPluginPluginVersion>3.4</mavenPluginPluginVersion>
+                                    <mavenResourcesVersion>2.7</mavenResourcesVersion>
                                 </configuration>
                             </execution>
                         </executions>
