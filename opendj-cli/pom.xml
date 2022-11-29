@@ -25,6 +25,7 @@
     </parent>
 
     <artifactId>opendj-cli</artifactId>
+
     <name>Wren:DS CLI API</name>
     <description>
         This module includes an API for implementing command-line LDAP directory applications.
@@ -62,13 +63,11 @@
         </dependency>
     </dependencies>
 
-
     <properties>
         <opendj.osgi.import.additional>
             org.forgerock.opendj.*;provide:=true
         </opendj.osgi.import.additional>
     </properties>
-
 
     <build>
         <plugins>
@@ -113,7 +112,6 @@
         </plugins>
     </build>
 
-
     <reporting>
         <plugins>
             <plugin>
@@ -122,10 +120,10 @@
                 <reportSets>
                     <reportSet>
                         <reports>
-                            <report>mailing-list</report>
-                            <report>issue-tracking</report>
-                            <report>license</report>
-                            <report>cim</report>
+                            <report>mailing-lists</report>
+                            <report>issue-management</report>
+                            <report>licenses</report>
+                            <report>ci-management</report>
                             <report>distribution-management</report>
                         </reports>
                     </reportSet>

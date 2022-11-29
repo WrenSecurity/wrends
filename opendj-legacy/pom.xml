@@ -16,18 +16,21 @@
   Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.wrensecurity.wrends</groupId>
-    <artifactId>opendj-project</artifactId>
-    <version>4.0.0-M4-SNAPSHOT</version>
-  </parent>
-  <artifactId>opendj-legacy</artifactId>
-  <name>Wren:DS Legacy</name>
-  <description>
-    This module contains Wren:DS legacy code that needs to be kept for compatibility reasons
-    but will never be used again. DO NOT USE THIS CODE AT ALL, it could be removed any time.
-    All code must be marked as deprecated with a link to the bug tracker.
-  </description>
-  <packaging>jar</packaging>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
+        <version>4.0.0-M4-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>opendj-legacy</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Wren:DS Legacy</name>
+    <description>
+        This module contains Wren:DS legacy code that needs to be kept for compatibility reasons
+        but will never be used again. DO NOT USE THIS CODE AT ALL, it could be removed any time.
+        All code must be marked as deprecated with a link to the bug tracker.
+    </description>
 </project>

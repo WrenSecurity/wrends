@@ -25,6 +25,7 @@
     </parent>
 
     <artifactId>opendj-grizzly</artifactId>
+
     <name>Wren:DS Grizzly Transport Provider</name>
     <description>This module includes a Grizzly based network transport provider for Wren:DS.</description>
 
@@ -69,7 +70,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
     <build>
         <plugins>
@@ -116,7 +116,6 @@
             </plugin>
         </plugins>
     </build>
-
 
     <reporting>
         <plugins>

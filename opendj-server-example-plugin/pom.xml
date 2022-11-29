@@ -16,111 +16,121 @@
   Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.wrensecurity.wrends</groupId>
-    <artifactId>opendj-project</artifactId>
-    <version>4.0.0-M4-SNAPSHOT</version>
-  </parent>
-  <artifactId>opendj-server-example-plugin</artifactId>
-  <name>Wren:DS Server Example Plugin</name>
-  <description>
-    An example Wren:DS Server plugin illustrating how custom components may be developed for Wren:DS.
-  </description>
-  <packaging>jar</packaging>
-  <dependencies>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-server-legacy</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <!-- This adds an external dependency for the plugin.
-         Also update src/main/assembly/descriptor.xml file to include the dependency -->
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.3.2</version>
-    </dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.wrensecurity.commons</groupId>
-        <artifactId>i18n-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>generate-messages</goal>
-            </goals>
-            <configuration>
-              <resourceDirectory>${basedir}/src/main/resources</resourceDirectory>
-              <messageFiles>
-                <messageFile>com/example/opendj/example_plugin.properties</messageFile>
-              </messageFiles>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
         <groupId>org.wrensecurity.wrends</groupId>
-        <artifactId>opendj-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>generate-config</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>generate-config</goal>
-            </goals>
-            <configuration>
-              <packageName>com.example.opendj</packageName>
-              <isExtension>true</isExtension>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>make-assembly</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <appendAssemblyId>false</appendAssemblyId>
-              <descriptors>
-                <descriptor>src/main/assembly/descriptor.xml</descriptor>
-              </descriptors>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-        <reportSets>
-          <reportSet>
-            <reports>
-              <report>dependencies</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </reporting>
+        <artifactId>opendj-project</artifactId>
+        <version>4.0.0-M4-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>opendj-server-example-plugin</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Wren:DS Server Example Plugin</name>
+    <description>
+        An example Wren:DS Server plugin illustrating how custom components may be developed for Wren:DS.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-server-legacy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- This adds an external dependency for the plugin.
+            Also update src/main/assembly/descriptor.xml file to include the dependency -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.3.2</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.wrensecurity.commons</groupId>
+                <artifactId>i18n-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-messages</goal>
+                        </goals>
+                        <configuration>
+                            <resourceDirectory>${basedir}/src/main/resources</resourceDirectory>
+                            <messageFiles>
+                                <messageFile>com/example/opendj/example_plugin.properties</messageFile>
+                            </messageFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.wrensecurity.wrends</groupId>
+                <artifactId>opendj-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-config</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-config</goal>
+                        </goals>
+                        <configuration>
+                            <packageName>com.example.opendj</packageName>
+                            <isExtension>true</isExtension>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/main/assembly/descriptor.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>dependencies</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>

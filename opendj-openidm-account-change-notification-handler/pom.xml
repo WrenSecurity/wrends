@@ -16,201 +16,184 @@
   Portions Copyright 2018-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.wrensecurity.wrends</groupId>
-    <artifactId>opendj-project</artifactId>
-    <version>4.0.0-M4-SNAPSHOT</version>
-  </parent>
-
-  <artifactId>opendj-openidm-account-change-notification-handler</artifactId>
-  <name>Wren:DS Account Change Notification Handler for IDM</name>
-
-  <description>
-    A handler for notifying Wren:IDM when an account has been updated, allowing Wren:IDM to react to
-    password and profile change events.
-  </description>
-
-  <packaging>jar</packaging>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-config</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wrensecurity.commons</groupId>
-      <artifactId>i18n-slf4j</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-server-legacy</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wrensecurity.commons</groupId>
-      <artifactId>json-crypto-core</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wrensecurity.http</groupId>
-      <artifactId>chf-http-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wrensecurity.http</groupId>
-      <artifactId>chf-client-apache-async</artifactId>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.wrensecurity.commons</groupId>
-        <artifactId>i18n-maven-plugin</artifactId>
-
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-
-            <goals>
-              <goal>generate-messages</goal>
-            </goals>
-
-            <configuration>
-              <resourceDirectory>${basedir}/src/main/resources</resourceDirectory>
-
-              <messageFiles>
-                <messageFile>org/forgerock/openidm/accountchange/openidm-account-status-notification-handler.properties</messageFile>
-              </messageFiles>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
+    <parent>
         <groupId>org.wrensecurity.wrends</groupId>
-        <artifactId>opendj-maven-plugin</artifactId>
+        <artifactId>opendj-project</artifactId>
+        <version>4.0.0-M4-SNAPSHOT</version>
+    </parent>
 
-        <executions>
-          <execution>
-            <id>generate-config</id>
-            <phase>generate-sources</phase>
+    <artifactId>opendj-openidm-account-change-notification-handler</artifactId>
+    <packaging>jar</packaging>
 
-            <goals>
-              <goal>generate-config</goal>
-            </goals>
+    <name>Wren:DS Account Change Notification Handler for IDM</name>
+    <description>
+        A handler for notifying Wren:IDM when an account has been updated, allowing Wren:IDM to react to
+        password and profile change events.
+    </description>
 
-            <configuration>
-              <packageName>org.forgerock.openidm.accountchange</packageName>
-              <isExtension>true</isExtension>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+    <dependencies>
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-      <!-- Retrieve the SCM revision number and store it into the ${buildRevision} 
-        property and retrieve the build timestamp and store it into the ${buildDateTime} 
-        property -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-      </plugin>
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-config</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>i18n-slf4j</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-        <executions>
-          <execution>
-            <phase>package</phase>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-            <goals>
-              <goal>shade</goal>
-            </goals>
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-server-legacy</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
-            <configuration>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>json-crypto-core</artifactId>
+        </dependency>
 
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <manifestEntries>
-                    <Extension-Name>OpenidmAccountStatusNotificationHandler</Extension-Name>
-                    <Implementation-Version>${project.version}</Implementation-Version>
-                    <Revision-Number>${buildRevision}</Revision-Number>
-                  </manifestEntries>
-                </transformer>
-              </transformers>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+        <dependency>
+            <groupId>org.wrensecurity.http</groupId>
+            <artifactId>chf-http-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
+        <dependency>
+            <groupId>org.wrensecurity.http</groupId>
+            <artifactId>chf-client-apache-async</artifactId>
+        </dependency>
+    </dependencies>
 
-        <executions>
-          <execution>
-            <id>make-assembly</id>
-            <phase>package</phase>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.wrensecurity.commons</groupId>
+                <artifactId>i18n-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-messages</goal>
+                        </goals>
+                        <configuration>
+                            <resourceDirectory>${basedir}/src/main/resources</resourceDirectory>
+                            <messageFiles>
+                                <messageFile>org/forgerock/openidm/accountchange/openidm-account-status-notification-handler.properties</messageFile>
+                            </messageFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-            <goals>
-              <goal>single</goal>
-            </goals>
+            <plugin>
+                <groupId>org.wrensecurity.wrends</groupId>
+                <artifactId>opendj-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-config</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-config</goal>
+                        </goals>
+                        <configuration>
+                            <packageName>org.forgerock.openidm.accountchange</packageName>
+                            <isExtension>true</isExtension>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-            <configuration>
-              <appendAssemblyId>false</appendAssemblyId>
+            <!-- Retrieve the SCM revision number and store it into the ${buildRevision}
+                property and retrieve the build timestamp and store it into the ${buildDateTime}
+                property -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+            </plugin>
 
-              <descriptors>
-                <descriptor>src/main/assembly/descriptor.xml</descriptor>
-              </descriptors>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Extension-Name>OpenidmAccountStatusNotificationHandler</Extension-Name>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                        <Revision-Number>${buildRevision}</Revision-Number>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/main/assembly/descriptor.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
-        <reportSets>
-          <reportSet>
-            <reports>
-              <report>dependencies</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-      </plugin>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>dependencies</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </reporting>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>
