@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 
 package org.forgerock.opendj.examples;
@@ -60,7 +61,7 @@ public final class SetupServer {
         final String openDJArchive = args[i++];
         final String serverRootDir = args[i++];
         final String baseDn = (args.length > i) ? args[i++] : "o=example";
-        final String backendType = (args.length > i) ? args[i++] : "pdb";
+        final String backendType = (args.length > i) ? args[i++] : "je";
         final int ldapPort = (args.length > i) ? Integer.parseInt(args[i++]) : 1500;
         final int adminPort = (args.length > i) ? Integer.parseInt(args[i++]) : 4500;
         final int jmxPort = (args.length > i) ? Integer.parseInt(args[i++]) : 1600;

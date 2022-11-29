@@ -13,6 +13,7 @@
  *
  * Copyright 2009 Sun Microsystems, Inc.
  * Portions Copyright 2014-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.guitools.controlpanel.ui;
 
@@ -90,8 +91,6 @@ class BrowseGeneralMonitoringPanel extends StatusGenericPanel
     ENTRY_CACHES,
     /** JE Databases information node. */
     JE_DATABASES_INFORMATION,
-    /** PDB databases information node. */
-    PDB_DATABASES_INFORMATION
   }
 
   /** The panel displaying the informations about the selected node. */
@@ -369,7 +368,6 @@ class BrowseGeneralMonitoringPanel extends StatusGenericPanel
           INFO_CTRL_PANEL_WORK_QUEUE.get(),
           INFO_CTRL_PANEL_ENTRY_CACHES.get(),
           INFO_CTRL_PANEL_JE_DB_INFO.get(),
-          INFO_CTRL_PANEL_PDB_DB_INFO.get()
     };
     NodeType[] identifiers = {
           NodeType.SYSTEM_INFORMATION,
@@ -377,7 +375,6 @@ class BrowseGeneralMonitoringPanel extends StatusGenericPanel
           NodeType.WORK_QUEUE,
           NodeType.ENTRY_CACHES,
           NodeType.JE_DATABASES_INFORMATION,
-          NodeType.PDB_DATABASES_INFORMATION
     };
     for (int i=0; i < messages.length; i++)
     {
@@ -489,7 +486,6 @@ class BrowseGeneralMonitoringPanel extends StatusGenericPanel
         NodeType.WORK_QUEUE,
         NodeType.ENTRY_CACHES,
         NodeType.JE_DATABASES_INFORMATION,
-        NodeType.PDB_DATABASES_INFORMATION
     };
     LocalizableMessage[] ocPaths = {
         INFO_CTRL_PANEL_GENERAL_MONITORING_ROOT_TREE_NODE.get(),

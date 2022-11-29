@@ -13,6 +13,7 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.guitools.controlpanel.ui;
 
@@ -38,7 +39,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 import org.forgerock.opendj.ldap.Attribute;
 import org.opends.guitools.controlpanel.datamodel.BackendDescriptor;
-import org.opends.guitools.controlpanel.datamodel.BackendDescriptor.PluggableType;
 import org.opends.guitools.controlpanel.datamodel.DatabaseMonitoringTableModel;
 import org.opends.guitools.controlpanel.datamodel.ServerDescriptor;
 import org.opends.guitools.controlpanel.util.Utilities;
@@ -82,8 +82,7 @@ class DatabaseMonitoringPanel extends GeneralMonitoringPanel
   private void createLayout()
   {
     GridBagConstraints gbc = new GridBagConstraints();
-    final JLabel lTitle = Utilities.createTitleLabel(
-        PluggableType.JE == pluggableType ? INFO_CTRL_PANEL_JE_DB_INFO.get() : INFO_CTRL_PANEL_PDB_DB_INFO.get());
+    final JLabel lTitle = Utilities.createTitleLabel(INFO_CTRL_PANEL_JE_DB_INFO.get());
     gbc.fill = GridBagConstraints.NONE;
     gbc.anchor = GridBagConstraints.WEST;
     gbc.gridwidth = 2;

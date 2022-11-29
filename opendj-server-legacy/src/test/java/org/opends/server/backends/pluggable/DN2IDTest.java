@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.backends.pluggable;
 
@@ -31,12 +32,12 @@ import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.schema.CoreSchema;
 import org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn.IndexType;
 import org.forgerock.opendj.server.config.server.BackendIndexCfg;
-import org.forgerock.opendj.server.config.server.PDBBackendCfg;
+import org.forgerock.opendj.server.config.server.JEBackendCfg;
 import org.forgerock.util.promise.NeverThrowsException;
 import org.forgerock.util.promise.PromiseImpl;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
-import org.opends.server.backends.pdb.PDBStorage;
+import org.opends.server.backends.jeb.JEStorage;
 import org.opends.server.backends.pluggable.spi.AccessMode;
 import org.opends.server.backends.pluggable.spi.Cursor;
 import org.opends.server.backends.pluggable.spi.ReadOperation;
@@ -61,9 +62,9 @@ public class DN2IDTest extends DirectoryServerTestCase
   private final TreeName dn2IDTreeName = new TreeName("base-dn", "index-id");
   private DN baseDN;
   private DN2ID dn2ID;
-  private PDBStorage storage;
+  private JEStorage storage;
 
-  // FIXME: This is required since PDBStorage is now using
+  // FIXME: This is required since JEStorage is now using
   // DirectoryServer static method.
   @BeforeClass
   public void startServer() throws Exception
@@ -78,7 +79,7 @@ public class DN2IDTest extends DirectoryServerTestCase
     when(serverContext.getMemoryQuota()).thenReturn(new MemoryQuota());
     when(serverContext.getDiskSpaceMonitor()).thenReturn(mock(DiskSpaceMonitor.class));
 
-    storage = new PDBStorage(createBackendCfg(), serverContext);
+    storage = new JEStorage(createBackendCfg(), serverContext);
     storage.open(AccessMode.READ_WRITE);
     storage.write(new WriteOperation()
     {
@@ -307,10 +308,10 @@ public class DN2IDTest extends DirectoryServerTestCase
     return new EntryID(id);
   }
 
-  private static PDBBackendCfg createBackendCfg() throws ConfigException, DirectoryException
+  private static JEBackendCfg createBackendCfg() throws ConfigException
   {
-    String homeDirName = "pdb_test";
-    PDBBackendCfg backendCfg = mockCfg(PDBBackendCfg.class);
+    String homeDirName = "je_test";
+    JEBackendCfg backendCfg = mockCfg(JEBackendCfg.class);
 
     when(backendCfg.getBackendId()).thenReturn("persTest" + homeDirName);
     when(backendCfg.getDBDirectory()).thenReturn(homeDirName);

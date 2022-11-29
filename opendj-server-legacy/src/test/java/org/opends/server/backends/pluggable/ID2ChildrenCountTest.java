@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.backends.pluggable;
 
@@ -32,12 +33,12 @@ import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.schema.CoreSchema;
 import org.forgerock.opendj.server.config.meta.BackendIndexCfgDefn.IndexType;
 import org.forgerock.opendj.server.config.server.BackendIndexCfg;
-import org.forgerock.opendj.server.config.server.PDBBackendCfg;
+import org.forgerock.opendj.server.config.server.JEBackendCfg;
 import org.forgerock.util.promise.NeverThrowsException;
 import org.forgerock.util.promise.PromiseImpl;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
-import org.opends.server.backends.pdb.PDBStorage;
+import org.opends.server.backends.jeb.JEStorage;
 import org.opends.server.backends.pluggable.spi.AccessMode;
 import org.opends.server.backends.pluggable.spi.ReadOperation;
 import org.opends.server.backends.pluggable.spi.ReadableTransaction;
@@ -47,7 +48,6 @@ import org.opends.server.backends.pluggable.spi.WriteableTransaction;
 import org.opends.server.core.MemoryQuota;
 import org.opends.server.core.ServerContext;
 import org.opends.server.extensions.DiskSpaceMonitor;
-import org.opends.server.types.DirectoryException;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -60,7 +60,7 @@ public class ID2ChildrenCountTest extends DirectoryServerTestCase
   private final TreeName id2CountTreeName = new TreeName("base-dn", "index-id");
   private ExecutorService parallelExecutor;
   private ID2ChildrenCount id2ChildrenCount;
-  private PDBStorage storage;
+  private JEStorage storage;
 
   @BeforeClass
   public void startServer() throws Exception
@@ -75,7 +75,7 @@ public class ID2ChildrenCountTest extends DirectoryServerTestCase
     when(serverContext.getMemoryQuota()).thenReturn(new MemoryQuota());
     when(serverContext.getDiskSpaceMonitor()).thenReturn(mock(DiskSpaceMonitor.class));
 
-    storage = new PDBStorage(createBackendCfg(), serverContext);
+    storage = new JEStorage(createBackendCfg(), serverContext);
     storage.open(AccessMode.READ_WRITE);
     storage.write(new WriteOperation()
     {
@@ -223,10 +223,10 @@ public class ID2ChildrenCountTest extends DirectoryServerTestCase
     return new EntryID(id);
   }
 
-  private PDBBackendCfg createBackendCfg() throws ConfigException, DirectoryException
+  private JEBackendCfg createBackendCfg() throws ConfigException
   {
-    String homeDirName = "pdb_test";
-    PDBBackendCfg backendCfg = mockCfg(PDBBackendCfg.class);
+    String homeDirName = "je_test";
+    JEBackendCfg backendCfg = mockCfg(JEBackendCfg.class);
 
     when(backendCfg.getBackendId()).thenReturn("persTest" + homeDirName);
     when(backendCfg.getDBDirectory()).thenReturn(homeDirName);

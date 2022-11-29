@@ -13,6 +13,7 @@
  *
  * Copyright 2008-2011 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.guitools.controlpanel.util;
 
@@ -92,7 +93,6 @@ public class ConfigFromConnection extends ConfigReader
   private static final LocalizedLogger logger = LocalizedLogger.getLoggerForThisClass();
 
   private static final String DATABASE_JE_MONITORING_ENTRY_SUFFIX = " JE Database";
-  private static final String DATABASE_PDB_MONITORING_ENTRY_SUFFIX = " PDB Database";
   private static final String SYNC_PROVIDER_NAME = "Multimaster Synchronization";
 
   private SearchResultEntry rootMonitor;
@@ -748,11 +748,6 @@ public class ConfigFromConnection extends ConfigReader
         {
           pluggableType = BackendDescriptor.PluggableType.JE;
           monitorBackendID = cn.substring(0, cn.length() - DATABASE_JE_MONITORING_ENTRY_SUFFIX.length());
-        }
-        if (cn != null && cn.endsWith(DATABASE_PDB_MONITORING_ENTRY_SUFFIX))
-        {
-          pluggableType = BackendDescriptor.PluggableType.PDB;
-          monitorBackendID = cn.substring(0, cn.length() - DATABASE_PDB_MONITORING_ENTRY_SUFFIX.length());
         }
         if (monitorBackendID != null)
         {

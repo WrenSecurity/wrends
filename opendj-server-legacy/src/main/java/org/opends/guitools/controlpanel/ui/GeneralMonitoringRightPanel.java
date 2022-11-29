@@ -13,6 +13,7 @@
  *
  * Copyright 2009 Sun Microsystems, Inc.
  * Portions Copyright 2014-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.guitools.controlpanel.ui;
 
@@ -46,8 +47,6 @@ class GeneralMonitoringRightPanel extends StatusGenericPanel
   private final EntryCachesMonitoringPanel entryCachesPanel = new EntryCachesMonitoringPanel();
   private final DatabaseMonitoringPanel jeMonitoringPanel = new DatabaseMonitoringPanel(
       BackendDescriptor.PluggableType.JE);
-  private final DatabaseMonitoringPanel pdbMonitoringPanel = new DatabaseMonitoringPanel(
-      BackendDescriptor.PluggableType.PDB);
   private final SystemInformationMonitoringPanel systemInformationPanel = new SystemInformationMonitoringPanel();
   private final JavaInformationMonitoringPanel javaInformationPanel = new JavaInformationMonitoringPanel();
 
@@ -55,7 +54,6 @@ class GeneralMonitoringRightPanel extends StatusGenericPanel
   private static final String workQueuePanelTitle = "WorkQueueMonitoringPanel";
   private static final String entryCachesPanelTitle = "EntryCachesMonitoringPanel";
   private static final String jeMonitoringPanelTitle = "JEDatabaseMonitoringPanel";
-  private static final String pdbMonitoringPanelTitle = "PDBDatabaseMonitoringPanel";
   private static final String systemInformationPanelTitle = "SystemInformationMonitoringPanel";
   private static final String javaInformationPanelTitle = "JavaInformationMonitoringPanel";
 
@@ -69,7 +67,6 @@ class GeneralMonitoringRightPanel extends StatusGenericPanel
       workQueuePanel,
       entryCachesPanel,
       jeMonitoringPanel,
-      pdbMonitoringPanel,
       systemInformationPanel,
       javaInformationPanel
   };
@@ -122,7 +119,6 @@ class GeneralMonitoringRightPanel extends StatusGenericPanel
     {
       mainPanel.add(jeMonitoringPanel, jeMonitoringPanelTitle);
     }
-    mainPanel.add(pdbMonitoringPanel, pdbMonitoringPanelTitle);
     cardLayout.show(mainPanel, noEntryPanelTitle);
     gbc.gridx = 0;
     gbc.gridy = 0;
@@ -180,9 +176,6 @@ class GeneralMonitoringRightPanel extends StatusGenericPanel
       break;
     case JE_DATABASES_INFORMATION:
       update(jeMonitoringPanel, jeMonitoringPanelTitle);
-      break;
-    case PDB_DATABASES_INFORMATION:
-      update(pdbMonitoringPanel, pdbMonitoringPanelTitle);
       break;
     case JAVA_INFORMATION:
       update(javaInformationPanel, javaInformationPanelTitle);
