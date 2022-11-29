@@ -27,7 +27,7 @@
     <artifactId>opendj-packages</artifactId>
     <name>Wren:DS Packages</name>
     <description>
-        This module contains sub-modules which generates OEM Wren:DS version, deb and rpm Wren:DS packages.
+        This module contains sub-modules which generates deb, rpm, msi and srv4 Wren:DS packages.
     </description>
 
     <packaging>pom</packaging>
@@ -38,10 +38,6 @@
         <!-- Location of the opendj service file for linux based packages. -->
         <sysv.file.location />
     </properties>
-
-    <modules>
-        <module>opendj-zip</module>
-    </modules>
 
     <profiles>
         <profile>
@@ -117,10 +113,8 @@
 
                 <!--
                   !  Prevent useless jar files generation. Needed for:
-                  !    * opendj-rpm-standard
-                  !    * opendj-rpm-oem
-                  !    * opendj-deb-standard
-                  !    * opendj-deb-oem
+                  !    * opendj-rpm
+                  !    * opendj-deb
                  -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

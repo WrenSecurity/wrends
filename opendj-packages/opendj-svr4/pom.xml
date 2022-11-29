@@ -25,21 +25,44 @@
     </parent>
 
     <artifactId>opendj-svr4</artifactId>
-    <name>Wren:DS SVR4 Packages Parent</name>
-
     <packaging>pom</packaging>
 
+    <name>Wren:DS SVR4 Package</name>
     <description>
-        This module contains configuration and generic plugin call to build Wren:DS SVR4 packages.
+        This module generates a SVR4 Wren:DS version.
     </description>
 
-    <profiles>
-        <profile>
-            <id>packages</id>
-            <modules>
-                <module>opendj-svr4-standard</module>
-            </modules>
-        </profile>
-    </profiles>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
 
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-svr4-package</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <ant antfile="${basedir}/resources/build-svr4.xml">
+                                    <target name="svr4" />
+                                </ant>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
