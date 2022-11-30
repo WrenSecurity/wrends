@@ -319,7 +319,7 @@
                     <?m2e ignore?>
                     <groupId>org.wrensecurity.commons</groupId>
                     <artifactId>doc-maven-plugin</artifactId>
-                    <version>22.4.0-SNAPSHOT</version>
+                    <version>22.4.0</version>
                     <configuration>
                         <projectName>Wren:DS</projectName>
                         <projectVersion>${project.version}</projectVersion>
