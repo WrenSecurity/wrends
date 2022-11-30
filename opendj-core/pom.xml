@@ -21,7 +21,7 @@
     <parent>
         <artifactId>opendj-project</artifactId>
         <groupId>org.wrensecurity.wrends</groupId>
-        <version>4.0.0-RC1</version>
+        <version>4.0.0-RC2-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-core</artifactId>

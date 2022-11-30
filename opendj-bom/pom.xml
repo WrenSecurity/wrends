@@ -27,7 +27,7 @@
 
     <groupId>org.wrensecurity.wrends</groupId>
     <artifactId>opendj-bom</artifactId>
-    <version>4.0.0-RC1</version>
+    <version>4.0.0-RC2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Wren:DS BOM</name>
@@ -120,8 +120,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-  <scm>
-    <tag>4.0.0-RC1</tag>
-  </scm>
 </project>
