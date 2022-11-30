@@ -25,7 +25,6 @@
     </parent>
 
     <artifactId>opendj-ldap-toolkit</artifactId>
-    <packaging>jar</packaging>
 
     <name>Wren:DS SDK Toolkit</name>
     <description>This module includes LDAP command line tools based on the Wren:DS LDAP SDK.</description>
