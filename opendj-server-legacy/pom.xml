@@ -41,7 +41,7 @@
         <patchFixIds />
         <isDebugBuild>false</isDebugBuild>
         <docHomepageUrl>https://opendj.forgerock.org/</docHomepageUrl>
-        <docWikiUrl>http://opendj.forgerock.org/docs.html</docWikiUrl>
+        <docWikiUrl>https://wrensecurity.org/projects/wrends/resources.html</docWikiUrl>
         <docGuideRefUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideRefUrl>
         <docGuideAdminUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideAdminUrl>
         <!-- Other properties -->
