@@ -19,12 +19,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>opendj-project</artifactId>
         <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-embedded-server-examples</artifactId>
+
     <name>Wren:DS Embedded Server Examples</name>
     <description>Examples illustrating usage of the Wren:DS embedded server API</description>
 
@@ -34,7 +35,6 @@
             <artifactId>opendj-server-legacy</artifactId>
             <version>${project.version}</version>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -61,7 +61,6 @@
             </plugin>
         </plugins>
     </build>
-
 
     <reporting>
         <plugins>

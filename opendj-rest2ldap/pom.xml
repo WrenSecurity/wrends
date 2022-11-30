@@ -19,12 +19,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>opendj-project</artifactId>
         <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-rest2ldap</artifactId>
+
     <name>Wren:DS Commons REST Adapter</name>
     <description>This module includes APIs for accessing LDAP repositories using commons REST.</description>
 
@@ -34,7 +35,6 @@
             org.forgerock.json.*;provide:=true
         </opendj.osgi.import.additional>
     </properties>
-
 
     <dependencies>
         <dependency>
@@ -79,7 +79,6 @@
         </dependency>
     </dependencies>
 
-
     <build>
         <plugins>
             <plugin>
@@ -116,7 +115,6 @@
             </plugin>
         </plugins>
     </build>
-
 
     <reporting>
         <plugins>

@@ -25,9 +25,10 @@
     </parent>
 
     <artifactId>opendj-dsml-servlet</artifactId>
+    <packaging>war</packaging>
+
     <name>Wren:DS DSML Gateway</name>
     <description>Directory Services Mark-up Language Gateway</description>
-    <packaging>war</packaging>
 
     <properties>
         <!-- If the binary-licensing profile is activated, we need the ForgeRock license there -->
@@ -45,7 +46,7 @@
             <scope>provided</scope>
     	</dependency>
 
-        <!-- ForgeRock libraries -->
+        <!-- Wren Security libraries -->
         <dependency>
             <groupId>org.wrensecurity.commons</groupId>
             <artifactId>forgerock-util</artifactId>

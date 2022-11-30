@@ -16,189 +16,203 @@
   Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.wrensecurity.wrends</groupId>
-    <artifactId>opendj-project</artifactId>
-    <version>4.0.0-M4-SNAPSHOT</version>
-  </parent>
-  <artifactId>opendj-config</artifactId>
-  <name>Wren:DS Configuration API</name>
-  <description>
-    This module includes Configuration APIs for implementing LDAP Directory
-    client and server applications.
-  </description>
-  <dependencies>
-    <dependency>
-      <groupId>org.wrensecurity.commons</groupId>
-      <artifactId>i18n-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.commons</groupId>
-      <artifactId>i18n-slf4j</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity</groupId>
-      <artifactId>wrensec-build-tools</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-core</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-cli</artifactId>
-    </dependency>
-  </dependencies>
+    <modelVersion>4.0.0</modelVersion>
 
-  <properties>
-    <opendj.osgi.import.additional>
-      org.forgerock.opendj.*;provide:=true
-    </opendj.osgi.import.additional>
-  </properties>
-
-  <build>
-    <resources>
-      <!-- Main resources -->
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>false</filtering>
-      </resource>
-      <!-- Generated resources -->
-      <resource>
-        <directory>${project.build.directory}/generated-resources</directory>
-        <filtering>false</filtering>
-        <includes>
-          <include>**/*.properties</include>
-          <include>**/org.forgerock.opendj.config.AbstractManagedObjectDefinition</include>
-        </includes>
-      </resource>
-    </resources>
-
-    <plugins>
-      <!-- Retrieve the SCM revision number and store it into the ${buildRevision} property -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <executions>
-          <!-- We do not need build timestamp for this module -->
-          <execution>
-            <id>generate-timestamp</id>
-            <phase>none</phase>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>generate-test-jar</id>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <!-- Classes to have mocks with configuration defaults -->
-                <include>**/AdminTestCaseUtils.class</include>
-                <include>**/AdminTestCaseUtils$*.class</include>
-                <include>**/ConfigurationMock.class</include>
-                <include>**/ConfigurationMock$*.class</include>
-              </includes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.wrensecurity.commons</groupId>
-        <artifactId>i18n-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>generate-messages</goal>
-            </goals>
-            <configuration>
-              <messageFiles>
-                <messageFile>com/forgerock/opendj/ldap/config/config.properties</messageFile>
-                <messageFile>com/forgerock/opendj/dsconfig/dsconfig.properties</messageFile>
-              </messageFiles>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- Validate core components XML definition files and generate the components. -->
-      <plugin>
+    <parent>
         <groupId>org.wrensecurity.wrends</groupId>
-        <artifactId>opendj-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <?m2e execute onConfiguration?>
-            <id>generate-config</id>
-            <goals>
-              <goal>generate-config</goal>
-            </goals>
-            <configuration>
-              <packageName>org.forgerock.opendj.server.config</packageName>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <configuration>
-          <instructions>
-            <SCM-Revision>${buildRevision}</SCM-Revision>
-          </instructions>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <configuration>
-            <excludes>
-              <exclude>**/*Messages.class</exclude>
-              <exclude>**/config/client/*CfgClient*.class</exclude>
-              <exclude>**/config/server/*Cfg*.class</exclude>
-              <exclude>**/config/meta/*.class</exclude>
-            </excludes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-        <reportSets>
-          <reportSet>
-            <reports>
-              <report>mailing-list</report>
-              <report>issue-tracking</report>
-              <report>license</report>
-              <report>cim</report>
-              <report>distribution-management</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-      </plugin>
-    </plugins>
-  </reporting>
+        <artifactId>opendj-project</artifactId>
+        <version>4.0.0-M4-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>opendj-config</artifactId>
+
+    <name>Wren:DS Configuration API</name>
+    <description>
+        This module includes Configuration APIs for implementing LDAP Directory client and server applications.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>i18n-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>i18n-slf4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity</groupId>
+            <artifactId>wrensec-build-tools</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-core</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-cli</artifactId>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <opendj.osgi.import.additional>
+            org.forgerock.opendj.*;provide:=true
+        </opendj.osgi.import.additional>
+    </properties>
+
+    <build>
+        <resources>
+            <!-- Main resources -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+            </resource>
+            <!-- Generated resources -->
+            <resource>
+                <directory>${project.build.directory}/generated-resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/org.forgerock.opendj.config.AbstractManagedObjectDefinition</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <!-- Retrieve the SCM revision number and store it into the ${buildRevision} property -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <executions>
+                    <!-- We do not need build timestamp for this module -->
+                    <execution>
+                        <id>generate-timestamp</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-test-jar</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <!-- Classes to have mocks with configuration defaults -->
+                                <include>**/AdminTestCaseUtils.class</include>
+                                <include>**/AdminTestCaseUtils$*.class</include>
+                                <include>**/ConfigurationMock.class</include>
+                                <include>**/ConfigurationMock$*.class</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.wrensecurity.commons</groupId>
+                <artifactId>i18n-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-messages</goal>
+                        </goals>
+                        <configuration>
+                            <messageFiles>
+                                <messageFile>com/forgerock/opendj/ldap/config/config.properties</messageFile>
+                                <messageFile>com/forgerock/opendj/dsconfig/dsconfig.properties</messageFile>
+                            </messageFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Validate core components XML definition files and generate the components. -->
+            <plugin>
+                <groupId>org.wrensecurity.wrends</groupId>
+                <artifactId>opendj-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <?m2e execute onConfiguration?>
+                        <id>generate-config</id>
+                        <goals>
+                            <goal>generate-config</goal>
+                        </goals>
+                        <configuration>
+                            <packageName>org.forgerock.opendj.server.config</packageName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <configuration>
+                    <instructions>
+                        <SCM-Revision>${buildRevision}</SCM-Revision>
+                    </instructions>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*Messages.class</exclude>
+                        <exclude>**/config/client/*CfgClient*.class</exclude>
+                        <exclude>**/config/server/*Cfg*.class</exclude>
+                        <exclude>**/config/meta/*.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>mailing-lists</report>
+                            <report>issue-management</report>
+                            <report>licenses</report>
+                            <report>ci-management</report>
+                            <report>distribution-management</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>

@@ -16,140 +16,134 @@
   Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.wrensecurity.wrends</groupId>
-    <artifactId>opendj-project</artifactId>
-    <version>4.0.0-M4-SNAPSHOT</version>
-  </parent>
-  <artifactId>opendj-server</artifactId>
-  <name>Wren:DS Server NG</name>
-  <description>
-    Wren:DS LDAP embedded directory server.
-  </description>
-  <packaging>jar</packaging>
-  <properties>
-    <!-- Product information properties -->
-    <patchFixIds />
-    <isDebugBuild>false</isDebugBuild>
-    <docHomepageUrl>http://opendj.forgerock.org/</docHomepageUrl>
-    <docWikiUrl>http://opendj.forgerock.org/docs.html</docWikiUrl>
-    <docGuideRefUrl>http://opendj.forgerock.org/doc/admin-guide/index.html</docGuideRefUrl>
-    <docGuideAdminUrl>http://opendj.forgerock.org/doc/admin-guide/index.html</docGuideAdminUrl>
-  </properties>
-  <dependencies>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-grizzly</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-config</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.commons</groupId>
-      <artifactId>forgerock-util</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.commons</groupId>
-      <artifactId>i18n-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-core</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity</groupId>
-      <artifactId>wrensec-build-tools</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-cli</artifactId>
-    </dependency>
-  </dependencies>
-  <build>
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>true</filtering>
-      </resource>
-    </resources>
+    <modelVersion>4.0.0</modelVersion>
 
-    <plugins>
-      <!-- Parse version to generate properties (major.version, minor.version, ...) -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-      </plugin>
+    <parent>
+        <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
+        <version>4.0.0-M4-SNAPSHOT</version>
+    </parent>
 
-      <!--
-          Retrieve the SCM revision number and store it into the ${buildRevision} property
-          and retrieve the build timestamp and store it into the ${buildDateTime} property
-      -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-      </plugin>
+    <artifactId>opendj-server</artifactId>
 
-      <plugin>
-        <groupId>org.wrensecurity.commons</groupId>
-        <artifactId>i18n-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>generate-messages</goal>
-            </goals>
-            <configuration>
-              <messageFiles>
-                <!-- <messageFile>com/forgerock/opendj/grizzly/grizzly.properties</messageFile> -->
-              </messageFiles>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-        <reportSets>
-          <reportSet>
-            <reports>
-              <report>dependencies</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <links>
-            <link>http://commons.forgerock.org/i18n-framework/i18n-core/apidocs</link>
-          </links>
-        </configuration>
-      </plugin>
-    </plugins>
-  </reporting>
+    <name>Wren:DS Server NG</name>
+    <description>
+        Wren:DS LDAP embedded directory server.
+    </description>
+
+    <properties>
+        <!-- Product information properties -->
+        <patchFixIds />
+        <isDebugBuild>false</isDebugBuild>
+        <docHomepageUrl>http://opendj.forgerock.org/</docHomepageUrl>
+        <docWikiUrl>http://opendj.forgerock.org/docs.html</docWikiUrl>
+        <docGuideRefUrl>http://opendj.forgerock.org/doc/admin-guide/index.html</docGuideRefUrl>
+        <docGuideAdminUrl>http://opendj.forgerock.org/doc/admin-guide/index.html</docGuideAdminUrl>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-grizzly</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-config</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-util</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>i18n-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-core</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity</groupId>
+            <artifactId>wrensec-build-tools</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-cli</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <!-- Parse version to generate properties (major.version, minor.version, ...) -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+
+            <!--
+                Retrieve the SCM revision number and store it into the ${buildRevision} property
+                and retrieve the build timestamp and store it into the ${buildDateTime} property
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>dependencies</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>

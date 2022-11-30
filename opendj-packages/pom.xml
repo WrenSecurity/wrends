@@ -25,12 +25,12 @@
     </parent>
 
     <artifactId>opendj-packages</artifactId>
+    <packaging>pom</packaging>
+
     <name>Wren:DS Packages</name>
     <description>
         This module contains sub-modules which generates deb, rpm, msi and srv4 Wren:DS packages.
     </description>
-
-    <packaging>pom</packaging>
 
     <properties>
         <legal.folder>legal-notices</legal.folder>

@@ -96,7 +96,6 @@
         <product.locales>ca_ES,es,de,fr,ja,ko,pl,zh_CN,zh_TW</product.locales>
         <localized.jars.classifier>i18n</localized.jars.classifier>
 
-        <forgerock-doc-plugin.version>3.2.2-SNAPSHOT</forgerock-doc-plugin.version>
         <freemarker.version>2.3.24-incubating</freemarker.version>
         <grizzly-framework.version>2.3.28</grizzly-framework.version>
         <metrics-core.version>3.1.2</metrics-core.version>
@@ -111,7 +110,6 @@
             ${opendj.osgi.import.additional},
             *
         </opendj.osgi.import>
-        <opendj-copyright-maven-plugin.version>1.0.1</opendj-copyright-maven-plugin.version>
 
         <!-- Override Checkstyle versions to avoid unnecessary errors -->
         <checkstylePluginVersion>2.9.1</checkstylePluginVersion>
@@ -316,35 +314,12 @@
                     </executions>
                 </plugin>
 
-                <plugin>
-                    <?m2e ignore?>
-                    <groupId>org.wrensecurity.wrends</groupId>
-                    <artifactId>opendj-copyright-maven-plugin</artifactId>
-                    <version>${opendj-copyright-maven-plugin.version}</version>
-                    <configuration>
-                        <!-- Disable copyright on README and legal files -->
-                        <disabledFiles>
-                            <disabledFile>README</disabledFile>
-                            <disabledFile>**/README</disabledFile>
-                            <disabledFile>README.txt</disabledFile>
-                            <disabledFile>**/README.txt</disabledFile>
-                            <disabledFile>**/THIRD-PARTY.properties</disabledFile>
-                            <disabledFile>**/THIRDPARTYREADME.txt</disabledFile>
-                            <disabledFile>legal-notices/CDDLv1_0.txt</disabledFile>
-                            <disabledFile>**/tests/unit-tests-testng/resource/config-changes.ldif</disabledFile>
-                            <disabledFile>opendj-rest2ldap-servlet/src/main/webapp/WEB-INF/classes/logging.properties</disabledFile>
-                            <disabledFile>opendj-ldap-toolkit/src/test/resources/*.ldif</disabledFile>
-                            <disabledFile>opendj-ldap-toolkit/src/test/resources/**/*.ldif</disabledFile>
-                        </disabledFiles>
-                    </configuration>
-                </plugin>
-
                 <!-- Provides build capabilities for docs in DocBook XML format. -->
                 <plugin>
                     <?m2e ignore?>
-                    <groupId>org.forgerock.commons</groupId>
-                    <artifactId>forgerock-doc-maven-plugin</artifactId>
-                    <version>${forgerock-doc-plugin.version}</version>
+                    <groupId>org.wrensecurity.commons</groupId>
+                    <artifactId>doc-maven-plugin</artifactId>
+                    <version>22.4.0-SNAPSHOT</version>
                     <configuration>
                         <projectName>Wren:DS</projectName>
                         <projectVersion>${project.version}</projectVersion>
@@ -462,16 +437,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.4</version>
                 <reportSets>
                     <reportSet>
                         <reports>
                             <report>index</report>
-                            <report>mailing-list</report>
-                            <report>issue-tracking</report>
-                            <report>license</report>
+                            <report>mailing-lists</report>
+                            <report>issue-management</report>
+                            <report>licenses</report>
                             <report>scm</report>
-                            <report>cim</report>
+                            <report>ci-management</report>
                             <report>distribution-management</report>
                         </reports>
                     </reportSet>

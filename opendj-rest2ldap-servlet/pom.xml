@@ -16,94 +16,96 @@
   Portions Copyright 2017-2022 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.wrensecurity.wrends</groupId>
-    <artifactId>opendj-project</artifactId>
-    <version>4.0.0-M4-SNAPSHOT</version>
-  </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>opendj-rest2ldap-servlet</artifactId>
-  <name>Wren:DS Commons REST LDAP Gateway</name>
-  <description>
-    Provides integration between the Wren:DS Commons REST Adapter and Servlet APIs.
-  </description>
-  <packaging>war</packaging>
+    <parent>
+        <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
+        <version>4.0.0-M4-SNAPSHOT</version>
+    </parent>
 
-  <properties>
-    <!-- If the binary-licensing profile is activated, we need the ForgeRock license there -->
-    <forgerock.license.output.dir>${project.build.directory}/${project.build.finalName}/WEB-INF/legal-notices</forgerock.license.output.dir>
-  </properties>
+    <artifactId>opendj-rest2ldap-servlet</artifactId>
+    <packaging>war</packaging>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-jdk14</artifactId>
-    </dependency>
+    <name>Wren:DS Commons REST LDAP Gateway</name>
+    <description>
+        Provides integration between the Wren:DS Commons REST Adapter and Servlet APIs.
+    </description>
 
-    <dependency>
-      <groupId>org.wrensecurity.http</groupId>
-      <artifactId>chf-http-servlet</artifactId>
-    </dependency>
+    <properties>
+        <!-- If the binary-licensing profile is activated, we need the ForgeRock license there -->
+        <forgerock.license.output.dir>${project.build.directory}/${project.build.finalName}/WEB-INF/legal-notices</forgerock.license.output.dir>
+    </properties>
 
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-rest2ldap</artifactId>
-    </dependency>
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
 
-    <dependency>
-      <groupId>org.wrensecurity.wrends</groupId>
-      <artifactId>opendj-grizzly</artifactId>
-    </dependency>
-  </dependencies>
+        <dependency>
+            <groupId>org.wrensecurity.http</groupId>
+            <artifactId>chf-http-servlet</artifactId>
+        </dependency>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-maven-plugin</artifactId>
-        <version>9.2.11.v20150529</version>
-        <configuration>
-          <scanIntervalSeconds>10</scanIntervalSeconds>
-          <webAppConfig>
-            <contextPath>/</contextPath>
-          </webAppConfig>
-        </configuration>
-      </plugin>
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-rest2ldap</artifactId>
+        </dependency>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <configuration>
-          <webResources>
-            <!-- Include CDDLv1_0.txt -->
-            <resource>
-              <targetPath>WEB-INF/legal-notices</targetPath>
-              <directory>../legal-notices</directory>
-              <includes>
-                <include>CDDLv1_0.txt</include>
-              </includes>
-            </resource>
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-grizzly</artifactId>
+        </dependency>
+    </dependencies>
 
-            <!-- Include THIRDPARTYREADME.txt -->
-            <resource>
-              <targetPath>WEB-INF/legal-notices</targetPath>
-              <directory>legal-notices</directory>
-              <includes>
-                <include>THIRDPARTYREADME.txt</include>
-              </includes>
-            </resource>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>9.2.11.v20150529</version>
+                <configuration>
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <webAppConfig>
+                        <contextPath>/</contextPath>
+                    </webAppConfig>
+                </configuration>
+            </plugin>
 
-            <resource>
-              <targetPath>/</targetPath>
-              <directory>src/main/webapp/</directory>
-              <excludes>
-                <exclude>web.xml</exclude>
-              </excludes>
-            </resource>
-          </webResources>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webResources>
+                        <!-- Include CDDLv1_0.txt -->
+                        <resource>
+                            <targetPath>WEB-INF/legal-notices</targetPath>
+                            <directory>../legal-notices</directory>
+                            <includes>
+                                <include>CDDLv1_0.txt</include>
+                            </includes>
+                        </resource>
+
+                        <!-- Include THIRDPARTYREADME.txt -->
+                        <resource>
+                            <targetPath>WEB-INF/legal-notices</targetPath>
+                            <directory>legal-notices</directory>
+                            <includes>
+                                <include>THIRDPARTYREADME.txt</include>
+                            </includes>
+                        </resource>
+
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>src/main/webapp/</directory>
+                            <excludes>
+                                <exclude>web.xml</exclude>
+                            </excludes>
+                        </resource>
+                    </webResources>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

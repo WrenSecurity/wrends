@@ -19,16 +19,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>opendj-project</artifactId>
         <groupId>org.wrensecurity.wrends</groupId>
+        <artifactId>opendj-project</artifactId>
         <version>4.0.0-M4-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-ldap-toolkit</artifactId>
+
     <name>Wren:DS SDK Toolkit</name>
     <description>This module includes LDAP command line tools based on the Wren:DS LDAP SDK.</description>
-
-    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -85,7 +84,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
     <build>
         <plugins>

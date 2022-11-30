@@ -741,15 +741,8 @@ public class SubCommandArgumentParser extends ArgumentParser {
         setUsageOrVersionDisplayed(true);
 
         final StringBuilder buffer = new StringBuilder();
-        final boolean isUsageArgument = isUsageArgument(a);
-        if (isUsageArgument && subCommand != null) {
-            getSubCommandUsage(buffer, subCommand);
-        } else if (isUsageArgument && usageGroupArguments.size() <= 1) {
-            // No groups - so display all sub-commands.
-            getFullUsage(subCommands.values(), true, buffer);
-        } else if (isUsageArgument) {
-            // Using groups - so display all sub-commands group help.
-            getFullUsage(Collections.<SubCommand> emptySet(), true, buffer);
+        if (isUsageArgument(a)) {
+            buffer.append(getUsage());
         } else {
             // Requested help on specific group - don't display global options.
             getFullUsage(usageGroupArguments.get(a), false, buffer);

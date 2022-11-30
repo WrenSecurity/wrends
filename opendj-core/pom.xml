@@ -25,6 +25,7 @@
     </parent>
 
     <artifactId>opendj-core</artifactId>
+
     <name>Wren:DS Core APIs</name>
     <description>
         This module provides the core APIs required for implementing LDAP Directory

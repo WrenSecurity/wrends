@@ -104,3 +104,5 @@ test-output/
 /opendj-server-legacy/src/messages/generated/
 /opendj-server-legacy/maven-eclipse.xml
 
+# VS Code
+.vscode/
