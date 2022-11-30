@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.tools.upgrade;
 
@@ -978,80 +979,6 @@ final class UpgradeTasks
       public String toString()
       {
         return INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_1.get("%s").toString();
-      }
-    };
-  }
-
-  /**
-   * Creates backups of the local DB backends directories by renaming adding them a ".bak" suffix.
-   * e.g "userRoot" would become "userRoot.bak"
-   *
-   * @param backendObjectClass
-   *          The backend object class name.
-   */
-  static UpgradeTask renameLocalDBBackendDirectories(final String backendObjectClass)
-  {
-    return new AbstractUpgradeTask()
-    {
-      private boolean reimportRequired;
-
-      @Override
-      public void perform(UpgradeContext context) throws ClientException
-      {
-        try
-        {
-          Filter filter = Filter.equality("objectclass", backendObjectClass);
-          SearchRequest findLocalDBBackends = Requests.newSearchRequest(DN.rootDN(), SearchScope.WHOLE_SUBTREE, filter);
-          try (final EntryReader jeBackends = searchConfigFile(findLocalDBBackends))
-          {
-            while (jeBackends.hasNext())
-            {
-              Upgrade.needToRunPostUpgradePhase();
-              reimportRequired = true;
-
-              Entry jeBackend = jeBackends.readEntry();
-              File dbParent = UpgradeUtils.getFileForPath(jeBackend.parseAttribute("ds-cfg-db-directory").asString());
-              String id = jeBackend.parseAttribute("ds-cfg-backend-id").asString();
-
-              // Use canonical paths so that the progress message is more readable.
-              File dbDirectory = new File(dbParent, id).getCanonicalFile();
-              File dbDirectoryBackup = new File(dbParent, id + ".bak").getCanonicalFile();
-              if (dbDirectory.exists() && !dbDirectoryBackup.exists())
-              {
-                LocalizableMessage msg = INFO_UPGRADE_TASK_RENAME_JE_DB_DIR.get(dbDirectory, dbDirectoryBackup);
-                ProgressNotificationCallback pnc = new ProgressNotificationCallback(0, msg, 0);
-                context.notifyProgress(pnc);
-                boolean renameSucceeded = dbDirectory.renameTo(dbDirectoryBackup);
-                context.notifyProgress(pnc.setProgress(renameSucceeded ? 100 : -1));
-              }
-            }
-          }
-        }
-        catch (Exception e)
-        {
-          logger.error(LocalizableMessage.raw(e.getMessage()));
-        }
-      }
-
-      @Override
-      public void postUpgrade(UpgradeContext context) throws ClientException
-      {
-        postponePostUpgrade(context);
-      }
-
-      @Override
-      public void postponePostUpgrade(UpgradeContext context) throws ClientException
-      {
-        if (reimportRequired)
-        {
-          context.notify(INFO_UPGRADE_TASK_RENAME_JE_DB_DIR_WARNING.get(), TextOutputCallback.WARNING);
-        }
-      }
-
-      @Override
-      public String toString()
-      {
-        return INFO_UPGRADE_TASK_RENAME_JE_DB_DIR.get("%s", "%s").toString();
       }
     };
   }
