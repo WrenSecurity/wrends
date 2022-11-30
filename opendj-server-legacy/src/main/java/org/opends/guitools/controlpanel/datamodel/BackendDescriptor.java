@@ -13,6 +13,7 @@
  *
  * Copyright 2008-2011 Sun Microsystems, Inc.
  * Portions Copyright 2014-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.guitools.controlpanel.datamodel;
 
@@ -66,8 +67,6 @@ public class BackendDescriptor
   {
     /** JE Backend. */
     JE,
-    /** PDB Backend. */
-    PDB,
     /** Unknown Type, should never fall through this. */
     UNKNOWN
   }

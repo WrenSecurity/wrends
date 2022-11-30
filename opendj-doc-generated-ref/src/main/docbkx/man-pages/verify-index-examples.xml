@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
+  Portions Copyright 2022 Wren Security
 -->
 <refsect1 xmlns="http://docbook.org/ns/docbook"
           version="5.0" xml:lang="en"
@@ -25,25 +26,18 @@
  <para>
   The following example shows how to verify
   the <literal>sn</literal> (surname) index for completeness and for errors.
-  The messages shown are for a backend of type <literal>pdb</literal>.
+  The messages shown are for a backend of type <literal>je</literal>.
   The output is similar for other backend types:
  </para>
 
   <screen>
 $ <userinput>verify-index -b dc=example,dc=com -i sn --clean --countErrors</userinput>
-<computeroutput>[20/05/2015:14:24:18 +0200] category=...PDBStorage seq=0 severity=INFO
- msg=The PDB storage for backend 'userRoot' initialized
- to use 57528 buffers of 16384 bytes (total 920448kb)
-[20/05/2015:14:24:18 +0200] category=...pluggable.VerifyJob seq=1 severity=INFO
- msg=Checked 478 records and found 0 error(s) in 0 seconds
- (average rate 3594.0/sec)
-[20/05/2015:14:24:18 +0200] category=...pluggable.VerifyJob seq=2 severity=FINE
- msg=Number of records referencing more than one entry: 224
-[20/05/2015:14:24:18 +0200] category=...pluggable.VerifyJob seq=3 severity=FINE
- msg=Number of records that exceed the entry limit: 0
-[20/05/2015:14:24:18 +0200] category=...pluggable.VerifyJob seq=4 severity=FINE
- msg=Average number of entries referenced is 2.00/record
-[20/05/2015:14:24:18 +0200] category=...pluggable.VerifyJob seq=5 severity=FINE
- msg=Maximum number of entries referenced by any record is 32</computeroutput>
+<computeroutput>[29/11/2022:10:55:52 +0100] category=BACKEND seq=0 severity=FINE msg=JE backend 'userRoot' does not specify the number of cleaner threads: defaulting to 16 threads
+[29/11/2022:10:55:52 +0100] category=BACKEND seq=1 severity=FINE msg=JE backend 'userRoot' does not specify the number of lock tables: defaulting to 37
+[29/11/2022:10:55:53 +0100] category=BACKEND seq=36 severity=INFO msg=Checked 1205 records and found 0 error(s) in 0 seconds (average rate 10126.1/sec)
+[29/11/2022:10:55:53 +0100] category=BACKEND seq=37 severity=FINE msg=Number of records referencing more than one entry: 104
+[29/11/2022:10:55:53 +0100] category=BACKEND seq=38 severity=FINE msg=Number of records that exceed the entry limit: 0
+[29/11/2022:10:55:53 +0100] category=BACKEND seq=39 severity=FINE msg=Average number of entries referenced is 1.00/record
+[29/11/2022:10:55:53 +0100] category=BACKEND seq=40 severity=FINE msg=Maximum number of entries referenced by any record is 27</computeroutput>
   </screen>
 </refsect1>

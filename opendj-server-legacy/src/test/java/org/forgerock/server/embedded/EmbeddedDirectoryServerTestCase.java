@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.forgerock.server.embedded;
 
@@ -270,7 +271,7 @@ public class EmbeddedDirectoryServerTestCase extends UtilTestCase
       tempServer.extractArchiveForSetup(TestCaseUtils.getOpenDJArchivePath());
       tempServer.setup(
           setupParams()
-            .backendType("pdb")
+            .backendType("je")
             .baseDn("dc=example,dc=com")
             .jmxPort(ports[2]));
       tempServer.start();

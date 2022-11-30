@@ -12,19 +12,34 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.backends.jeb;
 
-import static com.sleepycat.je.EnvironmentConfig.*;
+import static com.sleepycat.je.EnvironmentConfig.CLEANER_MIN_UTILIZATION;
+import static com.sleepycat.je.EnvironmentConfig.LOG_FILE_MAX;
 import static com.sleepycat.je.LockMode.READ_COMMITTED;
 import static com.sleepycat.je.LockMode.RMW;
-import static com.sleepycat.je.OperationStatus.*;
 
-import static org.forgerock.util.Utils.*;
-import static org.opends.messages.BackendMessages.*;
-import static org.opends.messages.UtilityMessages.*;
-import static org.opends.server.backends.pluggable.spi.StorageUtils.*;
-import static org.opends.server.util.StaticUtils.*;
+import static com.sleepycat.je.OperationStatus.SUCCESS;
+import static org.forgerock.util.Utils.closeSilently;
+import static org.opends.messages.BackendMessages.ERR_BACKEND_CONFIG_CACHE_PERCENT_GREATER_THAN_JVM_HEAP;
+import static org.opends.messages.BackendMessages.ERR_BACKEND_CONFIG_CACHE_SIZE_GREATER_THAN_JVM_HEAP;
+import static org.opends.messages.BackendMessages.ERR_BACKEND_LIST_FILES_TO_BACKUP;
+import static org.opends.messages.BackendMessages.NOTE_CONFIG_DB_DIR_REQUIRES_RESTART;
+import static org.opends.messages.BackendMessages.NOTE_JEB_BACKUP_CLEANER_ACTIVITY;
+import static org.opends.messages.UtilityMessages.ERR_CANNOT_RENAME_RESTORE_DIRECTORY;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.addErrorMessage;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.checkDBDirExistsOrCanCreate;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.checkDBDirPermissions;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.getDBDirectory;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.setDBDirPermissions;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.setupStorageFiles;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.statusWhenDiskSpaceFull;
+import static org.opends.server.backends.pluggable.spi.StorageUtils.statusWhenDiskSpaceLow;
+import static org.opends.server.util.StaticUtils.MB;
+import static org.opends.server.util.StaticUtils.recursiveDelete;
+import static org.opends.server.util.StaticUtils.stackTraceToSingleLineString;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -679,10 +694,9 @@ public final class JEStorage implements Storage, Backupable, ConfigurationChange
    *          The configuration.
    * @param serverContext
    *          This server instance context
-   * @throws ConfigException
-   *           if memory cannot be reserved
    */
-  JEStorage(final JEBackendCfg cfg, ServerContext serverContext) throws ConfigException
+  // FIXME: Should be package private.
+  public JEStorage(final JEBackendCfg cfg, ServerContext serverContext)
   {
     this.serverContext = serverContext;
     backendDirectory = getBackendDirectory(cfg);

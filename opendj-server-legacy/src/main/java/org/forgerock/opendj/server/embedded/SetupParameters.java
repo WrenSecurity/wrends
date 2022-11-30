@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.forgerock.opendj.server.embedded;
 
@@ -125,7 +126,7 @@ public final class SetupParameters
    * Sets the type of the backend containing user information.
    *
    * @param backendType
-   *          the backend type (e.g. je, pdb)
+   *          the backend type (e.g. je)
    * @return this builder
    */
   public SetupParameters backendType(String backendType)

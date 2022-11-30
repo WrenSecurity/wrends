@@ -12,17 +12,20 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.backends.pluggable;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 import static org.forgerock.opendj.config.ConfigurationMock.mockCfg;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.opends.server.TestCaseUtils.makeEntry;
 import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
 import static org.opends.server.protocols.internal.Requests.newSearchRequest;
-import static org.opends.server.util.CollectionUtils.*;
-import static org.opends.server.util.ServerConstants.*;
+import static org.opends.server.util.CollectionUtils.newTreeSet;
+import static org.opends.server.util.ServerConstants.OID_SERVER_SIDE_SORT_RESPONSE_CONTROL;
+import static org.opends.server.util.ServerConstants.OID_VLV_RESPONSE_CONTROL;
 import static org.testng.Assert.fail;
 
 import java.util.ArrayList;
@@ -36,12 +39,12 @@ import org.forgerock.opendj.ldap.ByteStringBuilder;
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.ResultCode;
 import org.forgerock.opendj.ldap.SearchScope;
+import org.forgerock.opendj.server.config.server.JEBackendCfg;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
 import org.forgerock.opendj.server.config.meta.BackendVLVIndexCfgDefn.Scope;
 import org.forgerock.opendj.server.config.server.BackendVLVIndexCfg;
-import org.forgerock.opendj.server.config.server.PDBBackendCfg;
-import org.opends.server.backends.pdb.PDBBackend;
+import org.opends.server.backends.jeb.JEBackend;
 import org.opends.server.controls.ServerSideSortRequestControl;
 import org.opends.server.controls.ServerSideSortResponseControl;
 import org.opends.server.controls.VLVRequestControl;
@@ -115,7 +118,7 @@ public class ControlsTestCase extends DirectoryServerTestCase
   /** Unindexed: ordered by {@link #SORT_ORDER_4} */
   private static final List<Integer> USERS_BY_SORT_ORDER_4 = Arrays.asList(4, 6, 7, 3, 8, 5, 2, 0, 1);
 
-  private PDBBackend backend;
+  private JEBackend backend;
 
   @BeforeClass
   public void beforeClass() throws Exception
@@ -124,7 +127,7 @@ public class ControlsTestCase extends DirectoryServerTestCase
 
     final DN baseDN = DN.valueOf(BACKEND_BASE_DN);
 
-    final PDBBackendCfg backendCfg = mockCfg(PDBBackendCfg.class);
+    final JEBackendCfg backendCfg = mockCfg(JEBackendCfg.class);
     when(backendCfg.dn()).thenReturn(baseDN);
     when(backendCfg.getBackendId()).thenReturn(BACKEND_NAME);
     when(backendCfg.getBaseDN()).thenReturn(newTreeSet(baseDN));
@@ -139,7 +142,7 @@ public class ControlsTestCase extends DirectoryServerTestCase
     createVlvIndex(baseDN, backendCfg, SORT_ORDER_1);
     createVlvIndex(baseDN, backendCfg, SORT_ORDER_2);
 
-    backend = new PDBBackend();
+    backend = new JEBackend();
     backend.setBackendID(backendCfg.getBackendId());
     backend.configureBackend(backendCfg, DirectoryServer.getInstance().getServerContext());
     backend.openBackend();
@@ -152,7 +155,7 @@ public class ControlsTestCase extends DirectoryServerTestCase
     }
   }
 
-  private void createVlvIndex(final DN baseDN, final PDBBackendCfg backendCfg, final String sortOrder)
+  private void createVlvIndex(final DN baseDN, final JEBackendCfg backendCfg, final String sortOrder)
       throws ConfigException
   {
     final BackendVLVIndexCfg vlvIndexCfg = mockCfg(BackendVLVIndexCfg.class);

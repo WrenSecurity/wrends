@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security
  */
 package org.opends.server.tools.upgrade;
 
@@ -27,7 +28,6 @@ import java.util.TreeMap;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.server.core.LockFileManager;
-import org.opends.server.tools.upgrade.UpgradeTasks.UpgradeCondition;
 import org.opends.server.util.BuildVersion;
 
 import com.forgerock.opendj.cli.ClientException;
@@ -44,8 +44,6 @@ import static org.opends.server.tools.upgrade.LicenseFile.*;
 import static org.opends.server.tools.upgrade.UpgradeTasks.*;
 import static org.opends.server.tools.upgrade.UpgradeUtils.batDirectory;
 import static org.opends.server.tools.upgrade.UpgradeUtils.binDirectory;
-import static org.opends.server.tools.upgrade.UpgradeUtils.instanceContainsJeBackends;
-import static org.opends.server.tools.upgrade.UpgradeUtils.libDirectory;
 import static org.opends.server.util.StaticUtils.*;
 
 /**
@@ -64,9 +62,6 @@ public final class Upgrade
   static final int EXIT_CODE_SUCCESS = 0;
   /** The error exit code value. */
   static final int EXIT_CODE_ERROR = 1;
-
-  private static final String LOCAL_DB_BACKEND_OBJECT_CLASS = "ds-cfg-local-db-backend";
-  private static final String JE_BACKEND_OBJECT_CLASS = "ds-cfg-je-backend";
 
   /** If the upgrade contains some post upgrade tasks to do. */
   private static boolean hasPostUpgradeTask;
@@ -200,98 +195,41 @@ public final class Upgrade
 
     /* If the upgraded version is a non OEM one, migrates local-db backends to JE Backend, see OPENDJ-2364 **/
     register("3.0.0",
-        conditionalUpgradeTasks(
-          new UpgradeCondition() {
-              @Override
-              public boolean shouldPerformUpgradeTasks(UpgradeContext context) throws ClientException {
-                return !isOEMVersion();
-              }
-
-              @Override
-              public String toString() {
-                return "!isOEMVersion";
-              }
-          },
-          migrateLocalDBBackendsToJEBackends(),
-          modifyConfigEntry(INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_2.get(),
-              "(objectClass=ds-cfg-local-db-backend)",
-              "replace: objectClass",
-              "objectClass: top",
-              "objectClass: ds-cfg-backend",
-              "objectClass: ds-cfg-pluggable-backend",
-              "objectClass: ds-cfg-je-backend",
-              "-",
-              "replace: ds-cfg-java-class",
-              "ds-cfg-java-class: org.opends.server.backends.jeb.JEBackend",
-              "-",
-              "delete: ds-cfg-import-thread-count",
-              "-",
-              "delete: ds-cfg-import-queue-size",
-              "-",
-              "delete: ds-cfg-subordinate-indexes-enabled",
-              "-"
-          ),
-          modifyConfigEntry(INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_3.get(),
-              "(objectClass=ds-cfg-local-db-index)",
-              "replace: objectClass",
-              "objectClass: top",
-              "objectClass: ds-cfg-backend-index",
-              "-"
-          ),
-          modifyConfigEntry(INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_4.get(),
-              "(objectClass=ds-cfg-local-db-vlv-index)",
-              "replace: objectClass",
-              "objectClass: top",
-              "objectClass: ds-cfg-backend-vlv-index",
-              "-",
-              "delete: ds-cfg-max-block-size",
-              "-"
-          )
+        migrateLocalDBBackendsToJEBackends(),
+        modifyConfigEntry(INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_2.get(),
+                "(objectClass=ds-cfg-local-db-backend)",
+                "replace: objectClass",
+                "objectClass: top",
+                "objectClass: ds-cfg-backend",
+                "objectClass: ds-cfg-pluggable-backend",
+                "objectClass: ds-cfg-je-backend",
+                "-",
+                "replace: ds-cfg-java-class",
+                "ds-cfg-java-class: org.opends.server.backends.jeb.JEBackend",
+                "-",
+                "delete: ds-cfg-import-thread-count",
+                "-",
+                "delete: ds-cfg-import-queue-size",
+                "-",
+                "delete: ds-cfg-subordinate-indexes-enabled",
+                "-"
+        ),
+        modifyConfigEntry(INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_3.get(),
+                "(objectClass=ds-cfg-local-db-index)",
+                "replace: objectClass",
+                "objectClass: top",
+                "objectClass: ds-cfg-backend-index",
+                "-"
+        ),
+        modifyConfigEntry(INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_4.get(),
+                "(objectClass=ds-cfg-local-db-vlv-index)",
+                "replace: objectClass",
+                "objectClass: top",
+                "objectClass: ds-cfg-backend-vlv-index",
+                "-",
+                "delete: ds-cfg-max-block-size",
+                "-"
         )
-    );
-
-    /* If the upgraded version is OEM, migrates local-db backends to PDB, see OPENDJ-2364 **/
-    register("3.0.0",
-      conditionalUpgradeTasks(
-        new UpgradeCondition() {
-          @Override
-          public boolean shouldPerformUpgradeTasks(UpgradeContext context) throws ClientException {
-            return isOEMVersion();
-          }
-
-          @Override
-          public String toString() {
-            return "isOEMVersion";
-          }
-        },
-        deleteFile(new File(libDirectory, "je.jar")),
-        requireConfirmation(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_1_SUMMARY.get("3.0.0"), NO,
-                renameLocalDBBackendDirectories(LOCAL_DB_BACKEND_OBJECT_CLASS),
-                convertJEBackendsToPDBBackends(LOCAL_DB_BACKEND_OBJECT_CLASS),
-                // Convert JE backend indexes to PDB backend indexes.
-                modifyConfigEntry(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_3_SUMMARY.get(),
-                        "(objectclass=ds-cfg-local-db-index)",
-                        "delete: objectclass",
-                        "objectclass: ds-cfg-local-db-index",
-                        "-",
-                        "add: objectclass",
-                        "objectclass: ds-cfg-backend-index",
-                        "-"
-                ),
-                // Convert JE backend VLV indexes to PDB backend VLV indexes.
-                modifyConfigEntry(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_4_SUMMARY.get(),
-                        "(objectclass=ds-cfg-local-db-vlv-index)",
-                        "delete: objectclass",
-                        "objectclass: ds-cfg-local-db-vlv-index",
-                        "-",
-                        "add: objectclass",
-                        "objectclass: ds-cfg-backend-vlv-index",
-                        "-",
-                        "delete: ds-cfg-max-block-size",
-                        "-"
-                )
-        )
-      )
     );
 
     /* Remove dbtest tool (replaced by backendstat in 3.0.0) - see OPENDJ-1791 **/
@@ -611,7 +549,6 @@ public final class Upgrade
 
     /* All upgrades will refresh the server configuration schema and generate a new upgrade folder. */
     registerLast(
-        performOEMMigrationIfNeeded(),
         copySchemaFile("02-config.ldif"),
         updateConfigUpgradeFolder(),
         postUpgradeRebuildIndexes());
@@ -619,100 +556,7 @@ public final class Upgrade
     // @formatter:on
   }
 
-  /** If the upgraded version is OEM, migrates local-db backends to PDB, see OPENDJ-3002 **/
-  private static UpgradeTask performOEMMigrationIfNeeded() {
-    return conditionalUpgradeTasks(
-        isOemVersionAndNewerThan3dot0(),
-        deleteFile(new File(libDirectory, "je.jar")),
-        deleteFile(new File(libDirectory, "wrends-je-backend.jar")),
-        conditionalUpgradeTasks(
-            new UpgradeCondition() {
-                @Override
-                public boolean shouldPerformUpgradeTasks(final UpgradeContext context) throws ClientException {
-                    return instanceContainsJeBackends();
-                }
-            },
-            requireConfirmation(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_1_SUMMARY.get("3.5.0"), NO,
-                    renameLocalDBBackendDirectories(JE_BACKEND_OBJECT_CLASS),
-                    convertJEBackendsToPDBBackends(JE_BACKEND_OBJECT_CLASS))
-        )
-    );
-  }
-
-  private static UpgradeCondition isOemVersionAndNewerThan3dot0() {
-    return new UpgradeCondition() {
-        @Override
-        public boolean shouldPerformUpgradeTasks(UpgradeContext context) throws ClientException {
-            return isOEMVersion()
-                && context.getFromVersion().isNewerThan(BuildVersion.valueOf("3.0.0"));
-        }
-
-        @Override
-        public String toString() {
-            return "is OEM version and from version >= 3.0.0";
-        }
-    };
-  }
-
-  private static UpgradeTask convertJEBackendsToPDBBackends(final String objectClass) {
-    return modifyConfigEntry(INFO_UPGRADE_TASK_LOCAL_DB_TO_PDB_2_SUMMARY.get(),
-        "(objectclass=" + objectClass + ")",
-        "delete: objectclass",
-        "objectclass: " + objectClass,
-        "-",
-        "add: objectclass",
-        "objectclass: ds-cfg-pluggable-backend",
-        "objectclass: ds-cfg-pdb-backend",
-        "-",
-        "replace: ds-cfg-java-class",
-        "ds-cfg-java-class: org.opends.server.backends.pdb.PDBBackend",
-        "-",
-        "delete: ds-cfg-preload-time-limit",
-        "-",
-        "delete: ds-cfg-import-thread-count",
-        "-",
-        "delete: ds-cfg-import-queue-size",
-        "-",
-        "delete: ds-cfg-db-txn-write-no-sync",
-        "-",
-        "delete: ds-cfg-db-run-cleaner",
-        "-",
-        "delete: ds-cfg-db-cleaner-min-utilization",
-        "-",
-        "delete: ds-cfg-db-evictor-lru-only",
-        "-",
-        "delete: ds-cfg-db-evictor-core-threads",
-        "-",
-        "delete: ds-cfg-db-evictor-max-threads",
-        "-",
-        "delete: ds-cfg-db-evictor-keep-alive",
-        "-",
-        "delete: ds-cfg-db-evictor-nodes-per-scan",
-        "-",
-        "delete: ds-cfg-db-log-file-max",
-        "-",
-        "delete: ds-cfg-db-log-filecache-size",
-        "-",
-        "delete: ds-cfg-db-logging-file-handler-on",
-        "-",
-        "delete: ds-cfg-db-logging-level",
-        "-",
-        "delete: ds-cfg-db-checkpointer-bytes-interval",
-        "-",
-        "delete: ds-cfg-db-checkpointer-wakeup-interval",
-        "-",
-        "delete: ds-cfg-db-num-lock-tables",
-        "-",
-        "delete: ds-cfg-db-num-cleaner-threads",
-        "-",
-        "delete: ds-cfg-je-property",
-        "-",
-        "delete: ds-cfg-subordinate-indexes-enabled",
-        "-"
-    );
-  }
-
-  /**
+    /**
    * Returns a list containing all the tasks which are required in order to upgrade
    * from {@code fromVersion} to {@code toVersion}.
    *
