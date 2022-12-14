@@ -1,0 +1,2 @@
+# Ignore build-related folders
+**/target
