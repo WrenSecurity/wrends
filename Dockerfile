@@ -1,7 +1,7 @@
-FROM maven:3.8.6-eclipse-temurin-17-alpine AS project-build
+FROM maven:3.8.6-eclipse-temurin-17 AS project-build
 
 # Install management tools
-RUN apk add unzip git
+RUN apt-get update && apt-get install -y unzip git
 
 # Copy project files
 WORKDIR /project
