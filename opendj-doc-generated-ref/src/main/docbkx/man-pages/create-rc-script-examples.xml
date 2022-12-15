@@ -13,6 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
+  Portions Copyright 2022 Wren Security.
 -->
 <refsect1 xmlns="http://docbook.org/ns/docbook"
           version="5.0" xml:lang="en"
@@ -23,13 +24,13 @@
  <title>Examples</title>
 
  <para>
-  The following example adds a script to start OpenDJ at boot time
+  The following example adds a script to start Wren:DS at boot time
   on a Debian-based system,
   and then updates the runlevel system to use the script.
  </para>
 
  <screen>
-$ <userinput>sudo create-rc-script -f /etc/init.d/opendj -u opendj-user</userinput>
-$ <userinput>sudo update-rc.d opendj</userinput>
+$ <userinput>sudo create-rc-script -f /etc/init.d/wrends -u opendj-user</userinput>
+$ <userinput>sudo update-rc.d wrends</userinput>
  </screen>
 </refsect1>

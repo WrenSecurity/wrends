@@ -13,16 +13,17 @@
 # information: "Portions Copyright [year] [name of copyright owner]".
 #
 # Copyright 2013-2015 ForgeRock AS.
+# Portions Copyright 2022 Wren Security.
 
 # Post install script
 # Install is launched with an empty second arg.
 # If the package is already installed, the second arg. is not empty.
 
 # Registers the service
-update-rc.d opendj defaults
+update-rc.d wrends defaults
 
 # Symlinks to process ID
-test -h "/var/run/opendj.pid" || ln -s ${deb.prefix}/logs/server.pid /var/run/opendj.pid
+test -h "/var/run/wrends.pid" || ln -s ${deb.prefix}/logs/server.pid /var/run/wrends.pid
 
 # In this case, we are in upgrade mode.
 if [ "$1" = "configure" ] && [ ! -z "$2" ] ; then

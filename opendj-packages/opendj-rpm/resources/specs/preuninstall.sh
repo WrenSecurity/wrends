@@ -13,6 +13,7 @@
 # information: "Portions Copyright [year] [name of copyright owner]".
 #
 # Copyright 2013-2015 ForgeRock AS.
+# Portions Copyright 2022 Wren Security.
 
 # =================================
 # RPM Pre Uninstall Script (%preun)
@@ -24,15 +25,15 @@
 if [ "$1" == "0" ] ; then
     echo "Pre Uninstall - uninstall"
     # Unlink the symlink to the process ID.
-    test -h "/var/run/opendj.pid" && unlink /var/run/opendj.pid
+    test -h "/var/run/wrends.pid" && unlink /var/run/wrends.pid
     # Only if the instance has been configured
     if [ -e "%{_prefix}"/config/buildinfo ] && [ "$(ls -A "%{_prefix}"/config/archived-configs)" ] ; then
 	   "%{_prefix}"/bin/./stop-ds
     fi
 
-    if [ -e /etc/init.d/opendj ] ; then
+    if [ -e /etc/init.d/wrends ] ; then
         # Deletes the service.
-        /sbin/chkconfig --del opendj
+        /sbin/chkconfig --del wrends
     fi
 else if [ "$1" == "1" ] ; then
     echo "Pre Uninstall - upgrade uninstall"
