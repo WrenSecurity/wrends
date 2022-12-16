@@ -13,19 +13,20 @@
  ! information: "Portions Copyright [year] [name of copyright owner]".
  !
  ! Copyright 2013-2016 ForgeRock AS.
+ ! Portions Copyright 2022 Wren Security.
  ! -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Codepage="1252" Language="1033" Manufacturer="ForgeRock"
-           Name="ForgeRock $(var.name) $(var.major).$(var.minor).$(var.point)" Version="$(var.major).$(var.minor).$(var.point)"
+  <Product Id="*" Codepage="1252" Language="1033" Manufacturer="Wren Security"
+           Name="Wren Security $(var.name) $(var.major).$(var.minor).$(var.point)" Version="$(var.major).$(var.minor).$(var.point)"
            UpgradeCode="A3E82AC0-88E6-4DEE-9D8C-5AE3B7853274">
-    <Package Id="*" Comments="This package contains ForgeRock $(var.name) $(var.major).$(var.minor).$(var.point)."
-             Description="ForgeRock products" InstallerVersion="300" Languages="1033" Manufacturer="ForgeRock"
+    <Package Id="*" Comments="This package contains Wren Security $(var.name) $(var.major).$(var.minor).$(var.point)."
+             Description="Wren Security products" InstallerVersion="300" Languages="1033" Manufacturer="Wren Security"
              Platform="x86" Compressed="yes"/>
     <Media Id="1" Cabinet="opendj.cab" DiskPrompt="Disk 1" EmbedCab="yes" CompressionLevel="high"/>
-    <Property Id="DiskPrompt" Value="ForgeRock $(var.name) $(var.major).$(var.minor).$(var.point) Installation"/>
+    <Property Id="DiskPrompt" Value="Wren Security $(var.name) $(var.major).$(var.minor).$(var.point) Installation"/>
 
     <Property Id="ALLUSERS" Value="1"/>
-    <Property Id="ARPHELPLINK" Value="http://forgerock.com"/>
+    <Property Id="ARPHELPLINK" Value="http://wrensecurity.org"/>
 
     <!-- UI customization -->
     <WixVariable Id="WixUIBannerBmp" Value="opendjbanner.bmp" />
