@@ -76,11 +76,13 @@ $ mvn clean package
 
 Built binary can be found in `${GIT_REPOSITORIES}/wrends/opendj-server-legacy/target/package/wrends-${VERSION}.zip`.
 
+### Docker image
+
+You can also run Wren:DS in a Docker container. Official Wren:DS Docker images can be found [here](https://hub.docker.com/r/wrensecurity/wrends).
+
 ## Documentation
 
-[![Documentation](https://img.shields.io/badge/Documentation-WIP-yellow)](https://github.com/WrenSecurity/wrends)
-
-Documentation is still work in progress.
+Project documentation can be found in our documentation platform ([docs.wrensecurity.org](https://docs.wrensecurity.org/wrends/latest/index.html)).
 
 ## Acknowledgments
 
