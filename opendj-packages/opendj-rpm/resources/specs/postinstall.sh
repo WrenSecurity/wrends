@@ -13,6 +13,7 @@
 # information: "Portions Copyright [year] [name of copyright owner]".
 #
 # Copyright 2013-2015 ForgeRock AS.
+# Portions Copyright 2022 Wren Security.
 
 # ===============================
 # RPM Post Install Script (%post)
@@ -23,10 +24,10 @@
 #  an uninstallation.)
 
 # Registers the service
-/sbin/chkconfig --add opendj
+/sbin/chkconfig --add wrends
 
 # Symlinks to process ID
-test -h "/var/run/opendj.pid" || ln -s /opt/opendj/logs/server.pid /var/run/opendj.pid
+test -h "/var/run/wrends.pid" || ln -s /opt/wrends/logs/server.pid /var/run/wrends.pid
 
 if [ "$1" == "1" ] ; then
     echo "Post Install - initial install"

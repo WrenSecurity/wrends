@@ -13,13 +13,14 @@
 # information: "Portions Copyright [year] [name of copyright owner]".
 #
 # Copyright 2013-2015 ForgeRock AS.
+# Portions Copyright 2022 Wren Security.
 
 set -e
 # Post rm script
 # Files are removed automatically by pm.
 if [ "$1" = "remove" ] ; then
     # Deletes the service.
-    update-rc.d -f opendj remove
+    update-rc.d -f wrends remove
     echo
     echo *OpenDJ successfully removed
 fi

@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# OPENDJ SERVICE SCRIPT
+# WREN:DS SERVICE SCRIPT
 #
 
 #
@@ -17,22 +17,23 @@
 # information: "Portions Copyright [year] [name of copyright owner]".
 #
 # Copyright 2013-2015 ForgeRock AS.
+# Portions Copyright 2022 Wren Security.
 
 
 # chkconfig: 2345 80 05
-# description: Starts and stops opendj LDAPv3 service.
+# description: Starts and stops wrends LDAPv3 service.
 #
 ### BEGIN INIT INFO
-# Provides:          opendj
+# Provides:          wrends
 # Required-Start:
 # Required-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: This is the opendj daemon
-# Description:       OpenDJ is an LDAPv3 compliant directory service, developed for the Java
+# Short-Description: This is the wrends daemon
+# Description:       Wren:DS is an LDAPv3 compliant directory service, developed for the Java
 #                    platform, providing a high performance, highly available and secure store
 #                    for the identities managed by enterprises. Its easy installation process,
-#                    combined with the power of the Java platform makes OpenDJ one of the
+#                    combined with the power of the Java platform makes Wren:DS one of the
 #                    simplest and fastest directory servers to deploy and manage.
 ### END INIT INFO
 
@@ -40,34 +41,34 @@
 if [ -f /etc/redhat-release ] ; then
     # Redhat
     . /etc/init.d/functions
-    LOCKFILE=/var/lock/subsys/opendj
+    LOCKFILE=/var/lock/subsys/wrends
 elif [ -f /etc/SuSE-release ] ; then
     # SuSE
     . /etc/rc.status
-    LOCKFILE=/var/run/rcopendj
+    LOCKFILE=/var/run/rcwrends
 elif [ -f /etc/lsb-release ] || lsb_release -a >/dev/null 2>&1 ; then
     # Debian
     # On Debian 8 the file /etc/lsb-release does not exist. The lsb_release command may be used instead.
     . /lib/lsb/init-functions
-    LOCKFILE=/var/lock/opendj
+    LOCKFILE=/var/lock/wrends
 elif [ -f /etc/init.d/functions.sh ] ; then
     # Other dist.
     . /etc/init.d/functions.sh
-    LOCKFILE=/tmp/unused-lockfile-opendj
+    LOCKFILE=/tmp/unused-lockfile-wrends
 fi
-# LOCKFILE is used by the service subsystem to know whether the opendj service is started and act upon it
+# LOCKFILE is used by the service subsystem to know whether the wrends service is started and act upon it
 
 
 # Sets the script vars
-INSTALL_ROOT="/opt/opendj"
+INSTALL_ROOT="/opt/wrends"
 export INSTALL_ROOT
-DAEMON=opendj
+DAEMON=wrends
 
 # Original PID file
-ORIGINPIDFILE=/opt/opendj/logs/server.pid
+ORIGINPIDFILE=/opt/wrends/logs/server.pid
 
-# Pid file is a symlink to /opt/opendj/log/server.pid
-PIDFILE=/var/run/opendj.pid
+# Pid file is a symlink to /opt/wrends/log/server.pid
+PIDFILE=/var/run/wrends.pid
 RETVAL=0
 
 # If the daemon is not there, then exit / LSB return code.

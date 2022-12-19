@@ -36,7 +36,7 @@
         <rpm.prefix>/opt/${product.name.lowercase}</rpm.prefix>
         <manpage.dir>${project.build.directory}/dependency/man</manpage.dir>
         <doc.homepage.url>https://wrensecurity.org/</doc.homepage.url>
-        <sysv.file.location>${project.parent.basedir}/resources/sysv/opendj</sysv.file.location>
+        <sysv.file.location>${project.parent.basedir}/resources/sysv/wrends</sysv.file.location>
         <rpm.product.name>${product.name}</rpm.product.name>
         <rpm.product.name.lowercase>${product.name.lowercase}</rpm.product.name.lowercase>
         <rpm.resources.path>${project.basedir}/resources</rpm.resources.path>
