@@ -29,8 +29,8 @@
     <Property Id="ARPHELPLINK" Value="http://wrensecurity.org"/>
 
     <!-- UI customization -->
-    <WixVariable Id="WixUIBannerBmp" Value="opendjbanner.bmp" />
-    <WixVariable Id="WixUIDialogBmp" Value="opendjdialog.bmp" />
+    <WixVariable Id="WixUIBannerBmp" Value="wrendsbanner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="wrendsdialog.bmp" />
 
     <!-- Upgrading -->
     <MajorUpgrade DowngradeErrorMessage="A newer version of $(var.name) is already installed."/>

@@ -102,8 +102,8 @@
   <googleAnalytics>UA-23412190-8</googleAnalytics>
   <openproject>
    <href>http://opendj.org/</href>
-   <src>./images/FR_plogo_org_FC_openDJ-302x86.png</src>
-   <alt>OpenDJ</alt>
+   <src>./images/Logo-Wren-DS.png</src>
+   <alt>Wren:DS</alt>
   </openproject>
   <siteSearchFQDN>forgerock.org</siteSearchFQDN>
  </custom>

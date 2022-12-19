@@ -87,7 +87,7 @@ limit_privileges='basic,net_privaddr,sys_resource,!proc_info,!file_link_any'
         </common_name>
         <documentation>
           <doc_link name='OpenDJ Documentation'
-	          uri='http://opendj.forgerock.org/docs.html' />
+	          uri='https://wrensecurity.org/projects/wrends/resources.html' />
         </documentation>
       </template>
     </instance>
