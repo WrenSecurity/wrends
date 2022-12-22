@@ -35,7 +35,7 @@ import org.forgerock.opendj.ldap.ByteString;
  *
  * Control control = ...;
  * String OID = control.getOID();
- * if (supported != null && !supported.isEmpty() && supported.contains(OID)) {
+ * if (supported != null &amp;&amp; !supported.isEmpty() &amp;&amp; supported.contains(OID)) {
  *     // The control is supported. Use it here...
  * }
  * </pre>

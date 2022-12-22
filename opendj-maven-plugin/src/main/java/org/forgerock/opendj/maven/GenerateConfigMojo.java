@@ -62,6 +62,7 @@ import org.apache.maven.project.MavenProject;
  * places depending on whether the plugin is executing for the core config or an
  * extension:
  * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th></th>
  * <th>Location</th>

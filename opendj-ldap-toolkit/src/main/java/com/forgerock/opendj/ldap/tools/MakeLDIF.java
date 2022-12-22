@@ -109,7 +109,6 @@ public final class MakeLDIF extends ToolConsoleApplication {
                 .build();
         argParser.setVersionHandler(newSdkVersionHandler());
         argParser.setShortToolDescription(REF_SHORT_DESC_MAKELDIF.get());
-        argParser.setDocToolDescriptionSupplement(SUPPLEMENT_DESCRIPTION_MAKELDIF.get());
 
         BooleanArgument showUsage;
         IntegerArgument randomSeed;
@@ -122,7 +121,6 @@ public final class MakeLDIF extends ToolConsoleApplication {
                     StringArgument.builder(OPTION_LONG_RESOURCE_PATH)
                             .shortIdentifier('r')
                             .description(INFO_MAKELDIF_DESCRIPTION_RESOURCE_PATH.get())
-                            .docDescriptionSupplement(SUPPLEMENT_DESCRIPTION_RESOURCE_PATH.get())
                             .valuePlaceholder(INFO_PATH_PLACEHOLDER.get())
                             .buildAndAddToParser(argParser);
             ldifFile =

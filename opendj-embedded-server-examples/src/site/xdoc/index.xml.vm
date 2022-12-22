@@ -13,27 +13,28 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2016 ForgeRock AS.
+  Portions Copyright 2022 Wren Security.
 -->
 <document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties>
     <title>About ${project.name}</title>
-    <author email="opendj-dev@forgerock.org">${project.organization.name}</author>
+    <author email="info@wrensecurity.org">${project.organization.name}</author>
   </properties>
   <body>
     <section name="About ${project.name}">
 
       <p>
-        The following examples use the OpenDJ Embedded Server API:
+        The following examples use the Wren:DS Embedded Server API:
       </p>
 
       <ul>
         <li>
           <a href="xref/org/forgerock/opendj/examples/SetupServer.html">Server Setup</a>
-          - illustrates how to setup a server from the OpenDJ archive using the Embedded Server API
+          - illustrates how to setup a server from the Wren:DS archive using the Embedded Server API
         </li>
         <li>
-          <a href="xref/org/forgerock/opendj/examples/StartStop.html">Server Start and Stop</a>
+          <a href="xref/org/forgerock/opendj/examples/StartStopServer.html">Server Start and Stop</a>
           - illustrates how to start and stop an installed server using the Embedded Server API
         </li>
         <li>

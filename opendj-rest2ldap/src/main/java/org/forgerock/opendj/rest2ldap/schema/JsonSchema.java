@@ -12,6 +12,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security.
  */
 package org.forgerock.opendj.rest2ldap.schema;
 
@@ -109,6 +110,7 @@ public final class JsonSchema {
      * characters in a single path element, and "**" represents any number of path elements. For example:
      *
      * <table valign="top">
+     *     <caption></caption>
      *     <tr><th>Pattern</th><th>Matches</th><th>Doesn't match</th></tr>
      *     <tr><td>/aaa/bbb/ccc</td><td>/aaa/bbb/ccc</td><td>/aaa/bbb/ccc/ddd<br/>/aaa/bbb/cccc</td></tr>
      *     <tr><td>/aaa/b&#x002A;/ccc</td><td>/aaa/bbb/ccc<br/>/aaa/bxx/ccc</td><td>/aaa/xxx/ccc<br/>/aaa/bbb</td></tr>

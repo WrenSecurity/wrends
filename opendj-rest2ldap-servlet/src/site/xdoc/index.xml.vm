@@ -13,12 +13,13 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2013-2015 ForgeRock AS.
+  Portions Copyright 2022 Wren Security.
 -->
 <document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties>
     <title>About ${project.name}</title>
-    <author email="opendj-dev@forgerock.org">${project.organization.name}</author>
+    <author email="info@wrensecurity.org">${project.organization.name}</author>
   </properties>
   <body>
     <section name="About ${project.name}">
@@ -43,17 +44,17 @@
         </p>
         <source>&lt;repositories>
   &lt;repository>
-    &lt;id>forgerock-staging-repository&lt;/id>
-    &lt;name>ForgeRock Release Repository&lt;/name>
-    &lt;url>${mavenRepoReleases}&lt;/url>
+    &lt;id>wrensecurity-releases&lt;/id>
+    &lt;name>Wren Security Release Repository&lt;/name>
+    &lt;url>https://wrensecurity.jfrog.io/wrensecurity/releases&lt;/url>
     &lt;snapshots>
       &lt;enabled>false&lt;/enabled>
     &lt;/snapshots>
   &lt;/repository>
   &lt;repository>
-    &lt;id>forgerock-snapshots-repository&lt;/id>
-    &lt;name>ForgeRock Snapshot Repository&lt;/name>
-    &lt;url>${mavenRepoSnapshots}&lt;/url>
+    &lt;id>wrensecurity-snapshots&lt;/id>
+    &lt;name>Wren Security Snapshot Repository&lt;/name>
+    &lt;url>https://wrensecurity.jfrog.io/wrensecurity/snapshots&lt;/url>
     &lt;releases>
       &lt;enabled>false&lt;/enabled>
     &lt;/releases>
@@ -77,23 +78,17 @@
           time <a href="dependencies.html">dependencies</a>:
         </p>
         <ul>
-          <li><a href="${mavenRepoReleases}/org/forgerock/opendj/${project.artifactId}">Stable releases</a></li>
-          <li><a href="${mavenRepoSnapshots}/org/forgerock/opendj/${project.artifactId}/${project.version}">Latest development snapshot</a></li>
+          <li><a href="https://wrensecurity.jfrog.io/wrensecurity/releases/org/wrensecurity/wrends/${project.artifactId}">Stable releases</a></li>
+          <li><a href="https://wrensecurity.jfrog.io/wrensecurity/snapshots/org/wrensecurity/wrends/${project.artifactId}/${project.version}">Latest development snapshot</a></li>
         </ul>
       </subsection>
       <subsection name="Build">
         <p>
           For the DIY enthusiasts you can build it yourself by checking out the
-          latest code using <a href="source-repository.html">Subversion</a>
+          latest code using <a href="scm.html">Git</a>
           and building it with Maven 3.
         </p>
       </subsection>
-    </section>
-    <section name="Getting started">
-      <p>
-        The following example shows how ${project.name} may be used:
-      </p>
-      <source>TODO</source>
     </section>
   </body>
 </document>

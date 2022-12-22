@@ -13,18 +13,19 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2015 ForgeRock AS.
+  Portions Copyright 2022 Wren Security.
 -->
 <document
- xmlns="http://maven.apache.org/XDOC/2.0"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
- <properties>
-  <title>OpenDJ Community Site - Page Not Found</title>
-  <author email="opendj-dev@forgerock.org">ForgeRock AS</author>
- </properties>
- <body>
-  <section name="Page Not Found">
-   <p>The page you are looking for is not yet part of this site.</p>
-  </section>
- </body>
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Wren:DS Community Site - Page Not Found</title>
+    <author email="info@wrensecurity.org">${project.organization.name}</author>
+  </properties>
+  <body>
+    <section name="Page Not Found">
+      <p>The page you are looking for is not yet part of this site.</p>
+    </section>
+  </body>
 </document>

@@ -403,7 +403,6 @@ public class AddRate extends ConsoleApplication {
                 .build();
         argParser.setVersionHandler(newSdkVersionHandler());
         argParser.setShortToolDescription(REF_SHORT_DESC_ADDRATE.get());
-        argParser.setDocToolDescriptionSupplement(SUPPLEMENT_DESCRIPTION_RATE_TOOLS.get());
 
         final ConnectionFactoryProvider connectionFactoryProvider;
         final ConnectionFactory connectionFactory;
@@ -435,7 +434,6 @@ public class AddRate extends ConsoleApplication {
                     StringArgument.builder(MakeLDIF.OPTION_LONG_RESOURCE_PATH)
                             .shortIdentifier('r')
                             .description(INFO_ADDRATE_DESCRIPTION_RESOURCE_PATH.get())
-                            .docDescriptionSupplement(SUPPLEMENT_DESCRIPTION_RESOURCE_PATH.get())
                             .valuePlaceholder(INFO_PATH_PLACEHOLDER.get())
                             .buildAndAddToParser(argParser);
 

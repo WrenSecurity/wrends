@@ -13,50 +13,42 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
+  Portions Copyright 2022 Wren Security.
 -->
 <document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties>
-    <title>About OpenDJ Directory Server</title>
-    <author email="opendj-dev@forgerock.org">ForgeRock AS</author>
+    <title>About Wren:DS Directory Server</title>
+    <author email="info@wrensecurity.org">${project.organization.name}</author>
   </properties>
   <body>
-    <section name="About OpenDJ Directory Server">
+    <section name="About Wren:DS Directory Server">
       <p>
-        OpenDJ is an LDAPv3 compliant directory service, developed for the Java
+        Wren:DS is an LDAPv3 compliant directory service, developed for the Java
         platform, providing a high performance, highly available, and secure
         store for the identities managed by your organization. Its easy
         installation process, combined with the power of the Java platform makes
-        OpenDJ the simplest, fastest directory to deploy and manage.
+        Wren:DS the simplest, fastest directory to deploy and manage.
       </p>
     </section>
-    <section name="Get the OpenDJ Directory Server">
+    <section name="Get the Wren:DS Directory Server">
       <p>
-        You can obtain the OpenDJ Directory Server using any of the following
+        You can obtain the Wren:DS Directory Server using any of the following
         methods:
       </p>
       <subsection name="Download">
         <p>
-          By far the simplest method is to download a build from ForgeRock
-          <a href="https://backstage.forgerock.com/#!/">BackStage</a>,
-          or a nightly build from the ForgeRock
-          <a href="https://forgerock.org">community resource center</a>
+          The easiest way to get the Wren:DS is to download the latest binary 
+          [release](https://github.com/WrenSecurity/wrends/releases).
         </p>
       </subsection>
       <subsection name="Build">
         <p>
           For the DIY enthusiasts you can build it yourself by checking out the
-          <a href="source-repository.html">latest code</a>
+          <a href="scm.html">latest code</a>
           and building it with Maven 3.
         </p>
       </subsection>
-    </section>
-    <section name="Getting started">
-      <p>
-        Once you have obtained a copy of the OpenDJ Directory Server, read the
-        <a href="../doc/bootstrap/install-guide/index.html">Installation Guide</a>
-        for further instructions.
-      </p>
     </section>
   </body>
 </document>
