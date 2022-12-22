@@ -13,44 +13,37 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2013-2015 ForgeRock AS.
+  Portions Copyright 2022 Wren Security.
 -->
 <document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties>
-    <title>About OpenDJ LDAP SDK</title>
-    <author email="opendj-dev@forgerock.org">${project.organization.name}</author>
+    <title>About Wren:DS LDAP SDK</title>
+    <author email="info@wrensecurity.org">${project.organization.name}</author>
   </properties>
   <body>
-    <section name="About OpenDJ LDAP SDK">
+    <section name="About Wren:DS LDAP SDK">
       <p>
-        The OpenDJ LDAP SDK provides a set of modern, developer-friendly Java
-        APIs as part of the OpenDJ product suite. The product suite includes the
+        The Wren:DS LDAP SDK provides a set of modern, developer-friendly Java
+        APIs as part of the Wren:DS product suite. The product suite includes the
         client SDK alongside command-line tools and sample code, a 100% pure
-        Java directory server, and more. You can use OpenDJ SDK to create client
+        Java directory server, and more. You can use Wren:DS SDK to create client
         applications for use with any server that complies with the,
         <a href='http://tools.ietf.org/html/rfc4510'>RFC 4510: Lightweight Directory
         Access Protocol (LDAP): Technical Specification Road Map</a>.
       </p>
       <p>
-        The OpenDJ LDAP SDK brings you easy-to-use connection management,
+        The Wren:DS LDAP SDK brings you easy-to-use connection management,
         connection pooling, load balancing, and all the standard LDAP operations
-        to read and write directory entries. OpenDJ LDAP SDK also lets you build
+        to read and write directory entries. Wren:DS LDAP SDK also lets you build
         applications with capabilities defined in additional draft and
         experimental RFCs that are supported by modern LDAP servers.
       </p>
     </section>
-    <section name="Documentation for OpenDJ SDK">
-      <p>
-        Javadoc for this module can be found <a href="apidocs/index.html">here</a>.
-        Read the <a href="../doc/dev-guide/index.html">developer guide</a> for
-        a deeper understanding of LDAP application development, as well as a
-        detailed over of LDAP itself.
-      </p>
-    </section>
-    <section name="Get the OpenDJ LDAP SDK">
+    <section name="Get the Wren:DS LDAP SDK">
       <p>
         You can start developing your LDAP applications now by obtaining the
-        OpenDJ LDAP SDK using any of the following methods:
+        Wren:DS LDAP SDK using any of the following methods:
       </p>
       <subsection name="Maven">
         <p>
@@ -59,25 +52,25 @@
         </p>
         <source>&lt;repositories>
   &lt;repository>
-    &lt;id>forgerock-staging-repository&lt;/id>
-    &lt;name>ForgeRock Release Repository&lt;/name>
-    &lt;url>${mavenRepoReleases}&lt;/url>
+    &lt;id>wrensecurity-releases&lt;/id>
+    &lt;name>Wren Security Release Repository&lt;/name>
+    &lt;url>https://wrensecurity.jfrog.io/wrensecurity/releases&lt;/url>
     &lt;snapshots>
       &lt;enabled>false&lt;/enabled>
     &lt;/snapshots>
   &lt;/repository>
   &lt;repository>
-    &lt;id>forgerock-snapshots-repository&lt;/id>
-    &lt;name>ForgeRock Snapshot Repository&lt;/name>
-    &lt;url>${mavenRepoSnapshots}&lt;/url>
+    &lt;id>wrensecurity-snapshots&lt;/id>
+    &lt;name>Wren Security Snapshot Repository&lt;/name>
+    &lt;url>https://wrensecurity.jfrog.io/wrensecurity/snapshots&lt;/url>
     &lt;releases>
       &lt;enabled>false&lt;/enabled>
     &lt;/releases>
   &lt;/repository>
 &lt;/repositories></source>
         <p>
-          The following dependencies will load both the OpenDJ Core APIs and the
-          OpenDJ Grizzly network transport:
+          The following dependencies will load both the Wren:DS Core APIs and the
+          Wren:DS Grizzly network transport:
         </p>
         <source>&lt;dependencies>
   &lt;dependency>
@@ -94,7 +87,7 @@
         <p>
           In some use-cases, such as developing LDAP unit tests or embedded
           LDAP applications, the network transport is not required, in which
-          case you can simply declare a dependency on the OpenDJ core APIs:
+          case you can simply declare a dependency on the Wren:DS core APIs:
         </p>
         <source>&lt;dependencies>
   &lt;dependency>
@@ -107,25 +100,25 @@
       <subsection name="Download">
         <p>
           If you are not using Maven then you will need to download a pre-built
-          binary from the ForgeRock Maven repository, along with any compile
+          binary from the Wren Security Maven repository, along with any compile
           time <a href="dependencies.html">dependencies</a>:
         </p>
         <ul>
-          <li><a href="${mavenRepoReleases}/org/forgerock/opendj/${project.artifactId}">Stable releases</a></li>
-          <li><a href="${mavenRepoSnapshots}/org/forgerock/opendj/${project.artifactId}/${project.version}">Latest development snapshot</a></li>
+          <li><a href="https://wrensecurity.jfrog.io/wrensecurity/releases/org/wrensecurity/wrends/${project.artifactId}">Stable releases</a></li>
+          <li><a href="https://wrensecurity.jfrog.io/wrensecurity/snapshots/org/wrensecurity/wrends/${project.artifactId}/${project.version}">Latest development snapshot</a></li>
         </ul>
       </subsection>
       <subsection name="Build">
         <p>
           For the DIY enthusiasts you can build it yourself by checking out the
-          latest code using <a href="source-repository.html">Subversion</a>
+          latest code using <a href="scm.html">Git</a>
           and building it with Maven 3.
         </p>
       </subsection>
     </section>
     <section name="Getting started">
       <p>
-        The following example shows how the OpenDJ SDK may be used to
+        The following example shows how the Wren:DS SDK may be used to
         connect to a Directory Server, authenticate, and then perform a
         search. The search results are output as LDIF to the standard output:
       </p>
@@ -172,9 +165,6 @@ finally
     connection.close();
   }
 }</source>
-      <p>
-        You can find more examples in the <a href="../opendj-ldap-sdk-examples/index.html">OpenDJ LDAP SDK Examples</a> module.
-      </p>
     </section>
   </body>
 </document>

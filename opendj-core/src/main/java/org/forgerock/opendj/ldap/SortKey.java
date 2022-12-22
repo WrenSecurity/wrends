@@ -13,6 +13,7 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions copyright 2012-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -47,8 +48,8 @@ import org.forgerock.util.Reject;
  * Connection connection = ...;
  * SearchRequest request = ...;
  *
- * Comparator&lt;Entry> comparator = SortKey.comparator("cn");
- * Set&lt;SearchResultEntry>; results = new TreeSet&lt;SearchResultEntry>(comparator);
+ * Comparator&lt;Entry&lt; comparator = SortKey.comparator("cn");
+ * Set&lt;SearchResultEntry&lt; results = new TreeSet&lt;SearchResultEntry&lt;(comparator);
  *
  * connection.search(request, results);
  * </pre>
