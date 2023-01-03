@@ -29,6 +29,11 @@
   <files>
     <file>
       <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/man-addrate.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
       <source>${project.build.directory}/docbkx-sources/man-pages/man-authrate.xml</source>
     </file>
 
@@ -94,7 +99,17 @@
 
     <file>
       <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/addrate-examples.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
       <source>${project.build.directory}/docbkx-sources/man-pages/attributes.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/authrate-examples.xml</source>
     </file>
 
     <file>
@@ -104,7 +119,22 @@
 
     <file>
       <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/description-makeldif.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
       <source>${project.build.directory}/docbkx-sources/man-pages/description-psearch-info.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/description-rate-tools.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/description-resource-path.xml</source>
     </file>
 
     <file>
@@ -115,6 +145,11 @@
     <file>
       <outputDirectory>man-pages</outputDirectory>
       <source>${project.build.directory}/docbkx-sources/man-pages/exit-codes-0-5-6-other.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/exit-codes-0-80-89.xml</source>
     </file>
 
     <file>
@@ -205,6 +240,16 @@
     <file>
       <outputDirectory>man-pages</outputDirectory>
       <source>${project.build.directory}/docbkx-sources/man-pages/man-makeldif-template.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/modrate-examples.xml</source>
+    </file>
+
+    <file>
+      <outputDirectory>man-pages</outputDirectory>
+      <source>${project.build.directory}/docbkx-sources/man-pages/searchrate-examples.xml</source>
     </file>
 
     <file>

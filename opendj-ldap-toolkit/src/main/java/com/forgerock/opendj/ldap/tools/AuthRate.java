@@ -381,6 +381,7 @@ public final class AuthRate extends ConsoleApplication {
                 .build();
         argParser.setVersionHandler(newSdkVersionHandler());
         argParser.setShortToolDescription(REF_SHORT_DESC_AUTHRATE.get());
+        argParser.setDocToolDescriptionSupplement(SUPPLEMENT_DESCRIPTION_RATE_TOOLS.get());
 
         ConnectionFactoryProvider connectionFactoryProvider;
         ConnectionFactory connectionFactory;

@@ -202,6 +202,7 @@ public final class SearchRate extends ConsoleApplication {
                 .build();
         argParser.setVersionHandler(newSdkVersionHandler());
         argParser.setShortToolDescription(REF_SHORT_DESC_SEARCHRATE.get());
+        argParser.setDocToolDescriptionSupplement(SUPPLEMENT_DESCRIPTION_RATE_TOOLS.get());
 
         ConnectionFactoryProvider connectionFactoryProvider;
         ConnectionFactory connectionFactory;
