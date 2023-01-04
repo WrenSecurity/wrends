@@ -13,6 +13,7 @@
  *
  * Copyright 2009-2011 Sun Microsystems, Inc.
  * Portions copyright 2012-2016 ForgeRock AS.
+ * Portions Copyright 2022 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -53,7 +54,7 @@ import org.forgerock.util.Reject;
  * Filter filter = and(equality("cn", "bjensen"), greaterOrEqual("age", 21));
  *
  * // Alternatively use a filter template:
- * Filter filter = Filter.format("(&(cn=%s)(age>=%s))", "bjensen", 21);
+ * Filter filter = Filter.format("(&amp;(cn=%s)(age&lt;=%s))", "bjensen", 21);
  * </pre>
  *
  * @see <a href="http://tools.ietf.org/html/rfc4511">RFC 4511 - Lightweight
