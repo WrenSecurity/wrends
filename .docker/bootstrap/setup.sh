@@ -23,12 +23,12 @@ process_init_files() {
 
 # Check whether Wren:DS is started
 is_started() {
-  $WRENDS_INSTALL_PATH/status -D "$ROOT_USER_DN" -w $ROOT_USER_PASSWORD | grep -eq 'Server Run Status:\ *Started'
+  $WRENDS_INSTALL_PATH/status -D "$ROOT_USER_DN" -w "$ROOT_USER_PASSWORD" | grep -eq 'Server Run Status:\ *Started'
 }
 
 # Check whether Wren:DS is stopped
 is_stopped() {
-  $WRENDS_INSTALL_PATH/status -D "$ROOT_USER_DN" -w $ROOT_USER_PASSWORD | grep -eq 'Server Run Status:\ *Stopped'
+  $WRENDS_INSTALL_PATH/status -D "$ROOT_USER_DN" -w "$ROOT_USER_PASSWORD" | grep -eq 'Server Run Status:\ *Stopped'
 }
 
 first_start() {
@@ -47,7 +47,7 @@ first_start() {
     --noPropertiesFile \
     --doNotStart \
     $SSL_OPTIONS \
-    $ADD_BASE_ENTRY
+    $ADDITIONAL_SETUP_ARGS
 
   $WRENDS_INSTALL_PATH/bin/start-ds
   while [ ! is_started ]; do sleep 0.1; done

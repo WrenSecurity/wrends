@@ -1,2 +1,10 @@
 # Ignore build-related folders
 **/target
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore Docker files
+.dockerignore
+Dockerfile
