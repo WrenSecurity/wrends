@@ -402,8 +402,8 @@ public final class TestCaseUtils {
                                           "org", "forgerock", "opendj", "ldif").toAbsolutePath().toFile();
     File serverClassesDir = new File(paths.buildDir, "classes");
     File unitClassesDir = new File(paths.unitRoot, "classes");
-    File libDir = new File(paths.buildDir.getPath() + "/package/opendj/lib");
-    File upgradeDir = new File(paths.buildDir.getPath() + "/package/opendj/template/config/upgrade");
+    File libDir = new File(paths.buildDir.getPath() + "/package/wrends/lib");
+    File upgradeDir = new File(paths.buildDir.getPath() + "/package/wrends/template/config/upgrade");
     System.out.println("libDir=" + libDir);
     File resourceDir = new File(paths.buildRoot, "resource");
     File testResourceDir = new File(paths.testSrcRoot, "resource");
