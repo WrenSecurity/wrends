@@ -163,10 +163,10 @@ public class LocalBackendWorkflowElementTest extends DirectoryServerTestCase
       TestCaseUtils.initializeMemoryBackend(childID1, child1, true);
       TestCaseUtils.initializeMemoryBackend(strangerID, stranger, true);
 
-      assertEquals(getMatchedDN("cn=user," + parent), DN.valueOf(parent));
-      assertEquals(getMatchedDN("cn=user," + child1), DN.valueOf(child1));
-      assertEquals(getMatchedDN("cn=user," + child2), DN.valueOf(parent));
-      assertEquals(getMatchedDN("cn=user," + stranger), DN.valueOf(stranger));
+      TestCaseUtils.assertObjectEquals(getMatchedDN("cn=user," + parent), DN.valueOf(parent));
+      TestCaseUtils.assertObjectEquals(getMatchedDN("cn=user," + child1), DN.valueOf(child1));
+      TestCaseUtils.assertObjectEquals(getMatchedDN("cn=user," + child2), DN.valueOf(parent));
+      TestCaseUtils.assertObjectEquals(getMatchedDN("cn=user," + stranger), DN.valueOf(stranger));
     }
     finally
     {

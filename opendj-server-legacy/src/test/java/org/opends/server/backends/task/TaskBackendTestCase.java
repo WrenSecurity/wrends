@@ -16,11 +16,11 @@
  */
 package org.opends.server.backends.task;
 
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.util.ServerConstants.DATE_FORMAT_GMT_TIME;
 import static org.opends.server.util.ServerConstants.TIME_ZONE_UTC;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.text.SimpleDateFormat;

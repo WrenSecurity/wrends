@@ -338,7 +338,7 @@ public class TestDnKeyFormat extends DirectoryServerTestCase {
 
         // check DN and number of attributes
         assertThat(entryBefore.getAllAttributes()).hasSameSizeAs(entryAfter.getAllAttributes());
-        assertEquals(entryBefore.getName(), entryAfter.getName());
+        TestCaseUtils.assertObjectEquals(entryBefore.getName(), entryAfter.getName());
 
         // check the object classes were not changed
         for (String ocBefore : entryBefore.getObjectClasses().values()) {
@@ -359,7 +359,7 @@ public class TestDnKeyFormat extends DirectoryServerTestCase {
             for (Attribute attrAfter : listAfter) {
               if (attrAfter.getAttributeDescription().equals(attrBefore.getAttributeDescription())) {
                 // Found the corresponding attribute
-                assertEquals(attrBefore, attrAfter);
+                TestCaseUtils.assertObjectEquals(attrBefore, attrAfter);
                 found = true;
               }
             }

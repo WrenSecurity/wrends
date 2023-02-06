@@ -16,7 +16,6 @@
  */
 package org.opends.server.core;
 
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.core.AddOperationTestCase.setWritabilityMode;
 import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
 import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
@@ -26,6 +25,7 @@ import static org.opends.server.protocols.ldap.LDAPConstants.OP_TYPE_EXTENDED_RE
 import static org.opends.server.types.NullOutputStream.nullPrintStream;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;

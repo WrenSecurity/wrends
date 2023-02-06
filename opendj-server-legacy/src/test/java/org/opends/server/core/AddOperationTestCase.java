@@ -21,7 +21,6 @@ import static org.forgerock.opendj.ldap.requests.Requests.newAddRequest;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.getDescriptionAttributeType;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.getExtensibleObjectObjectClass;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.getObjectClassAttributeType;
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.TestCaseUtils.getServer;
 import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
 import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
@@ -32,6 +31,7 @@ import static org.opends.server.types.NullOutputStream.nullPrintStream;
 import static org.opends.server.util.CollectionUtils.newArrayList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 

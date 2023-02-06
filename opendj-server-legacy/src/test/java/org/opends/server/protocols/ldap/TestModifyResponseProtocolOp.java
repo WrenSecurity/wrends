@@ -115,7 +115,7 @@ public class TestModifyResponseProtocolOp extends LdapTestCase
                                                   referralURLs);
     assertEquals(modifyResponse.getErrorMessage(), resultMsg);
     assertEquals(modifyResponse.getResultCode(), resultCode);
-    assertEquals(modifyResponse.getMatchedDN(), dn);
+    TestCaseUtils.assertObjectEquals(modifyResponse.getMatchedDN(), dn);
     assertEquals(modifyResponse.getReferralURLs(), referralURLs);
   }
 

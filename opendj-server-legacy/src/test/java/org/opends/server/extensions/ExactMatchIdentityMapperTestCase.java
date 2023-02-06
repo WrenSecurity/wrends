@@ -311,7 +311,7 @@ public class ExactMatchIdentityMapperTestCase
     // successfully.
     Entry mappedEntry = mapper.getEntryForID("test");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
 
 
     mapper.finalizeIdentityMapper();
@@ -365,7 +365,7 @@ public class ExactMatchIdentityMapperTestCase
     // successfully.
     Entry mappedEntry = mapper.getEntryForID("test");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
 
 
     mapper.finalizeIdentityMapper();
@@ -590,7 +590,7 @@ public class ExactMatchIdentityMapperTestCase
     // successfully.
     Entry mappedEntry = mapper.getEntryForID("foo");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=foo,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=foo,o=test"));
 
 
     mapper.finalizeIdentityMapper();
@@ -644,7 +644,7 @@ public class ExactMatchIdentityMapperTestCase
     // successfully.
     Entry mappedEntry = mapper.getEntryForID("bar");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=foo,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=foo,o=test"));
 
 
     mapper.finalizeIdentityMapper();
@@ -742,7 +742,7 @@ public class ExactMatchIdentityMapperTestCase
     // does not.
     Entry mappedEntry = mapper.getEntryForID("test");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
 
     mappedEntry = mapper.getEntryForID("test user");
     assertNull(mappedEntry);
@@ -760,7 +760,7 @@ public class ExactMatchIdentityMapperTestCase
 
     mappedEntry = mapper.getEntryForID("test user");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
 
 
     // Change the configuration back to the way it was.
@@ -772,7 +772,7 @@ public class ExactMatchIdentityMapperTestCase
     // Verify that the original matching pattern is back.
     mappedEntry = mapper.getEntryForID("test");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
 
     mappedEntry = mapper.getEntryForID("test user");
     assertNull(mappedEntry);
@@ -814,7 +814,7 @@ public class ExactMatchIdentityMapperTestCase
     // Verify that we can retrieve the user.
     Entry mappedEntry = mapper.getEntryForID("test");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
 
 
     // Create a modification to set the map base DN to "dc=example,dc=com".
@@ -837,7 +837,7 @@ public class ExactMatchIdentityMapperTestCase
     // Verify that we can retrieve the user again.
     mappedEntry = mapper.getEntryForID("test");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
 
 
     // Change the configuration back to its original setting.
@@ -849,7 +849,7 @@ public class ExactMatchIdentityMapperTestCase
     // Verify that we can still retrieve the user.
     mappedEntry = mapper.getEntryForID("test");
     assertNotNull(mappedEntry);
-    assertEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(mappedEntry.getName(), DN.valueOf("uid=test,o=test"));
   }
 
   /**

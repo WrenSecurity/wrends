@@ -238,7 +238,7 @@ public class LDIFBackendTestCase
 
     AddOperation addOperation = getRootConnection().processAdd(e);
     assertEquals(addOperation.getResultCode(), ResultCode.NO_SUCH_OBJECT);
-    assertEquals(addOperation.getMatchedDN(), DN.valueOf("o=ldif"));
+    TestCaseUtils.assertObjectEquals(addOperation.getMatchedDN(), DN.valueOf("o=ldif"));
   }
 
 
@@ -548,7 +548,7 @@ public class LDIFBackendTestCase
     SearchRequest request = newSearchRequest(dn, SearchScope.BASE_OBJECT);
     InternalSearchOperation searchOperation = getRootConnection().processSearch(request);
     assertEquals(searchOperation.getResultCode(), ResultCode.NO_SUCH_OBJECT);
-    assertEquals(searchOperation.getMatchedDN(), DN.valueOf("o=ldif"));
+    TestCaseUtils.assertObjectEquals(searchOperation.getMatchedDN(), DN.valueOf("o=ldif"));
   }
 
 

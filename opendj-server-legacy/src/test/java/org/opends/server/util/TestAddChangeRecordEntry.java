@@ -87,7 +87,7 @@ public final class TestAddChangeRecordEntry extends UtilTestCase {
     AddChangeRecordEntry entry = new AddChangeRecordEntry(DN.rootDN(),
         attributes);
 
-    Assert.assertEquals(entry.getDN(), DN.rootDN());
+    TestCaseUtils.assertObjectEquals(entry.getDN(), DN.rootDN());
   }
 
   /**
@@ -104,7 +104,7 @@ public final class TestAddChangeRecordEntry extends UtilTestCase {
     AddChangeRecordEntry entry = new AddChangeRecordEntry(testDN1,
         attributes);
 
-    Assert.assertEquals(entry.getDN(), testDN2);
+    TestCaseUtils.assertObjectEquals(entry.getDN(), testDN2);
   }
 
   /**
@@ -150,6 +150,6 @@ public final class TestAddChangeRecordEntry extends UtilTestCase {
     Assert.assertEquals(attrs.size(), 1);
 
     Attribute first = attrs.get(0);
-    Assert.assertEquals(first, attribute);
+    TestCaseUtils.assertObjectEquals(first, attribute);
   }
 }

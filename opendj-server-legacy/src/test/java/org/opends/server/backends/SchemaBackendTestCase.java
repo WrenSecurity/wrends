@@ -32,7 +32,6 @@ import static org.forgerock.opendj.ldap.schema.CoreSchema.getModifyTimestampAttr
 import static org.forgerock.opendj.ldap.schema.CoreSchema.getObjectClassesAttributeType;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.TestCaseUtils.getServerContext;
 import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
 import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
@@ -43,6 +42,7 @@ import static org.opends.server.types.NullOutputStream.nullPrintStream;
 import static org.opends.server.util.StaticUtils.createEntry;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -163,7 +163,7 @@ public class SchemaBackendTestCase extends BackendTestCase
     DN    schemaDN    = DN.valueOf("cn=schema");
     Entry schemaEntry = schemaBackend.getEntry(schemaDN);
     assertNotNull(schemaEntry);
-    assertEquals(schemaEntry.getName(), schemaDN);
+    TestCaseUtils.assertObjectEquals(schemaEntry.getName(), schemaDN);
 
     assertTrue(schemaEntry.hasAttribute(getAttributeTypesAttributeType()));
     assertTrue(schemaEntry.hasAttribute(getObjectClassesAttributeType()));
@@ -202,7 +202,7 @@ public class SchemaBackendTestCase extends BackendTestCase
     DN    schemaDN    = DN.valueOf("cn=schema");
     Entry schemaEntry = schemaBackend.getSchemaEntry(schemaDN);
     assertNotNull(schemaEntry);
-    assertEquals(schemaEntry.getName(), schemaDN);
+    TestCaseUtils.assertObjectEquals(schemaEntry.getName(), schemaDN);
 
     assertTrue(schemaEntry.hasAttribute(getAttributeTypesAttributeType()));
     assertTrue(schemaEntry.hasAttribute(getObjectClassesAttributeType()));
@@ -212,7 +212,7 @@ public class SchemaBackendTestCase extends BackendTestCase
     schemaDN    = DN.valueOf("cn=subschema");
     schemaEntry = schemaBackend.getSchemaEntry(schemaDN);
     assertNotNull(schemaEntry);
-    assertEquals(schemaEntry.getName(), schemaDN);
+    TestCaseUtils.assertObjectEquals(schemaEntry.getName(), schemaDN);
 
     assertTrue(schemaEntry.hasAttribute(getAttributeTypesAttributeType()));
     assertTrue(schemaEntry.hasAttribute(getObjectClassesAttributeType()));
@@ -4849,7 +4849,7 @@ public class SchemaBackendTestCase extends BackendTestCase
   {
     DN configEntryDN =
             DN.valueOf("ds-cfg-backend-id=schema,cn=Backends,cn=config");
-    assertEquals(schemaBackend.getComponentEntryDN(), configEntryDN);
+    TestCaseUtils.assertObjectEquals(schemaBackend.getComponentEntryDN(), configEntryDN);
   }
 
   /** Tests the {@code getClassName} method. */

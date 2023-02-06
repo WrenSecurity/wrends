@@ -27,7 +27,6 @@ import static org.forgerock.opendj.ldap.requests.Requests.newModifyDNRequest;
 import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
 import static org.forgerock.opendj.ldap.requests.Requests.newSearchRequest;
 import static org.forgerock.opendj.ldap.requests.Requests.newSimpleBindRequest;
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.TestCaseUtils.getServerLdapPort;
 import static org.opends.server.controls.PasswordPolicyErrorType.ACCOUNT_LOCKED;
 import static org.opends.server.controls.PasswordPolicyErrorType.CHANGE_AFTER_RESET;
@@ -38,6 +37,7 @@ import static org.opends.server.controls.PasswordPolicyErrorType.PASSWORD_MOD_NO
 import static org.opends.server.controls.PasswordPolicyErrorType.PASSWORD_TOO_YOUNG;
 import static org.opends.server.util.ServerConstants.OID_PASSWORD_POLICY_CONTROL;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.util.List;

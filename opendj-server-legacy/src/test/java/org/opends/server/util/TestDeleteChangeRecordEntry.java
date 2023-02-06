@@ -66,7 +66,7 @@ public final class TestDeleteChangeRecordEntry extends UtilTestCase {
   public void testConstructorEmptyDN() throws Exception {
     DeleteChangeRecordEntry entry = new DeleteChangeRecordEntry(DN.rootDN());
 
-    Assert.assertEquals(entry.getDN(), DN.rootDN());
+    TestCaseUtils.assertObjectEquals(entry.getDN(), DN.rootDN());
   }
 
   /**
@@ -82,7 +82,7 @@ public final class TestDeleteChangeRecordEntry extends UtilTestCase {
 
     DeleteChangeRecordEntry entry = new DeleteChangeRecordEntry(testDN1);
 
-    Assert.assertEquals(entry.getDN(), testDN2);
+    TestCaseUtils.assertObjectEquals(entry.getDN(), testDN2);
   }
 
   /**

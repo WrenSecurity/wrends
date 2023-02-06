@@ -63,7 +63,7 @@ public class TestDN extends TypesTestCase {
 
     DN childDN = namingContext.child(RDN.valueOf("ou=People"));
     assertNotNull(backendConfigManager.getParentDNInSuffix(childDN));
-    assertEquals(backendConfigManager.getParentDNInSuffix(childDN), namingContext);
+    TestCaseUtils.assertObjectEquals(backendConfigManager.getParentDNInSuffix(childDN), namingContext);
   }
 }
 

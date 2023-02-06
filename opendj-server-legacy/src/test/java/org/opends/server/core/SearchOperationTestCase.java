@@ -968,7 +968,7 @@ public class SearchOperationTestCase extends OperationTestCase
     assertThat(entries).hasSize(1);
 
     Entry entry = entries.getFirst();
-    assertEquals(entry.getName(), userDN);
+    TestCaseUtils.assertObjectEquals(entry.getName(), userDN);
 
     // Check real attributes and virtual (operational) attributes.
     List<String> messages = new LinkedList<>();
@@ -1155,7 +1155,7 @@ public class SearchOperationTestCase extends OperationTestCase
     assertThat(entries).hasSize(1);
 
     Entry entry = entries.getFirst();
-    assertEquals(entry.getName(), userDN);
+    TestCaseUtils.assertObjectEquals(entry.getName(), userDN);
 
     // Check all expected attributes are present and have the user requested name.
     assertThat(getAttributeNames(entry)).containsAll(expectedAttributes);
@@ -1216,7 +1216,7 @@ public class SearchOperationTestCase extends OperationTestCase
           new LinkedHashSet<>(requestedAttributes));
 
     SearchResultEntryProtocolOp entry = searchExternalForSingleEntry(searchRequest, null);
-    assertEquals(entry.getDN(), userDN);
+    TestCaseUtils.assertObjectEquals(entry.getDN(), userDN);
 
     // Check all expected attributes are present and have the user requested name.
     assertThat(getAttributeNames(entry)).containsAll(expectedAttributes);

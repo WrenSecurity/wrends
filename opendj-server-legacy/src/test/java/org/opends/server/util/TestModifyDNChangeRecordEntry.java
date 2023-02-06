@@ -75,7 +75,7 @@ public final class TestModifyDNChangeRecordEntry extends UtilTestCase {
     ModifyDNChangeRecordEntry entry = new ModifyDNChangeRecordEntry(
         DN.rootDN(), newRDN, false, newSuperiorDN);
 
-    Assert.assertEquals(entry.getDN(), DN.rootDN());
+    TestCaseUtils.assertObjectEquals(entry.getDN(), DN.rootDN());
   }
 
   /**
@@ -92,7 +92,7 @@ public final class TestModifyDNChangeRecordEntry extends UtilTestCase {
     ModifyDNChangeRecordEntry entry = new ModifyDNChangeRecordEntry(
         testDN1, newRDN, false, newSuperiorDN);
 
-    Assert.assertEquals(entry.getDN(), testDN2);
+    TestCaseUtils.assertObjectEquals(entry.getDN(), testDN2);
   }
 
   /**
@@ -121,7 +121,7 @@ public final class TestModifyDNChangeRecordEntry extends UtilTestCase {
     ModifyDNChangeRecordEntry entry =
          new ModifyDNChangeRecordEntry(DN.rootDN(), newRDN, false, newSuperiorDN);
 
-    Assert.assertEquals(entry.getNewRDN(), newRDN);
+    TestCaseUtils.assertObjectEquals(entry.getNewRDN(), newRDN);
   }
 
   /**
@@ -135,8 +135,7 @@ public final class TestModifyDNChangeRecordEntry extends UtilTestCase {
     ModifyDNChangeRecordEntry entry =
          new ModifyDNChangeRecordEntry(DN.rootDN(), newRDN, false, newSuperiorDN);
 
-    Assert
-        .assertEquals(entry.getNewSuperiorDN(), newSuperiorDN);
+    TestCaseUtils.assertObjectEquals(entry.getNewSuperiorDN(), newSuperiorDN);
   }
 
   /**

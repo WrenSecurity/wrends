@@ -115,7 +115,7 @@ public class TestCompareResponseProtocolOp extends LdapTestCase
                                                   referralURLs);
     assertEquals(compareResponse.getErrorMessage(), resultMsg);
     assertEquals(compareResponse.getResultCode(), resultCode);
-    assertEquals(compareResponse.getMatchedDN(), dn);
+    TestCaseUtils.assertObjectEquals(compareResponse.getMatchedDN(), dn);
     assertEquals(compareResponse.getReferralURLs(), referralURLs);
   }
 

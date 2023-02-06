@@ -23,6 +23,7 @@ import java.util.zip.DataFormatException;
 
 import org.forgerock.opendj.ldap.DN;
 import org.opends.server.DirectoryServerTestCase;
+import org.opends.server.TestCaseUtils;
 import org.opends.server.replication.common.CSN;
 import org.opends.server.replication.common.ServerState;
 import org.testng.annotations.DataProvider;
@@ -115,7 +116,7 @@ public class ByteArrayTest extends DirectoryServerTestCase
     assertEquals(scanner.nextLongUTF8(), l);
     assertEquals(scanner.nextCSN(), csn);
     assertEquals(scanner.nextCSNUTF8(), csn);
-    assertEquals(scanner.nextDN(), dn);
+    TestCaseUtils.assertObjectEquals(scanner.nextDN(), dn);
     assertEquals(scanner.nextByteArray(byteArray.length), byteArray);
     scanner.skipZeroSeparator();
     assertEquals(scanner.nextByteArray(byteArray.length), byteArray);

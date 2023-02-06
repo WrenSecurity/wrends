@@ -18,7 +18,6 @@ package org.opends.server.controls;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.controls.PersistentSearchChangeType.ADD;
 import static org.opends.server.controls.PersistentSearchChangeType.DELETE;
 import static org.opends.server.controls.PersistentSearchChangeType.MODIFY;
@@ -29,6 +28,7 @@ import static org.opends.server.types.NullOutputStream.nullPrintStream;
 import static org.opends.server.util.ServerConstants.OID_ENTRY_CHANGE_NOTIFICATION;
 import static org.opends.server.util.ServerConstants.OID_PERSISTENT_SEARCH;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -420,7 +420,7 @@ public class PersistentSearchControlTest extends ControlsTestCase
       assertEquals(OID_ENTRY_CHANGE_NOTIFICATION, ecnc.getOID());
       assertEquals(changeNumber, ecnc.getChangeNumber());
       assertEquals(type, ecnc.getChangeType());
-      assertEquals(dn, ecnc.getPreviousDN());
+      TestCaseUtils.assertObjectEquals(dn, ecnc.getPreviousDN());
       assertEquals(false, ecnc.isCritical()) ;
       checkEntryChangeNotificationControlToString(ecnc);
 
@@ -435,7 +435,7 @@ public class PersistentSearchControlTest extends ControlsTestCase
         assertEquals(ecnc.getOID(),newEcnc.getOID());
         assertEquals(ecnc.getChangeNumber(),newEcnc.getChangeNumber());
         assertEquals(ecnc.getChangeType(),newEcnc.getChangeType());
-        assertEquals(ecnc.getPreviousDN(),newEcnc.getPreviousDN());
+        TestCaseUtils.assertObjectEquals(ecnc.getPreviousDN(), newEcnc.getPreviousDN());
         assertEquals(ecnc.isCritical(),newEcnc.isCritical()) ;
       }
       catch (DirectoryException e)
@@ -457,7 +457,7 @@ public class PersistentSearchControlTest extends ControlsTestCase
       assertEquals(OID_ENTRY_CHANGE_NOTIFICATION, ecnc.getOID());
       assertEquals(changeNumber, ecnc.getChangeNumber());
       assertEquals(type, ecnc.getChangeType());
-      assertEquals(dn, ecnc.getPreviousDN());
+      TestCaseUtils.assertObjectEquals(dn, ecnc.getPreviousDN());
       assertEquals(isCritical, ecnc.isCritical()) ;
       checkEntryChangeNotificationControlToString(ecnc);
 
@@ -472,7 +472,7 @@ public class PersistentSearchControlTest extends ControlsTestCase
         assertEquals(ecnc.getOID(),newEcnc.getOID());
         assertEquals(ecnc.getChangeNumber(),newEcnc.getChangeNumber());
         assertEquals(ecnc.getChangeType(),newEcnc.getChangeType());
-        assertEquals(ecnc.getPreviousDN(),newEcnc.getPreviousDN());
+        TestCaseUtils.assertObjectEquals(ecnc.getPreviousDN(), newEcnc.getPreviousDN());
         assertEquals(ecnc.isCritical(),newEcnc.isCritical()) ;
       }
       catch (DirectoryException e)

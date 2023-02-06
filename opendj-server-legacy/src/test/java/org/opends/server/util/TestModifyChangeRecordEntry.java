@@ -91,7 +91,7 @@ public final class TestModifyChangeRecordEntry extends UtilTestCase {
     ModifyChangeRecordEntry entry = new ModifyChangeRecordEntry(DN.rootDN(),
         modifications);
 
-    Assert.assertEquals(entry.getDN(), DN.rootDN());
+    TestCaseUtils.assertObjectEquals(entry.getDN(), DN.rootDN());
   }
 
   /**
@@ -108,7 +108,7 @@ public final class TestModifyChangeRecordEntry extends UtilTestCase {
     ModifyChangeRecordEntry entry = new ModifyChangeRecordEntry(testDN1,
         modifications);
 
-    Assert.assertEquals(entry.getDN(), testDN2);
+    TestCaseUtils.assertObjectEquals(entry.getDN(), testDN2);
   }
 
   /**
@@ -158,6 +158,6 @@ public final class TestModifyChangeRecordEntry extends UtilTestCase {
 
     RawModification first = mods.get(0);
     Assert.assertEquals(first.getModificationType(), ModificationType.ADD);
-    Assert.assertEquals(first.getAttribute().toAttribute(), attribute);
+    TestCaseUtils.assertObjectEquals(first.getAttribute().toAttribute(), attribute);
   }
 }

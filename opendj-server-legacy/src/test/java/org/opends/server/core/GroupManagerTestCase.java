@@ -528,7 +528,7 @@ public class GroupManagerTestCase
 
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertTrue(groupInstance.isMember(user2DN));
     assertFalse(groupInstance.isMember(user3DN));
@@ -657,7 +657,7 @@ public class GroupManagerTestCase
 
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertTrue(groupInstance.isMember(user2DN));
     assertFalse(groupInstance.isMember(user3DN));
@@ -674,7 +674,7 @@ public class GroupManagerTestCase
                                           SearchScope.WHOLE_SUBTREE, filter);
     assertTrue(memberList.hasMoreMembers());
     DN memberDN = memberList.nextMemberDN();
-    assertEquals(memberDN, user1DN);
+    TestCaseUtils.assertObjectEquals(memberDN, user1DN);
     assertFalse(memberList.hasMoreMembers());
 
     filter = SearchFilter.createFilterFromString("(uid=user.3)");
@@ -692,7 +692,7 @@ public class GroupManagerTestCase
 
     groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertFalse(groupInstance.isMember(user2DN));
     assertTrue(groupInstance.isMember(user3DN));
@@ -745,7 +745,7 @@ public class GroupManagerTestCase
     DN groupDN = DN.valueOf("cn=Test Group of Names,ou=Groups,o=test");
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertFalse(groupInstance.getMembers().hasMoreMembers());
 
 
@@ -841,7 +841,7 @@ public class GroupManagerTestCase
 
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertTrue(groupInstance.isMember(user2DN));
     assertFalse(groupInstance.isMember(user3DN));
@@ -858,7 +858,7 @@ public class GroupManagerTestCase
                                           SearchScope.WHOLE_SUBTREE, filter);
     assertTrue(memberList.hasMoreMembers());
     DN memberDN = memberList.nextMemberDN();
-    assertEquals(memberDN, user1DN);
+    TestCaseUtils.assertObjectEquals(memberDN, user1DN);
     assertFalse(memberList.hasMoreMembers());
 
     filter = SearchFilter.createFilterFromString("(uid=user.3)");
@@ -876,7 +876,7 @@ public class GroupManagerTestCase
 
     groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertFalse(groupInstance.isMember(user2DN));
     assertTrue(groupInstance.isMember(user3DN));
@@ -929,7 +929,7 @@ public class GroupManagerTestCase
     DN groupDN = DN.valueOf("cn=Test Group of Unique Names,ou=Groups,o=test");
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertFalse(groupInstance.getMembers().hasMoreMembers());
 
 
@@ -1025,7 +1025,7 @@ public class GroupManagerTestCase
 
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertTrue(groupInstance.isMember(user2DN));
     assertFalse(groupInstance.isMember(user3DN));
@@ -1042,7 +1042,7 @@ public class GroupManagerTestCase
                                           SearchScope.WHOLE_SUBTREE, filter);
     assertTrue(memberList.hasMoreMembers());
     DN memberDN = memberList.nextMemberDN();
-    assertEquals(memberDN, user1DN);
+    TestCaseUtils.assertObjectEquals(memberDN, user1DN);
     assertFalse(memberList.hasMoreMembers());
 
     filter = SearchFilter.createFilterFromString("(uid=user.3)");
@@ -1060,7 +1060,7 @@ public class GroupManagerTestCase
 
     groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertFalse(groupInstance.isMember(user2DN));
     assertTrue(groupInstance.isMember(user3DN));
@@ -1113,7 +1113,7 @@ public class GroupManagerTestCase
     DN groupDN = DN.valueOf("cn=Test Group of Entries,ou=Groups,o=test");
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertFalse(groupInstance.getMembers().hasMoreMembers());
 
 
@@ -1183,7 +1183,7 @@ public class GroupManagerTestCase
 
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
 
 
@@ -1200,7 +1200,7 @@ public class GroupManagerTestCase
 
     groupInstance = groupManager.getGroupInstance(newDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), newDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), newDN);
     assertTrue(groupInstance.isMember(user1DN));
 
 
@@ -1523,7 +1523,7 @@ public class GroupManagerTestCase
     DN groupDN = DN.valueOf("cn=Test Group of Unique Names,ou=Groups,o=test");
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
 
 
     // Use a member list to iterate across the member DNs with no filter.
@@ -1660,7 +1660,7 @@ public class GroupManagerTestCase
 
     Group groupInstance = groupManager.getGroupInstance(groupDN);
     assertNotNull(groupInstance);
-    assertEquals(groupInstance.getGroupDN(), groupDN);
+    TestCaseUtils.assertObjectEquals(groupInstance.getGroupDN(), groupDN);
     assertTrue(groupInstance.isMember(user1DN));
     assertTrue(groupInstance.isMember(user2DN));
     assertFalse(groupInstance.isMember(user3DN));

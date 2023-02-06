@@ -26,7 +26,6 @@ import static org.forgerock.opendj.ldap.ResultCode.SUCCESS;
 import static org.forgerock.opendj.ldap.ResultCode.UNWILLING_TO_PERFORM;
 import static org.forgerock.opendj.ldap.requests.Requests.newModifyDNRequest;
 import static org.forgerock.opendj.ldap.requests.Requests.newModifyRequest;
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
 import static org.opends.server.protocols.internal.InternalClientConnection.nextMessageID;
 import static org.opends.server.protocols.internal.InternalClientConnection.nextOperationID;
@@ -38,6 +37,7 @@ import static org.opends.server.types.Privilege.UPDATE_SCHEMA;
 import static org.opends.server.util.CollectionUtils.newArrayList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 

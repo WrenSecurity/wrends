@@ -202,7 +202,7 @@ public class TestSearchResultEntryProtocolOp extends LdapTestCase
     SearchResultEntryProtocolOp decodedProtocolOp =
         (SearchResultEntryProtocolOp)LDAPReader.readProtocolOp(reader);
 
-    assertEquals(decodedProtocolOp.getDN(), protocolOp.getDN());
+    TestCaseUtils.assertObjectEquals(decodedProtocolOp.getDN(), protocolOp.getDN());
     assertTrue(testEqual(decodedProtocolOp.getAttributes(),
                          protocolOp.getAttributes()));
   }

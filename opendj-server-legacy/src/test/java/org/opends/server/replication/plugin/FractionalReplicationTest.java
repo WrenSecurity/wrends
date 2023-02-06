@@ -1223,7 +1223,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
        */
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(entry.getName(), newEntry.getName());
+      TestCaseUtils.assertObjectEquals(entry.getName(), newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
 
@@ -1257,7 +1257,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
        */
       newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(entry.getName(), newEntry.getName());
+      TestCaseUtils.assertObjectEquals(entry.getName(), newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "givenName", "ValueToBeKeptToo");
@@ -1312,7 +1312,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
        */
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(entry.getName(), newEntry.getName());
+      TestCaseUtils.assertObjectEquals(entry.getName(), newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "carLicense", "cirLicenseValue");
@@ -1348,7 +1348,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
        */
       newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(entry.getName(), newEntry.getName());
+      TestCaseUtils.assertObjectEquals(entry.getName(), newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "description", "ValueToBeKeptToo");
@@ -1402,7 +1402,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       // check that entry has been created and has attribute values from RDN
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(entry.getName(), newEntry.getName());
+      TestCaseUtils.assertObjectEquals(entry.getName(), newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "givenName", "ValueToBeRemoved");
@@ -1424,7 +1424,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       // check that entry has been renamed and has only attribute left in the new RDN
       newEntry = getEntry(newEntryDn, TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(newEntryDn, newEntry.getName());
+      TestCaseUtils.assertObjectEquals(newEntryDn, newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       assertThat(newEntry.getAllAttributes("givenName")).isEmpty();
@@ -1483,7 +1483,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       // check that entry has been created and has attribute values from RDN
       Entry newEntry = getEntry(entry.getName(), TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(entry.getName(), newEntry.getName());
+      TestCaseUtils.assertObjectEquals(entry.getName(), newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       checkEntryAttributeValue(newEntry, "description", "ValueToBeRemoved");
@@ -1505,7 +1505,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
       // check that entry has been renamed and has only attribute left in the * new RDN
       newEntry = getEntry(newEntryDn, TIMEOUT, true);
       assertNotNull(newEntry);
-      assertEquals(newEntryDn, newEntry.getName());
+      TestCaseUtils.assertObjectEquals(newEntryDn, newEntry.getName());
       assertTrue(newEntry.hasObjectClass(getInetOrgPersonObjectClass()));
       checkEntryAttributeValue(newEntry, "displayName", "ValueToBeKept");
       assertThat(newEntry.getAllAttributes("description")).isEmpty();

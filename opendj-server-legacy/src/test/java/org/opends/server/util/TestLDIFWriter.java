@@ -342,7 +342,7 @@ public final class TestLDIFWriter extends UtilTestCase {
     Entry readEntry = reader.readEntry();
     reader.close();
 
-    Assert.assertEquals(readEntry.getName(), entry.getName());
+    TestCaseUtils.assertObjectEquals(readEntry.getName(), entry.getName());
   }
 
   /**
@@ -369,7 +369,7 @@ public final class TestLDIFWriter extends UtilTestCase {
     reader.close();
 
     Assert.assertTrue(add instanceof AddChangeRecordEntry);
-    Assert.assertEquals(add.getDN(), entry.getName());
+    TestCaseUtils.assertObjectEquals(add.getDN(), entry.getName());
   }
 
   /**

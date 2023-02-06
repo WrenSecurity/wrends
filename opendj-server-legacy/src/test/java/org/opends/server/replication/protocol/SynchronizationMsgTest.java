@@ -42,6 +42,7 @@ import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.requests.ModifyDNRequest;
 import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.ObjectClass;
+import org.opends.server.TestCaseUtils;
 import org.opends.server.controls.SubtreeDeleteControl;
 import org.opends.server.core.AddOperation;
 import org.opends.server.core.AddOperationBasis;
@@ -243,11 +244,11 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     assertEquals(msg.compareTo(generatedMsg), 0);
 
     // Check Get / Set DN
-    assertEquals(msg.getDN(), generatedMsg.getDN());
+    TestCaseUtils.assertObjectEquals(msg.getDN(), generatedMsg.getDN());
 
     DN fakeDN = DN.valueOf("cn=fake cn");
     msg.setDN(fakeDN) ;
-    assertEquals(msg.getDN(), fakeDN) ;
+    TestCaseUtils.assertObjectEquals(msg.getDN(), fakeDN) ;
 
     // Check uuid
     assertEquals(msg.getEntryUUID(), generatedMsg.getEntryUUID());
@@ -670,7 +671,7 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     ServerStartMsg newMsg = new ServerStartMsg(msg.getBytes(getCurrentVersion()));
     assertEquals(msg.getServerId(), newMsg.getServerId());
     assertEquals(msg.getServerURL(), newMsg.getServerURL());
-    assertEquals(msg.getBaseDN(), newMsg.getBaseDN());
+    TestCaseUtils.assertObjectEquals(msg.getBaseDN(), newMsg.getBaseDN());
     assertEquals(msg.getWindowSize(), newMsg.getWindowSize());
     assertEquals(msg.getHeartbeatInterval(), newMsg.getHeartbeatInterval());
     assertEquals(msg.getSSLEncryption(), newMsg.getSSLEncryption());
@@ -714,7 +715,7 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     ReplServerStartMsg newMsg = new ReplServerStartMsg(msg.getBytes(getCurrentVersion()));
     assertEquals(msg.getServerId(), newMsg.getServerId());
     assertEquals(msg.getServerURL(), newMsg.getServerURL());
-    assertEquals(msg.getBaseDN(), newMsg.getBaseDN());
+    TestCaseUtils.assertObjectEquals(msg.getBaseDN(), newMsg.getBaseDN());
     assertEquals(msg.getWindowSize(), newMsg.getWindowSize());
     assertEquals(msg.getServerState().getCSN(1),
         newMsg.getServerState().getCSN(1));
@@ -1023,7 +1024,7 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     byte[] b = msg.getBytes(getCurrentVersion());
     MonitorMsg newMsg = new MonitorMsg(b, getCurrentVersion());
 
-    assertEquals(rsState, msg.getReplServerDbState());
+    TestCaseUtils.assertObjectEquals(rsState, msg.getReplServerDbState());
     assertEquals(newMsg.getReplServerDbState().toString(),
         msg.getReplServerDbState().toString());
 
@@ -1103,7 +1104,7 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     InitializeRequestMsg newMsg = new InitializeRequestMsg(msg.getBytes(getCurrentVersion()),getCurrentVersion());
     assertEquals(msg.getSenderID(), newMsg.getSenderID());
     assertEquals(msg.getDestination(), newMsg.getDestination());
-    assertEquals(msg.getBaseDN(), newMsg.getBaseDN());
+    TestCaseUtils.assertObjectEquals(msg.getBaseDN(), newMsg.getBaseDN());
   }
 
   /**
@@ -1125,13 +1126,13 @@ public class SynchronizationMsgTest extends ReplicationTestCase
     assertEquals(msg.getDestination(), newMsg.getDestination());
     assertEquals(msg.getInitiatorID(), newMsg.getInitiatorID());
     assertEquals(msg.getEntryCount(), newMsg.getEntryCount());
-    assertEquals(msg.getBaseDN(), newMsg.getBaseDN());
+    TestCaseUtils.assertObjectEquals(msg.getBaseDN(), newMsg.getBaseDN());
 
     assertEquals(senderID, newMsg.getSenderID());
     assertEquals(targetID, newMsg.getDestination());
     assertEquals(requestorID, newMsg.getInitiatorID());
     assertEquals(entryCount, newMsg.getEntryCount());
-    assertEquals(TEST_ROOT_DN, newMsg.getBaseDN());
+    TestCaseUtils.assertObjectEquals(TEST_ROOT_DN, newMsg.getBaseDN());
   }
 
   /**

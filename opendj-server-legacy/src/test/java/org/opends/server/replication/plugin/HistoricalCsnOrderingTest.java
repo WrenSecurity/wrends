@@ -300,19 +300,19 @@ public class HistoricalCsnOrderingTest extends ReplicationTestCase
     assertEquals(opList.size(), 5, "buildAndPublishMissingChanges should return 5 operations");
     ReplicationMsg msg = opList.removeFirst();
     assertEquals(msg.getClass(), AddMsg.class);
-    assertEquals(((LDAPUpdateMsg) msg).getDN(), dnTest1);
+    TestCaseUtils.assertObjectEquals(((LDAPUpdateMsg) msg).getDN(), dnTest1);
     msg = opList.removeFirst();
     assertEquals(msg.getClass(), DeleteMsg.class);
-    assertEquals(((LDAPUpdateMsg) msg).getDN(), dnTest3);
+    TestCaseUtils.assertObjectEquals(((LDAPUpdateMsg) msg).getDN(), dnTest3);
     msg = opList.removeFirst();
     assertEquals(msg.getClass(), AddMsg.class);
-    assertEquals(((LDAPUpdateMsg) msg).getDN(), dnTest2);
+    TestCaseUtils.assertObjectEquals(((LDAPUpdateMsg) msg).getDN(), dnTest2);
     msg = opList.removeFirst();
     assertEquals(msg.getClass(), ModifyMsg.class);
-    assertEquals(((LDAPUpdateMsg) msg).getDN(), dnTest2);
+    TestCaseUtils.assertObjectEquals(((LDAPUpdateMsg) msg).getDN(), dnTest2);
     msg = opList.removeFirst();
     assertEquals(msg.getClass(), ModifyMsg.class);
-    assertEquals(((LDAPUpdateMsg) msg).getDN(), dnTest1);
+    TestCaseUtils.assertObjectEquals(((LDAPUpdateMsg) msg).getDN(), dnTest1);
     }
     finally
     {

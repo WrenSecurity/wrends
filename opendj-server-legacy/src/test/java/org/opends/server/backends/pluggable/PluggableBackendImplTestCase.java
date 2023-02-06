@@ -733,12 +733,12 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     renameEntry.setDN(newDN);
     backend.renameEntry(prevDN, renameEntry, op);
     Entry dbEntry = backend.getEntry(newDN);
-    assertEquals(dbEntry.getName(), newDN, "Renamed entry is missing.");
+    TestCaseUtils.assertObjectEquals(dbEntry.getName(), newDN, "Renamed entry is missing.");
 
     renameEntry.setDN(prevDN);
     backend.renameEntry(newDN, renameEntry, op);
     dbEntry = backend.getEntry(prevDN);
-    assertEquals(dbEntry.getName(), prevDN, "Original entry has not been renamed");
+    TestCaseUtils.assertObjectEquals(dbEntry.getName(), prevDN, "Original entry has not been renamed");
   }
 
   @Test(description = "OPENDJ-2404")
@@ -797,7 +797,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     List<SearchResultEntry> result = runSearch(request, useInternalConnection);
 
     assertEquals(result.size(), 1, "Base Search should return only one Entry");
-    assertEquals(result.get(0).getName(), testBaseDN, "Base Search on the suffix should return the suffix itself");
+    TestCaseUtils.assertObjectEquals(result.get(0).getName(), testBaseDN, "Base Search on the suffix should return the suffix itself");
   }
 
   @Test
@@ -814,8 +814,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
 
     assertEquals(result.size(), 1, "One Level search should return a single child entry");
     SearchResultEntry resEntry = result.get(0);
-    assertEquals(topEntries.get(1).getName(), resEntry.getName(),
-        "One Level search should return the expected child");
+    TestCaseUtils.assertObjectEquals(topEntries.get(1).getName(), resEntry.getName(), "One Level search should return the expected child");
   }
 
   @Test
@@ -914,7 +913,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
         + " child entry");
     if (expectedEntryCount > 0)
     {
-      assertEquals(searchDN, result.get(0).getName(), "User entry search should return the expected entry");
+      TestCaseUtils.assertObjectEquals(searchDN, result.get(0).getName(), "User entry search should return the expected entry");
     }
   }
 

@@ -96,8 +96,7 @@ public class StressTest extends ReplicationTestCase
         Operation receivedOp = addMsg.createOperation(connection);
         assertEquals(receivedOp.getOperationType(), OperationType.ADD,
         "The received replication message is not an ADD msg");
-        assertEquals(addMsg.getDN(), personEntry.getName(),
-        "The received ADD replication message is not for the excepted DN");
+        TestCaseUtils.assertObjectEquals(addMsg.getDN(), personEntry.getName(), "The received ADD replication message is not for the excepted DN");
       }
 
       reader = new BrokerReader(broker);

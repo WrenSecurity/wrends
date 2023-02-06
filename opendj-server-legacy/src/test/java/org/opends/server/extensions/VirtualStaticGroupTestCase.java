@@ -388,8 +388,8 @@ public class VirtualStaticGroupTestCase
     assertTrue(g.isMember(u1));
 
     assertNotNull(g.getGroupDefinitionFilter());
-    assertEquals(g.getGroupDN(), vmda);
-    assertEquals(g.getTargetGroupDN(), da);
+    TestCaseUtils.assertObjectEquals(g.getGroupDN(), vmda);
+    TestCaseUtils.assertObjectEquals(g.getTargetGroupDN(), da);
     assertFalse(g.supportsNestedGroups());
     assertTrue(g.getNestedGroupDNs().isEmpty());
     assertFalse(g.mayAlterMemberList());
@@ -461,8 +461,8 @@ public class VirtualStaticGroupTestCase
     assertNotNull(g);
 
     assertNotNull(g.getGroupDefinitionFilter());
-    assertEquals(g.getGroupDN(), vn);
-    assertEquals(g.getTargetGroupDN(), ne);
+    TestCaseUtils.assertObjectEquals(g.getGroupDN(), vn);
+    TestCaseUtils.assertObjectEquals(g.getTargetGroupDN(), ne);
     assertFalse(g.supportsNestedGroups());
     assertTrue(g.getNestedGroupDNs().isEmpty());
     assertFalse(g.mayAlterMemberList());
