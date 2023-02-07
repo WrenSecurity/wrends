@@ -24,6 +24,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.mockito.internal.stubbing.defaultanswers.ReturnsEmptyValues;
+import org.mockito.internal.util.Primitives;
 import org.mockito.invocation.InvocationOnMock;
 
 /**
@@ -88,6 +89,9 @@ public final class ConfigurationMock {
                 Object defaultValue = getDefaultValue(definition, getPropertyDefMethod, propertyReturnType);
                 if (defaultValue != null) {
                     return defaultValue;
+                }
+                if (Number.class.isAssignableFrom(invocation.getMethod().getReturnType())) {
+                    return null; // Prevent Mockito's default behavior of returning wrapped 0
                 }
                 return answerFromDefaultMockitoBehavior(invocation);
             } catch (Exception e) {

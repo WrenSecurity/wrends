@@ -717,7 +717,7 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
         returnedEntries.add(invocation.getArgument(0));
         return null;
       }
-    }).when(searchOp).returnEntry(any(Entry.class), any(List.class));
+    }).when(searchOp).returnEntry(any(Entry.class), any());
     return searchOp;
   }
 
