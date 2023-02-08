@@ -542,7 +542,7 @@ public final class LDAPClientConnection2 extends ClientConnection implements TLS
     }
 
     private Response toResponse(final SearchResultEntry searchEntry) {
-        return Responses.newSearchResultEntry(Converters.partiallyWrap(searchEntry, ldapVersion));
+        return Responses.copyOfSearchResultEntry(Converters.partiallyWrap(searchEntry, ldapVersion));
     }
 
     /**
