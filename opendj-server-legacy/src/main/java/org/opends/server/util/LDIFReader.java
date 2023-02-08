@@ -21,6 +21,7 @@ import static org.opends.messages.UtilityMessages.*;
 import static org.opends.server.util.CollectionUtils.*;
 import static org.opends.server.util.StaticUtils.*;
 
+import com.google.common.collect.Maps;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -28,7 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -226,9 +227,9 @@ public class LDIFReader implements Closeable
 
   private Entry createEntry(DN entryDN, List<StringBuilder> lines, boolean checkSchema) throws LDIFException
   {
-    Map<ObjectClass, String> objectClasses = new HashMap<>();
-    Map<AttributeType, List<AttributeBuilder>> userAttrBuilders = new HashMap<>();
-    Map<AttributeType, List<AttributeBuilder>> operationalAttrBuilders = new HashMap<>();
+    Map<ObjectClass, String> objectClasses = new LinkedHashMap<>();
+    Map<AttributeType, List<AttributeBuilder>> userAttrBuilders = new LinkedHashMap<>();
+    Map<AttributeType, List<AttributeBuilder>> operationalAttrBuilders = new LinkedHashMap<>();
     for (StringBuilder line : lines)
     {
       readAttribute(lines, line, entryDN, objectClasses, userAttrBuilders, operationalAttrBuilders, checkSchema);
@@ -311,7 +312,7 @@ public class LDIFReader implements Closeable
    */
   protected Map<AttributeType, List<Attribute>> toAttributesMap(Map<AttributeType, List<AttributeBuilder>> attrBuilders)
   {
-    Map<AttributeType, List<Attribute>> attributes = new HashMap<>(attrBuilders.size());
+    Map<AttributeType, List<Attribute>> attributes = new LinkedHashMap<>(attrBuilders.size());
     for (Map.Entry<AttributeType, List<AttributeBuilder>> attrTypeEntry : attrBuilders.entrySet())
     {
       AttributeType attrType = attrTypeEntry.getKey();
@@ -1285,8 +1286,8 @@ public class LDIFReader implements Closeable
   private ChangeRecordEntry parseAddChangeRecordEntry(DN entryDN,
       List<StringBuilder> lines) throws LDIFException
   {
-    Map<ObjectClass, String> objectClasses = new HashMap<>();
-    Map<AttributeType, List<AttributeBuilder>> attrBuilders = new HashMap<>();
+    Map<ObjectClass, String> objectClasses = new LinkedHashMap<>();
+    Map<AttributeType, List<AttributeBuilder>> attrBuilders = new LinkedHashMap<>();
     for(StringBuilder line : lines)
     {
       readAttribute(lines, line, entryDN, objectClasses,

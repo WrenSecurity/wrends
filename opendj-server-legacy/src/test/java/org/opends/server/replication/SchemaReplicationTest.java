@@ -266,7 +266,7 @@ public class SchemaReplicationTest extends ReplicationTestCase
   private void assertModReceived(Modification mod, final DN baseDN, ModifyMsg modMsg) throws Exception
   {
     Operation receivedOp = modMsg.createOperation(connection);
-    assertEquals(modMsg.getDN(), baseDN, "The received message is not for cn=schema");
+    TestCaseUtils.assertObjectEquals(modMsg.getDN(), baseDN, "The received message is not for cn=schema");
     Assertions.assertThat(receivedOp).isInstanceOf(ModifyOperation.class);
     ModifyOperation receivedModifyOperation = (ModifyOperation) receivedOp;
 

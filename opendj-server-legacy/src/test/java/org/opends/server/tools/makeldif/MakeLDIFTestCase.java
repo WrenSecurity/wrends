@@ -321,7 +321,7 @@ public class MakeLDIFTestCase extends ToolsTestCase
     assertThat(attrs).isNotEmpty();
     Attribute a = attrs.iterator().next();
     Attribute expectedRes = Attributes.create(attrName, expectedValue);
-    assertEquals(a, expectedRes);
+    TestCaseUtils.assertObjectEquals(a, expectedRes);
   }
 
   private Entry readEntry(String outLdifFilePath) throws IOException, LDIFException

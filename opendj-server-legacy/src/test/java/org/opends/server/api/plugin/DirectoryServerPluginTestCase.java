@@ -811,7 +811,7 @@ public class DirectoryServerPluginTestCase
     nullPlugin.initializeInternal(DirectoryServer.getInstance().getServerContext(),
         configuration.dn(), pluginTypes,
         configuration.isInvokeForInternalOperations());
-    assertEquals(nullPlugin.getPluginEntryDN(), pluginEntryDN);
+    TestCaseUtils.assertObjectEquals(nullPlugin.getPluginEntryDN(), pluginEntryDN);
   }
 
 

@@ -180,7 +180,7 @@ public class AttributesTest extends TypesTestCase
       Attribute d) throws Exception
   {
     Attribute actual = Attributes.merge(a1, a2);
-    Assert.assertEquals(actual, e);
+    TestCaseUtils.assertObjectEquals(actual, e);
   }
 
 
@@ -209,7 +209,7 @@ public class AttributesTest extends TypesTestCase
   {
     List<ByteString> duplicates = new LinkedList<>();
     Attribute actual = Attributes.merge(a1, a2, duplicates);
-    Assert.assertEquals(actual, e);
+    TestCaseUtils.assertObjectEquals(actual, e);
 
     Assert.assertEquals(duplicates.size(), d.size());
     Assert.assertTrue(d.containsAll(duplicates));
@@ -238,7 +238,7 @@ public class AttributesTest extends TypesTestCase
       Attribute e, Attribute m) throws Exception
   {
     Attribute actual = Attributes.subtract(a1, a2);
-    Assert.assertEquals(actual, e);
+    TestCaseUtils.assertObjectEquals(actual, e);
   }
 
 
@@ -267,7 +267,7 @@ public class AttributesTest extends TypesTestCase
   {
     List<ByteString> missingValues = new LinkedList<>();
     Attribute actual = Attributes.subtract(a1, a2, missingValues);
-    Assert.assertEquals(actual, e);
+    TestCaseUtils.assertObjectEquals(actual, e);
 
     Assert.assertEquals(missingValues.size(), m.size());
     Assert.assertTrue(m.containsAll(missingValues));

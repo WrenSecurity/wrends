@@ -268,7 +268,7 @@ public final class TestLDIFReader extends UtilTestCase {
       Entry entry = reader.readEntry();
       Assert.assertNotNull(entry);
 
-      Assert.assertEquals(entry.getName(), DN.valueOf("cn=john, dc=foo, dc=com"));
+      TestCaseUtils.assertObjectEquals(entry.getName(), DN.valueOf("cn=john, dc=foo, dc=com"));
       Assert.assertTrue(entry.hasObjectClass(getTopObjectClass()));
       Assert.assertTrue(entry.hasObjectClass(getPersonObjectClass()));
       Assert.assertTrue(entry.hasValue(getCNAttributeType(), ByteString.valueOfUtf8("john")));
@@ -355,7 +355,7 @@ public final class TestLDIFReader extends UtilTestCase {
 
       Assert.assertNotNull(entry);
 
-      Assert.assertEquals(entry.getName(), DN.valueOf("cn=anne, dc=foo, dc=com"));
+      TestCaseUtils.assertObjectEquals(entry.getName(), DN.valueOf("cn=anne, dc=foo, dc=com"));
       Assert.assertTrue(entry.hasObjectClass(getTopObjectClass()));
       Assert.assertTrue(entry.hasObjectClass(getPersonObjectClass()));
       Assert.assertTrue(entry.hasValue(getCNAttributeType(), ByteString.valueOfUtf8("anne")));
@@ -396,7 +396,7 @@ public final class TestLDIFReader extends UtilTestCase {
       add = (AddChangeRecordEntry) change;
 
       dn = DN.valueOf("cn=Fiona Jensen, ou=Marketing, dc=airius, dc=com");
-      Assert.assertEquals(add.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(add.getDN(), dn);
 
       List<Attribute> attrs = new ArrayList<>();
       AttributeBuilder builder = new AttributeBuilder(getObjectClassAttributeType());
@@ -417,7 +417,7 @@ public final class TestLDIFReader extends UtilTestCase {
       delete = (DeleteChangeRecordEntry) change;
 
       dn = DN.valueOf("cn=Robert Jensen, ou=Marketing, dc=airius, dc=com");
-      Assert.assertEquals(delete.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(delete.getDN(), dn);
 
       // Change record #3.
       change = reader.readChangeRecord(false);
@@ -426,10 +426,10 @@ public final class TestLDIFReader extends UtilTestCase {
 
       dn = DN
           .valueOf("cn=Paul Jensen, ou=Product Development, dc=airius, dc=com");
-      Assert.assertEquals(modifyDN.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(modifyDN.getDN(), dn);
 
       rdn = RDN.valueOf("cn=paula jensen");
-      Assert.assertEquals(modifyDN.getNewRDN(), rdn);
+      TestCaseUtils.assertObjectEquals(modifyDN.getNewRDN(), rdn);
       Assert.assertNull(modifyDN.getNewSuperiorDN());
       Assert.assertTrue(modifyDN.deleteOldRDN());
 
@@ -440,12 +440,12 @@ public final class TestLDIFReader extends UtilTestCase {
 
       dn = DN
           .valueOf("ou=PD Accountants, ou=Product Development, dc=airius, dc=com");
-      Assert.assertEquals(modifyDN.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(modifyDN.getDN(), dn);
 
       rdn = RDN.valueOf("ou=Product Development Accountants");
-      Assert.assertEquals(modifyDN.getNewRDN(), rdn);
+      TestCaseUtils.assertObjectEquals(modifyDN.getNewRDN(), rdn);
       dn = DN.valueOf("ou=Accounting, dc=airius, dc=com");
-      Assert.assertEquals(modifyDN.getNewSuperiorDN(), dn);
+      TestCaseUtils.assertObjectEquals(modifyDN.getNewSuperiorDN(), dn);
       Assert.assertFalse(modifyDN.deleteOldRDN());
 
       // Change record #5.
@@ -455,7 +455,7 @@ public final class TestLDIFReader extends UtilTestCase {
 
       dn = DN
           .valueOf("cn=Paula Jensen, ou=Product Development, dc=airius, dc=com");
-      Assert.assertEquals(modify.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(modify.getDN(), dn);
 
       i = modify.getModifications().iterator();
 
@@ -464,14 +464,14 @@ public final class TestLDIFReader extends UtilTestCase {
       Assert.assertEquals(mod.getModificationType(), ModificationType.ADD);
       attr = Attributes.create("postaladdress",
           "123 Anystreet $ Sunnyvale, CA $ 94086");
-      Assert.assertEquals(mod.getAttribute(), attr);
+      TestCaseUtils.assertObjectEquals(mod.getAttribute(), attr);
 
       Assert.assertTrue(i.hasNext());
       mod = i.next().toModification();
       Assert.assertEquals(mod.getModificationType(),
           ModificationType.DELETE);
       attr = Attributes.empty(getDescriptionAttributeType());
-      Assert.assertEquals(mod.getAttribute(), attr);
+      TestCaseUtils.assertObjectEquals(mod.getAttribute(), attr);
 
       Assert.assertTrue(i.hasNext());
       mod = i.next().toModification();
@@ -480,14 +480,14 @@ public final class TestLDIFReader extends UtilTestCase {
       builder = new AttributeBuilder(getTelephoneNumberAttributeType());
       builder.add("+1 408 555 1234");
       builder.add("+1 408 555 5678");
-      Assert.assertEquals(mod.getAttribute(), builder.toAttribute());
+      TestCaseUtils.assertObjectEquals(mod.getAttribute(), builder.toAttribute());
 
       Assert.assertTrue(i.hasNext());
       mod = i.next().toModification();
       Assert.assertEquals(mod.getModificationType(),
           ModificationType.DELETE);
       attr = Attributes.create("facsimiletelephonenumber", "+1 408 555 9876");
-      Assert.assertEquals(mod.getAttribute(), attr);
+      TestCaseUtils.assertObjectEquals(mod.getAttribute(), attr);
 
       Assert.assertFalse(i.hasNext());
 
@@ -497,7 +497,7 @@ public final class TestLDIFReader extends UtilTestCase {
       modify = (ModifyChangeRecordEntry) change;
 
       dn = DN.valueOf("cn=Ingrid Jensen, ou=Product Support, dc=airius, dc=com");
-      Assert.assertEquals(modify.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(modify.getDN(), dn);
 
       i = modify.getModifications().iterator();
 
@@ -505,7 +505,7 @@ public final class TestLDIFReader extends UtilTestCase {
       mod = i.next().toModification();
       Assert.assertEquals(mod.getModificationType(), ModificationType.REPLACE);
       attr = Attributes.empty(CoreSchema.getPostalAddressAttributeType());
-      Assert.assertEquals(mod.getAttribute(), attr);
+      TestCaseUtils.assertObjectEquals(mod.getAttribute(), attr);
 
       // Change record #7.
       change = reader.readChangeRecord(false);
@@ -521,7 +521,7 @@ public final class TestLDIFReader extends UtilTestCase {
       Assert.assertEquals(mod.getModificationType(),
           ModificationType.DELETE);
       attr = Attributes.empty(getDescriptionAttributeType());
-      Assert.assertEquals(mod.getAttribute(), attr);
+      TestCaseUtils.assertObjectEquals(mod.getAttribute(), attr);
 
       // Change record #8.
       change = reader.readChangeRecord(false);
@@ -529,7 +529,7 @@ public final class TestLDIFReader extends UtilTestCase {
       modify = (ModifyChangeRecordEntry) change;
 
       dn = DN.valueOf("uid=rogasawara, ou=\u55b6\u696d\u90e8, o=airius");
-      Assert.assertEquals(modify.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(modify.getDN(), dn);
 
       i = modify.getModifications().iterator();
 
@@ -538,7 +538,7 @@ public final class TestLDIFReader extends UtilTestCase {
       Assert.assertEquals(mod.getModificationType(),
           ModificationType.DELETE);
       attr = Attributes.empty(getDescriptionAttributeType());
-      Assert.assertEquals(mod.getAttribute(), attr);
+      TestCaseUtils.assertObjectEquals(mod.getAttribute(), attr);
 
       Assert.assertFalse(i.hasNext());
 
@@ -600,7 +600,7 @@ public final class TestLDIFReader extends UtilTestCase {
       AddChangeRecordEntry add = (AddChangeRecordEntry) change;
 
       DN dn = DN.valueOf("cn=john smith, dc=com");
-      Assert.assertEquals(add.getDN(), dn);
+      TestCaseUtils.assertObjectEquals(add.getDN(), dn);
 
       Attribute attr = Attributes.create("description", TEMP_FILE_STRING);
       Assert.assertTrue(add.getAttributes().contains(attr));

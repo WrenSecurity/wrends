@@ -116,7 +116,7 @@ public class TestDeleteResponseProtocolOp extends LdapTestCase
                                             referralURLs);
     assertEquals(deleteResponse.getErrorMessage(), resultMsg);
     assertEquals(deleteResponse.getResultCode(), resultCode);
-    assertEquals(deleteResponse.getMatchedDN(), dn);
+    TestCaseUtils.assertObjectEquals(deleteResponse.getMatchedDN(), dn);
     assertEquals(deleteResponse.getReferralURLs(), referralURLs);
   }
 

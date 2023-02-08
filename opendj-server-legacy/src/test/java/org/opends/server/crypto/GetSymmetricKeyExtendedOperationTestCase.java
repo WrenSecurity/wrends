@@ -16,7 +16,6 @@
  */
 package org.opends.server.crypto;
 
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.config.ConfigConstants.ATTR_CRYPTO_CIPHER_TRANSFORMATION_NAME;
 import static org.opends.server.config.ConfigConstants.ATTR_CRYPTO_KEY_COMPROMISED_TIME;
 import static org.opends.server.config.ConfigConstants.ATTR_CRYPTO_KEY_LENGTH_BITS;
@@ -26,6 +25,7 @@ import static org.opends.server.protocols.internal.InternalClientConnection.getR
 import static org.opends.server.protocols.internal.Requests.newSearchRequest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 
 import org.forgerock.opendj.ldap.ByteString;
 import org.forgerock.opendj.ldap.DN;

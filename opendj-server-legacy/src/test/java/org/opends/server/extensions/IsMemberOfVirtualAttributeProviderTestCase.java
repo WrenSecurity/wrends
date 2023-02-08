@@ -854,9 +854,9 @@ public class IsMemberOfVirtualAttributeProviderTestCase
     List<SearchResultEntry> entries = searchOperation.getSearchEntries();
     assertEquals(entries.size(), 2, "Expecting 2 entries, but got " + entries.size());
     // First direct members
-    assertEquals(entries.get(0).getName(), DN.valueOf("cn=test group 1,ou=groups,o=test"));
+    TestCaseUtils.assertObjectEquals(entries.get(0).getName(), DN.valueOf("cn=test group 1,ou=groups,o=test"));
     // Then indirect members
-    assertEquals(entries.get(1).getName(), DN.valueOf("uid=test.user,ou=people,o=test"));
+    TestCaseUtils.assertObjectEquals(entries.get(1).getName(), DN.valueOf("uid=test.user,ou=people,o=test"));
 
     delete("cn=test group 1,ou=groups,o=test",
         "cn=test group 2,ou=groups,o=test",

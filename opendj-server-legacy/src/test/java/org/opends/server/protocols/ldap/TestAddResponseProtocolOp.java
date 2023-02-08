@@ -114,7 +114,7 @@ public class TestAddResponseProtocolOp extends DirectoryServerTestCase {
                                            referralURLs);
     assertEquals(addResponse.getErrorMessage(), resultMsg);
     assertEquals(addResponse.getResultCode(), resultCode);
-    assertEquals(addResponse.getMatchedDN(), dn);
+    TestCaseUtils.assertObjectEquals(addResponse.getMatchedDN(), dn);
     assertEquals(addResponse.getReferralURLs(), referralURLs);
   }
 

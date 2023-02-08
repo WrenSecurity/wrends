@@ -97,7 +97,7 @@ public final class TestChangeRecordEntry extends UtilTestCase {
   public void testConstructorEmptyDN() throws Exception {
     MyChangeRecordEntry entry = new MyChangeRecordEntry(DN.rootDN());
 
-    Assert.assertEquals(entry.getDN(), DN.rootDN());
+    TestCaseUtils.assertObjectEquals(entry.getDN(), DN.rootDN());
   }
 
   /**
@@ -113,6 +113,6 @@ public final class TestChangeRecordEntry extends UtilTestCase {
 
     MyChangeRecordEntry entry = new MyChangeRecordEntry(testDN1);
 
-    Assert.assertEquals(entry.getDN(), testDN2);
+    TestCaseUtils.assertObjectEquals(entry.getDN(), testDN2);
   }
 }

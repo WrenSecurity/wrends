@@ -90,8 +90,7 @@ public class ProxiedAuthV1ControlTestCase
          new ProxiedAuthV1Control(ByteString.valueOfUtf8("uid=test,o=test"));
     assertEquals(proxyControl.getOID(), OID_PROXIED_AUTH_V1);
     assertTrue(proxyControl.isCritical());
-    assertEquals(proxyControl.getAuthorizationDN(),
-                 DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(proxyControl.getAuthorizationDN(), DN.valueOf("uid=test,o=test"));
 
 
     // Try an invalid DN, which will be initally accepted but will fail when
@@ -142,8 +141,7 @@ public class ProxiedAuthV1ControlTestCase
          new ProxiedAuthV1Control(DN.valueOf("uid=test,o=test"));
     assertEquals(proxyControl.getOID(), OID_PROXIED_AUTH_V1);
     assertTrue(proxyControl.isCritical());
-    assertEquals(proxyControl.getAuthorizationDN(),
-                 DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(proxyControl.getAuthorizationDN(), DN.valueOf("uid=test,o=test"));
   }
 
 
@@ -321,8 +319,7 @@ public class ProxiedAuthV1ControlTestCase
         new LDAPControl(OID_PROXIED_AUTH_V1, true, bsb.toByteString());
 
     ProxiedAuthV1Control proxyControl = ProxiedAuthV1Control.DECODER.decode(c.isCritical(), c.getValue());
-    assertEquals(proxyControl.getAuthorizationDN(),
-                 DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(proxyControl.getAuthorizationDN(), DN.valueOf("uid=test,o=test"));
   }
 
 
@@ -362,14 +359,13 @@ public class ProxiedAuthV1ControlTestCase
     ProxiedAuthV1Control proxyControl =
          new ProxiedAuthV1Control(DN.rootDN());
     assertEquals(proxyControl.getRawAuthorizationDN(), ByteString.valueOfUtf8(""));
-    assertEquals(proxyControl.getAuthorizationDN(), DN.rootDN());
+    TestCaseUtils.assertObjectEquals(proxyControl.getAuthorizationDN(), DN.rootDN());
 
     proxyControl =
          new ProxiedAuthV1Control(DN.valueOf("uid=test,o=test"));
     assertEquals(proxyControl.getRawAuthorizationDN(),
                  ByteString.valueOfUtf8("uid=test,o=test"));
-    assertEquals(proxyControl.getAuthorizationDN(),
-                 DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(proxyControl.getAuthorizationDN(), DN.valueOf("uid=test,o=test"));
   }
 
 
@@ -417,8 +413,7 @@ public class ProxiedAuthV1ControlTestCase
     ProxiedAuthV1Control proxyControl =
          new ProxiedAuthV1Control(DN.valueOf("uid=test,o=test"));
 
-    assertEquals(proxyControl.getAuthorizationEntry().getName(),
-                 DN.valueOf("uid=test,o=test"));
+    TestCaseUtils.assertObjectEquals(proxyControl.getAuthorizationEntry().getName(), DN.valueOf("uid=test,o=test"));
   }
 
 

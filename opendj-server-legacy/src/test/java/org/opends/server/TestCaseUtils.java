@@ -14,6 +14,7 @@
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
  * Portions Copyright 2013 Manuel Gaupp
+ * Portions Copyright 2023 Wren Security
  */
 package org.opends.server;
 
@@ -402,8 +403,8 @@ public final class TestCaseUtils {
                                           "org", "forgerock", "opendj", "ldif").toAbsolutePath().toFile();
     File serverClassesDir = new File(paths.buildDir, "classes");
     File unitClassesDir = new File(paths.unitRoot, "classes");
-    File libDir = new File(paths.buildDir.getPath() + "/package/opendj/lib");
-    File upgradeDir = new File(paths.buildDir.getPath() + "/package/opendj/template/config/upgrade");
+    File libDir = new File(paths.buildDir.getPath() + "/package/wrends/lib");
+    File upgradeDir = new File(paths.buildDir.getPath() + "/package/wrends/template/config/upgrade");
     System.out.println("libDir=" + libDir);
     File resourceDir = new File(paths.buildRoot, "resource");
     File testResourceDir = new File(paths.testSrcRoot, "resource");
@@ -1924,25 +1925,20 @@ public final class TestCaseUtils {
     return dump.toString();
   }
 
-  /** FIXME Replace with {@link Assert#assertNotEquals(Object, Object)} once we upgrade to testng >= 6.1. */
-  public static void assertNotEquals(Object actual1, Object actual2)
+  /**
+   * {@link Object#equals} based assertion to workaround sneaky TestNG overloaded method.
+   */
+  public static void assertObjectEquals(Object actual, Object expected)
   {
-    assertNotEquals(actual1, actual2, null);
+      Assert.assertEquals(actual, expected);
   }
 
-  /** FIXME Replace with {@link Assert#assertNotEquals(Object, Object, String)} once we upgrade to testng >= 6.1. */
-  public static void assertNotEquals(Object actual1, Object actual2, String message)
+  /**
+   * {@link Object#equals} based assertion to workaround sneaky TestNG overloaded method.
+   */
+  public static void assertObjectEquals(Object actual, Object expected, String message)
   {
-    try
-    {
-      Assert.assertEquals(actual1, actual2);
-      Assert.fail(message);
-    }
-    catch (AssertionError e)
-    {
-      // this is good: they are not equals
-      return;
-    }
+      Assert.assertEquals(actual, expected, message);
   }
 
   public static int runLdapSearchTrustCertificateForSession(final String[] args)
@@ -1969,4 +1965,5 @@ public final class TestCaseUtils {
       System.setIn(stdin);
     }
   }
+
 }

@@ -16,12 +16,12 @@
  */
 package org.opends.server.extensions;
 
-import static org.opends.server.TestCaseUtils.assertNotEquals;
 import static org.opends.server.protocols.internal.InternalClientConnection.getRootConnection;
 import static org.opends.server.types.NullOutputStream.nullPrintStream;
 import static org.opends.server.util.ServerConstants.SASL_MECHANISM_DIGEST_MD5;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.util.List;

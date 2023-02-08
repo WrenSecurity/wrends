@@ -179,7 +179,7 @@ public class HistoricalTest extends ReplicationTestCase
     // Check that encoding and decoding preserves the history information.
     EntryHistorical hist = EntryHistorical.newInstanceFromEntry(entry);
     assertEquals(hist.getLastPurgedValuesCount(),0);
-    assertEquals(hist.encodeAndPurge(), before);
+    TestCaseUtils.assertObjectEquals(hist.encodeAndPurge(), before);
 
     Thread.sleep(1000);
 
@@ -434,7 +434,7 @@ public class HistoricalTest extends ReplicationTestCase
     }
 
     Entry newEntry = DirectoryServer.getEntry(dn2);
-    assertEquals(entry.getName(), newEntry.getName());
+    TestCaseUtils.assertObjectEquals(entry.getName(), newEntry.getName());
   }
 
   /**
@@ -458,7 +458,7 @@ public class HistoricalTest extends ReplicationTestCase
         FakeAddOperation addOp = (FakeAddOperation) op;
         assertNotNull(addOp.getCSN());
         AddMsg addmsg = addOp.generateMessage();
-        assertEquals(dn1, addmsg.getDN());
+        TestCaseUtils.assertObjectEquals(dn1, addmsg.getDN());
         assertEquals(addmsg.getEntryUUID(), EntryHistorical.getEntryUUID(entry));
         String parentId = LDAPReplicationDomain.findEntryUUID(dn1.parent());
         assertEquals(addmsg.getParentEntryUUID(), parentId);

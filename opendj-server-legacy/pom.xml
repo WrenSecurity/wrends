@@ -37,6 +37,7 @@
         <!-- General server-wide properties -->
         <docgen.dir>${project.build.directory}/docgen</docgen.dir>
         <jars.dir>${project.build.directory}/jars</jars.dir>
+
         <!-- Product information properties -->
         <patchFixIds />
         <isDebugBuild>false</isDebugBuild>
@@ -44,8 +45,10 @@
         <docWikiUrl>https://wrensecurity.org/projects/wrends/resources.html</docWikiUrl>
         <docGuideRefUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideRefUrl>
         <docGuideAdminUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideAdminUrl>
+
         <!-- Other properties -->
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
+
         <!-- Additional OSGI import package for this module -->
         <opendj.osgi.import.additional>
             org.forgerock.opendj.*;provide:=true,
@@ -53,6 +56,14 @@
         </opendj.osgi.import.additional>
         <product.archive.name>${product.name.lowercase}-${project.version}</product.archive.name>
         <juel.version>2.2.7</juel.version>
+
+        <!-- maven-failsafe-plugin JVM arguments -->
+        <argLine>
+            -server -Xms1024M -Xmx2048M
+            --add-exports java.base/sun.security.x509=ALL-UNNAMED
+            --add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED
+            --add-opens java.base/java.nio=ALL-UNNAMED
+        </argLine>
     </properties>
 
     <dependencies>
@@ -173,11 +184,6 @@
         </dependency>
 
         <!-- slf4j libraries -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jul-to-slf4j</artifactId>
@@ -1087,57 +1093,65 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
+
+                        <configuration>
+                            <testSourceDirectory>src/test/java</testSourceDirectory>
+                            <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+                            <additionalClasspathElements>
+                                <additionalClasspathElement>${jars.dir}/wrends-slf4j-adapter.jar</additionalClasspathElement>
+                                <additionalClasspathElement>${jars.dir}/wrends-je-backend.jar</additionalClasspathElement>
+                            </additionalClasspathElements>
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>org.slf4j:slf4j-jdk14</classpathDependencyExclude>
+                            </classpathDependencyExcludes>
+                            <excludes>
+                                <exclude>org/opends/server/snmp/**</exclude>
+                                <exclude>org/opends/quicksetup/**</exclude>
+                                <exclude>org/opends/quicksetup/**</exclude>
+                            </excludes>
+                            <includes>
+                                <include>**/Test*.java</include>
+                                <include>**/*Test.java</include>
+                                <include>**/*Tests.java</include>
+                                <include>**/*TestCase.java</include>
+                                <include>**/*TestCases.java</include>
+                            </includes>
+                            <properties>
+                                <property>
+                                    <name>usedefaultlisteners</name>
+                                    <value>false</value>
+                                </property>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.opends.server.TestListener</value>
+                                </property>
+                                <property>
+                                    <name>excludegroups</name>
+                                    <value>slow</value>
+                                </property>
+                                <property>
+                                    <name>configfailurepolicy</name>
+                                    <value>skip</value>
+                                </property>
+                            </properties>
+                            <systemPropertyVariables>
+                                <org.opends.server.BuildRoot>${basedir}</org.opends.server.BuildRoot>
+                                <org.opends.server.BuildDir>${project.build.directory}</org.opends.server.BuildDir>
+                                <org.opends.test.replicationDbImpl>LOG</org.opends.test.replicationDbImpl>
+                                <!-- <jvmarg value="-Dorg.opends.server.snmp.opendmk=${opendmk.lib.dir}" /> -->
+                                <org.opends.server.CleanupDirectories>true</org.opends.server.CleanupDirectories>
+                                <org.opends.test.suppressOutput>true</org.opends.test.suppressOutput>
+                                <org.opends.test.pauseOnFailure>false</org.opends.test.pauseOnFailure>
+                                <org.opends.test.copyClassesToTestPackage>false</org.opends.test.copyClassesToTestPackage>
+                            </systemPropertyVariables>
+                        </configuration>
+
                         <executions>
                             <execution>
                                 <goals>
                                     <goal>integration-test</goal>
                                     <goal>verify</goal>
                                 </goals>
-                                <configuration>
-                                    <testSourceDirectory>src/test/java</testSourceDirectory>
-                                    <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
-                                    <excludes>
-                                        <exclude>org/opends/server/snmp/**</exclude>
-                                        <exclude>org/opends/quicksetup/**</exclude>
-                                        <exclude>org/opends/quicksetup/**</exclude>
-                                    </excludes>
-                                    <includes>
-                                        <include>**/Test*.java</include>
-                                        <include>**/*Test.java</include>
-                                        <include>**/*Tests.java</include>
-                                        <include>**/*TestCase.java</include>
-                                        <include>**/*TestCases.java</include>
-                                    </includes>
-                                    <properties>
-                                        <property>
-                                            <name>usedefaultlisteners</name>
-                                            <value>false</value>
-                                        </property>
-                                        <property>
-                                            <name>listener</name>
-                                            <value>org.opends.server.TestListener</value>
-                                        </property>
-                                        <property>
-                                            <name>excludegroups</name>
-                                            <value>slow</value>
-                                        </property>
-                                        <property>
-                                            <name>configfailurepolicy</name>
-                                            <value>skip</value>
-                                        </property>
-                                    </properties>
-                                    <systemPropertyVariables>
-                                        <org.opends.server.BuildRoot>${basedir}</org.opends.server.BuildRoot>
-                                        <org.opends.server.BuildDir>${project.build.directory}</org.opends.server.BuildDir>
-                                        <org.opends.test.replicationDbImpl>LOG</org.opends.test.replicationDbImpl>
-                                        <!-- <jvmarg value="-Dorg.opends.server.snmp.opendmk=${opendmk.lib.dir}" /> -->
-                                        <org.opends.server.CleanupDirectories>true</org.opends.server.CleanupDirectories>
-                                        <org.opends.test.suppressOutput>true</org.opends.test.suppressOutput>
-                                        <org.opends.test.pauseOnFailure>false</org.opends.test.pauseOnFailure>
-                                        <org.opends.test.copyClassesToTestPackage>false</org.opends.test.copyClassesToTestPackage>
-                                    </systemPropertyVariables>
-                                    <argLine>-server -Xms1024M -Xmx2048M -XX:MaxPermSize=256m</argLine>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

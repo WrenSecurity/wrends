@@ -109,7 +109,7 @@ public class TestBindResponseProtocolOp  extends LdapTestCase {
       assertTrue(protocolOp instanceof BindResponseProtocolOp);
       BindResponseProtocolOp bindResponse = (BindResponseProtocolOp)protocolOp;
       assertEquals(bindResponse.getResultCode(), okCode.intValue());
-      assertEquals(bindResponse.getMatchedDN(), responseDn);
+      TestCaseUtils.assertObjectEquals(bindResponse.getMatchedDN(), responseDn);
       assertEquals(bindResponse.getErrorMessage().toString(), message.toString());
       assertNull(bindResponse.getReferralURLs());
       assertNull(bindResponse.getServerSASLCredentials());
@@ -156,7 +156,7 @@ public class TestBindResponseProtocolOp  extends LdapTestCase {
       assertTrue(protocolOp instanceof BindResponseProtocolOp);
       BindResponseProtocolOp bindResponse = (BindResponseProtocolOp)protocolOp;
       assertEquals(bindResponse.getResultCode(), okCode.intValue());
-      assertEquals(bindResponse.getMatchedDN(), responseDn);
+      TestCaseUtils.assertObjectEquals(bindResponse.getMatchedDN(), responseDn);
       assertEquals(bindResponse.getErrorMessage().toString(), message.toString());
       assertNull(bindResponse.getReferralURLs());
       assertNull(bindResponse.getServerSASLCredentials());
@@ -231,6 +231,6 @@ public class TestBindResponseProtocolOp  extends LdapTestCase {
         assertTrue(list1.equals(list2));
         DN dn1=saslOkOp.getMatchedDN();
         DN dn2=saslOkResp.getMatchedDN();
-        assertEquals(dn1, dn2);
+        TestCaseUtils.assertObjectEquals(dn1, dn2);
     }
 }

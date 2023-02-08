@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -172,7 +171,7 @@ public class Entry
     {
       return map;
     }
-    return new HashMap<>();
+    return new LinkedHashMap<>();
   }
 
 
@@ -2350,14 +2349,14 @@ public class Entry
    */
   public Entry duplicate(boolean processVirtual)
   {
-    Map<ObjectClass, String> objectClassesCopy = new HashMap<>(objectClasses);
+    Map<ObjectClass, String> objectClassesCopy = new LinkedHashMap<>(objectClasses);
 
-    Map<AttributeType, List<Attribute>> userAttrsCopy = new HashMap<>(userAttributes.size());
+    Map<AttributeType, List<Attribute>> userAttrsCopy = new LinkedHashMap<>(userAttributes.size());
     deepCopy(userAttributes, userAttrsCopy, false, false, false,
         true, false);
 
     Map<AttributeType, List<Attribute>> operationalAttrsCopy =
-         new HashMap<>(operationalAttributes.size());
+         new LinkedHashMap<>(operationalAttributes.size());
     deepCopy(operationalAttributes, operationalAttrsCopy, false,
         false, false, true, false);
 

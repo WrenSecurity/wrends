@@ -139,8 +139,7 @@ public class ProtocolWindowTest extends ReplicationTestCase
       assertEquals(OperationType.ADD.compareTo(receivedOp.getOperationType()), 0,
           "The received Replication message is not an ADD msg");
 
-      assertEquals(addMsg.getDN(), personEntry.getName(),
-        "The received ADD Replication message is not for the excepted DN");
+      TestCaseUtils.assertObjectEquals(addMsg.getDN(), personEntry.getName(), "The received ADD Replication message is not for the excepted DN");
 
       // send (2 * window + replicationServer queue) modify operations
       // so that window + replicationServer queue get stuck in the replicationServer queue

@@ -222,7 +222,7 @@ public class FileChangeNumberIndexDBTest extends ReplicationTestCase
     final ChangeNumberIndexRecord newest = cnIndexDB.getNewestRecord();
     assertEquals(oldest.getChangeNumber(), newestChangeNumber);
     assertEquals(oldest.getChangeNumber(), newest.getChangeNumber());
-    assertEquals(oldest.getBaseDN(), newest.getBaseDN());
+    TestCaseUtils.assertObjectEquals(oldest.getBaseDN(), newest.getBaseDN());
     assertEquals(oldest.getCSN(), newest.getCSN());
   }
 
