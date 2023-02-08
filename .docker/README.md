@@ -23,7 +23,7 @@ You can run Wren:DS through this command:
 
 Then you can perform base LDAP search request through this command:
 
-    docker exec -it wrends-test ./bin/ldapsearch --port 1389 --bindDN "cn=Directory Manager" --bindPassword password --baseDN dc=example,dc=com "(objectClass=*)"
+    docker exec -it wrends-test ldapsearch --port 1389 --bindDN "cn=Directory Manager" --bindPassword password --baseDN dc=example,dc=com "(objectClass=*)"
 
 Alternatively you can connect to the server through your favorite directory browser (e.g. _Apache Directory Studio_) using the following properties:
 
@@ -38,15 +38,14 @@ Wren:DS instance can be configured through the following predefined environment 
 
 | Variable | Description | Default Value |
 | --- | --- | --- |
-| `INSTANCE_DIR` | Directory for Wren:DS configuration / data | `/opt/wrends/instance` |
 | `BASE_DN` | Directory Base DN | `dc=example,dc=com` |
 | `LDAP_PORT` | LDAP Listener Port | `1389` |
 | `LDAPS_PORT` | LDAPS Listener Port | `1636` |
 | `ADMIN_CONNECTOR_PORT` | Administration Connector Port | `4444` |
 | `ROOT_USER_DN` | Root User DN | `cn=Directory Manager` |
 | `ROOT_USER_PASSWORD` | Root User Password | `password` |
-| `ADD_BASE_ENTRY` | Create Directory Base Entry if set | `--addBaseEntry` |
 | `SSL_OPTIONS` | SSL Configuration Options (see chapter bellow) | `--generateSelfSignedCertificate` |
+| `ADDITIONAL_SETUP_ARGS` | Additional Directory Setup Arguments (e.g. `--addBaseEntry` or `--sampleData`) | `--addBaseEntry` |
 
 ## Directory Initialization
 
