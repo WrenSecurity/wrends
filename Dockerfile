@@ -10,10 +10,10 @@ WORKDIR /project
 COPY . .
 
 # Perform actual Wren:DS build
-ARG BUILD_ARGS
+ARG MAVEN_BUILD_ARGS
 RUN \
   --mount=type=cache,target=/root/.m2 \
-  mvn package ${BUILD_ARGS}
+  mvn package ${MAVEN_BUILD_ARGS}
 
 # Extract built artifact into target directory
 RUN \

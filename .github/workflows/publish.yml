@@ -41,6 +41,8 @@ jobs:
         with:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            MAVEN_BUILD_ARGS=-DskipTests
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
