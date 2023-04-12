@@ -21,7 +21,6 @@ import static org.opends.messages.UtilityMessages.*;
 import static org.opends.server.util.CollectionUtils.*;
 import static org.opends.server.util.StaticUtils.*;
 
-import com.google.common.collect.Maps;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;

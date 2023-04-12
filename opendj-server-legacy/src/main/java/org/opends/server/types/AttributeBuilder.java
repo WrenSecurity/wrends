@@ -348,6 +348,7 @@ public final class AttributeBuilder implements Iterable<ByteString>
       return values.size();
     }
 
+    // @Checkstyle:ignore
     @Override
     public int hashCode()
     {

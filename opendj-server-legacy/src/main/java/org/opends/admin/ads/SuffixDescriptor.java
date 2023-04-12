@@ -107,6 +107,24 @@ public class SuffixDescriptor implements Comparable<SuffixDescriptor>
   }
 
   @Override
+  public boolean equals(Object obj)
+  {
+    if (this == obj)
+    {
+      return true;
+    }
+    else if (obj instanceof SuffixDescriptor)
+    {
+      final SuffixDescriptor other = (SuffixDescriptor) obj;
+      return getId().equals(other.getId());
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  @Override
   public int hashCode()
   {
     return getId().hashCode();

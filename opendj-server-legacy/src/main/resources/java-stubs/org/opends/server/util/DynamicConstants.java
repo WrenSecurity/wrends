@@ -82,10 +82,12 @@ public final class DynamicConstants
   /** The documentation url. */
   public static String DOC_REFERENCE_WIKI = "${docWikiUrl}";
   /** The documentation url. */
+  // @Checkstyle:ignore
   public static String DOC_QUICK_REFERENCE_GUIDE = "${docGuideRefUrl}";
 
-   /** The administration guide. */
-   public static String ADMINISTRATION_GUIDE_URL = "${docGuideAdminUrl}";
+  /** The administration guide. */
+  // @Checkstyle:ignore
+  public static String ADMINISTRATION_GUIDE_URL = "${docGuideAdminUrl}";
 
   /** A string representation of the version number. */
   public static String VERSION_NUMBER_STRING = String.format("%s.%s.%s", MAJOR_VERSION, MINOR_VERSION, POINT_VERSION);

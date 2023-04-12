@@ -110,10 +110,6 @@
             ${opendj.osgi.import.additional},
             *
         </opendj.osgi.import>
-
-        <!-- Override Checkstyle versions to avoid unnecessary errors -->
-        <checkstylePluginVersion>2.9.1</checkstylePluginVersion>
-        <checkstyleVersion>5.5</checkstyleVersion>
     </properties>
 
     <dependencyManagement>

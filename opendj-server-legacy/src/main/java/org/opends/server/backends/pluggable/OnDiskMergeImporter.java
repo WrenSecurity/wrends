@@ -473,7 +473,8 @@ final class OnDiskMergeImporter {
                     }
                     break;
                 default:
-                    throw new UnsupportedOperationException("Unsupported rebuild mode " + rebuildConfig.getRebuildMode());
+                    throw new UnsupportedOperationException("Unsupported rebuild mode "
+                            + rebuildConfig.getRebuildMode());
             }
             if (indexesToRebuild.contains(entryContainer.getDN2ID().getName().getIndexId())) {
                 // Always rebuild id2childrencount with dn2id.

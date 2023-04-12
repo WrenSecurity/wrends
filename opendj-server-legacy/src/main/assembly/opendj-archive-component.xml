@@ -88,15 +88,6 @@
       </includes>
     </fileSet>
 
-    <!-- Include the Forgerock binary license file if exists -->
-    <fileSet>
-       <directory>${project.build.directory}/legal-notices</directory>
-       <outputDirectory>legal-notices</outputDirectory>
-      <includes>
-        <include>*.txt</include>
-      </includes>
-    </fileSet>
-
     <!-- Adds sh in lib/ directory -->
     <fileSet>
       <directory>${basedir}/resource/bin</directory>
