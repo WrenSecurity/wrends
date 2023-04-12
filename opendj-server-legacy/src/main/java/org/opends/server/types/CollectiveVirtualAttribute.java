@@ -96,6 +96,7 @@ public class CollectiveVirtualAttribute extends AbstractAttribute
     return attribute.size();
   }
 
+  // @Checkstyle:ignore
   @Override
   public int hashCode()
   {

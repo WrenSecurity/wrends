@@ -16,17 +16,11 @@
  */
 package org.opends.server.types;
 
-
-
-
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-
 
 /**
  * This class defines an annotation type that can be used to describe
@@ -80,11 +74,9 @@ public @interface PublicAPI
   /**
    * Retrieves the stability level for the associated class or method.
    *
-   * return The stability level for the associated class or method.
+   * @return The stability level for the associated class or method.
    */
   StabilityLevel stability() default StabilityLevel.PRIVATE;
-
-
 
   /**
    * Indicates whether third-party code should be allowed to directly
@@ -96,13 +88,11 @@ public @interface PublicAPI
    * obtained elsewhere (e.g., provided as an argument to a method
    * overridden by the third-party code).
    *
-   * return {@code true} if third-party code should be allowed to
+   * @return {@code true} if third-party code should be allowed to
    *          create new instances of the associated object type, or
    *          {@code false} if not.
    */
   boolean mayInstantiate() default false;
-
-
 
   /**
    * Indicates whether the associated class/interface/method may be
@@ -112,34 +102,30 @@ public @interface PublicAPI
    * may be extended by internal code but should not be extended by
    * classes outside the OpenDS code base.
    *
-   * return  {@code true} if the associated class/interface/method
+   * @return  {@code true} if the associated class/interface/method
    *          may be extended by third-party code, or {@code false} if
    *          not.
    */
   boolean mayExtend() default false;
 
-
-
   /**
    * Indicates whether the associated method may be invoked by
    * third-party code.
    *
-   * return  {@code true} if third-party code should be allowed to
+   * @return  {@code true} if third-party code should be allowed to
    *          invoke the associated method, or {@code false} if not.
    */
   boolean mayInvoke() default false;
-
-
 
   /**
    * Retrieves a string that may contain additional notes that should
    * be taken into consideration by third-party developers that may be
    * interested in using the associated code.
    *
-   * return  A string that may contain additional notes that should
+   * @return  A string that may contain additional notes that should
    *          be taken into consideration by third-party developers
    *          that may be interested in using the associated code.
    */
   String notes() default "";
-}
 
+}

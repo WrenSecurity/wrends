@@ -18,7 +18,6 @@ package org.opends.server.util;
 
 import org.opends.server.TestCaseUtils;
 import org.forgerock.opendj.ldap.DN;
-import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 

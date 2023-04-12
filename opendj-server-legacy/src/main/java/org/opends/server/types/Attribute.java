@@ -48,7 +48,10 @@ public interface Attribute extends Iterable<ByteString>
   /** Marks code that can be removed once we are switching from server's to SDK's {@code Attribute}. */
   public @interface RemoveOnceSwitchingAttributes
   {
-    /** Free-form comment. */
+    /**
+     * Free-form comment.
+     * @return the comment
+     */
     String comment() default "";
   }
 
