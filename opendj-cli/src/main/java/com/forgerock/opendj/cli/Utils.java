@@ -378,7 +378,7 @@ public final class Utils {
      *             If the java version we are running on is not compatible.
      */
     public static void checkJavaVersion() throws ClientException {
-        final String version = System.getProperty("java.specification.version");
+        final String version = System.getProperty("java.specification.version").replaceAll("^1\\.", "");
         if (Float.valueOf(version) < CliConstants.MINIMUM_JAVA_VERSION) {
             final String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
             throw new ClientException(ReturnCode.JAVA_VERSION_INCOMPATIBLE,
