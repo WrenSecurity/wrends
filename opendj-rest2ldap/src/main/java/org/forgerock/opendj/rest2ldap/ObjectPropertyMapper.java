@@ -317,8 +317,8 @@ public final class ObjectPropertyMapper extends PropertyMapper {
                            @Override
                            public JsonValue apply(final List<Pair<String, JsonValue>> value) {
                                if (value.isEmpty()) {
-                                   // No subordinate attributes, so omit the entire JSON object from the resource.
-                                   return null;
+                                   // No subordinate attributes, we can return empty object.
+                                   return new JsonValue(Collections.emptyMap());
                                } else {
                                    // Combine the sub-attributes into a single JSON object.
                                    final Map<String, Object> result = new LinkedHashMap<>(value.size());
