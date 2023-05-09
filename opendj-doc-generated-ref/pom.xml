@@ -583,7 +583,7 @@
                     <plugin>
                         <groupId>org.wrensecurity.commons</groupId>
                         <artifactId>doc-maven-plugin</artifactId>
-                        <version>22.4.0-SNAPSHOT</version>
+
                         <executions>
                             <execution>
                                 <id>build-man-pages</id>
@@ -612,6 +612,7 @@
                     <!-- Generate Artifacts -->
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
+
                         <executions>
                             <execution>
                                 <id>sdk-tools-man-pages</id>
