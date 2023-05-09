@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-packages</artifactId>
-        <version>4.0.0-RC3-SNAPSHOT</version>
+        <version>5.0.0</version>
     </parent>
 
     <artifactId>opendj-svr4</artifactId>
