@@ -56,7 +56,7 @@ ENV PATH="${PATH}:/opt/wrends/bin"
 # Prepare Wren:DS instance directory
 ARG INSTANCE_DIR="/opt/wrends/instance"
 RUN echo ${INSTANCE_DIR} > /opt/wrends/instance.loc
-RUN mkdir -p ${INSTANCE_DIR} ${INSTANCE_DIR}/lib/extension
+RUN mkdir -p ${INSTANCE_DIR} ${INSTANCE_DIR}/lib/extensions
 VOLUME ${INSTANCE_DIR}
 
 EXPOSE ${LDAP_PORT} ${LDAPS_PORT} ${ADMIN_CONNECTOR_PORT}
