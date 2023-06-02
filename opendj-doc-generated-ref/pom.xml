@@ -21,7 +21,7 @@
     <parent>
         <artifactId>opendj-project</artifactId>
         <groupId>org.wrensecurity.wrends</groupId>
-        <version>5.0.1</version>
+        <version>5.0.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-doc-generated-ref</artifactId>
