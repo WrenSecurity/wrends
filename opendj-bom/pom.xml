@@ -27,7 +27,7 @@
 
     <groupId>org.wrensecurity.wrends</groupId>
     <artifactId>opendj-bom</artifactId>
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.0.1</version>
     <packaging>pom</packaging>
 
     <name>Wren:DS BOM</name>
@@ -122,6 +122,6 @@
     </dependencyManagement>
 
   <scm>
-    <tag>sustaining/5.0.x</tag>
+    <tag>5.0.1</tag>
   </scm>
 </project>
