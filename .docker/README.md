@@ -1,11 +1,14 @@
 <p align="center">
-  <img alt="Wren:DS logo" src="https://user-images.githubusercontent.com/13997406/203251142-037753c0-447e-4670-8b53-966f3ff3d098.png" width="60%">
+  <img alt="Wren:DS logo" src="https://user-images.githubusercontent.com/13997406/203251142-037753c0-447e-4670-8b53-966f3ff3d098.png" width="50%">
 </p>
 
 # Wren:DS
 
-[![License](https://img.shields.io/badge/license-CDDL-blue.svg)](https://github.com/WrenSecurity/wrends/blob/master/LICENSE)
+[![Organization Website](https://img.shields.io/badge/organization-Wren_Security-c12233)](https://wrensecurity.org)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/WrenSecurity)
+[![License](https://img.shields.io/badge/license-CDDL-blue.svg)](https://github.com/WrenSecurity/wrends/blob/main/LICENSE)
+[![Source Code](https://img.shields.io/badge/source_code-GitHub-6e40c9)](https://github.com/WrenSecurity/wrends)
+[![Contributing Guide](https://img.shields.io/badge/contributions-guide-green.svg)](https://github.com/WrenSecurity/wrensec-docs/wiki/Contributor-Guidelines)
 
 Wren:DS is an [LDAPv3](http://tools.ietf.org/html/rfc4510) compliant directory service, which has been developed
 for the Java platform, providing a high performance, highly available, and secure store for the identities managed
@@ -23,7 +26,7 @@ You can run Wren:DS through this command:
 
 Then you can perform base LDAP search request through this command:
 
-    docker exec -it wrends-test ldapsearch --port 1389 --bindDN "cn=Directory Manager" --bindPassword password --baseDN dc=example,dc=com "(objectClass=*)"
+    docker exec -it wrends-test ./bin/ldapsearch --port 1389 --bindDN "cn=Directory Manager" --bindPassword password --baseDN dc=example,dc=com "(objectClass=*)"
 
 Alternatively you can connect to the server through your favorite directory browser (e.g. _Apache Directory Studio_) using the following properties:
 
@@ -38,14 +41,15 @@ Wren:DS instance can be configured through the following predefined environment 
 
 | Variable | Description | Default Value |
 | --- | --- | --- |
+| `INSTANCE_DIR` | Directory for Wren:DS configuration / data | `/opt/wrends/instance` |
 | `BASE_DN` | Directory Base DN | `dc=example,dc=com` |
 | `LDAP_PORT` | LDAP Listener Port | `1389` |
 | `LDAPS_PORT` | LDAPS Listener Port | `1636` |
 | `ADMIN_CONNECTOR_PORT` | Administration Connector Port | `4444` |
 | `ROOT_USER_DN` | Root User DN | `cn=Directory Manager` |
 | `ROOT_USER_PASSWORD` | Root User Password | `password` |
+| `ADD_BASE_ENTRY` | Create Directory Base Entry if set | `--addBaseEntry` |
 | `SSL_OPTIONS` | SSL Configuration Options (see chapter bellow) | `--generateSelfSignedCertificate` |
-| `ADDITIONAL_SETUP_ARGS` | Additional Directory Setup Arguments (e.g. `--addBaseEntry` or `--sampleData`) | `--addBaseEntry` |
 
 ## Directory Initialization
 
@@ -113,11 +117,10 @@ List of all available SSL options can be found in [Utils](https://github.com/Wre
 
 # Acknowledgments
 
-Large portions of the source code are based on the open-source projects
-previously released by:
+Wren:DS is standing on the shoulders of giants and is a continuation of a prior work:
 
-* Sun Microsystems
-* ForgeRock
+* OpenDS by Sun Microsystems
+* OpenDJ by ForgeRock AS
 
 We'd like to thank them for supporting the idea of open-source software.
 
