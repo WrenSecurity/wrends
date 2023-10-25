@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2010-2016 ForgeRock AS.
+ * Portions Copyright 2023 Wren Security.
  */
 package org.opends.server.util;
 
@@ -1981,7 +1982,7 @@ public final class ServerConstants
   /**
    * The value that will be used for the vendorName attribute in the root DSE.
    */
-  public static final String SERVER_VENDOR_NAME = "ForgeRock AS.";
+  public static final String SERVER_VENDOR_NAME = "Wren Security";
 
 
 
