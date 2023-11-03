@@ -1,4 +1,4 @@
-FROM maven:3.8.6-eclipse-temurin-17 AS project-build
+FROM --platform=$BUILDPLATFORM maven:3.8.6-eclipse-temurin-17 AS project-build
 
 # Install build dependencies
 RUN \
