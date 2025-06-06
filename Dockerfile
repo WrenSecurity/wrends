@@ -22,7 +22,7 @@ RUN \
   unzip opendj-server-legacy/target/package/wrends-${WRENDS_VERSION}.zip -d /build
 
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:17-jre-ubi9-minimal
 
 # Set environment variables
 ENV \
@@ -38,8 +38,8 @@ ENV \
 # Create wrends user
 ARG WRENDS_UID=1000
 ARG WRENDS_GID=1000
-RUN addgroup --gid ${WRENDS_GID} wrends && \
-  adduser --uid ${WRENDS_UID} --gid ${WRENDS_GID} --system wrends
+RUN groupadd --gid ${WRENDS_GID} wrends && \
+  useradd --uid ${WRENDS_UID} --gid ${WRENDS_GID} --system wrends
 
 # Deploy wrends project
 COPY --chown=wrends:root --from=project-build /build/wrends /opt/wrends
