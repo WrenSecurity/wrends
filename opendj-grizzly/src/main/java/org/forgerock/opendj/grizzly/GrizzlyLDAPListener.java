@@ -13,20 +13,27 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions copyright 2011-2016 ForgeRock AS.
+ * Portions copyright 2025 Wren Security
  */
 package org.forgerock.opendj.grizzly;
 
 import static org.forgerock.opendj.grizzly.ServerTCPNIOTransport.SERVER_TRANSPORT;
-import static org.forgerock.opendj.ldap.LDAPListener.*;
+import static org.forgerock.opendj.ldap.CommonLDAPOptions.LDAP_DECODE_OPTIONS;
+import static org.forgerock.opendj.ldap.LDAPListener.CONNECT_MAX_BACKLOG;
+import static org.forgerock.opendj.ldap.LDAPListener.MAX_CONCURRENT_REQUESTS;
 
+import com.forgerock.opendj.util.ReferenceCountedObject;
+import com.forgerock.reactive.ReactiveHandler;
+import com.forgerock.reactive.Stream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.ldap.LDAPClientContext;
@@ -36,15 +43,13 @@ import org.forgerock.opendj.ldap.spi.LDAPListenerImpl;
 import org.forgerock.opendj.ldap.spi.LdapMessages.LdapRequestEnvelope;
 import org.forgerock.util.Function;
 import org.forgerock.util.Options;
+import org.glassfish.grizzly.CloseReason;
+import org.glassfish.grizzly.Closeable;
+import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.nio.transport.TCPNIOBindingHandler;
-import org.glassfish.grizzly.nio.transport.TCPNIOConnection;
 import org.glassfish.grizzly.nio.transport.TCPNIOServerConnection;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-
-import com.forgerock.opendj.util.ReferenceCountedObject;
-import com.forgerock.reactive.ReactiveHandler;
-import com.forgerock.reactive.Stream;
 
 /**
  * LDAP listener implementation using Grizzly for transport.
@@ -118,12 +123,31 @@ public final class GrizzlyLDAPListener implements LDAPListenerImpl {
     @Override
     public void close() {
         if (isClosed.compareAndSet(false, true)) {
+            CountDownLatch latch = new CountDownLatch(serverConnections.size());
+            for (TCPNIOServerConnection serverConnection : serverConnections) {
+                serverConnection.close().addCompletionHandler(new CompletionHandler<Closeable>() {
+                    @Override
+                    public void cancelled() {
+                        logger.warn(LocalizableMessage.raw("Closing listener has been unexpectedly cancelled"));
+                        latch.countDown();
+                    }
+                    @Override
+                    public void completed(Closeable result) {
+                        latch.countDown();
+                    }
+                    @Override
+                    public void failed(Throwable throwable) {
+                        logger.warn(LocalizableMessage.raw("Exception occurred while closing listener", throwable));
+                        latch.countDown();
+                    }
+                    @Override
+                    public void updated(Closeable result) {
+                    }
+                });
+            }
             try {
-                for (TCPNIOConnection serverConnection : serverConnections) {
-                    serverConnection.closeSilently();
-                }
-            } catch (final Exception e) {
-                // TODO: I18N
+                latch.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
                 logger.warn(LocalizableMessage.raw("Exception occurred while closing listener", e));
             } finally {
                 transport.release();
