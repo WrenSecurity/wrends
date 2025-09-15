@@ -37,16 +37,13 @@ ENV \
 
 # Create wrends user
 ARG WRENDS_UID=1000
-ARG WRENDS_GID=1000
-RUN addgroup --gid ${WRENDS_GID} wrends && \
-  adduser --uid ${WRENDS_UID} --gid ${WRENDS_GID} --system wrends
 
 # Deploy wrends project
-COPY --chown=wrends:root --from=project-build /build/wrends /opt/wrends
+COPY --chown=$WRENDS_UID:root --from=project-build /build/wrends /opt/wrends
 
 # Copy management scripts
-COPY --chown=wrends:root .docker/docker-entrypoint.sh /opt/wrends
-COPY --chown=wrends:root .docker/bootstrap /opt/wrends/bootstrap
+COPY --chown=$WRENDS_UID:root .docker/docker-entrypoint.sh /opt/wrends
+COPY --chown=$WRENDS_UID:root .docker/bootstrap /opt/wrends/bootstrap
 
 USER ${WRENDS_UID}
 WORKDIR /opt/wrends
