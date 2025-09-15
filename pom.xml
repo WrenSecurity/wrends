@@ -71,15 +71,22 @@
     </modules>
 
     <scm>
-        <url>https://github.com/WrenSecurity/WrenDS</url>
-        <connection>scm:git:git://github.com/WrenSecurity/WrenDS.git</connection>
-        <developerConnection>scm:git:git@github.com:WrenSecurity/WrenDS.git</developerConnection>
+        <url>https://github.com/WrenSecurity/wrends</url>
+        <connection>scm:git:git://github.com/WrenSecurity/wrends.git</connection>
+        <developerConnection>scm:git:git@github.com:WrenSecurity/wrends.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
     <issueManagement>
         <system>GitHub Issues</system>
         <url>https://github.com/WrenSecurity/WrenDS/issues</url>
     </issueManagement>
+
+    <distributionManagement>
+        <site>
+            <id>website</id>
+            <url>scm:git:git@github.com:WrenSecurity/wrends.git</url>
+        </site>
+    </distributionManagement>
 
     <repositories>
         <repository>
@@ -297,6 +304,17 @@
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-scm-publish-plugin</artifactId>
+                    <version>3.3.0</version>
+
+                    <configuration>
+                        <pubScmUrl>${project.scm.developerConnection}</pubScmUrl>
+                        <scmBranch>gh-pages</scmBranch>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
 
                     <configuration>
@@ -419,9 +437,11 @@
                     <executions>
                         <execution>
                             <id>generate-bootstrap-manifest</id>
+
                             <goals>
                                 <goal>generate-manifest</goal>
                             </goals>
+
                             <configuration>
                                 <classPathProperty>classpath.bootstrap</classPathProperty>
 
@@ -438,11 +458,14 @@
 
                         <execution>
                             <id>generate-bootstrap-client-manifest</id>
+
                             <goals>
                                 <goal>generate-manifest</goal>
                             </goals>
+
                             <configuration>
                                 <classPathProperty>classpath.bootstrap-client</classPathProperty>
+
                                 <excludes>
                                     <exclude>org.slf4j:jul-to-slf4j</exclude>
                                     <exclude>org.forgerock.opendj:opendj-server-legacy</exclude>

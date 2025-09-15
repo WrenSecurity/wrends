@@ -13,58 +13,45 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2022 Wren Security.
+  Portions Copyright 2022-2026 Wren Security.
 -->
-<project name="${project.name}"
- xmlns="http://maven.apache.org/DECORATION/1.0.1"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.1
-                     http://maven.apache.org/xsd/decoration-1.0.1.xsd">
+<site
+    name="${project.name}"
+    xmlns="http://maven.apache.org/SITE/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/SITE/2.0.0 https://maven.apache.org/xsd/site-2.0.0.xsd"
+>
+    <version position="right" />
 
- <publishDate position="right" format="yyyy.MM.dd" />
- <version position="right" />
+    <body>
+        <breadcrumbs>
+            <item name="Wren:DS" href="https://wrensecurity.org/projects/wrends" />
+        </breadcrumbs>
 
- <body>
+        <menu name="Wren:DS" inherit="top">
+            <item name="Welcome" href="index.html" />
+            <item name="Documentation" href="https://docs.wrensecurity.org/wrends/latest" />
+            <item name="Releases" href="https://github.com/WrenSecurity/wrends/releases" />
+        </menu>
 
-  <breadcrumbs>
-   <item name="Wren:DS" href="https://wrensecurity.org/projects/wrends" />
-  </breadcrumbs>
+        <menu name="Wren:DS Directory Server" inherit="top">
+            <item name="About" href="opendj-server-legacy/" />
+        </menu>
 
-  <menu name="Wren:DS" inherit="top">
-   <item name="Welcome" href="index.html" />
-   <item name="Documentation" href="https://docs.wrensecurity.org/wrends/latest" />
-   <item name="Releases" href="https://github.com/WrenSecurity/wrends/releases" />
-  </menu>
+        <menu name="Wren:DS LDAP SDK" inherit="top">
+            <item name="About" href="opendj-core/" />
+            <item name="Grizzly Integration" href="opendj-grizzly/" />
+            <item name="Examples" href="opendj-ldap-sdk-examples/" />
+            <item name="Toolkit" href="opendj-ldap-toolkit/" />
+            <item name="Rest2LDAP" href="opendj-rest2ldap/" />
+            <item name="Rest2LDAP Servlet" href="opendj-rest2ldap-servlet/" />
+        </menu>
 
-  <menu name="Wren:DS Directory Server" inherit="top">
-    <item name="About" href="opendj-server-legacy" />
-  </menu>
-
-  <menu name="Wren:DS LDAP SDK" inherit="top">
-    <item name="About" href="opendj-core" />
-    <item name="Grizzly Integration" href="opendj-grizzly" />
-    <item name="Examples" href="opendj-ldap-sdk-examples" />
-    <item name="Toolkit" href="opendj-ldap-toolkit" />
-    <item name="Rest2LDAP" href="opendj-rest2ldap" />
-    <item name="Rest2LDAP Servlet" href="opendj-rest2ldap-servlet" />
-  </menu>
-
-  <menu name="Wren:DS Development" inherit="top">
-    <item name="Source Repository" href="scm.html" />
-    <item name="Maven Repository" href="distribution-management.html" />
-    <item name="Issue Tracking" href="issue-management.html" />
-    <item name="License" href="licenses.html" />
-  </menu>
-
- </body>
-
- <custom>
-  <openproject>
-   <href>https://wrensecurity.org</href>
-   <src>./images/Logo-Wren-DS.png</src>
-   <alt>Wren:DS</alt>
-  </openproject>
-  <siteSearchFQDN>wrensecurity.org</siteSearchFQDN>
- </custom>
-
-</project>
+        <menu name="Wren:DS Development" inherit="top">
+            <item name="Source Repository" href="scm.html" />
+            <item name="Maven Repository" href="distribution-management.html" />
+            <item name="Issue Tracking" href="issue-management.html" />
+            <item name="License" href="licenses.html" />
+        </menu>
+    </body>
+</site>
