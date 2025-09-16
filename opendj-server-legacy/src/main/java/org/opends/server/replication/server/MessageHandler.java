@@ -13,6 +13,7 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions copyright 2025 Wren Security
  */
 package org.opends.server.replication.server;
 
@@ -304,12 +305,11 @@ class MessageHandler extends MonitorProvider<MonitorProviderCfg>
           synchronized (msgQueue) // TODO JNR why synchronize(msgQueue) here?
           {
             msg = lateQueue.removeFirst();
-            // By default a server is always not following. A weird case where messages not representing
-            // an operation may happen, making the late queue repeatedly fill and be emptied without ever
-            // getting the server out of state "not following".
-            if (lateQueue.isEmpty() && msgQueue.isEmpty())
+            // handle corner case when the last change does not contribute to domain state (i.e. we
+            // have reached end of the late queue)
+            if (lateQueue.isEmpty() && !msg.contributesToDomainState() && isMsgQueueBelowThreshold())
             {
-              following = true;
+                following = true;
             }
           }
           if (updateServerState(msg))
@@ -360,16 +360,17 @@ class MessageHandler extends MonitorProvider<MonitorProviderCfg>
   }
 
   /**
-   * Fills the late queue with the most recent changes, accepting only the
-   * messages from provided replica ids.
+   * Fills the late queue with the most recent changes, accepting only the messages from provided
+   * replica ids. We also make sure that the late queue always ends with a change that contributes
+   * to domain state, even if it means overflowing the queue.
    */
   private void fillLateQueue() throws ChangelogException
   {
     try (DBCursor<UpdateMsg> cursor = replicationServerDomain.getCursorFrom(serverState);)
     {
-      while (cursor.next() && isLateQueueBelowThreshold())
+      while (cursor.next() && (isLateQueueBelowThreshold() || !lateQueue.last().contributesToDomainState()))
       {
-        lateQueue.add(cursor.getRecord());
+          lateQueue.add(cursor.getRecord());
       }
     }
   }

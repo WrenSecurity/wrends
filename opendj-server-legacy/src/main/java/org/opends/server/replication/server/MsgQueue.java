@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2012-2016 ForgeRock AS.
+ * Portions copyright 2025 Wren Security
  */
 package org.opends.server.replication.server;
 
@@ -58,6 +59,19 @@ public class MsgQueue
     synchronized (lock)
     {
       return map.get(map.firstKey());
+    }
+  }
+
+  /**
+   * Return the last UpdateMsg in the MsgQueue.
+   *
+   * @return The last UpdateMsg in the MsgQueue.
+   */
+  public UpdateMsg last()
+  {
+    synchronized (lock)
+    {
+      return map.get(map.lastKey());
     }
   }
 
