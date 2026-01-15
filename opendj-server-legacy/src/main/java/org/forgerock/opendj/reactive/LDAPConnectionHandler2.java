@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.forgerock.opendj.reactive;
 
@@ -673,6 +674,22 @@ public final class LDAPConnectionHandler2 extends ConnectionHandler<LDAPConnecti
         logger.info(NOTE_CONNHANDLER_STARTED_LISTENING, handlerName);
     }
 
+    @Override
+    public void start() {
+        // The Directory Server start process should only return when the connection
+        // handlers port are fully opened and working. The start method therefore needs
+        // to wait for the created thread to actually start accepting connections
+        synchronized (waitListen) {
+            super.start();
+
+            try {
+                waitListen.wait();
+            } catch (InterruptedException e) {
+                // If something interrupted the start its probably better to return ASAP.
+            }
+        }
+    }
+
     /**
      * Operates in a loop, accepting new connections and ensuring that requests on those connections are handled
      * properly.
@@ -711,16 +728,16 @@ public final class LDAPConnectionHandler2 extends ConnectionHandler<LDAPConnecti
             }
 
             try {
+                // If we have gotten here, then we are about to start listening
+                // for the first time since startup or since we were previously disabled.
+                startListener();
+                lastIterationFailed = false;
+
                 // At this point, the connection Handler either started correctly or failed
                 // to start but the start process should be notified and resume its work in any cases.
                 synchronized (waitListen) {
                     waitListen.notify();
                 }
-
-                // If we have gotten here, then we are about to start listening
-                // for the first time since startup or since we were previously disabled.
-                startListener();
-                lastIterationFailed = false;
             } catch (Exception e) {
                 // Clean up the messed up HTTP server
                 stopListener();

@@ -804,10 +804,9 @@ public final class LDAPConnectionHandler extends
   @Override
   public void start()
   {
-    // The Directory Server start process should only return
-    // when the connection handlers port are fully opened
-    // and working. The start method therefore needs to wait for
-    // the created thread to
+    // The Directory Server start process should only return when the connection
+    // handlers port are fully opened and working. The start method therefore needs
+    // to wait for the created thread to actually start accepting connections
     synchronized (waitListen)
     {
       super.start();
@@ -818,8 +817,7 @@ public final class LDAPConnectionHandler extends
       }
       catch (InterruptedException e)
       {
-        // If something interrupted the start its probably better
-        // to return ASAP.
+        // If something interrupted the start its probably better to return ASAP.
       }
     }
   }
