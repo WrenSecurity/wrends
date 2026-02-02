@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.wrensecurity</groupId>
         <artifactId>wrensec-parent</artifactId>
-        <version>3.5.1</version>
+        <version>4.0.2</version>
         <relativePath />
     </parent>
 
@@ -117,6 +117,14 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>jaxws-ri</artifactId>
+                <version>2.3.7</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+ 
             <dependency>
                 <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-bom</artifactId>
@@ -290,7 +298,7 @@
                     <?m2e execute onConfiguration?>
                     <groupId>org.wrensecurity.commons</groupId>
                     <artifactId>i18n-maven-plugin</artifactId>
-                    <version>22.3.0</version>
+                    <version>22.6.2</version>
                 </plugin>
 
                 <!-- This is needed to use annotations in maven plugins with maven 3.0.x -->
@@ -318,7 +326,7 @@
                     <?m2e ignore?>
                     <groupId>org.wrensecurity.commons</groupId>
                     <artifactId>doc-maven-plugin</artifactId>
-                    <version>22.4.0</version>
+                    <version>22.6.2</version>
                     <configuration>
                         <projectName>Wren:DS</projectName>
                         <projectVersion>${project.version}</projectVersion>

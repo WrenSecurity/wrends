@@ -13,23 +13,22 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions copyright 2011-2016 ForgeRock AS.
- * Portions copyright 2022 Wren Security.
+ * Portions copyright 2022-2026 Wren Security.
  */
 package org.forgerock.opendj.ldap;
+
+import static org.fest.assertions.Assertions.assertThat;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.Arrays;
-
-import com.google.common.io.BaseEncoding;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import static org.fest.assertions.Assertions.*;
+import org.wrensecurity.guava.common.io.BaseEncoding;
 
 /**
  * This class defines a set of tests for the ByteString class.

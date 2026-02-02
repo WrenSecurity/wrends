@@ -15,8 +15,6 @@
  */
 package org.opends.server.replication.server.changelog.api;
 
-import javax.annotation.Generated;
-
 import org.forgerock.i18n.LocalizableMessage;
 
 /**
@@ -28,7 +26,6 @@ import org.forgerock.i18n.LocalizableMessage;
 public class AbortedChangelogCursorException extends ChangelogException
 {
 
-  @Generated("Eclipse")
   private static final long serialVersionUID = -2123770048083474999L;
 
   /**
