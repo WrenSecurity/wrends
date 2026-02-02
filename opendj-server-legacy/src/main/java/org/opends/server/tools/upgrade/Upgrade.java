@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Portions Copyright 2013-2016 ForgeRock AS.
- * Portions Copyright 2022 Wren Security
+ * Portions Copyright 2022-2026 Wren Security
  */
 package org.opends.server.tools.upgrade;
 
@@ -546,6 +546,8 @@ public final class Upgrade
     );
     register("4.0.0", moveSubordinateBaseDnToGlobalConfiguration());
     register("4.0.0", removeTools("ldif-diff", "make-ldif", "dsjavaproperties"));
+
+    register("5.0.4", removeMatchingJarFiles("forgerock-guava-*.jar"));
 
     /* All upgrades will refresh the server configuration schema and generate a new upgrade folder. */
     registerLast(
