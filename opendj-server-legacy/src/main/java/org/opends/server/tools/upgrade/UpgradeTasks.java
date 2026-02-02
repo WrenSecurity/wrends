@@ -12,23 +12,82 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Portions Copyright 2013-2016 ForgeRock AS.
- * Portions Copyright 2022 Wren Security
+ * Portions Copyright 2022-2026 Wren Security
  */
 package org.opends.server.tools.upgrade;
 
-import static org.opends.server.util.SchemaUtils.addSchemaFileToElementDefinitionIfAbsent;
-
-import static java.nio.charset.StandardCharsets.*;
-import static java.nio.file.StandardOpenOption.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.APPEND;
 import static javax.security.auth.callback.ConfirmationCallback.NO;
 import static javax.security.auth.callback.ConfirmationCallback.YES;
-import static javax.security.auth.callback.TextOutputCallback.*;
+import static javax.security.auth.callback.TextOutputCallback.INFORMATION;
 import static org.forgerock.util.Utils.joinAsString;
-import static org.opends.messages.ToolMessages.*;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_ADDATTRIBUTE_FAILS;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_ADDOBJECTCLASS_FAILS;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_ADD_CONFIG_FILE_FAILS;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_CONFIG_ERROR_UPGRADE_FOLDER;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_COPYSCHEMA_FAILS;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_CORRUPTED_TEMPLATE;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_PERFORMING_POST_TASKS_FAIL;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_ALL_REBUILD_INDEX_DECLINED;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_CHANGE_DONE_IN_SPECIFIC_FILE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_NO_CHANGE_DONE_IN_SPECIFIC_FILE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_NO_INDEX_TO_REBUILD_FOR_BACKEND;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_REBUILD_ALL;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_REBUILD_INDEXES_DECLINED;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_REBUILD_INDEX_ARGUMENTS;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_REBUILD_INDEX_ENDS;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_REBUILD_INDEX_STARTS;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_ADD_CONFIG_FILE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_ADD_SUBORDINATE_BASE_DN_TO_GLOBAL_CONFIG;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_CANNOT_READ_SCHEMA_FILE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_CANNOT_WRITE_TO_CONCATENATED_SCHEMA_FILE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_DELETE_CHANGELOG_SUMMARY;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_DELETE_FILE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_DELETE_SUBORDINATE_BASE_DN_FROM_ROOT_DSE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_CHANGELOG_DESCRIPTION;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_CONFIG_READ_FAIL;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_JE_CANCELLED;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_JE_DESCRIPTION;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_JE_ENV_UNREADABLE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_JE_NO_JE_LIB;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_1;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_JE_SUMMARY_5;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_MIGRATE_JE_UGLY_DN;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_NEEDS_USER_CONFIRM;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_REFRESH_UPGRADE_DIRECTORY;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_REMOVE_OLD_JARS;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_REPLACE_SCHEMA_FILE;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_SUMMARY_RESTORE_CSV_DELIMITER_CHAR;
+import static org.opends.messages.ToolMessages.INFO_UPGRADE_TASK_UNABLE_TO_REMOVE_OLD_JARS;
 import static org.opends.server.tools.upgrade.FileManager.copyRecursively;
-import static org.opends.server.tools.upgrade.UpgradeUtils.*;
-import static org.opends.server.util.StaticUtils.*;
+import static org.opends.server.tools.upgrade.UpgradeUtils.batDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.binDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.concatenatedSchemaFile;
+import static org.opends.server.tools.upgrade.UpgradeUtils.configDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.configFile;
+import static org.opends.server.tools.upgrade.UpgradeUtils.configSchemaDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.deleteFileIfExists;
+import static org.opends.server.tools.upgrade.UpgradeUtils.getInstancePath;
+import static org.opends.server.tools.upgrade.UpgradeUtils.libDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.searchConfigFile;
+import static org.opends.server.tools.upgrade.UpgradeUtils.templateConfigDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.templateConfigSchemaDirectory;
+import static org.opends.server.tools.upgrade.UpgradeUtils.updateConfigFile;
+import static org.opends.server.tools.upgrade.UpgradeUtils.updateConfigUpgradeSchemaFile;
+import static org.opends.server.tools.upgrade.UpgradeUtils.updateSchemaFile;
+import static org.opends.server.tools.upgrade.UpgradeUtils.deleteMatchingFiles;
+import static org.opends.server.util.SchemaUtils.addSchemaFileToElementDefinitionIfAbsent;
+import static org.opends.server.util.StaticUtils.isClassAvailable;
+import static org.opends.server.util.StaticUtils.stackTraceToSingleLineString;
 
+import com.forgerock.opendj.cli.ClientException;
+import com.forgerock.opendj.cli.ReturnCode;
+import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.Transaction;
+import com.sleepycat.je.TransactionConfig;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
@@ -45,9 +104,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
 import javax.security.auth.callback.TextOutputCallback;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.ldap.Attribute;
@@ -71,14 +128,6 @@ import org.opends.server.tools.RebuildIndex;
 import org.opends.server.util.BuildVersion;
 import org.opends.server.util.ChangeOperationType;
 import org.opends.server.util.StaticUtils;
-
-import com.forgerock.opendj.cli.ClientException;
-import com.forgerock.opendj.cli.ReturnCode;
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.Transaction;
-import com.sleepycat.je.TransactionConfig;
 
 /** Factory methods for create new upgrade tasks. */
 final class UpgradeTasks
@@ -1411,6 +1460,22 @@ final class UpgradeTasks
         {
           deleteFileIfExists(new File(binDirectory, toolName));
           deleteFileIfExists(new File(batDirectory, toolName +  ".bat"));
+        }
+      }
+    };
+  }
+
+  static UpgradeTask removeMatchingJarFiles(final String... patterns)
+  {
+    return new AbstractUpgradeTask() {
+      @Override
+      public void perform(UpgradeContext context) throws ClientException {
+        try {
+          for (String pattern : patterns) {
+              deleteMatchingFiles(libDirectory.toPath(), pattern);
+          }
+        } catch (IOException e) {
+            throw new ClientException(ReturnCode.ERROR_UNEXPECTED, LocalizableMessage.raw(e.getMessage()));
         }
       }
     };

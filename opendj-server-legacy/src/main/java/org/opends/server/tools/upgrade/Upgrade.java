@@ -547,6 +547,8 @@ public final class Upgrade
     register("4.0.0", moveSubordinateBaseDnToGlobalConfiguration());
     register("4.0.0", removeTools("ldif-diff", "make-ldif", "dsjavaproperties"));
 
+    register("5.0.4", removeMatchingJarFiles("forgerock-guava-*.jar"));
+
     /* All upgrades will refresh the server configuration schema and generate a new upgrade folder. */
     registerLast(
         copySchemaFile("02-config.ldif"),

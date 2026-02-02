@@ -12,8 +12,37 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.tools.upgrade;
+
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getCaseExactMatchingRule;
+import static org.forgerock.opendj.ldap.schema.CoreSchema.getDirectoryStringSyntax;
+import static org.forgerock.opendj.ldap.schema.SchemaOptions.DEFAULT_MATCHING_RULE_OID;
+import static org.forgerock.opendj.ldap.schema.SchemaOptions.DEFAULT_SYNTAX_OID;
+import static org.opends.messages.ConfigMessages.INFO_CONFIG_FILE_HEADER;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_CORRUPTED_TEMPLATE;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_READING_CONF_FILE;
+import static org.opends.messages.ToolMessages.ERR_UPGRADE_UNKNOWN_OC_ATT;
+import static org.opends.server.tools.upgrade.FileManager.deleteRecursively;
+import static org.opends.server.tools.upgrade.FileManager.rename;
+import static org.opends.server.tools.upgrade.Installation.CONFIG_PATH_RELATIVE;
+import static org.opends.server.tools.upgrade.Installation.CURRENT_CONFIG_FILE_NAME;
+import static org.opends.server.tools.upgrade.Installation.INSTANCE_LOCATION_PATH;
+import static org.opends.server.tools.upgrade.Installation.INSTANCE_LOCATION_PATH_RELATIVE;
+import static org.opends.server.tools.upgrade.Installation.LIB_RELATIVE_PATH;
+import static org.opends.server.tools.upgrade.Installation.LOCKS_PATH_RELATIVE;
+import static org.opends.server.tools.upgrade.Installation.OPENDJ_BOOTSTRAP_JAR_RELATIVE_PATH;
+import static org.opends.server.tools.upgrade.Installation.SCHEMA_PATH_RELATIVE;
+import static org.opends.server.tools.upgrade.Installation.SVC_SCRIPT_FILE_NAME;
+import static org.opends.server.tools.upgrade.Installation.TEMPLATE_RELATIVE_PATH;
+import static org.opends.server.tools.upgrade.Installation.UNIX_BINARIES_PATH_RELATIVE;
+import static org.opends.server.tools.upgrade.Installation.UPGRADE_PATH;
+import static org.opends.server.tools.upgrade.Installation.WINDOWS_BINARIES_PATH_RELATIVE;
+import static org.opends.server.util.ChangeOperationType.ADD;
+import static org.opends.server.util.ChangeOperationType.DELETE;
+import static org.opends.server.util.ChangeOperationType.MODIFY;
+import static org.opends.server.util.ServerConstants.SCHEMA_CONCAT_FILE_NAME;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,11 +52,17 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.ldap.Assertion;
@@ -57,15 +92,6 @@ import org.forgerock.util.Reject;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.util.ChangeOperationType;
 import org.opends.server.util.SchemaUtils;
-
-import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
-import static org.forgerock.opendj.ldap.schema.SchemaOptions.*;
-import static org.opends.messages.ConfigMessages.*;
-import static org.opends.messages.ToolMessages.*;
-import static org.opends.server.tools.upgrade.FileManager.*;
-import static org.opends.server.tools.upgrade.Installation.*;
-import static org.opends.server.util.ChangeOperationType.*;
-import static org.opends.server.util.ServerConstants.*;
 
 /** Common utility methods needed by the upgrade. */
 final class UpgradeUtils
@@ -752,6 +778,23 @@ final class UpgradeUtils
     {
       f.delete();
     }
+  }
+
+  static void deleteMatchingFiles(Path base, String pattern) throws IOException {
+    PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+    Files.walkFileTree(base, new SimpleFileVisitor<Path>() {
+      @Override
+      public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        return dir.equals(base) ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE;
+      }
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        if (matcher.matches(file.getFileName()) && attrs.isRegularFile()) {
+          Files.delete(file);
+        }
+        return FileVisitResult.CONTINUE;
+      }
+    });
   }
 
   /** Prevent instantiation. */
