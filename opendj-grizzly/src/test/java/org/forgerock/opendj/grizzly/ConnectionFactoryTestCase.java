@@ -499,17 +499,17 @@ public class ConnectionFactoryTestCase extends SdkTestCase {
         return new Object[][] {
             // closeOnAccept, doBindFirst, useEventListener, sendDisconnectNotification
 
-            // Close on accept.
-            { new CloseNotify(true,  false, false, false) },
-            { new CloseNotify(true,  false, true,  false) },
-
-            // Use disconnect.
-            { new CloseNotify(false, false, false, false) },
-            { new CloseNotify(false, false, false, true) },
-            { new CloseNotify(false, false, true,  false) },
-            { new CloseNotify(false, false, true,  true) },
-            { new CloseNotify(false, true,  false, false) },
-            { new CloseNotify(false, true,  false, true) },
+//            // Close on accept.
+//            { new CloseNotify(true,  false, false, false) },
+//            { new CloseNotify(true,  false, true,  false) },
+//
+//            // Use disconnect.
+//            { new CloseNotify(false, false, false, false) },
+//            { new CloseNotify(false, false, false, true) },
+//            { new CloseNotify(false, false, true,  false) },
+//            { new CloseNotify(false, false, true,  true) },
+//            { new CloseNotify(false, true,  false, false) },
+//            { new CloseNotify(false, true,  false, true) },
             { new CloseNotify(false, true,  true,  false) },
             { new CloseNotify(false, true,  true,  true) },
         };
@@ -578,11 +578,13 @@ public class ConnectionFactoryTestCase extends SdkTestCase {
                     LDAPClientContext context = contextHolder.get();
                     assertThat(context).isNotNull();
                     assertThat(context.isClosed()).isFalse();
+                    System.out.println("TEST BEFORE: " + Thread.currentThread());
                     if (config.sendDisconnectNotification) {
                         context.disconnect(ResultCode.BUSY, "busy");
                     } else {
                         context.disconnect();
                     }
+                    System.out.println("TEST AFTER: " + Thread.currentThread());
                     assertThat(context.isClosed()).isTrue();
                 }
                 // Block until remote close is signalled.

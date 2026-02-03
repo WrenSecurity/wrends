@@ -332,6 +332,7 @@ final class LDAPServerFilter extends BaseFilter {
 
         @Override
         public NextAction handleClose(final FilterChainContext ctx) {
+            System.out.println("TEST HANDLE CLOSE: " + Thread.currentThread());
             isClosed = true;
             // downstream can be null if the connection is closed before handleAccept() completion.
             final GrizzlyBackpressureSubscription immutableRef = downstream;
