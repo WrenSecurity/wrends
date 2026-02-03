@@ -583,6 +583,7 @@ public class ConnectionFactoryTestCase extends SdkTestCase {
                     } else {
                         context.disconnect();
                     }
+                    waitForCondition(context::isClosed);
                     assertThat(context.isClosed()).isTrue();
                 }
                 // Block until remote close is signalled.
