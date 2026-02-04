@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2017-2025 Wren Security.
+  Portions Copyright 2017-2026 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -102,7 +102,7 @@
         <freemarker.version>2.3.24-incubating</freemarker.version>
         <grizzly-framework.version>2.3.28</grizzly-framework.version>
         <metrics-core.version>3.1.2</metrics-core.version>
-        <wrensec-commons.version>22.3.0</wrensec-commons.version>
+        <wrensec-commons.version>22.6.2</wrensec-commons.version>
 
         <!-- OSGi bundles properties -->
         <opendj.osgi.import.additional />
@@ -124,13 +124,13 @@
                 <version>1.0-1</version>
             </dependency>
 
-	        <dependency>
-			    <groupId>com.sun.xml.ws</groupId>
-			    <artifactId>jaxws-ri</artifactId>
-			    <version>2.3.7</version>
-			    <type>pom</type>
-			    <scope>import</scope>
-			</dependency>
+            <dependency>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>jaxws-ri</artifactId>
+                <version>2.3.7</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
@@ -348,7 +348,7 @@
                     <?m2e ignore?>
                     <groupId>org.wrensecurity.commons</groupId>
                     <artifactId>doc-maven-plugin</artifactId>
-                    <version>22.4.0</version>
+                    <version>${wrensec-commons.version}</version>
                     <configuration>
                         <projectName>Wren:DS</projectName>
                         <projectVersion>${project.version}</projectVersion>
