@@ -12,7 +12,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
- *
+ * Portions copyright 2026 Wren Security
  */
 package org.forgerock.opendj.rest2ldap;
 
@@ -21,12 +21,22 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.forgerock.json.JsonValue.array;
 import static org.forgerock.json.JsonValue.json;
 import static org.forgerock.json.resource.PatchOperation.replace;
-import static org.forgerock.json.resource.Requests.*;
+import static org.forgerock.json.resource.Requests.newCreateRequest;
+import static org.forgerock.json.resource.Requests.newPatchRequest;
+import static org.forgerock.json.resource.Requests.newQueryRequest;
+import static org.forgerock.json.resource.Requests.newReadRequest;
+import static org.forgerock.json.resource.Requests.newUpdateRequest;
 import static org.forgerock.json.resource.Responses.newResourceResponse;
 import static org.forgerock.opendj.ldap.Connections.newInternalConnection;
-import static org.forgerock.opendj.rest2ldap.Rest2Ldap.*;
+import static org.forgerock.opendj.rest2ldap.Rest2Ldap.collectionOf;
+import static org.forgerock.opendj.rest2ldap.Rest2Ldap.constant;
+import static org.forgerock.opendj.rest2ldap.Rest2Ldap.object;
+import static org.forgerock.opendj.rest2ldap.Rest2Ldap.resource;
+import static org.forgerock.opendj.rest2ldap.Rest2Ldap.rest2Ldap;
+import static org.forgerock.opendj.rest2ldap.Rest2Ldap.simple;
 import static org.forgerock.opendj.rest2ldap.WritabilityPolicy.CREATE_ONLY;
 import static org.forgerock.opendj.rest2ldap.WritabilityPolicy.READ_ONLY;
+import static org.forgerock.opendj.rest2ldap.WritabilityPolicy.READ_ONLY_DISCARD_WRITES;
 import static org.forgerock.util.Options.defaultOptions;
 
 import java.util.Map;
@@ -35,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.forgerock.json.JsonPointer;
 import org.forgerock.json.JsonValue;
+import org.forgerock.json.resource.BadRequestException;
 import org.forgerock.json.resource.CreateRequest;
 import org.forgerock.json.resource.DeleteRequest;
 import org.forgerock.json.resource.NotFoundException;
@@ -81,7 +92,6 @@ public final class Rest2LdapTest extends ForgeRockTestCase {
     // TODO: unit test for DN template variables
     // TODO: unit test for nested sub-resources
     // TODO: unit test for singletons
-    // TODO: unit test for read-only
 
     private enum UseCase {
         CLIENT_ID_PRIMARY_VIEW {
@@ -376,6 +386,144 @@ public final class Rest2LdapTest extends ForgeRockTestCase {
         assertThatExpectedResourceWasReturned(actualResource.get(), resource);
     }
 
+    @Test
+    public void cannotCreateResourceWithReadOnlyAttribute() throws Exception {
+        // Given
+        RequestHandler handler = readOnlyTestHandler();
+        Context ctx = readOnlyTestCtx();
+        JsonValue content = json(o(
+                f("_id", "bjensen"),
+                f("uid", "bjensen"),
+                f("cn", "bjensen"),
+                f("sn", "bjensen"),
+                f("readOnly", "value")));
+
+        // When / Then
+        try {
+            handler.handleCreate(ctx, newCreateRequest("users", "bjensen", content))
+                   .getOrThrowUninterruptibly();
+            fail("Expected BadRequestException when setting a read-only attribute during create");
+        } catch (BadRequestException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void canCreateResourceIgnoringReadOnlyDiscardWritesAttribute() throws Exception {
+        // Given
+        RequestHandler handler = readOnlyTestHandler();
+        Context ctx = readOnlyTestCtx();
+        JsonValue content = json(o(
+                f("_id", "bjensen"),
+                f("uid", "bjensen"),
+                f("cn", "bjensen"),
+                f("sn", "bjensen"),
+                f("readOnlyDiscard", "value")));
+
+        // When - the readOnlyDiscard value should be silently discarded
+        ResourceResponse actual = handler.handleCreate(ctx, newCreateRequest("users", "bjensen", content))
+                .getOrThrowUninterruptibly();
+
+        // Then
+        assertThat(actual.getContent().get("readOnlyDiscard").getObject()).isNull();
+    }
+
+    @Test
+    public void cannotUpdateResourceWithChangedReadOnlyAttribute() throws Exception {
+        // Given
+        RequestHandler handler = readOnlyTestHandler();
+        Context ctx = readOnlyTestCtx();
+        JsonValue content = json(o(
+                f("_id", "bjensen"),
+                f("uid", "bjensen"),
+                f("cn", "bjensen"),
+                f("sn", "bjensen")));
+        ResourceResponse resource = handler.handleCreate(ctx, newCreateRequest("users", "bjensen", content))
+                .getOrThrowUninterruptibly();
+
+        JsonValue newContent = resource.getContent().copy();
+        newContent.put("readOnly", "value");
+
+        // When / Then
+        try {
+            handler.handleUpdate(ctx, newUpdateRequest("users", resource.getId(), newContent))
+                    .getOrThrowUninterruptibly();
+            fail("Expected BadRequestException when changing a read-only attribute during update");
+        } catch (BadRequestException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void canUpdateResourceIgnoringReadOnlyDiscardWritesAttribute() throws Exception {
+        // Given
+        RequestHandler handler = readOnlyTestHandler();
+        Context ctx = readOnlyTestCtx();
+        JsonValue content = json(o(
+                f("_id", "bjensen"),
+                f("uid", "bjensen"),
+                f("cn", "bjensen"),
+                f("sn", "bjensen")));
+        ResourceResponse resource = handler.handleCreate(ctx, newCreateRequest("users", "bjensen", content))
+                .getOrThrowUninterruptibly();
+
+        JsonValue newContent = resource.getContent().copy();
+        newContent.put("readOnlyDiscard", "value");
+
+        // When - the readOnlyDiscard value should be silently discarded
+        ResourceResponse actual = handler.handleUpdate(ctx, newUpdateRequest("users", resource.getId(), newContent))
+                .getOrThrowUninterruptibly();
+
+        // Then
+        assertThat(actual.getContent().get("readOnlyDiscard").getObject()).isNull();
+    }
+
+    @Test
+    public void cannotPatchReadOnlyAttribute() throws Exception {
+        // Given
+        RequestHandler handler = readOnlyTestHandler();
+        Context ctx = readOnlyTestCtx();
+        JsonValue content = json(o(
+                f("_id", "bjensen"),
+                f("uid", "bjensen"),
+                f("cn", "bjensen"),
+                f("sn", "bjensen")));
+        ResourceResponse resource = handler.handleCreate(ctx, newCreateRequest("users", "bjensen", content))
+                .getOrThrowUninterruptibly();
+
+        // When / Then
+        try {
+            handler.handlePatch(ctx, newPatchRequest("users", resource.getId(), replace("readOnly", "value")))
+                   .getOrThrowUninterruptibly();
+            fail("Expected BadRequestException when patching a read-only attribute");
+        } catch (BadRequestException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void cannotPatchReadOnlyDiscardWritesAttribute() throws Exception {
+        // Given
+        RequestHandler handler = readOnlyTestHandler();
+        Context ctx = readOnlyTestCtx();
+        JsonValue content = json(o(
+                f("_id", "bjensen"),
+                f("uid", "bjensen"),
+                f("cn", "bjensen"),
+                f("sn", "bjensen")));
+        ResourceResponse resource = handler.handleCreate(ctx, newCreateRequest("users", "bjensen", content))
+                .getOrThrowUninterruptibly();
+
+        // When / Then - patch always rejects read-only attributes, even when discardWrites is set
+        try {
+            handler.handlePatch(ctx, newPatchRequest("users", resource.getId(), replace("readOnlyDiscard", "value")))
+                    .getOrThrowUninterruptibly();
+            fail("Expected BadRequestException when patching a read-only (discard writes) attribute");
+        } catch (BadRequestException e) {
+            // Expected
+        }
+    }
+
     @DataProvider
     Object[][] useCases() throws Exception {
         UseCase[] values = UseCase.values();
@@ -390,6 +538,25 @@ public final class Rest2LdapTest extends ForgeRockTestCase {
         assertThat(actual.getId()).isEqualTo(expected.getId());
         assertThat(actual.getRevision()).isEqualTo(expected.getRevision());
         assertThat(actual.getContent().asMap()).isEqualTo(expected.getContent().asMap());
+    }
+
+    private static RequestHandler readOnlyTestHandler() {
+        return rest2Ldap(defaultOptions(), top(), resource("readOnlyTest").superType("top")
+                        .objectClasses("person", "organizationalPerson", "inetOrgPerson")
+                        .property("_id", simple("uid").isRequired(true).writability(CREATE_ONLY))
+                        .property("uid", simple("uid").isRequired(true).writability(CREATE_ONLY))
+                        .property("cn", simple("cn").isRequired(true)).property("sn", simple("sn").isRequired(true))
+                        .property("readOnly", simple("telephoneNumber").writability(READ_ONLY))
+                        .property("readOnlyDiscard", simple("mobile").writability(READ_ONLY_DISCARD_WRITES)),
+                resource("test").subResources(
+                        collectionOf("readOnlyTest").useClientDnNaming("uid").dnTemplate("dc=test")
+                                .urlTemplate("users"))).newRequestHandlerFor("test");
+    }
+
+    private static Context readOnlyTestCtx() throws Exception {
+        EntryReader ldif = new LDIFEntryReader("dn: dc=test", "objectClass: top", "objectClass: domain", "dc: test");
+        Connection connection = newInternalConnection(updateMeta(new MemoryBackend(ldif)));
+        return new AuthenticatedConnectionContext(new RootContext(), connection);
     }
 
     private static org.forgerock.opendj.ldap.RequestHandler<RequestContext> updateMeta(final MemoryBackend delegate) {
