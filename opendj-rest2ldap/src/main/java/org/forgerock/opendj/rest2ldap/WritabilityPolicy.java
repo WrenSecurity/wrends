@@ -12,6 +12,7 @@
  * information: "Portions copyright [year] [name of copyright owner]".
  *
  * Copyright 2013-2016 ForgeRock AS.
+ * Portions copyright 2026 Wren Security
  */
 package org.forgerock.opendj.rest2ldap;
 
@@ -64,7 +65,8 @@ public enum WritabilityPolicy {
     }
 
     boolean canCreate(final AttributeDescription attribute) {
-        return this != READ_ONLY && !attribute.getAttributeType().isNoUserModification();
+        return this != READ_ONLY && this != READ_ONLY_DISCARD_WRITES
+                && !attribute.getAttributeType().isNoUserModification();
     }
 
     boolean canWrite(final AttributeDescription attribute) {
