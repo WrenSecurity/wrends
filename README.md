@@ -61,7 +61,7 @@ Following software is needed to build the project:
 
 | Software  | Required Version |
 | --------- | -------------    |
-| OpenJDK   | 8 and above      |
+| OpenJDK   | 17 and above      |
 | Git       | 2.0 and above    |
 | Maven     | 3.0 and above    |
 

@@ -41,10 +41,10 @@
         <!-- Product information properties -->
         <patchFixIds />
         <isDebugBuild>false</isDebugBuild>
-        <docHomepageUrl>https://opendj.forgerock.org/</docHomepageUrl>
-        <docWikiUrl>https://wrensecurity.org/projects/wrends/resources.html</docWikiUrl>
-        <docGuideRefUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideRefUrl>
-        <docGuideAdminUrl>http://opendj.forgerock.org/opendj-server-legacy/doc/bootstrap/admin-guide/</docGuideAdminUrl>
+        <docHomepageUrl>https://docs.wrensecurity.org/wrends/latest/</docHomepageUrl>
+        <docWikiUrl>https://docs.wrensecurity.org/wrends/latest/</docWikiUrl>
+        <docGuideRefUrl>https://docs.wrensecurity.org/wrends/latest/</docGuideRefUrl>
+        <docGuideAdminUrl>https://docs.wrensecurity.org/wrends/latest/</docGuideAdminUrl>
 
         <!-- Other properties -->
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
@@ -65,22 +65,75 @@
     </properties>
 
     <dependencies>
-        <!-- Wren Security libraries -->
         <dependency>
-            <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-cli</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.github.stephenc.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-rest2ldap</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.sleepycat</groupId>
+            <artifactId>je</artifactId>
+            <version>18.3.12</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.odysseus.juel</groupId>
+            <artifactId>juel-api</artifactId>
+            <version>${juel.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.odysseus.juel</groupId>
+            <artifactId>juel-impl</artifactId>
+            <version>${juel.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+
+       <dependency>
+            <groupId>org.wrensecurity</groupId>
+            <artifactId>wrensec-build-tools</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.wrensecurity.commons</groupId>
             <artifactId>i18n-slf4j</artifactId>
+            <version>${wrensec-commons.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-cli</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -99,19 +152,75 @@
 
         <dependency>
             <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-server</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.wrends</groupId>
             <artifactId>opendj-ldap-toolkit</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.wrensecurity</groupId>
-            <artifactId>wrensec-build-tools</artifactId>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-rest2ldap</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.http</groupId>
+            <artifactId>chf-http-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.http</groupId>
+            <artifactId>chf-http-grizzly</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-handler-csv</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-handler-elasticsearch</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-handler-jdbc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-handler-jms</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-handler-json</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-handler-splunk</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-handler-syslog</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>forgerock-audit-json</artifactId>
         </dependency>
 
         <dependency>
@@ -128,128 +237,12 @@
             <groupId>org.wrensecurity.commons</groupId>
             <artifactId>json-resource-http</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.http</groupId>
-            <artifactId>chf-http-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.http</groupId>
-            <artifactId>chf-http-grizzly</artifactId>
-        </dependency>
-
-        <!-- Wren Security Common Audit libraries -->
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-handler-csv</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-handler-json</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-handler-elasticsearch</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-handler-splunk</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-handler-jms</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-json</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-handler-syslog</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>forgerock-audit-handler-jdbc</artifactId>
-        </dependency>
-
-        <!-- slf4j libraries -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-        </dependency>
-
-        <!-- mail -->
-        <dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>javax.mail</artifactId>
-            <version>1.5.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.freemarker</groupId>
-            <artifactId>freemarker</artifactId>
-            <version>${freemarker.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Databases -->
-        <dependency>
-            <groupId>com.sleepycat</groupId>
-            <artifactId>je</artifactId>
-            <version>18.3.12</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.stephenc.jcip</groupId>
-            <artifactId>jcip-annotations</artifactId>
-            <version>1.0-1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>de.odysseus.juel</groupId>
-            <artifactId>juel-impl</artifactId>
-            <version>${juel.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>de.odysseus.juel</groupId>
-            <artifactId>juel-api</artifactId>
-            <version>${juel.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
         <finalName>${product.name.lowercase}</finalName>
+
         <resources>
-            <!-- Main resources -->
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
@@ -259,6 +252,7 @@
             </resource>
 
             <!-- Property files used in test sources -->
+            <!-- TODO is this needed for the standard build? -->
             <resource>
                 <directory>src/test/java</directory>
                 <filtering>false</filtering>
@@ -271,6 +265,7 @@
             <resource>
                 <directory>src/quicksetup</directory>
                 <filtering>false</filtering>
+
                 <includes>
                     <include>**/images/*.gif</include>
                     <include>**/images/*.png</include>
@@ -281,6 +276,7 @@
             <resource>
                 <directory>src/guitools</directory>
                 <filtering>false</filtering>
+
                 <includes>
                     <include>**/images/*.gif</include>
                     <include>**/images/*.png</include>
@@ -291,6 +287,7 @@
             <resource>
                 <directory>resource/mac</directory>
                 <filtering>true</filtering>
+
                 <includes>
                     <include>**/Info.plist</include>
                 </includes>
@@ -310,6 +307,7 @@
                     <artifactId>maven-jar-plugin</artifactId>
                     <configuration>
                         <outputDirectory>${jars.dir}</outputDirectory>
+
                         <archive>
                             <addMavenDescriptor>false</addMavenDescriptor>
                             <index>true</index>
@@ -327,6 +325,7 @@
                     <filesets>
                         <fileset>
                             <directory>${basedir}/src</directory>
+
                             <includes>
                                 <include>messages/generated/**</include>
                             </includes>
@@ -341,16 +340,20 @@
                 <?m2e execute onConfiguration?>
                 <groupId>org.wrensecurity.commons</groupId>
                 <artifactId>i18n-maven-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>generate-messages</goal>
                         </goals>
+
                         <configuration>
                             <resourceDirectory>${basedir}/src/messages</resourceDirectory>
                             <targetDirectory>${basedir}/src/messages/generated/</targetDirectory>
                             <force>true</force>
+
                             <messageFiles>
                                 <!-- Warning: messageFile must contains at least one "/" -->
                                 <messageFile>org/opends/messages/access_control.properties</messageFile>
@@ -385,9 +388,11 @@
                     <execution>
                         <id>copy-l10n-messages</id>
                         <phase>validate</phase>
+
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+
                         <configuration>
                             <outputDirectory>${project.build.outputDirectory}/org/opends/messages</outputDirectory>
                             <resources>
@@ -402,9 +407,11 @@
                     <execution>
                         <id>copy-guitools-resources</id>
                         <phase>validate</phase>
+
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+
                         <configuration>
                             <outputDirectory>${project.build.outputDirectory}/org/opends/guitools</outputDirectory>
                             <resources>
@@ -419,9 +426,11 @@
                     <execution>
                         <id>copy-quicksetup-resources</id>
                         <phase>validate</phase>
+
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
+
                         <configuration>
                             <outputDirectory>${project.build.outputDirectory}/org/opends/quicksetup</outputDirectory>
                             <resources>
@@ -439,12 +448,15 @@
                 <?m2e ignore?>
                 <groupId>org.wrensecurity.wrends</groupId>
                 <artifactId>opendj-maven-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <id>generate-bootstrap-manifest</id>
+
                         <goals>
                             <goal>generate-manifest</goal>
                         </goals>
+
                         <configuration>
                             <additionalJars>
                                 <additionalJar>wrends-slf4j-adapter.jar</additionalJar>
@@ -455,9 +467,11 @@
 
                     <execution>
                         <id>generate-bootstrap-client-manifest</id>
+
                         <goals>
                             <goal>generate-manifest</goal>
                         </goals>
+
                         <configuration>
                             <additionalJars>
                                 <additionalJar>wrends-je-backend.jar</additionalJar>
@@ -468,9 +482,11 @@
                     <!-- Create consolidated schema file for use in upgrade -->
                     <execution>
                         <id>creates-base-schema-files</id>
+
                         <goals>
                             <goal>concat</goal>
                         </goals>
+
                         <configuration>
                             <schemaDirectory>${basedir}/resource/schema</schemaDirectory>
                             <outputDirectory>${project.build.directory}/upgrade</outputDirectory>
@@ -483,6 +499,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
+
                 <executions>
                     <!-- Run inherited 'parse-version' execution to generate properties (major.version, minor.version, ...) -->
                     <!-- Take into account several sources directories for the build -->
@@ -490,9 +507,11 @@
                         <?m2e execute onConfiguration?>
                         <id>main-java-sources</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+
                         <configuration>
                             <sources>
                                 <source>src/messages/generated</source>
@@ -519,12 +538,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <id>default-testCompile</id>
+
                         <goals>
                             <goal>testCompile</goal>
                         </goals>
+
                         <configuration>
                             <testSourceDirectory>src/test/java</testSourceDirectory>
                             <showDeprecation>false</showDeprecation>
@@ -542,6 +564,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <id>default-test</id>
@@ -553,13 +576,16 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+
                 <executions>
                     <!-- Create opendj-slf4j-adapter manifest -->
                     <execution>
                         <id>opendj-slf4j-adapter-manifest</id>
+
                         <goals>
                             <goal>manifest</goal>
                         </goals>
+
                         <configuration>
                             <buildDirectory>${project.build.directory}/slf4j-adapter-manifest/META-INF</buildDirectory>
                             <manifestLocation>${project.build.directory}/slf4j-adapter-manifest/META-INF</manifestLocation>
@@ -582,18 +608,22 @@
                     <!-- Create Wren:DS manifest -->
                     <execution>
                         <id>opendj-manifest</id>
+
                         <goals>
                             <goal>manifest</goal>
                         </goals>
+
                         <configuration>
                             <instructions>
                                 <Bundle-Version>${project.version}</Bundle-Version>
                                 <Export-Package>org.forgerock.opendj.server.embedded</Export-Package>
+
                                 <Import-Package>
                                     org.opends.server.replication.server.changelog.je;resolution:=optional,
                                     com.sleepycat.je*;resolution:=optional,
                                     ${opendj.osgi.import}
                                 </Import-Package>
+
                                 <Embed-Dependency>
                                     jcip-annotations
                                 </Embed-Dependency>
@@ -610,14 +640,18 @@
                     <execution>
                         <id>build-bootstrap-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>bootstrap</classifier>
+
                             <includes>
                                 <include>nothing</include>
                             </includes>
+
                             <archive>
                                 <index>false</index>
                                 <manifestFile>${project.build.outputDirectory}/bootstrap/manifest-bootstrap</manifestFile>
@@ -629,14 +663,18 @@
                     <execution>
                         <id>build-bootstrap-client-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>bootstrap-client</classifier>
+
                             <includes>
                                 <include>nothing</include>
                             </includes>
+
                             <archive>
                                 <index>false</index>
                                 <manifestFile>${project.build.outputDirectory}/bootstrap/manifest-bootstrap-client</manifestFile>
@@ -648,11 +686,14 @@
                     <execution>
                         <id>create-build-tools-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>build-tools</classifier>
+
                             <includes>
                                 <include>**/messages/Severity.class</include>
                                 <include>**/messages/Category.class</include>
@@ -663,6 +704,7 @@
                                 <include>**/server/types/StabilityLevel.class</include>
                                 <include>**/build/tools/*</include>
                             </includes>
+
                             <archive>
                                 <index>false</index>
                             </archive>
@@ -673,9 +715,11 @@
                     <execution>
                         <id>build-quicksetup-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>quicksetup</classifier>
                             <includes>
@@ -693,6 +737,7 @@
                                 <include>**/org/opends/messages/QuickSetupMessages.class</include>
                                 <include>**/org/opends/server/types/OpenDsException.class</include>
                             </includes>
+
                             <archive>
                                 <index>false</index>
                             </archive>
@@ -703,15 +748,19 @@
                     <execution>
                         <id>build-opendj-slf4j-adapter-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>slf4j-adapter</classifier>
+
                             <includes>
                                 <include>**/org/slf4j/**</include>
                                 <include>**/org/opends/server/loggers/slf4j/**</include>
                             </includes>
+
                             <archive>
                                 <index>false</index>
                                 <manifestFile>${project.build.directory}/slf4j-adapter-manifest/META-INF/MANIFEST.MF</manifestFile>
@@ -723,15 +772,19 @@
                     <execution>
                         <id>build-wrends-je-backend-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>je-backend</classifier>
+
                             <includes>
                                 <include>org/opends/server/backends/jeb/**</include>
                                 <include>org/opends/server/replication/server/changelog/je/**</include>
                             </includes>
+
                             <archive>
                                 <index>false</index>
                             </archive>
@@ -743,9 +796,11 @@
                     <execution>
                         <id>build-caES-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-ca_ES</classifier>
                             <includes>
@@ -757,11 +812,14 @@
                     <execution>
                         <id>build-de-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-de</classifier>
+
                             <includes>
                                 <include>**/*_de.properties</include>
                             </includes>
@@ -771,11 +829,14 @@
                     <execution>
                         <id>build-es-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-es</classifier>
+
                             <includes>
                                 <include>**/*_es.properties</include>
                             </includes>
@@ -785,11 +846,14 @@
                     <execution>
                         <id>build-fr-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-fr</classifier>
+
                             <includes>
                                 <include>**/*_fr.properties</include>
                             </includes>
@@ -799,11 +863,14 @@
                     <execution>
                         <id>build-ja-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-ja</classifier>
+
                             <includes>
                                 <include>**/*_ja.properties</include>
                             </includes>
@@ -813,11 +880,14 @@
                     <execution>
                         <id>build-ko-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-ko</classifier>
+
                             <includes>
                                 <include>**/*_ko.properties</include>
                             </includes>
@@ -827,11 +897,14 @@
                     <execution>
                         <id>build-pl-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-pl</classifier>
+
                             <includes>
                                 <include>**/*_pl.properties</include>
                             </includes>
@@ -841,11 +914,14 @@
                     <execution>
                         <id>build-zh-CN-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-zh_CN</classifier>
+
                             <includes>
                                 <include>**/*_zh_CN.properties</include>
                             </includes>
@@ -855,11 +931,14 @@
                     <execution>
                         <id>build-zh-TW-jar</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <classifier>${localized.jars.classifier}-zh_TW</classifier>
+
                             <includes>
                                 <include>**/*_zh_TW.properties</include>
                             </includes>
@@ -870,9 +949,11 @@
                     <execution>
                         <id>default-jar</id>
                         <phase>package</phase>
+
                         <goals>
                             <goal>jar</goal>
                         </goals>
+
                         <configuration>
                             <excludes>
                                 <exclude>*.app/**</exclude>
@@ -893,6 +974,7 @@
                                 <exclude>org/opends/server/backends/jeb/**</exclude>
                                 <exclude>org/opends/server/replication/server/changelog/je/**</exclude>
                             </excludes>
+
                             <archive>
                                 <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                             </archive>
@@ -905,13 +987,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <id>unpack-archive</id>
                         <phase>package</phase>
+
                         <goals>
                             <goal>unpack</goal>
                         </goals>
+
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -935,20 +1020,25 @@
                     <execution>
                         <id>build-opendj-archive</id>
                         <phase>package</phase>
+
                         <goals>
                             <goal>single</goal>
                         </goals>
+
                         <configuration>
                             <finalName>${product.name.lowercase}</finalName>
                             <outputDirectory>${project.build.directory}/package</outputDirectory>
                             <appendAssemblyId>false</appendAssemblyId>
                             <attach>false</attach>
+
                             <descriptors>
                                 <descriptor>src/main/assembly/opendj-archive-assembly.xml</descriptor>
                             </descriptors>
+
                             <formats>
                                 <format>dir</format>
                             </formats>
+
                             <archive>
                                 <manifestFile>${project.build.outputDirectory}/bootstrap/manifest-bootstrap</manifestFile>
                             </archive>
@@ -959,14 +1049,17 @@
                     <execution>
                         <id>build-example-plugin.zip</id>
                         <phase>package</phase>
+
                         <goals>
                             <goal>single</goal>
                         </goals>
+
                         <configuration>
                             <finalName>example-plugin</finalName>
                             <outputDirectory>${project.build.directory}/package/${product.name.lowercase}/</outputDirectory>
                             <appendAssemblyId>false</appendAssemblyId>
                             <attach>false</attach>
+
                             <descriptors>
                                 <descriptor>src/main/assembly/example-plugin-assembly.xml</descriptor>
                             </descriptors>
@@ -984,11 +1077,13 @@
                         <!-- Copy config.ldif in build dir (needed if snmp config merge is needed) -->
                         <id>copy-config-ldif</id>
                         <phase>generate-resources</phase>
+
                         <configuration>
                             <target>
                                 <copy todir="${project.build.directory}/template/config" file="${basedir}/resource/config/config.ldif" />
                             </target>
                         </configuration>
+
                         <goals>
                             <goal>run</goal>
                         </goals>
@@ -999,9 +1094,11 @@
                         <?m2e ignore?>
                         <id>attach-artifact</id>
                         <phase>package</phase>
+
                         <goals>
                             <goal>run</goal>
                         </goals>
+
                         <configuration>
                             <target>
                                 <zip destfile="${project.build.directory}/package/${product.archive.name}.zip">
@@ -1018,28 +1115,11 @@
                 </executions>
             </plugin>
 
-            <!-- Build javadoc -->
-            <plugin>
-                <groupId>org.forgerock.maven.plugins</groupId>
-                <artifactId>javadoc-updater-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>fixjavadoc</goal>
-                        </goals>
-                        <configuration>
-                            <directory>${project.build.directory}/site/javadoc</directory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <!-- Release project -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
+
                 <configuration>
                     <!-- Required for release:perform: the parent pom specifies a value
                         for "arguments" in the plugin configuration. This prevents command line setting
@@ -1059,17 +1139,20 @@
         -->
         <profile>
             <id>precommit</id>
+
             <build>
                 <plugins>
                     <!-- Enforce Checkstyle -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
+
                         <executions>
                             <!-- Disable default from parent -->
                             <execution>
                                 <id>check-src-and-tests</id>
                                 <phase>none</phase>
+
                                 <goals>
                                     <goal>checkstyle</goal>
                                 </goals>
@@ -1077,6 +1160,12 @@
 
                             <execution>
                                 <id>check-src-and-tests-alternative</id>
+                                <phase>process-test-classes</phase>
+
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+
                                 <configuration>
                                     <excludes>generated/org/opends/server/snmp/**,org/opends/messages/**</excludes>
                                     <configLocation>${project.build.outputDirectory}/org/forgerock/checkstyle/opends-checkstyle.xml</configLocation>
@@ -1088,10 +1177,6 @@
                                     <consoleOutput>${checkstyleFailOnError}</consoleOutput>
                                     <failsOnError>${checkstyleFailOnError}</failsOnError>
                                 </configuration>
-                                <phase>process-test-classes</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
                             </execution>
                         </executions>
                     </plugin>
@@ -1114,18 +1199,22 @@
                         <configuration>
                             <testSourceDirectory>src/test/java</testSourceDirectory>
                             <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${jars.dir}/wrends-slf4j-adapter.jar</additionalClasspathElement>
                                 <additionalClasspathElement>${jars.dir}/wrends-je-backend.jar</additionalClasspathElement>
                             </additionalClasspathElements>
+
                             <classpathDependencyExcludes>
                                 <classpathDependencyExclude>org.slf4j:slf4j-jdk14</classpathDependencyExclude>
                             </classpathDependencyExcludes>
+
                             <excludes>
                                 <exclude>org/opends/server/snmp/**</exclude>
                                 <exclude>org/opends/quicksetup/**</exclude>
                                 <exclude>org/opends/quicksetup/**</exclude>
                             </excludes>
+
                             <includes>
                                 <include>**/Test*.java</include>
                                 <include>**/*Test.java</include>
@@ -1133,24 +1222,29 @@
                                 <include>**/*TestCase.java</include>
                                 <include>**/*TestCases.java</include>
                             </includes>
+
                             <properties>
                                 <property>
                                     <name>usedefaultlisteners</name>
                                     <value>false</value>
                                 </property>
+
                                 <property>
                                     <name>listener</name>
                                     <value>org.opends.server.TestListener</value>
                                 </property>
+
                                 <property>
                                     <name>excludegroups</name>
                                     <value>slow</value>
                                 </property>
+
                                 <property>
                                     <name>configfailurepolicy</name>
                                     <value>skip</value>
                                 </property>
                             </properties>
+
                             <systemPropertyVariables>
                                 <org.opends.server.BuildRoot>${basedir}</org.opends.server.BuildRoot>
                                 <org.opends.server.BuildDir>${project.build.directory}</org.opends.server.BuildDir>
@@ -1227,9 +1321,11 @@
                             <execution>
                                 <id>snmp-java-sources</id>
                                 <phase>generate-sources</phase>
+
                                 <goals>
                                     <goal>add-source</goal>
                                 </goals>
+
                                 <configuration>
                                     <sources>
                                         <source>src/snmp</source>
@@ -1247,21 +1343,27 @@
                             <execution>
                                 <id>createMibDir</id>
                                 <phase>initialize</phase>
+
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+
                                 <configuration>
                                     <target>
                                         <delete dir="${snmp.gen.dir}/org/opends/server/snmp" />
                                         <mkdir dir="${snmp.gen.dir}/org/opends/server/snmp" />
                                     </target>
                                 </configuration>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
                             </execution>
 
                             <execution>
                                 <!-- Append snmp config to the config.ldif -->
                                 <id>generate-config-ldif</id>
                                 <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+
                                 <configuration>
                                     <target>
                                         <concat destfile="${project.build.directory}/template/config/config.ldif" append="true">
@@ -1269,9 +1371,6 @@
                                         </concat>
                                     </target>
                                 </configuration>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
                             </execution>
                         </executions>
                     </plugin>
@@ -1285,12 +1384,15 @@
                             <execution>
                                 <id>mib-generation</id>
                                 <phase>generate-sources</phase>
+
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
+
                                 <configuration>
                                     <executable>java</executable>
                                     <classpathScope>compile</classpathScope>
+
                                     <arguments>
                                         <argument>-classpath</argument>
                                         <classpath />
@@ -1319,23 +1421,30 @@
                             <execution>
                                 <id>build-snmp-jar</id>
                                 <phase>prepare-package</phase>
+
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+
                                 <configuration>
                                     <outputDirectory>${jars.dir}</outputDirectory>
                                     <finalName>${snmp.jar.name}</finalName>
                                     <attach>false</attach>
+
                                     <descriptors>
                                         <descriptor>src/main/assembly/snmp-jar-assembly.xml</descriptor>
                                     </descriptors>
+
                                     <appendAssemblyId>false</appendAssemblyId>
+
                                     <formats>
                                         <format>jar</format>
                                     </formats>
+
                                     <archive>
                                         <index>true</index>
                                         <addMavenDescriptor>false</addMavenDescriptor>
+
                                         <manifestEntries>
                                             <Extension-Name>${snmp.jar.name}</Extension-Name>
                                             <Implementation-Version>${project.version}</Implementation-Version>
@@ -1349,19 +1458,25 @@
                             <execution>
                                 <id>build-opendj-archive</id>
                                 <phase>package</phase>
+
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+
                                 <configuration>
                                     <outputDirectory>${project.build.directory}/package</outputDirectory>
                                     <finalName>${product.name.lowercase}</finalName>
+
                                     <descriptors>
                                         <descriptor>src/main/assembly/opendj-snmp-archive-assembly.xml</descriptor>
                                     </descriptors>
+
                                     <appendAssemblyId>false</appendAssemblyId>
+
                                     <formats>
                                         <format>dir</format>
                                     </formats>
+
                                     <archive>
                                         <manifestFile>${project.build.outputDirectory}/bootstrap/manifest-bootstrap</manifestFile>
                                     </archive>
@@ -1371,16 +1486,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>forgerock-release</id>
-            <properties>
-                <docHomepageUrl>https://docs.wrensecurity.org/wrends/latest/</docHomepageUrl>
-                <docWikiUrl>https://docs.wrensecurity.org/wrends/latest/</docWikiUrl>
-                <docGuideRefUrl>https://docs.wrensecurity.org/wrends/latest/</docGuideRefUrl>
-                <docGuideAdminUrl>https://docs.wrensecurity.org/wrends/latest/</docGuideAdminUrl>
-            </properties>
         </profile>
     </profiles>
 </project>

@@ -33,16 +33,29 @@
         include a default network transport which must be obtained separately.
     </description>
 
+    <properties>
+        <opendj.osgi.import.additional>
+            com.sun.security.auth*;resolution:=optional
+        </opendj.osgi.import.additional>
+    </properties>
+
     <dependencies>
         <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>i18n-core</artifactId>
+          <groupId>com.github.stephenc.jcip</groupId>
+          <artifactId>jcip-annotations</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.wrensecurity.commons.guava</groupId>
-            <artifactId>wrensec-guava-io</artifactId>
-            <scope>test</scope>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+            <!-- TODO UPGRADE to v3 -->
+            <version>2.2.21</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.reactivestreams</groupId>
+            <artifactId>reactive-streams</artifactId>
+            <version>1.0.4</version>
         </dependency>
 
         <dependency>
@@ -51,79 +64,40 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wrensecurity</groupId>
+            <artifactId>wrensec-build-tools</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.wrensecurity.commons</groupId>
             <artifactId>forgerock-util</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.reactivestreams</groupId>
-            <artifactId>reactive-streams</artifactId>
-            <version>1.0.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.reactivex.rxjava2</groupId>
-            <artifactId>rxjava</artifactId>
-            <version>2.2.21</version>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>i18n-core</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.wrensecurity.commons</groupId>
             <artifactId>i18n-slf4j</artifactId>
+            <version>${wrensec-commons.version}</version>
         </dependency>
 
         <dependency>
-          <groupId>com.github.stephenc.jcip</groupId>
-          <artifactId>jcip-annotations</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity</groupId>
-            <artifactId>wrensec-build-tools</artifactId>
+            <groupId>org.wrensecurity.commons.guava</groupId>
+            <artifactId>wrensec-guava-io</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
-
-    <properties>
-        <opendj.osgi.import.additional>
-            com.sun.security.auth*;resolution:=optional
-        </opendj.osgi.import.additional>
-        <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
-    </properties>
-
-
     <build>
         <plugins>
             <plugin>
-                <groupId>org.wrensecurity.commons</groupId>
-                <artifactId>i18n-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>generate-messages</goal>
-                        </goals>
-                        <configuration>
-                            <messageFiles>
-                                <messageFile>com/forgerock/opendj/ldap/core.properties</messageFile>
-                                <messageFile>com/forgerock/opendj/security/keystore.properties</messageFile>
-                            </messageFiles>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Retrieve the SCM revision number and store it into the ${buildRevision} property -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>buildnumber-maven-plugin</artifactId>
-            </plugin>
-
-            <!-- Creates opendj-core bundle -->
-            <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+
                 <configuration>
                     <instructions>
                         <Export-Package>
@@ -144,22 +118,14 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+
                 <configuration>
                     <archive>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
+
                 <executions>
                     <execution>
                         <goals>
@@ -168,14 +134,58 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>package</phase>
+
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Retrieve the SCM revision number and store it into the ${buildRevision} property -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.wrensecurity.commons</groupId>
+                <artifactId>i18n-maven-plugin</artifactId>
+
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+
+                        <goals>
+                            <goal>generate-messages</goal>
+                        </goals>
+
+                        <configuration>
+                            <messageFiles>
+                                <messageFile>com/forgerock/opendj/ldap/core.properties</messageFile>
+                                <messageFile>com/forgerock/opendj/security/keystore.properties</messageFile>
+                            </messageFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
 
     <profiles>
         <profile>
             <!-- This profile provides API/ABI compatiblity checks and reports via Clirr -->
             <id>clirr</id>
+
             <activation>
                 <file>
                     <exists>clirr-ignored-api-changes.xml</exists>
@@ -188,8 +198,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>clirr-maven-plugin</artifactId>
-                        <version>${clirrPluginVersion}</version>
-                        <inherited>true</inherited>
+
                         <configuration>
                             <comparisonArtifacts>
                                 <comparisonArtifact>
@@ -198,9 +207,11 @@
                                     <version>3.0.0</version>
                                 </comparisonArtifact>
                             </comparisonArtifacts>
+
                             <excludes>
                                 <exclude>com/**</exclude>
                             </excludes>
+
                             <ignoredDifferencesFile>clirr-ignored-api-changes.xml</ignoredDifferencesFile>
                         </configuration>
 
@@ -225,8 +236,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>clirr-maven-plugin</artifactId>
-                        <version>${clirrPluginVersion}</version>
-                        <inherited>true</inherited>
+
                         <configuration>
                             <comparisonArtifacts>
                                 <comparisonArtifact>
@@ -236,9 +246,11 @@
                                     <version>2.6.0</version>
                                 </comparisonArtifact>
                             </comparisonArtifacts>
+
                             <excludes>
                                 <exclude>com/**</exclude>
                             </excludes>
+
                             <ignoredDifferencesFile>clirr-ignored-api-changes.xml</ignoredDifferencesFile>
                         </configuration>
                     </plugin>
@@ -251,7 +263,7 @@
           and also dependency (and transitive dependency) ForgeRock packages.
         -->
         <profile>
-            <id>forgerock-release</id>
+            <id>wrensec-release</id>
 
             <properties>
                 <javadocTitle>Wren:DS LDAP SDK ${project.version} API</javadocTitle>
@@ -262,23 +274,18 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>javadoc-jar</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
+
                         <configuration>
-                            <includeDependencySources>true</includeDependencySources>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                             <dependencySourceIncludes>
                                 <dependencySourceInclude>org.wrensecurity.*:*</dependencySourceInclude>
                             </dependencySourceIncludes>
+
+                            <includeDependencySources>true</includeDependencySources>
+                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                             <excludePackageNames>com.*:*.internal</excludePackageNames>
+
                             <groups>
                                 <group>
                                     <title>${project.name} Packages</title>
@@ -290,12 +297,14 @@
                                     <packages>*</packages>
                                 </group>
                             </groups>
+
                             <author>false</author>
                             <doctitle>${javadocTitle}</doctitle>
                             <windowtitle>${javadocTitle}</windowtitle>
                             <header>${javadocTitle}</header>
                             <footer>${javadocTitle}</footer>
                             <bottom>Copyright 2011-${maven.build.timestamp} ForgeRock AS.</bottom>
+
                             <links>
                                 <link>http://docs.oracle.com/javase/7/docs/api/</link>
                                 <link>http://www.slf4j.org/apidocs/</link>
@@ -307,12 +316,12 @@
         </profile>
     </profiles>
 
-
     <reporting>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
+
                 <reportSets>
                     <reportSet>
                         <reports>

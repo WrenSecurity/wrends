@@ -12,11 +12,10 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2012-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.forgerock.opendj.rest2ldap;
 
-import static javax.xml.bind.DatatypeConverter.parseDateTime;
-import static javax.xml.bind.DatatypeConverter.printDateTime;
 import static org.forgerock.opendj.ldap.Filter.alwaysFalse;
 import static org.forgerock.opendj.ldap.Functions.byteStringToBoolean;
 import static org.forgerock.opendj.ldap.Functions.byteStringToGeneralizedTime;
@@ -28,10 +27,12 @@ import static org.forgerock.opendj.ldap.schema.CoreSchema.getIntegerSyntax;
 import static org.forgerock.opendj.rest2ldap.Rest2ldapMessages.ERR_UNRECOGNIZED_JSON_VALUE;
 import static org.forgerock.opendj.rest2ldap.schema.JsonSchema.getJsonSyntax;
 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.forgerock.json.JsonValue;
@@ -72,6 +73,14 @@ final class Utils {
                 }
             };
 
+    private static final DateTimeFormatter DATETIME_FORMATTER = new DateTimeFormatterBuilder()
+            .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)   // handles YYYY-MM-DDTHH:mm:ss[.SSS]
+            .optionalStart()
+                .appendOffsetId()                            // handles Z or ±HH:MM
+            .optionalEnd()
+            .parseDefaulting(ChronoField.OFFSET_SECONDS, 0) // default to UTC if no offset
+            .toFormatter();
+
     static Function<Object, ByteString, LocalizedIllegalArgumentException> base64ToByteString() {
         return BASE64_TO_BYTESTRING;
     }
@@ -91,7 +100,7 @@ final class Utils {
                 } else if (syntax.equals(getIntegerSyntax())) {
                     return byteStringToLong().apply(value);
                 } else if (syntax.equals(getGeneralizedTimeSyntax())) {
-                    return printDateTime(byteStringToGeneralizedTime().apply(value).toCalendar());
+                    return DATETIME_FORMATTER.format(byteStringToGeneralizedTime().apply(value).toOffsetDateTime());
                 } else if (syntax.equals(getJsonSyntax())) {
                     return JsonSchema.byteStringToJson().apply(value);
                 } else {
@@ -132,7 +141,8 @@ final class Utils {
                 final Syntax syntax = ad.getAttributeType().getSyntax();
                 if (isJsonPrimitive(value)) {
                     if (syntax.equals(getGeneralizedTimeSyntax())) {
-                        return ByteString.valueOfObject(GeneralizedTime.valueOf(parseDateTime(value.toString())));
+                        return ByteString.valueOfObject(GeneralizedTime.valueOf(
+                                DATETIME_FORMATTER.parse(value.toString())));
                     } else {
                         return ByteString.valueOfObject(value);
                     }
