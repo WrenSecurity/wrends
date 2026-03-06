@@ -17,14 +17,63 @@
 package org.forgerock.opendj.reactive;
 
 import static com.forgerock.reactive.RxJavaStreams.streamFromPublisher;
-import static org.forgerock.opendj.io.LDAP.*;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_ABANDON_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_ADD_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_ADD_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_BIND_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_BIND_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_COMPARE_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_COMPARE_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_DELETE_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_DELETE_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_EXTENDED_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_EXTENDED_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_INTERMEDIATE_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_MODIFY_DN_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_MODIFY_DN_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_MODIFY_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_MODIFY_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_SEARCH_REQUEST;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_SEARCH_RESULT_DONE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_SEARCH_RESULT_ENTRY;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_SEARCH_RESULT_REFERENCE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_UNBIND_REQUEST;
 import static org.forgerock.util.Utils.closeSilently;
-import static org.opends.messages.CoreMessages.*;
-import static org.opends.messages.ProtocolMessages.*;
+import static org.opends.messages.CoreMessages.ERR_ENQUEUE_BIND_IN_PROGRESS;
+import static org.opends.messages.CoreMessages.ERR_ENQUEUE_SASLBIND_IN_PROGRESS;
+import static org.opends.messages.CoreMessages.ERR_ENQUEUE_STARTTLS_IN_PROGRESS;
+import static org.opends.messages.ProtocolMessages.ERR_LDAPV2_CONTROLS_NOT_ALLOWED;
+import static org.opends.messages.ProtocolMessages.ERR_LDAPV2_EXTENDED_REQUEST_NOT_ALLOWED;
+import static org.opends.messages.ProtocolMessages.ERR_LDAPV2_REFERRALS_OMITTED;
+import static org.opends.messages.ProtocolMessages.ERR_LDAPV2_REFERRAL_RESULT_CHANGED;
+import static org.opends.messages.ProtocolMessages.ERR_LDAPV2_SKIPPING_EXTENDED_RESPONSE;
+import static org.opends.messages.ProtocolMessages.ERR_LDAPV2_SKIPPING_SEARCH_REFERENCE;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_CLIENT_SEND_RESPONSE_INVALID_OP;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_CLIENT_SEND_RESPONSE_NO_RESULT_CODE;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_DISCONNECT_DUE_TO_BIND_PROTOCOL_ERROR;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_DISCONNECT_DUE_TO_INVALID_REQUEST_TYPE;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_DISCONNECT_DUE_TO_PROCESSING_FAILURE;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_INVALID_BIND_AUTH_TYPE;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_TLS_CANNOT_CREATE_TLS_PROVIDER;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_TLS_EXISTING_SECURITY_PROVIDER;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_TLS_STARTTLS_NOT_ALLOWED;
+import static org.opends.messages.ProtocolMessages.ERR_LDAP_UNSUPPORTED_PROTOCOL_VERSION;
+import static org.opends.messages.ProtocolMessages.INFO_LDAP_CLIENT_GENERIC_NOTICE_OF_DISCONNECTION;
+import static org.opends.messages.ProtocolMessages.WARN_CLIENT_DISCONNECT_IN_PROGRESS;
+import static org.opends.messages.ProtocolMessages.WARN_LDAP_CLIENT_CANNOT_ENQUEUE;
+import static org.opends.messages.ProtocolMessages.WARN_LDAP_CLIENT_DUPLICATE_MESSAGE_ID;
 import static org.opends.server.loggers.AccessLogger.logDisconnect;
 import static org.opends.server.util.ServerConstants.OID_START_TLS_REQUEST;
-import static org.opends.server.util.StaticUtils.*;
+import static org.opends.server.util.StaticUtils.getExceptionMessage;
+import static org.opends.server.util.StaticUtils.stackTraceToSingleLineString;
 
+import com.forgerock.reactive.Consumer;
+import com.forgerock.reactive.ReactiveHandler;
+import com.forgerock.reactive.Stream;
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.FlowableEmitter;
+import io.reactivex.rxjava3.core.FlowableOnSubscribe;
 import java.net.InetAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Selector;
@@ -40,12 +89,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.sasl.SaslServer;
-
 import org.forgerock.i18n.LocalizableException;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.LocalizableMessageBuilder;
@@ -110,15 +157,6 @@ import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-
-import com.forgerock.reactive.Consumer;
-import com.forgerock.reactive.ReactiveHandler;
-import com.forgerock.reactive.Stream;
-
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.FlowableEmitter;
-import io.reactivex.FlowableOnSubscribe;
 
 /**
  * This class defines an LDAP client connection, which is a type of client connection that will be accepted by an

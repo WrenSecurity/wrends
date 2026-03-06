@@ -16,12 +16,28 @@
  */
 package org.forgerock.opendj.grizzly;
 
-import static com.forgerock.reactive.RxJavaStreams.*;
+import static com.forgerock.reactive.RxJavaStreams.completableError;
+import static com.forgerock.reactive.RxJavaStreams.emptyStream;
+import static com.forgerock.reactive.RxJavaStreams.newCompletable;
+import static com.forgerock.reactive.RxJavaStreams.singleFrom;
+import static com.forgerock.reactive.RxJavaStreams.streamError;
+import static com.forgerock.reactive.RxJavaStreams.streamFromPublisher;
 import static org.forgerock.opendj.grizzly.GrizzlyUtils.configureConnection;
-import static org.forgerock.opendj.io.LDAP.*;
+import static org.forgerock.opendj.io.LDAP.OID_NOTICE_OF_DISCONNECTION;
+import static org.forgerock.opendj.io.LDAP.OP_TO_RESULT_TYPE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_EXTENDED_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_INTERMEDIATE_RESPONSE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_SEARCH_RESULT_ENTRY;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_SEARCH_RESULT_REFERENCE;
+import static org.forgerock.opendj.io.LDAP.OP_TYPE_UNBIND_REQUEST;
 import static org.forgerock.opendj.ldap.responses.Responses.newGenericExtendedResult;
 import static org.forgerock.opendj.ldap.spi.LdapMessages.newResponseMessage;
 
+import com.forgerock.reactive.Action;
+import com.forgerock.reactive.Completable;
+import com.forgerock.reactive.ReactiveHandler;
+import com.forgerock.reactive.Stream;
+import io.reactivex.rxjava3.internal.util.BackpressureHelper;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -29,12 +45,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslServer;
-
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.io.AbstractLDAPMessageHandler;
 import org.forgerock.opendj.io.LDAP;
@@ -74,13 +88,6 @@ import org.glassfish.grizzly.ssl.SSLUtils;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
-
-import com.forgerock.reactive.Action;
-import com.forgerock.reactive.Completable;
-import com.forgerock.reactive.ReactiveHandler;
-import com.forgerock.reactive.Stream;
-
-import io.reactivex.internal.util.BackpressureHelper;
 
 /**
  * Grizzly filter implementation for decoding LDAP requests and handling server side logic for SSL and SASL operations
