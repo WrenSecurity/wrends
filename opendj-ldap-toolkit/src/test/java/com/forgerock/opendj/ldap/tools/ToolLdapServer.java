@@ -15,7 +15,7 @@
  */
 package com.forgerock.opendj.ldap.tools;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.TestCaseUtils.loopbackWithDynamicPort;
 import static org.forgerock.opendj.ldap.LDAPListener.LDAP_DECODE_OPTIONS;
 

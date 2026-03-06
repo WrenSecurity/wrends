@@ -15,6 +15,10 @@
  */
 package org.forgerock.opendj.ldap;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -105,6 +109,28 @@ public final class GeneralizedTime implements Comparable<GeneralizedTime> {
     public static GeneralizedTime valueOf(final long timeMS) {
         Reject.ifTrue(timeMS < MIN_GENERALIZED_TIME_MS, "timeMS is too old to represent as a generalized time");
         return new GeneralizedTime(null, null, timeMS, null);
+    }
+
+    /**
+     * Returns a generalized time representing the provided {@code TemporalAccessor}.
+     *
+     * @param temporal
+     *            The temporal accessor to be converted to a generalized time.
+     * @return A generalized time representing the provided {@code TemporalAccessor}.
+     * @throws java.time.DateTimeException
+     *             If the temporal accessor cannot be converted to an {@code Instant}.
+     * @throws NullPointerException
+     *             If {@code temporal} was {@code null}.
+     */
+    public static GeneralizedTime valueOf(final TemporalAccessor temporal) {
+        Reject.ifNull(temporal);
+        if (temporal instanceof ZonedDateTime) {
+            return valueOf(GregorianCalendar.from((ZonedDateTime) temporal));
+        }
+        if (temporal instanceof OffsetDateTime) {
+            return valueOf(GregorianCalendar.from(((OffsetDateTime) temporal).toZonedDateTime()));
+        }
+        return valueOf(Instant.from(temporal).toEpochMilli());
     }
 
     /**
@@ -877,6 +903,15 @@ public final class GeneralizedTime implements Comparable<GeneralizedTime> {
             date = tmpDate;
         }
         return (Date) tmpDate.clone();
+    }
+
+    /**
+     * Returns a {@code OffsetDateTime} representation of this generalized time.
+     *
+     * @return A {@code OffsetDateTime} representation of this generalized time.
+     */
+    public OffsetDateTime toOffsetDateTime() {
+        return ((GregorianCalendar) toCalendar()).toZonedDateTime().toOffsetDateTime();
     }
 
     @Override

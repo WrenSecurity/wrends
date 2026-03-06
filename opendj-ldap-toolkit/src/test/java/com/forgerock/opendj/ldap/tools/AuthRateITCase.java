@@ -18,7 +18,7 @@ package com.forgerock.opendj.ldap.tools;
 import static com.forgerock.opendj.cli.CliMessages.*;
 import static com.forgerock.opendj.ldap.tools.ToolsMessages.ERR_ERROR_PARSING_ARGS;
 import static com.forgerock.opendj.ldap.tools.ToolsMessages.INFO_TOOL_WARMING_UP;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.PrintStream;
 

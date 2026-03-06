@@ -30,7 +30,7 @@ import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.addValueNeededLongA
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.addValueNeededShortArgs;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.args;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.toDataProviderArray;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.buildArgs;
 
 import java.util.ArrayList;

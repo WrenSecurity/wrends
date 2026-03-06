@@ -16,7 +16,7 @@
 
 package org.forgerock.opendj.config;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.testng.Assert.assertEquals;
 
 import java.util.Collection;

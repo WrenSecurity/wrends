@@ -17,7 +17,7 @@ package com.forgerock.opendj.ldap.tools;
 
 import static com.forgerock.opendj.cli.Utils.MAX_LINE_WIDTH;
 import static com.forgerock.opendj.cli.Utils.wrapText;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.ldap.ByteStringBuilder;

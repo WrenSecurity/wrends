@@ -16,11 +16,26 @@
 package org.opends.server.protocols.http;
 
 import static org.forgerock.http.grizzly.GrizzlySupport.newGrizzlyHttpHandler;
-import static org.opends.messages.ConfigMessages.*;
-import static org.opends.messages.ProtocolMessages.*;
-import static org.opends.server.util.ServerConstants.*;
-import static org.opends.server.util.StaticUtils.*;
+import static org.opends.messages.ConfigMessages.WARN_CONFIG_LOGGER_NO_ACTIVE_HTTP_ACCESS_LOGGERS;
+import static org.opends.messages.ProtocolMessages.ERR_CONNHANDLER_ADDRESS_INUSE;
+import static org.opends.messages.ProtocolMessages.ERR_CONNHANDLER_CANNOT_ACCEPT_CONNECTION;
+import static org.opends.messages.ProtocolMessages.ERR_CONNHANDLER_CANNOT_BIND;
+import static org.opends.messages.ProtocolMessages.ERR_CONNHANDLER_CONFIG_CHANGES_REQUIRE_RESTART;
+import static org.opends.messages.ProtocolMessages.ERR_CONNHANDLER_CONSECUTIVE_ACCEPT_FAILURES;
+import static org.opends.messages.ProtocolMessages.ERR_CONNHANDLER_SSL_CANNOT_INITIALIZE;
+import static org.opends.messages.ProtocolMessages.ERR_INVALID_KEYSTORE;
+import static org.opends.messages.ProtocolMessages.ERR_KEYSTORE_DOES_NOT_CONTAIN_ALIAS;
+import static org.opends.messages.ProtocolMessages.ERR_NULL_KEY_PROVIDER_MANAGER;
+import static org.opends.messages.ProtocolMessages.INFO_DISABLE_CONNECTION;
+import static org.opends.messages.ProtocolMessages.NOTE_CONNHANDLER_STARTED_LISTENING;
+import static org.opends.messages.ProtocolMessages.NOTE_CONNHANDLER_STOPPED_LISTENING;
+import static org.opends.server.util.ServerConstants.ALERT_DESCRIPTION_HTTP_CONNECTION_HANDLER_CONSECUTIVE_FAILURES;
+import static org.opends.server.util.ServerConstants.ALERT_TYPE_HTTP_CONNECTION_HANDLER_CONSECUTIVE_FAILURES;
+import static org.opends.server.util.StaticUtils.getExceptionMessage;
+import static org.opends.server.util.StaticUtils.isAddressInUse;
+import static org.opends.server.util.StaticUtils.stackTraceToSingleLineString;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Arrays;
@@ -37,12 +52,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
-
 import org.forgerock.http.ApiProducer;
 import org.forgerock.http.DescribedHttpApplication;
 import org.forgerock.http.Filter;
@@ -97,8 +110,6 @@ import org.opends.server.types.OperationType;
 import org.opends.server.util.DynamicConstants;
 import org.opends.server.util.SelectableCertificateKeyManager;
 import org.opends.server.util.StaticUtils;
-
-import io.swagger.models.Swagger;
 
 /**
  * This class defines a connection handler that will be used for communicating
@@ -935,7 +946,7 @@ public class HTTPConnectionHandler extends ConnectionHandler<HTTPConnectionHandl
     }
 
     @Override
-    public ApiProducer<Swagger> getApiProducer()
+    public ApiProducer<OpenAPI> getApiProducer()
     {
       // Needed to enforce generation of CREST APIs
       return new SwaggerApiProducer(null);

@@ -15,7 +15,7 @@
  */
 package com.forgerock.opendj.ldap.tools;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.io.File;
 

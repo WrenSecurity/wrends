@@ -16,8 +16,8 @@
  */
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.Fail.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.forgerock.opendj.ldap.CommonLDAPOptions.TRANSPORT_PROVIDER_INSTANCE;
 import static org.forgerock.opendj.ldap.LDAPConnectionFactory.HEARTBEAT_ENABLED;
 import static org.forgerock.opendj.ldap.LDAPConnectionFactory.HEARTBEAT_SCHEDULER;

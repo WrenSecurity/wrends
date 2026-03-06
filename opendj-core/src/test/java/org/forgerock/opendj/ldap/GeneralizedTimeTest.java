@@ -16,8 +16,14 @@
  */
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -195,6 +201,72 @@ public class GeneralizedTimeTest extends SdkTestCase {
             {2000,  0,  1,  0,  0,  0, 100, "20000101000000.100Z"},
             {2000,  0,  1,  0,  0,  0, 999, "20000101000000.999Z"},
         };
+    }
+
+    @Test
+    public void testValueOfInstant() {
+        final Instant instant = Instant.parse("2006-09-06T13:50:30Z");
+        final GeneralizedTime time = GeneralizedTime.valueOf(instant);
+        assertThat(time.getTimeInMillis()).isEqualTo(instant.toEpochMilli());
+        assertThat(time.toString()).isEqualTo("20060906135030Z");
+    }
+
+    @Test
+    public void testValueOfOffsetDateTime() {
+        final OffsetDateTime odt = OffsetDateTime.of(2006, 9, 6, 13, 50, 30, 0, ZoneOffset.ofHours(1));
+        final GeneralizedTime time = GeneralizedTime.valueOf(odt);
+        assertThat(time.getTimeInMillis()).isEqualTo(odt.toInstant().toEpochMilli());
+        assertThat(time.toString()).isEqualTo("20060906135030+0100");
+    }
+
+    @Test
+    public void testValueOfOffsetDateTimeUTC() {
+        final OffsetDateTime odt = OffsetDateTime.of(2006, 9, 6, 12, 50, 30, 0, ZoneOffset.UTC);
+        final GeneralizedTime time = GeneralizedTime.valueOf(odt);
+        assertThat(time.getTimeInMillis()).isEqualTo(odt.toInstant().toEpochMilli());
+        assertThat(time.toString()).isEqualTo("20060906125030Z");
+    }
+
+    @Test
+    public void testValueOfZonedDateTime() {
+        final ZonedDateTime zdt = ZonedDateTime.of(2013, 1, 1, 13, 0, 0, 0, ZoneId.of("Europe/Paris"));
+        final GeneralizedTime time = GeneralizedTime.valueOf(zdt);
+        assertThat(time.getTimeInMillis()).isEqualTo(zdt.toInstant().toEpochMilli());
+        assertThat(time.toString()).isEqualTo("20130101130000+0100");
+    }
+
+    @Test
+    public void testValueOfZonedDateTimeDST() {
+        final ZonedDateTime zdt = ZonedDateTime.of(2013, 6, 1, 13, 0, 0, 0, ZoneId.of("Europe/Paris"));
+        final GeneralizedTime time = GeneralizedTime.valueOf(zdt);
+        assertThat(time.getTimeInMillis()).isEqualTo(zdt.toInstant().toEpochMilli());
+        assertThat(time.toString()).isEqualTo("20130601130000+0200");
+    }
+
+    @Test
+    public void testValueOfOffsetDateTimeRoundtrip() {
+        final OffsetDateTime odt = OffsetDateTime.of(2006, 9, 6, 13, 50, 30, 0, ZoneOffset.ofHours(1));
+        final GeneralizedTime time = GeneralizedTime.valueOf(odt);
+        final OffsetDateTime result = time.toOffsetDateTime();
+        assertThat(result.toInstant()).isEqualTo(odt.toInstant());
+    }
+
+    @Test
+    public void testValueOfInstantWithMillis() {
+        final Instant instant = Instant.parse("2006-09-06T13:50:30.123Z");
+        final GeneralizedTime time = GeneralizedTime.valueOf(instant);
+        assertThat(time.getTimeInMillis()).isEqualTo(instant.toEpochMilli());
+        assertThat(time.toString()).isEqualTo("20060906135030.123Z");
+    }
+
+    @Test(expectedExceptions = { java.time.DateTimeException.class })
+    public void testValueOfTemporalWithoutInstant() {
+        GeneralizedTime.valueOf(LocalDateTime.of(2006, 9, 6, 13, 50, 30));
+    }
+
+    @Test(expectedExceptions = { NullPointerException.class })
+    public void testValueOfNullTemporal() {
+        GeneralizedTime.valueOf((java.time.temporal.TemporalAccessor) null);
     }
 
     private static final String TIME_ZONE_UTC = "UTC";

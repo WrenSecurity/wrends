@@ -16,7 +16,7 @@
  */
 package org.forgerock.opendj.ldap.schema;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.LdapException.*;
 import static org.forgerock.opendj.ldap.schema.SchemaValidationPolicy.defaultPolicy;
 import static org.forgerock.opendj.ldap.schema.SchemaValidationPolicy.ignoreAll;

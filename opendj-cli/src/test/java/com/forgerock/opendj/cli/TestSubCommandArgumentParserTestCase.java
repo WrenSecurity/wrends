@@ -19,7 +19,7 @@ package com.forgerock.opendj.cli;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.fest.assertions.Assertions;
+import org.assertj.core.api.Assertions;
 import org.forgerock.i18n.LocalizableMessage;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;

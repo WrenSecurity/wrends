@@ -17,7 +17,7 @@
 
 package org.forgerock.opendj.ldap.requests;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.RDN;
@@ -69,7 +69,7 @@ public class ModifyDNRequestTestCase extends RequestsTestCase {
         copy.setNewSuperior(superior);
         assertThat(copy.getName().toString()).isEqualTo(newDN);
         assertThat(copy.getNewSuperior().toString()).isEqualTo(superior);
-        assertThat(original.getNewSuperior()).isNull();
+        assertThat((Object) original.getNewSuperior()).isNull();
         assertThat(copy.toString()).contains("deleteOldRDN=true");
     }
 
@@ -77,8 +77,8 @@ public class ModifyDNRequestTestCase extends RequestsTestCase {
     public void testUnmodifiableRequest(final ModifyDNRequest original) {
         final ModifyDNRequest unmodifiable = (ModifyDNRequest) unmodifiableOf(original);
         assertThat(unmodifiable.getName().toString()).isEqualTo(original.getName().toString());
-        assertThat(original.getNewSuperior()).isNull();
-        assertThat(unmodifiable.getNewSuperior()).isNull();
+        assertThat((Object) original.getNewSuperior()).isNull();
+        assertThat((Object) unmodifiable.getNewSuperior()).isNull();
     }
 
     @Test(dataProvider = "ModifyDNRequests", expectedExceptions = UnsupportedOperationException.class)

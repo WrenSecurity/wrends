@@ -17,7 +17,7 @@
 
 package org.forgerock.opendj.grizzly;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.LDAPListener.LDAP_DECODE_OPTIONS;
 import static org.forgerock.opendj.ldap.LDAPConnectionFactory.REQUEST_TIMEOUT;
 import static org.forgerock.util.time.Duration.duration;

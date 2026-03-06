@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.TestCaseUtils.mockTimeService;
 
 import org.testng.annotations.Test;

@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.testng.annotations.DataProvider;

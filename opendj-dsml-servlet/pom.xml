@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2015-2016 ForgeRock AS.
-  Portions Copyright 2017-2022 Wren Security.
+  Portions Copyright 2017-2026 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -31,8 +31,6 @@
     <description>Directory Services Mark-up Language Gateway</description>
 
     <properties>
-        <!-- If the binary-licensing profile is activated, we need the ForgeRock license there -->
-        <forgerock.license.output.dir>${project.build.directory}/${project.build.finalName}/WEB-INF/legal-notices</forgerock.license.output.dir>
         <opendj.server.module.name>opendj-server-legacy</opendj.server.module.name>
         <opendj.jars.folder>opendj-jars</opendj.jars.folder>
     </properties>
@@ -41,16 +39,15 @@
         <dependency>
             <groupId>com.sun.xml.ws</groupId>
             <artifactId>jaxws-rt</artifactId>
+            <version>4.0.3</version>
         </dependency>
 
-    	<!-- Servlet API -->
         <dependency>
-      		<groupId>javax.servlet</groupId>
-      		<artifactId>javax.servlet-api</artifactId>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
     	</dependency>
 
-        <!-- Wren Security libraries -->
         <dependency>
             <groupId>org.wrensecurity.commons</groupId>
             <artifactId>forgerock-util</artifactId>
@@ -64,19 +61,19 @@
         <dependency>
             <groupId>org.wrensecurity.commons</groupId>
             <artifactId>i18n-slf4j</artifactId>
+            <version>${wrensec-commons.version}</version>
         </dependency>
 
-        <!-- Wren:DS SDK dependency -->
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.wrensecurity.wrends</groupId>
             <artifactId>opendj-core</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <!-- Wren:DS Server dependencies -->
-        <dependency>
-            <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-config</artifactId>
         </dependency>
 
         <dependency>
@@ -89,20 +86,17 @@
 
     <build>
         <plugins>
-            <!-- Parse version to generate properties (major.version, minor.version, ...) -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>copy-and-rename-opendj-server-legacy-jars</id>
+
                         <goals>
                             <goal>copy</goal>
                         </goals>
+
                         <configuration>
                             <artifactItems>
                                 <!-- Copy and rename opendj main jar -->
@@ -201,37 +195,11 @@
                 </executions>
             </plugin>
 
-            <!-- Generate DSML code from XML files -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jaxb2-maven-plugin</artifactId>
-                <version>2.5.0</version>
-                <executions>
-                    <execution>
-                        <id>prepare-dsml-library</id>
-                        <goals>
-                            <goal>xjc</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/gen</outputDirectory>
-                            <sources>
-                                <source>${basedir}/resources/schema/DSMLv2.xsd</source>
-                            </sources>
-                            <packageName>org.opends.dsml.protocol</packageName>
-                            <xjbSources>
-                                <xjbSource>${basedir}/resources/schema/bindings.xjb</xjbSource>
-                            </xjbSources>
-                            <target>2.1</target>
-                            <noPackageLevelAnnotations>true</noPackageLevelAnnotations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <!-- WAR artefact is build by the assembly plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
+
                 <configuration>
                     <webResources>
                         <!-- Include Wren:DS jars -->
@@ -272,22 +240,63 @@
                     </webResources>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Generate DSML code from XML files -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>jaxb2-maven-plugin</artifactId>
+                <version>4.1.0</version>
+
+                <executions>
+                    <execution>
+                        <id>prepare-dsml-library</id>
+
+                        <goals>
+                            <goal>xjc</goal>
+                        </goals>
+
+                        <configuration>
+                            <target>3.0</target>
+                            <outputDirectory>${project.build.directory}/gen</outputDirectory>
+                            <noPackageLevelAnnotations>true</noPackageLevelAnnotations>
+
+                            <sources>
+                                <source>${basedir}/resources/schema/DSMLv2.xsd</source>
+                            </sources>
+
+                            <packageName>org.opends.dsml.protocol</packageName>
+
+                            <xjbSources>
+                                <xjbSource>${basedir}/resources/schema/bindings.xjb</xjbSource>
+                            </xjbSources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
             <id>precommit</id>
+
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
+
                         <executions>
                             <!-- Disable default from parent -->
                             <execution>
                                 <id>check-src-and-tests</id>
                                 <phase>none</phase>
+
                                 <goals>
                                     <goal>checkstyle</goal>
                                 </goals>

@@ -17,7 +17,7 @@ package org.forgerock.opendj.ldif;
 
 import static com.forgerock.opendj.ldap.CoreMessages.*;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.ldap.TestCaseUtils.*;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 

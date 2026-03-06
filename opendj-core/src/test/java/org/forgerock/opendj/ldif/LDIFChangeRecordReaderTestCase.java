@@ -19,7 +19,7 @@
 
 package org.forgerock.opendj.ldif;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -764,7 +764,7 @@ public final class LDIFChangeRecordReaderTestCase extends AbstractLDIFTestCase {
         assertThat((Object) modifyDNRequest.getName()).isEqualTo(DN.valueOf("dc=example,dc=com"));
         assertThat((Object) modifyDNRequest.getNewRDN()).isEqualTo(RDN.valueOf("dc=eggsample"));
         assertThat(modifyDNRequest.isDeleteOldRDN()).isTrue();
-        assertThat(modifyDNRequest.getNewSuperior()).isNull();
+        assertThat((Object) modifyDNRequest.getNewSuperior()).isNull();
         reader.close();
     }
 

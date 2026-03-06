@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.rest2ldap.authz;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.rest2ldap.authz.CredentialExtractors.HTTP_BASIC_AUTH_HEADER;
 import static org.forgerock.opendj.rest2ldap.authz.CredentialExtractors.httpBasicExtractor;
 import static org.forgerock.opendj.rest2ldap.authz.CredentialExtractors.newCustomHeaderExtractor;

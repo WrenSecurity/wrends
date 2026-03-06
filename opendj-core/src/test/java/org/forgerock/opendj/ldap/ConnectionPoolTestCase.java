@@ -18,7 +18,7 @@
 
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.Connections.newFixedConnectionPool;
 import static org.forgerock.opendj.ldap.LdapException.newLdapException;
 import static org.forgerock.opendj.ldap.TestCaseUtils.mockConnection;

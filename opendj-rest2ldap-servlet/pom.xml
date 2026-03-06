@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2013-2016 ForgeRock AS.
-  Portions Copyright 2017-2022 Wren Security.
+  Portions Copyright 2017-2026 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -32,11 +32,6 @@
         Provides integration between the Wren:DS Commons REST Adapter and Servlet APIs.
     </description>
 
-    <properties>
-        <!-- If the binary-licensing profile is activated, we need the ForgeRock license there -->
-        <forgerock.license.output.dir>${project.build.directory}/${project.build.finalName}/WEB-INF/legal-notices</forgerock.license.output.dir>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -50,13 +45,13 @@
 
         <dependency>
             <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-rest2ldap</artifactId>
+            <artifactId>opendj-grizzly</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-grizzly</artifactId>
+            <artifactId>opendj-rest2ldap</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -64,35 +59,24 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>9.2.11.v20150529</version>
-                <configuration>
-                    <scanIntervalSeconds>10</scanIntervalSeconds>
-                    <webAppConfig>
-                        <contextPath>/</contextPath>
-                    </webAppConfig>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
+
                 <configuration>
                     <webResources>
-                        <!-- Include CDDLv1_0.txt -->
                         <resource>
                             <targetPath>WEB-INF/legal-notices</targetPath>
                             <directory>../legal-notices</directory>
+
                             <includes>
                                 <include>CDDLv1_0.txt</include>
                             </includes>
                         </resource>
 
-                        <!-- Include THIRDPARTYREADME.txt -->
                         <resource>
                             <targetPath>WEB-INF/legal-notices</targetPath>
                             <directory>legal-notices</directory>
+
                             <includes>
                                 <include>THIRDPARTYREADME.txt</include>
                             </includes>
@@ -101,11 +85,22 @@
                         <resource>
                             <targetPath>/</targetPath>
                             <directory>src/main/webapp/</directory>
+
                             <excludes>
                                 <exclude>web.xml</exclude>
                             </excludes>
                         </resource>
                     </webResources>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.eclipse.jetty.ee11</groupId>
+                <artifactId>jetty-ee11-maven-plugin</artifactId>
+                <version>12.1.7</version>
+
+                <configuration>
+                    <scan>10</scan>
                 </configuration>
             </plugin>
         </plugins>

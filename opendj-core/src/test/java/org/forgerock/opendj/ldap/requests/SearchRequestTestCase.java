@@ -16,7 +16,7 @@
 
 package org.forgerock.opendj.ldap.requests;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.forgerock.opendj.ldap.DN;
 import org.forgerock.opendj.ldap.DereferenceAliasesPolicy;

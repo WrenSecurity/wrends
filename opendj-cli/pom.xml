@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2014-2016 ForgeRock AS.
-  Portions Copyright 2018-2022 Wren Security.
+  Portions Copyright 2018-2026 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -33,21 +33,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.wrends</groupId>
-            <artifactId>opendj-core</artifactId>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>i18n-core</artifactId>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -57,10 +45,22 @@
         </dependency>
 
         <dependency>
-            <groupId>org.freemarker</groupId>
-            <artifactId>freemarker</artifactId>
-            <version>${freemarker.version}</version>
-            <scope>provided</scope>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>i18n-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.wrends</groupId>
+            <artifactId>opendj-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -73,14 +73,28 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+
+                <configuration>
+                    <instructions>
+                        <Export-Package>com.forgerock.opendj.cli</Export-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>org.wrensecurity.commons</groupId>
                 <artifactId>i18n-maven-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>generate-messages</goal>
                         </goals>
+
                         <configuration>
                             <messageFiles>
                                 <messageFile>com/forgerock/opendj/cli/cli.properties</messageFile>
@@ -88,27 +102,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-            </plugin>
-
-            <!-- Creates opendj-cli bundle -->
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <configuration>
-                    <instructions>
-                        <Export-Package>com.forgerock.opendj.cli</Export-Package>
-                    </instructions>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -118,6 +111,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
+
                 <reportSets>
                     <reportSet>
                         <reports>

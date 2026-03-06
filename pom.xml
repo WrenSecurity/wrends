@@ -35,10 +35,8 @@
         Wren:DS is an LDAPv3 compliant directory service, developed for the Java platform, providing
         a high performance, highly available, secure store for the identities managed by enterprises.
     </description>
-
+    <url>https://wrensecurity.org/projects/wrends/</url>
     <inceptionYear>2017</inceptionYear>
-    <url>http://wrensecurity.org/</url>
-
     <licenses>
         <license>
             <name>CDDL-1.0</name>
@@ -48,10 +46,29 @@
         </license>
     </licenses>
 
-    <issueManagement>
-        <system>GitHub Issues</system>
-        <url>https://github.com/WrenSecurity/WrenDS/issues</url>
-    </issueManagement>
+    <modules>
+        <module>opendj-bom</module>
+
+        <module>opendj-core</module>
+        <module>opendj-doc-maven-plugin</module>
+        <module>opendj-grizzly</module>
+        <module>opendj-cli</module>
+        <module>opendj-ldap-toolkit</module>
+        <module>opendj-ldap-sdk-examples</module>
+        <module>opendj-rest2ldap</module>
+
+        <module>opendj-maven-plugin</module>
+        <module>opendj-config</module>
+        <module>opendj-rest2ldap-servlet</module>
+        <module>opendj-server</module>
+        <module>opendj-server-example-plugin</module>
+        <module>opendj-legacy</module>
+        <module>opendj-server-legacy</module>
+        <module>opendj-dsml-servlet</module>
+        <module>opendj-embedded-server-examples</module>
+        <module>opendj-openidm-account-change-notification-handler</module>
+        <module>opendj-doc-generated-ref</module>
+    </modules>
 
     <scm>
         <url>https://github.com/WrenSecurity/WrenDS</url>
@@ -59,6 +76,10 @@
         <developerConnection>scm:git:git@github.com:WrenSecurity/WrenDS.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/WrenSecurity/WrenDS/issues</url>
+    </issueManagement>
 
     <repositories>
         <repository>
@@ -91,25 +112,22 @@
     </repositories>
 
     <properties>
-        <pgpVerifyKeysVersion>1.9.7</pgpVerifyKeysVersion>
+        <pgpVerifyKeysVersion>1.9.14</pgpVerifyKeysVersion>
+        <maven.compiler.release>17</maven.compiler.release>
+
+        <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
+        <buildDateTime>${project.build.outputTimestamp}</buildDateTime>
 
         <product.name>Wren:DS</product.name>
         <product.name.lowercase>wrends</product.name.lowercase>
         <product.locales>ca_ES,es,de,fr,ja,ko,pl,zh_CN,zh_TW</product.locales>
         <localized.jars.classifier>i18n</localized.jars.classifier>
 
-        <bouncycastle.version>1.81</bouncycastle.version>
-        <freemarker.version>2.3.24-incubating</freemarker.version>
-        <grizzly-framework.version>2.3.28</grizzly-framework.version>
-        <metrics-core.version>3.1.2</metrics-core.version>
-        <wrensec-commons.version>22.6.2</wrensec-commons.version>
+        <bouncycastle.version>1.83</bouncycastle.version>
+        <freemarker.version>2.3.34</freemarker.version>
+        <wrensec-commons.version>23.0.0</wrensec-commons.version>
 
-        <!-- OSGi bundles properties -->
         <opendj.osgi.import.additional />
-        <!--
-         | Use provide:=true to disallow mixing Wren:DS and ForgeRock resource versions.
-         | it change the version policy from == + to == =+  [2.0,3) [2.0,2.1)
-        -->
         <opendj.osgi.import>
             ${opendj.osgi.import.additional},
             *
@@ -119,23 +137,89 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>2.15.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>com.github.stephenc.jcip</groupId>
                 <artifactId>jcip-annotations</artifactId>
                 <version>1.0-1</version>
             </dependency>
 
             <dependency>
-                <groupId>com.sun.xml.ws</groupId>
-                <artifactId>jaxws-ri</artifactId>
-                <version>2.3.7</version>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-bom</artifactId>
+                <version>4.2.38</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
 
             <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-core</artifactId>
-                <version>${metrics-core.version}</version>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>6.1.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>3.27.7</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.angus</groupId>
+                <artifactId>angus-mail</artifactId>
+                <version>2.0.5</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>${freemarker.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-bom</artifactId>
+                <version>4.0.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>4.4.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>2.0.17</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>7.8.0</version>
             </dependency>
 
             <dependency>
@@ -152,61 +236,10 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
-
-            <dependency>
-                <groupId>org.wrensecurity.commons</groupId>
-                <artifactId>i18n-slf4j</artifactId>
-                <version>${wrensec-commons.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wrensecurity.wrends</groupId>
-                <artifactId>opendj-core</artifactId>
-                <type>test-jar</type>
-                <version>${project.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wrensecurity.wrends</groupId>
-                <artifactId>opendj-config</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wrensecurity.wrends</groupId>
-                <artifactId>opendj-legacy</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wrensecurity.wrends</groupId>
-                <artifactId>opendj-server</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>org.easytesting</groupId>
-            <artifactId>fest-assert</artifactId>
-            <version>1.4</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -220,52 +253,44 @@
         </dependency>
 
         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
-    <modules>
-        <module>opendj-bom</module>
-
-        <module>opendj-core</module>
-        <module>opendj-doc-maven-plugin</module>
-        <module>opendj-grizzly</module>
-        <module>opendj-cli</module>
-        <module>opendj-ldap-toolkit</module>
-        <module>opendj-ldap-sdk-examples</module>
-        <module>opendj-rest2ldap</module>
-
-        <module>opendj-maven-plugin</module>
-        <module>opendj-config</module>
-        <module>opendj-rest2ldap-servlet</module>
-        <module>opendj-server</module>
-        <module>opendj-server-example-plugin</module>
-        <module>opendj-legacy</module>
-        <module>opendj-server-legacy</module>
-        <module>opendj-dsml-servlet</module>
-        <module>opendj-embedded-server-examples</module>
-        <module>opendj-openidm-account-change-notification-handler</module>
-        <module>opendj-doc-generated-ref</module>
-    </modules>
 
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
+                    <artifactId>maven-jxr-plugin</artifactId>
+                    <version>3.6.0</version>
+                </plugin>
+
+                <!-- This is needed to use annotations in maven plugins with maven 3.0.x -->
+                <plugin>
+                    <?m2e execute onConfiguration?>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-plugin-plugin</artifactId>
+
+                    <configuration>
+                        <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+                    </configuration>
+
                     <executions>
                         <execution>
+                            <id>mojo-descriptor</id>
+                            <phase>process-classes</phase>
+
                             <goals>
-                                <goal>jar</goal>
+                                <goal>descriptor</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -274,13 +299,14 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+
                     <configuration>
-                        <argLine>-server</argLine>
                         <properties>
                             <property>
                                 <name>usedefaultlisteners</name>
                                 <value>false</value>
                             </property>
+
                             <property>
                                 <name>listener</name>
                                 <value>org.forgerock.testng.ForgeRockTestListener</value>
@@ -298,6 +324,7 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
+
                     <configuration>
                         <instructions>
                             <!--
@@ -309,6 +336,7 @@
                             </_removeheaders>
                             <Import-Package>${opendj.osgi.import}</Import-Package>
                         </instructions>
+
                         <archive>
                             <addMavenDescriptor>false</addMavenDescriptor>
                             <index>true</index>
@@ -318,27 +346,39 @@
                 </plugin>
 
                 <plugin>
-                    <?m2e execute onConfiguration?>
-                    <groupId>org.wrensecurity.commons</groupId>
-                    <artifactId>i18n-maven-plugin</artifactId>
-                    <version>${wrensec-commons.version}</version>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.6.1</version>
+
+                    <executions>
+                        <!-- Parse version to generate properties (major.version, minor.version, ...) -->
+                        <execution>
+                            <id>parse-version</id>
+
+                            <goals>
+                                <goal>parse-version</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
 
-                <!-- This is needed to use annotations in maven plugins with maven 3.0.x -->
                 <plugin>
-                    <?m2e execute onConfiguration?>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-plugin-plugin</artifactId>
-                    <configuration>
-                        <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-                    </configuration>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>buildnumber-maven-plugin</artifactId>
+                    <version>3.3.0</version>
+
                     <executions>
                         <execution>
-                            <id>mojo-descriptor</id>
-                            <phase>process-classes</phase>
+                            <id>generate-buildnumber</id>
+
                             <goals>
-                                <goal>descriptor</goal>
+                                <goal>create</goal>
                             </goals>
+
+                            <configuration>
+                                <buildNumberPropertyName>buildRevision</buildNumberPropertyName>
+                                <revisionOnScmFailure>-1</revisionOnScmFailure>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -357,10 +397,19 @@
                 </plugin>
 
                 <plugin>
+                    <?m2e execute onConfiguration?>
+                    <groupId>org.wrensecurity.commons</groupId>
+                    <artifactId>i18n-maven-plugin</artifactId>
+                    <version>${wrensec-commons.version}</version>
+                </plugin>
+
+
+                <plugin>
                     <?m2e ignore?>
                     <groupId>org.wrensecurity.wrends</groupId>
                     <artifactId>opendj-maven-plugin</artifactId>
                     <version>${project.version}</version>
+
                     <!-- bootstrap and bootstrap-client MANIFEST.MF files generation. -->
                     <configuration>
                         <productJarName>${product.name.lowercase}</productJarName>
@@ -375,10 +424,12 @@
                             </goals>
                             <configuration>
                                 <classPathProperty>classpath.bootstrap</classPathProperty>
+
                                 <excludes>
                                     <exclude>org.slf4j:slf4j-jdk14</exclude>
                                     <exclude>org.forgerock.opendj:opendj-server-legacy</exclude>
                                 </excludes>
+
                                 <additionalJars>
                                     <additionalJar>wrends-slf4j-adapter.jar</additionalJar>
                                 </additionalJars>
@@ -400,54 +451,6 @@
                         </execution>
                     </executions>
                 </plugin>
-
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>1.8</version>
-                    <executions>
-                        <!-- Parse version to generate properties (major.version, minor.version, ...) -->
-                        <execution>
-                            <id>parse-version</id>
-                            <goals>
-                                <goal>parse-version</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-
-                <!-- Retrieve the build timestamp and SCM revision number -->
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>buildnumber-maven-plugin</artifactId>
-                    <version>1.4</version>
-                    <executions>
-                        <execution>
-                            <id>generate-buildnumber</id>
-                            <goals>
-                                <goal>create</goal>
-                            </goals>
-                            <configuration>
-                                <buildNumberPropertyName>buildRevision</buildNumberPropertyName>
-                                <revisionOnScmFailure>-1</revisionOnScmFailure>
-                            </configuration>
-                        </execution>
-
-                        <execution>
-                            <id>generate-timestamp</id>
-                            <goals>
-                                <goal>create</goal>
-                            </goals>
-                            <configuration>
-                                <format>{0,date,yyyyMMddHHmmss}</format>
-                                <items>
-                                    <item>timestamp</item>
-                                </items>
-                                <buildNumberPropertyName>buildDateTime</buildNumberPropertyName>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -455,29 +458,10 @@
     <profiles>
         <profile>
             <id>packages</id>
+
             <modules>
                 <module>opendj-packages</module>
             </modules>
-        </profile>
-
-        <profile>
-            <id>disable-doclint-for-java-8</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                         <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <doclint>none</doclint>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
         </profile>
     </profiles>
 
@@ -486,6 +470,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
+
                 <reportSets>
                     <reportSet>
                         <reports>

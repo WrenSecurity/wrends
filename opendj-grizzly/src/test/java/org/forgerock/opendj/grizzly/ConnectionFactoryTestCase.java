@@ -19,7 +19,7 @@ package org.forgerock.opendj.grizzly;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.CommonLDAPOptions.LDAP_DECODE_OPTIONS;
 import static org.forgerock.opendj.ldap.Connections.newFailoverLoadBalancer;
 import static org.forgerock.opendj.ldap.Connections.newFixedConnectionPool;

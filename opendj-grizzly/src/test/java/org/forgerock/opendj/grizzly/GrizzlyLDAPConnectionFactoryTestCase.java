@@ -16,8 +16,8 @@
  */
 package org.forgerock.opendj.grizzly;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.Fail.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.forgerock.opendj.ldap.CommonLDAPOptions.LDAP_DECODE_OPTIONS;
 import static org.forgerock.opendj.ldap.CommonLDAPOptions.TRANSPORT_PROVIDER;
 import static org.forgerock.opendj.ldap.CommonLDAPOptions.TRANSPORT_PROVIDER_CLASS_LOADER;

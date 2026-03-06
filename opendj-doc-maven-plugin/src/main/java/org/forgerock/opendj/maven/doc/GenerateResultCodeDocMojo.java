@@ -12,15 +12,17 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.forgerock.opendj.maven.doc;
 
 import static org.forgerock.opendj.maven.doc.Utils.*;
 
-import com.thoughtworks.qdox.JavaProjectBuilder;
-import com.thoughtworks.qdox.model.JavaClass;
-import com.thoughtworks.qdox.model.JavaField;
-import com.thoughtworks.qdox.model.JavaType;
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -73,21 +75,26 @@ public class GenerateResultCodeDocMojo extends AbstractMojo {
         map.put("year", new SimpleDateFormat("yyyy").format(new Date()));
 
         // The overall explanation in the generated doc is the class comment.
-        final JavaClass resultCodeClass;
+        final ClassOrInterfaceDeclaration resultCodeClass;
         try {
             resultCodeClass = getJavaClass();
         } catch (IOException e) {
             throw new MojoExecutionException("Could not read " + resultCodeSource.getPath(), e);
         }
-        map.put("classComment", cleanComment(resultCodeClass.getComment()));
+        map.put("classComment", cleanComment(resultCodeClass.getJavadocComment()
+                .map(c -> c.parse().toText())
+                .orElse("")));
 
         // Documentation for each result code comes from the Javadoc for the code,
         // and from the value and friendly name of the code.
         final Map<String, Object> comments = new HashMap<>();
-        for (final JavaField field : resultCodeClass.getFields()) {
-            final JavaType type = field.getType();
-            if (type.getValue().equals("ResultCode")) {
-                comments.put(field.getName(), cleanComment(field.getComment()));
+        for (final FieldDeclaration field : resultCodeClass.getFields()) {
+            for (final VariableDeclarator variable : field.getVariables()) {
+                if (field.getElementType().asString().equals("ResultCode")) {
+                    comments.put(variable.getNameAsString(), cleanComment(field.getJavadocComment()
+                            .map(c -> c.parse().toText())
+                            .orElse("")));
+                }
             }
         }
         map.put("resultCodes", getResultCodesDoc(comments));
@@ -106,10 +113,10 @@ public class GenerateResultCodeDocMojo extends AbstractMojo {
      * @return An object to access to the result code Java source.
      * @throws IOException  Could not read the source
      */
-    private JavaClass getJavaClass() throws IOException {
-        final JavaProjectBuilder builder = new JavaProjectBuilder();
-        builder.addSource(resultCodeSource);
-        return builder.getClassByName("org.forgerock.opendj.ldap.ResultCode");
+    private ClassOrInterfaceDeclaration getJavaClass() throws IOException {
+        final CompilationUnit cu = StaticJavaParser.parse(resultCodeSource);
+        return cu.getClassByName("ResultCode")
+                .orElseThrow(() -> new IOException("Could not find ResultCode class"));
     }
 
     /**

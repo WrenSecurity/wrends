@@ -22,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 import org.forgerock.i18n.LocalizableMessage;
 import org.testng.annotations.Test;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 

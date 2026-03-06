@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2011-2016 ForgeRock AS.
-  Portions Copyright 2018-2022 Wren Security.
+  Portions Copyright 2018-2026 Wren Security.
  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -38,7 +38,28 @@
         <dependency>
             <groupId>org.mpierce.metrics.reservoir</groupId>
             <artifactId>hdrhistogram-metrics-reservoir</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity</groupId>
+            <artifactId>wrensec-build-tools</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wrensecurity.commons</groupId>
+            <artifactId>i18n-core</artifactId>
         </dependency>
 
         <dependency>
@@ -54,21 +75,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wrensecurity.commons</groupId>
-            <artifactId>i18n-core</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.wrensecurity.wrends</groupId>
             <artifactId>opendj-cli</artifactId>
             <version>${project.version}</version>
@@ -81,66 +87,30 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-	        <groupId>org.wrensecurity</groupId>
-	        <artifactId>wrensec-build-tools</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.wrensecurity.commons</groupId>
-                <artifactId>i18n-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>generate-messages</goal>
-                        </goals>
-                        <configuration>
-                            <messageFiles>
-                                <messageFile>com/forgerock/opendj/ldap/tools/tools.properties</messageFile>
-                            </messageFiles>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <id>make-assembly</id>
                         <phase>package</phase>
+
                         <goals>
                             <goal>single</goal>
                         </goals>
+
                         <configuration>
                             <appendAssemblyId>false</appendAssemblyId>
+
                             <descriptors>
                                 <descriptor>src/main/assembly/descriptor.xml</descriptor>
                             </descriptors>
+
                             <formats>
                                 <format>zip</format>
                             </formats>
@@ -151,6 +121,7 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <executions>
                     <execution>
@@ -158,6 +129,40 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.wrensecurity.commons</groupId>
+                <artifactId>i18n-maven-plugin</artifactId>
+
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+
+                        <goals>
+                            <goal>generate-messages</goal>
+                        </goals>
+
+                        <configuration>
+                            <messageFiles>
+                                <messageFile>com/forgerock/opendj/ldap/tools/tools.properties</messageFile>
+                            </messageFiles>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

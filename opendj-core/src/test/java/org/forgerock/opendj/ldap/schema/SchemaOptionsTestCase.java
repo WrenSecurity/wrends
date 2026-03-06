@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.ldap.schema;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.ldap.schema.SchemaOptions.*;
 
 import org.forgerock.util.Option;

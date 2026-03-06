@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.forgerock.opendj.ldap.schema.NameForm.Builder;
 import org.testng.annotations.Test;

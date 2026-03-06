@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.io;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.ldap.LDAPConnectionFactory.LDAP_DECODE_OPTIONS;
 
 import java.io.IOException;

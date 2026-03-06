@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
 
 import static com.forgerock.opendj.util.StaticUtils.*;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Test {@code StaticUtils}.

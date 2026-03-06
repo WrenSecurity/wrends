@@ -17,7 +17,7 @@
 
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.Entries.diffEntries;
 import static org.forgerock.opendj.ldap.Entries.diffOptions;
 import static org.testng.AssertJUnit.assertFalse;

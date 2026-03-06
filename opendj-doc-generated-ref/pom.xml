@@ -13,7 +13,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2016 ForgeRock AS.
-  Portions Copyright 2018-2022 Wren Security.
+  Portions Copyright 2018-2026 Wren Security.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -31,7 +31,6 @@
     <description>Build generated documentation sources.</description>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <docServerArchivePath>${project.build.directory}/wrends</docServerArchivePath>
     </properties>
 
@@ -39,14 +38,18 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+
                 <executions>
                     <execution>
                         <id>unpack-source-dependencies</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>unpack</goal>
                         </goals>
+
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -80,9 +83,11 @@
                     <execution>
                         <id>copy-freemarker-jar</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>copy</goal>
                         </goals>
+
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -104,6 +109,7 @@
                     <execution>
                         <id>generate-configuration-reference-doc</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>generate-config-ref</goal>
                         </goals>
@@ -112,10 +118,12 @@
                     <execution>
                         <id>generate-global-acis-table-and-ref-for-doc</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>generate-global-acis-table</goal>
                             <goal>generate-schema-ref</goal>
                         </goals>
+
                         <configuration>
                             <configDotLdif>${project.build.directory}/wrends/template/config/config.ldif</configDotLdif>
                         </configuration>
@@ -123,12 +131,15 @@
 
                     <execution>
                         <id>generate-log-reference-doc</id>
+                        <phase>prepare-package</phase>
+
                         <goals>
                             <goal>generate-xml-messages-doc</goal>
                         </goals>
-                        <phase>prepare-package</phase>
+
                         <configuration>
                             <outputDirectory>${project.build.directory}/docbkx-sources/shared</outputDirectory>
+
                             <messageFileNames>
                                 <!--
                                   For each .properties with messages of at least error severity,
@@ -160,34 +171,44 @@
                     <execution>
                         <id>generate-result-code-doc</id>
                         <phase>prepare-package</phase>
+
                         <goals>
                             <goal>generate-result-code-doc</goal>
                         </goals>
+
                         <configuration>
                             <resultCodeSource>
                                 ${project.build.directory}/dependency/org/forgerock/opendj/ldap/ResultCode.java
                             </resultCodeSource>
-                            <xmlFile>${project.build.directory}/docbkx-sources/shared/appendix-ldap-result-codes.xml
+
+                            <xmlFile>
+                                ${project.build.directory}/docbkx-sources/shared/appendix-ldap-result-codes.xml
                             </xmlFile>
                         </configuration>
                     </execution>
 
                     <execution>
                         <id>generate-doc</id>
+
                         <goals>
                             <goal>generate-refentry</goal>
                         </goals>
+
                         <configuration>
                             <archiveDir>${project.build.directory}/opendj-ldap-toolkit</archiveDir>
                             <mode>TOOLKIT</mode>
+
                             <extendedClasspath>
                                 ${project.build.directory}/dependency/freemarker-${freemarker.version}.jar
                             </extendedClasspath>
+
                             <outputDir>${project.build.directory}/docbkx-sources/man-pages</outputDir>
+
                             <tools>
                                 <tool>
                                     <name>addrate</name>
                                     <application>com.forgerock.opendj.ldap.tools.AddRate</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-80-89.xml</trailingSectionPath>
                                         <trailingSectionPath>addrate-examples.xml</trailingSectionPath>
@@ -197,6 +218,7 @@
                                 <tool>
                                     <name>authrate</name>
                                     <application>com.forgerock.opendj.ldap.tools.AuthRate</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-89.xml</trailingSectionPath>
                                         <trailingSectionPath>authrate-examples.xml</trailingSectionPath>
@@ -206,6 +228,7 @@
                                 <tool>
                                     <name>base64</name>
                                     <application>com.forgerock.opendj.ldap.tools.Base64</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                         <trailingSectionPath>base64-examples.xml</trailingSectionPath>
@@ -215,6 +238,7 @@
                                 <tool>
                                     <name>ldapcompare</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDAPCompare</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>ldapcompare-exit-codes.xml</trailingSectionPath>
                                         <trailingSectionPath>files.xml</trailingSectionPath>
@@ -225,6 +249,7 @@
                                 <tool>
                                     <name>ldapdelete</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDAPDelete</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-ldap-89.xml</trailingSectionPath>
                                         <trailingSectionPath>files.xml</trailingSectionPath>
@@ -235,6 +260,7 @@
                                 <tool>
                                     <name>ldapmodify</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDAPModify</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-ldap-89.xml</trailingSectionPath>
                                         <trailingSectionPath>files.xml</trailingSectionPath>
@@ -246,6 +272,7 @@
                                     <name>ldappasswordmodify</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDAPPasswordModify
                                     </application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-ldap-89.xml</trailingSectionPath>
                                         <trailingSectionPath>files.xml</trailingSectionPath>
@@ -257,6 +284,7 @@
                                 <tool>
                                     <name>ldapsearch</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDAPSearch</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>filters.xml</trailingSectionPath>
                                         <trailingSectionPath>attributes.xml</trailingSectionPath>
@@ -269,6 +297,7 @@
                                 <tool>
                                     <name>ldifdiff</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDIFDiff</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>ldifdiff-exit-codes.xml</trailingSectionPath>
                                         <trailingSectionPath>ldifdiff-examples.xml</trailingSectionPath>
@@ -278,6 +307,7 @@
                                 <tool>
                                     <name>ldifmodify</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDIFModify</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                         <trailingSectionPath>ldifmodify-examples.xml</trailingSectionPath>
@@ -287,6 +317,7 @@
                                 <tool>
                                     <name>ldifsearch</name>
                                     <application>com.forgerock.opendj.ldap.tools.LDIFSearch</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                         <trailingSectionPath>ldifsearch-examples.xml</trailingSectionPath>
@@ -296,6 +327,7 @@
                                 <tool>
                                     <name>makeldif</name>
                                     <application>com.forgerock.opendj.ldap.tools.MakeLDIF</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-1.xml</trailingSectionPath>
                                         <trailingSectionPath>makeldif-examples.xml</trailingSectionPath>
@@ -306,6 +338,7 @@
                                 <tool>
                                     <name>modrate</name>
                                     <application>com.forgerock.opendj.ldap.tools.ModRate</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-89.xml</trailingSectionPath>
                                         <trailingSectionPath>modrate-examples.xml</trailingSectionPath>
@@ -315,6 +348,7 @@
                                 <tool>
                                     <name>searchrate</name>
                                     <application>com.forgerock.opendj.ldap.tools.SearchRate</application>
+
                                     <trailingSectionPaths>
                                         <trailingSectionPath>exit-codes-0-89.xml</trailingSectionPath>
                                         <trailingSectionPath>searchrate-examples.xml</trailingSectionPath>
@@ -332,10 +366,12 @@
                 <executions>
                     <execution>
                         <id>config-ref</id>
+                        <phase>package</phase>
+
                         <goals>
                             <goal>single</goal>
                         </goals>
-                        <phase>package</phase>
+
                         <configuration>
                             <descriptors>
                                 <descriptor>src/main/assembly/config-ref-assembly.xml</descriptor>
@@ -345,10 +381,12 @@
 
                     <execution>
                         <id>generated-doc-sources</id>
+                        <phase>package</phase>
+
                         <goals>
                             <goal>single</goal>
                         </goals>
-                        <phase>package</phase>
+
                         <configuration>
                             <descriptors>
                                 <descriptor>src/main/assembly/generated-doc-sources-assembly.xml</descriptor>
@@ -372,10 +410,12 @@
                         <executions>
                             <execution>
                                 <id>generate-man-pages</id>
+                                <phase>generate-sources</phase>
+
                                 <goals>
                                     <goal>generate-refentry</goal>
                                 </goals>
-                                <phase>generate-sources</phase>
+
                                 <configuration>
                                     <archiveDir>${project.build.directory}/wrends</archiveDir>
                                     <mode>SERVER</mode>
@@ -383,10 +423,12 @@
                                         ${project.build.directory}/dependency/freemarker-${freemarker.version}.jar
                                     </extendedClasspath>
                                     <outputDir>${project.build.directory}/docbkx-sources/man-pages</outputDir>
+
                                     <tools>
                                         <tool>
                                             <name>backendstat</name>
                                             <application>org.opends.server.backends.pluggable.BackendStat</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>backendstat-examples.xml</trailingSectionPath>
@@ -396,6 +438,7 @@
                                         <tool>
                                             <name>backup</name>
                                             <application>org.opends.server.tools.BackUpDB</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-1.xml</trailingSectionPath>
                                                 <trailingSectionPath>backup-examples.xml</trailingSectionPath>
@@ -404,8 +447,8 @@
 
                                         <tool>
                                             <name>control-panel</name>
-                                            <application>org.opends.guitools.controlpanel.ControlPanelLauncher
-                                            </application>
+                                            <application>org.opends.guitools.controlpanel.ControlPanelLauncher</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>control-panel-examples.xml</trailingSectionPath>
@@ -415,6 +458,7 @@
                                         <tool>
                                             <name>create-rc-script</name>
                                             <application>org.opends.server.tools.CreateRCScript</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>create-rc-script-examples.xml</trailingSectionPath>
@@ -424,6 +468,7 @@
                                         <tool>
                                             <name>dsconfig</name>
                                             <application>org.forgerock.opendj.config.dsconfig.DSConfig</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>dsconfig-examples.xml</trailingSectionPath>
@@ -434,6 +479,7 @@
                                             <name>dsreplication</name>
                                             <application>org.opends.server.tools.dsreplication.ReplicationCliMain
                                             </application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>dsreplication-examples.xml</trailingSectionPath>
@@ -443,6 +489,7 @@
                                         <tool>
                                             <name>encode-password</name>
                                             <application>org.opends.server.tools.EncodePassword</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-5-6-other.xml</trailingSectionPath>
                                                 <trailingSectionPath>encode-password-examples.xml</trailingSectionPath>
@@ -452,6 +499,7 @@
                                         <tool>
                                             <name>export-ldif</name>
                                             <application>org.opends.server.tools.ExportLDIF</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>export-ldif-examples.xml</trailingSectionPath>
@@ -461,6 +509,7 @@
                                         <tool>
                                             <name>import-ldif</name>
                                             <application>org.opends.server.tools.ImportLDIF</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>import-ldif-examples.xml</trailingSectionPath>
@@ -470,6 +519,7 @@
                                         <tool>
                                             <name>list-backends</name>
                                             <application>org.opends.server.tools.ListBackends</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>list-backends-examples.xml</trailingSectionPath>
@@ -479,6 +529,7 @@
                                         <tool>
                                             <name>manage-account</name>
                                             <application>org.opends.server.tools.ManageAccount</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-89.xml</trailingSectionPath>
                                                 <trailingSectionPath>manage-account-examples.xml</trailingSectionPath>
@@ -488,6 +539,7 @@
                                         <tool>
                                             <name>manage-tasks</name>
                                             <application>org.opends.server.tools.ManageTasks</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>manage-tasks-examples.xml</trailingSectionPath>
@@ -497,6 +549,7 @@
                                         <tool>
                                             <name>rebuild-index</name>
                                             <application>org.opends.server.tools.RebuildIndex</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>rebuild-index-examples.xml</trailingSectionPath>
@@ -506,6 +559,7 @@
                                         <tool>
                                             <name>restore</name>
                                             <application>org.opends.server.tools.RestoreDB</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>restore-examples.xml</trailingSectionPath>
@@ -515,6 +569,7 @@
                                         <tool>
                                             <name>setup</name>
                                             <application>org.opends.quicksetup.installer.SetupLauncher</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>setup-examples.xml</trailingSectionPath>
@@ -524,6 +579,7 @@
                                         <tool>
                                             <name>start-ds</name>
                                             <application>org.opends.server.core.DirectoryServer</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>start-ds-examples.xml</trailingSectionPath>
@@ -533,6 +589,7 @@
                                         <tool>
                                             <name>status</name>
                                             <application>org.opends.server.tools.status.StatusCli</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>status-examples.xml</trailingSectionPath>
@@ -542,6 +599,7 @@
                                         <tool>
                                             <name>stop-ds</name>
                                             <application>org.opends.server.tools.StopDS</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>stop-ds-examples.xml</trailingSectionPath>
@@ -551,6 +609,7 @@
                                         <tool>
                                             <name>uninstall</name>
                                             <application>org.opends.guitools.uninstaller.UninstallLauncher</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>exit-codes-0-gt0.xml</trailingSectionPath>
                                                 <trailingSectionPath>uninstall-examples.xml</trailingSectionPath>
@@ -560,6 +619,7 @@
                                         <tool>
                                             <name>upgrade</name>
                                             <application>org.opends.server.tools.upgrade.UpgradeCli</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>upgrade-exit-codes.xml</trailingSectionPath>
                                             </trailingSectionPaths>
@@ -568,6 +628,7 @@
                                         <tool>
                                             <name>verify-index</name>
                                             <application>org.opends.server.tools.VerifyIndex</application>
+
                                             <trailingSectionPaths>
                                                 <trailingSectionPath>verify-index-exit-codes.xml</trailingSectionPath>
                                                 <trailingSectionPath>verify-index-examples.xml</trailingSectionPath>
@@ -588,10 +649,12 @@
                             <execution>
                                 <id>build-man-pages</id>
                                 <phase>package</phase>
+
                                 <goals>
                                     <goal>process</goal>
                                     <goal>build</goal>
                                 </goals>
+
                                 <configuration>
                                     <projectName>Wren:DS</projectName>
                                     <projectVersion>${project.version}</projectVersion>
@@ -616,10 +679,12 @@
                         <executions>
                             <execution>
                                 <id>sdk-tools-man-pages</id>
+                                <phase>package</phase>
+
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
-                                <phase>package</phase>
+
                                 <configuration>
                                     <descriptors>
                                         <descriptor>src/main/assembly/sdk-tools-man-pages-assembly.xml</descriptor>
@@ -629,10 +694,12 @@
 
                             <execution>
                                 <id>server-tools-man-pages-sources</id>
+                                <phase>package</phase>
+
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
-                                <phase>package</phase>
+
                                 <configuration>
                                     <descriptors>
                                         <descriptor>src/main/assembly/server-tools-man-page-sources-assembly.xml
@@ -643,10 +710,12 @@
 
                             <execution>
                                 <id>server-tools-man-pages</id>
+                                <phase>package</phase>
+
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
-                                <phase>package</phase>
+
                                 <configuration>
                                     <descriptors>
                                         <descriptor>src/main/assembly/server-tools-man-pages-assembly.xml</descriptor>

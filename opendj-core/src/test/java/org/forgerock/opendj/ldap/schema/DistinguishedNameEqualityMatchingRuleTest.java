@@ -17,7 +17,7 @@
 
 package org.forgerock.opendj.ldap.schema;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.testng.Assert.assertEquals;
 
 import org.forgerock.opendj.ldap.ByteString;
