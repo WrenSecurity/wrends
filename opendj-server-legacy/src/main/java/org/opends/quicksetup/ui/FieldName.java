@@ -61,9 +61,9 @@ public enum FieldName
   LDIF_PATH,
   /** The value associated with this is a String. */
   NUMBER_ENTRIES,
-  /** The value associated with this is a Map<String, String>. */
+  /** The value associated with this is a {@code Map<String, String>}. */
   REMOTE_REPLICATION_PORT,
-  /** The value associated with this is a Map<String, Boolean>. */
+  /** The value associated with this is a {@code Map<String, Boolean>}. */
   REMOTE_REPLICATION_SECURE,
   /** The value associated with this is a String. */
   REMOTE_SERVER_DN,

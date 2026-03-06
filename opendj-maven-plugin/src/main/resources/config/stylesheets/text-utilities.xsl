@@ -12,6 +12,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2008 Sun Microsystems, Inc.
+  Portions Copyright 2026 Wren Security
   ! -->
 <xsl:stylesheet version="1.0"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -172,5 +173,67 @@
         </xsl:otherwise>
       </xsl:choose>
     </xsl:if>
+  </xsl:template>
+  <!--
+    Replace all occurrences of a search string with a replacement
+    string within the provided text.
+
+    @param text
+    The text to be processed.
+
+    @param search
+    The string to search for.
+
+    @param replace
+    The replacement string.
+  -->
+  <xsl:template name="string-replace">
+    <xsl:param name="text" />
+    <xsl:param name="search" />
+    <xsl:param name="replace" />
+    <xsl:choose>
+      <xsl:when test="contains($text, $search)">
+        <xsl:value-of select="substring-before($text, $search)" />
+        <xsl:value-of select="$replace" />
+        <xsl:call-template name="string-replace">
+          <xsl:with-param name="text" select="substring-after($text, $search)" />
+          <xsl:with-param name="search" select="$search" />
+          <xsl:with-param name="replace" select="$replace" />
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$text" />
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+  <!--
+    Escape special XML characters (&amp;, &lt;, &gt;) in text
+    content so that they are safe to use in XML or HTML output
+    such as JavaDoc comments.
+
+    @param text
+    The text to be escaped.
+  -->
+  <xsl:template name="xml-escape">
+    <xsl:param name="text" />
+    <xsl:variable name="amp-escaped">
+      <xsl:call-template name="string-replace">
+        <xsl:with-param name="text" select="$text" />
+        <xsl:with-param name="search" select="'&amp;'" />
+        <xsl:with-param name="replace" select="'&amp;amp;'" />
+      </xsl:call-template>
+    </xsl:variable>
+    <xsl:variable name="lt-escaped">
+      <xsl:call-template name="string-replace">
+        <xsl:with-param name="text" select="$amp-escaped" />
+        <xsl:with-param name="search" select="'&lt;'" />
+        <xsl:with-param name="replace" select="'&amp;lt;'" />
+      </xsl:call-template>
+    </xsl:variable>
+    <xsl:call-template name="string-replace">
+      <xsl:with-param name="text" select="$lt-escaped" />
+      <xsl:with-param name="search" select="'&gt;'" />
+      <xsl:with-param name="replace" select="'&amp;gt;'" />
+    </xsl:call-template>
   </xsl:template>
 </xsl:stylesheet>

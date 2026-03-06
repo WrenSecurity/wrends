@@ -314,6 +314,16 @@
                         </archive>
                     </configuration>
                 </plugin>
+
+                <plugin>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+
+                    <configuration>
+                        <sourceFileExcludes>
+                            <sourceFileExclude>**/org/opends/messages/*Messages.java</sourceFileExclude>
+                        </sourceFileExcludes>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -501,8 +511,6 @@
                 <artifactId>build-helper-maven-plugin</artifactId>
 
                 <executions>
-                    <!-- Run inherited 'parse-version' execution to generate properties (major.version, minor.version, ...) -->
-                    <!-- Take into account several sources directories for the build -->
                     <execution>
                         <?m2e execute onConfiguration?>
                         <id>main-java-sources</id>

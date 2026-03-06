@@ -1033,7 +1033,7 @@ public class Utils
   /**
    * Returns the HTML representation for a given text. without adding any kind
    * of font or style elements.  Just escapes the problematic characters
-   * (like '<') and transform the break lines into '\n' characters.
+   * (like '&lt;') and transform the break lines into '\n' characters.
    *
    * @param text the source text from which we want to get the HTML
    * representation

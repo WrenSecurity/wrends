@@ -46,13 +46,13 @@ import org.forgerock.opendj.ldif.ConnectionEntryReader;
  * may be performed. See RFC 4511 for the LDAPv3 protocol specification and more
  * information about the types of operations defined in LDAP.
  * <p>
- * <h3>Operation processing</h3>
+ * <h2>Operation processing</h2>
  * <p>
  * Operations may be performed synchronously or asynchronously depending on the
  * method chosen. Asynchronous methods can be identified by their {@code Async}
  * suffix.
  * <p>
- * <h4>Performing operations synchronously</h4>
+ * <h3>Performing operations synchronously</h3>
  * <p>
  * Synchronous methods block until a response is received from the Directory
  * Server, at which point an appropriate {@link Result} object is returned if
@@ -65,7 +65,7 @@ import org.forgerock.opendj.ldif.ConnectionEntryReader;
  * {@link CancelledResultException} whose cause is the underlying
  * {@link InterruptedException}.
  * <p>
- * <h4>Performing operations asynchronously</h4>
+ * <h3>Performing operations asynchronously</h3>
  * <p>
  * Asynchronous methods, identified by their {@code Async} suffix, are
  * non-blocking, returning a {@link LdapPromise} or sub-type thereof which can
