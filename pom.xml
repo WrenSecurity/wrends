@@ -115,6 +115,9 @@
         <pgpVerifyKeysVersion>1.9.14</pgpVerifyKeysVersion>
         <maven.compiler.release>17</maven.compiler.release>
 
+        <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
+        <buildDateTime>${project.build.outputTimestamp}</buildDateTime>
+
         <product.name>Wren:DS</product.name>
         <product.name.lowercase>wrends</product.name.lowercase>
         <product.locales>ca_ES,es,de,fr,ja,ko,pl,zh_CN,zh_TW</product.locales>
@@ -359,7 +362,6 @@
                     </executions>
                 </plugin>
 
-                <!-- Retrieve the build timestamp and SCM revision number -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>buildnumber-maven-plugin</artifactId>
@@ -376,24 +378,6 @@
                             <configuration>
                                 <buildNumberPropertyName>buildRevision</buildNumberPropertyName>
                                 <revisionOnScmFailure>-1</revisionOnScmFailure>
-                            </configuration>
-                        </execution>
-
-                        <execution>
-                            <id>generate-timestamp</id>
-
-                            <goals>
-                                <goal>create</goal>
-                            </goals>
-
-                            <configuration>
-                                <format>{0,date,yyyyMMddHHmmss}</format>
-
-                                <items>
-                                    <item>timestamp</item>
-                                </items>
-
-                                <buildNumberPropertyName>buildDateTime</buildNumberPropertyName>
                             </configuration>
                         </execution>
                     </executions>
