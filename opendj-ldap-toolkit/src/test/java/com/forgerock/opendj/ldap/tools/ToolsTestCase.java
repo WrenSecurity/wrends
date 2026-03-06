@@ -17,7 +17,7 @@
 
 package com.forgerock.opendj.ldap.tools;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.util.Utils.closeSilently;
 
 import java.io.PrintStream;

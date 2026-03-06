@@ -27,7 +27,7 @@ import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.buildArgs;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.createTempFile;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.toDataProviderArray;
 import static org.assertj.core.api.Assertions.fail;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;

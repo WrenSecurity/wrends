@@ -16,8 +16,8 @@
 package org.forgerock.opendj.ldap;
 
 import static java.util.Arrays.asList;
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.Fail.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.forgerock.opendj.ldap.Connections.LOAD_BALANCER_EVENT_LISTENER;
 import static org.forgerock.opendj.ldap.Connections.LOAD_BALANCER_MONITORING_INTERVAL;
 import static org.forgerock.opendj.ldap.Connections.LOAD_BALANCER_SCHEDULER;

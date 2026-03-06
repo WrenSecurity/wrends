@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.grizzly;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.forgerock.opendj.ldap.SdkTestCase;
 import org.glassfish.grizzly.StandaloneProcessor;

@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.TreeSet;
 
-import org.fest.assertions.Assertions;
+import org.assertj.core.api.Assertions;
 import org.forgerock.opendj.ldap.Assertion;
 import org.forgerock.opendj.ldap.ByteSequence;
 import org.forgerock.opendj.ldap.ByteString;
@@ -268,7 +268,7 @@ public class AbstractSubstringMatchingRuleImplTest extends AbstractSchemaTestCas
 
         final TreeSet<ByteString> keys = new TreeSet<>();
         indexer.createKeys(Schema.getCoreSchema(), valueOfUtf8("ABCDE"), keys);
-        Assertions.assertThat(keys).containsOnly((Object[]) toByteStrings("ABC", "BCD", "CDE", "DE", "E"));
+        Assertions.assertThat(keys).containsOnly(toByteStrings("ABC", "BCD", "CDE", "DE", "E"));
     }
 
     private ByteString[] toByteStrings(String... strings) {

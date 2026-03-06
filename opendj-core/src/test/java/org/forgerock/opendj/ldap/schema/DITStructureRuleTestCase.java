@@ -18,8 +18,7 @@ package org.forgerock.opendj.ldap.schema;
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
 
-import static org.fest.assertions.Assertions.*;
-import static org.fest.assertions.MapAssert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.testng.annotations.Test;
 
@@ -54,7 +53,7 @@ public class DITStructureRuleTestCase extends AbstractSchemaTestCase {
         assertThat(sr.getNames()).containsOnly("DIT structure rule test", "DIT structure rule for person");
         assertThat(sr.getDescription()).isEqualTo("My DIT structure rule");
         assertThat(sr.getNameForm().getOID()).isEqualTo(NAME_FORM_TEST_OID);
-        assertThat(sr.getExtraProperties()).includes(entry("property name", singletonList("property value")));
+        assertThat(sr.getExtraProperties()).contains(entry("property name", singletonList("property value")));
         assertThat(sr.getSuperiorRules()).isEmpty();
         assertThat(sr.isObsolete()).isFalse();
 
@@ -64,7 +63,7 @@ public class DITStructureRuleTestCase extends AbstractSchemaTestCase {
         assertThat(srChild.getNames()).containsOnly("DIT structure rule child test");
         assertThat(srChild.getDescription()).isEqualTo("My DIT structure rule child");
         assertThat(srChild.getNameForm().getOID()).isEqualTo(NAME_FORM_TEST_OID);
-        assertThat(srChild.getExtraProperties()).includes(entry("property name", singletonList("property value")));
+        assertThat(srChild.getExtraProperties()).contains(entry("property name", singletonList("property value")));
         assertThat(srChild.getSuperiorRules()).containsOnly(sr);
         assertThat(srChild.isObsolete()).isFalse();
     }
@@ -97,7 +96,7 @@ public class DITStructureRuleTestCase extends AbstractSchemaTestCase {
         assertThat(srCopy.getNameForm().getOID()).isEqualTo(NAME_FORM_TEST_OID);
         assertThat(srCopy.getDescription()).isEqualTo("My DIT structure rule");
         assertThat(srCopy.isObsolete()).isFalse();
-        assertThat(srCopy.getExtraProperties()).includes(entry("X-SCHEMA-FILE", asList("99-user.ldif")));
+        assertThat(srCopy.getExtraProperties()).contains(entry("X-SCHEMA-FILE", asList("99-user.ldif")));
     }
 
     @Test(expectedExceptions = ConflictingSchemaElementException.class)

@@ -18,7 +18,7 @@ package org.forgerock.opendj.ldap.schema;
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.EXTENSIBLE_OBJECT_OBJECTCLASS_OID;
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.TOP_OBJECTCLASS_OID;
 import static org.forgerock.opendj.ldap.schema.Schema.getCoreSchema;
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Set;
 
@@ -754,7 +754,7 @@ public class ObjectClassTestCase extends AbstractSchemaTestCase {
     }
 
     /** Returns attributes types from the provided schema by names (as Object[] due to usage in assertions). */
-    private Object[] attrs(Schema schema, String... names) {
+    private AttributeType[] attrs(Schema schema, String... names) {
         AttributeType[] attrs = new AttributeType[names.length];
         int i = 0;
         for (String name : names) {
@@ -764,7 +764,7 @@ public class ObjectClassTestCase extends AbstractSchemaTestCase {
     }
 
     /** Returns object classes from the provided schema by names (as Object[] due to usage in assertions). */
-    private Object[] objectClasses(Schema schema, String... names) {
+    private ObjectClass[] objectClasses(Schema schema, String... names) {
         ObjectClass[] attrs = new ObjectClass[names.length];
         int i = 0;
         for (String name : names) {

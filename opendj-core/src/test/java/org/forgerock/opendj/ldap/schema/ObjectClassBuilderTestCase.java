@@ -23,8 +23,8 @@ import org.testng.annotations.Test;
 
 import static java.util.Collections.*;
 
-import static org.fest.assertions.Assertions.*;
-import static org.fest.assertions.MapAssert.*;
+import static org.assertj.core.api.Assertions.*;
+
 import static org.forgerock.opendj.ldap.schema.ObjectClassType.*;
 import static org.forgerock.opendj.ldap.schema.Schema.*;
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.*;
@@ -117,12 +117,12 @@ public class ObjectClassBuilderTestCase extends AbstractSchemaTestCase {
         assertThat(oc.getOID()).isEqualTo(oid);
         assertThat(oc.getDescription()).isEqualTo(description);
         assertThat(oc.isObsolete()).isEqualTo(isObsolete);
-        assertThat(oc.getNames()).containsOnly(names.toArray());
+        assertThat(oc.getNames()).containsOnly(names.toArray(new String[0]));
         assertSchemaElementsContainsAll(oc.getSuperiorClasses(), superiorClassOIDs);
         assertSchemaElementsContainsAll(oc.getRequiredAttributes(), requiredAttributesOIDs);
         assertSchemaElementsContainsAll(oc.getOptionalAttributes(), optionalAttributeOIDs);
         assertThat(oc.getObjectClassType()).isEqualTo(type);
-        assertThat(oc.getExtraProperties()).includes(entry(extraPropertyName, singletonList(extraPropertyValue)));
+        assertThat(oc.getExtraProperties()).contains(entry(extraPropertyName, singletonList(extraPropertyValue)));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class ObjectClassBuilderTestCase extends AbstractSchemaTestCase {
         assertThat(oc.getNames()).containsOnly("defaultObjectClass");
         assertSchemaElementsContainsAll(oc.getSuperiorClasses(), TOP_OBJECTCLASS_NAME);
         final Set<AttributeType> topReqAttrs = schema.getObjectClass(TOP_OBJECTCLASS_NAME).getRequiredAttributes();
-        assertThat(oc.getRequiredAttributes()).containsOnly(topReqAttrs.toArray());
+        assertThat(oc.getRequiredAttributes()).containsOnly(topReqAttrs.toArray(new AttributeType[0]));
         assertThat(oc.getOptionalAttributes()).isEmpty();
         assertThat(oc.getObjectClassType()).isEqualTo(STRUCTURAL);
         assertThat(oc.getExtraProperties()).isEmpty();
@@ -211,7 +211,6 @@ public class ObjectClassBuilderTestCase extends AbstractSchemaTestCase {
             final Set<String> namesOrOIDs) throws Exception {
         assertSchemaElementsContainsAll(elements, namesOrOIDs.toArray(new String[namesOrOIDs.size()]));
     }
-
 
     private void assertSchemaElementsContainsAll(final Set<? extends AbstractSchemaElement> elements,
             final String... namesOrOIDs) throws Exception {

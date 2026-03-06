@@ -22,7 +22,7 @@ import org.forgerock.opendj.ldap.schema.AbstractSubstringMatchingRuleImplTest.Fa
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.ldap.schema.AbstractSubstringMatchingRuleImplTest.*;
 import static org.testng.Assert.*;
 

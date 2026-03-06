@@ -16,7 +16,7 @@
 package com.forgerock.opendj.ldap.tools;
 
 import static com.forgerock.opendj.ldap.tools.ToolLdapServer.DIRECTORY_MANAGER;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.buildArgs;
 
 import java.io.IOException;

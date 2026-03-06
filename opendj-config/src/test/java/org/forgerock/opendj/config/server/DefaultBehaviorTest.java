@@ -17,7 +17,7 @@
  */
 package org.forgerock.opendj.config.server;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldif.LDIF.makeEntry;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -396,7 +396,7 @@ public final class DefaultBehaviorTest extends AdminTestCase {
             actualStrings[i] = dn.toString();
             i++;
         }
-        assertThat(actualStrings).containsOnly(expectedDNs.toArray(new Object[expectedDNs.size()]));
+        assertThat(actualStrings).containsOnly(expectedDNs.toArray(new String[expectedDNs.size()]));
     }
 
     /** Make an entry by combining two lists. */

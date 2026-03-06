@@ -16,7 +16,7 @@
  */
 package org.forgerock.opendj.config.client.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.Connections.newInternalConnection;
 import static org.forgerock.opendj.ldap.LdapException.*;
 

@@ -20,7 +20,7 @@ package org.forgerock.opendj.ldap.schema;
 import org.forgerock.opendj.ldap.schema.Syntax.Builder;
 import org.testng.annotations.Test;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.ldap.schema.SchemaOptions.*;
 
 /**

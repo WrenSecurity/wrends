@@ -16,7 +16,7 @@
  */
 package org.forgerock.opendj.ldap.spi;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.LdapException.newLdapException;
 import static org.forgerock.opendj.ldap.responses.Responses.newGenericExtendedResult;
 import static org.mockito.ArgumentMatchers.same;

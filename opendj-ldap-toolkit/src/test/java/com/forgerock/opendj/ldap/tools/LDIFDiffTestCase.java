@@ -24,7 +24,7 @@ import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.addValueNeededShort
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.args;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.calcChecksum;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.toDataProviderArray;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.nio.file.Paths;

@@ -47,7 +47,7 @@ import org.forgerock.opendj.ldap.schema.SchemaValidationPolicy.Action;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -1603,7 +1603,7 @@ public final class LDIFEntryReaderTestCase extends AbstractLDIFTestCase {
         final Entry entry = LDIFEntryReader.valueOfLDIFEntry(getStandardEntry());
 
         assertThat(entry).isNotNull();
-        assertThat(entry.getName()).isNotNull();
+        assertThat((Object) entry.getName()).isNotNull();
         assertThat(entry.getName().toString()).isEqualTo("uid=user.0,ou=People,dc=example,dc=com");
         assertThat(entry.getAttribute("sn").firstValue().toString()).isEqualTo("Amar");
         assertThat(entry.getAttributeCount()).isEqualTo(nbStandardEntryAttributes);

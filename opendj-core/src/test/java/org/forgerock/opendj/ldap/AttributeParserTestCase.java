@@ -16,9 +16,9 @@
 
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import org.fest.util.Collections;
+import java.util.Set;
 import org.forgerock.i18n.LocalizedIllegalArgumentException;
 import org.testng.annotations.Test;
 
@@ -170,7 +170,7 @@ public final class AttributeParserTestCase extends SdkTestCase {
     @Test
     public void testAsDNMissing() {
         Entry e = new LinkedHashMapEntry("dn: cn=test", "objectClass: test");
-        assertThat(e.parseAttribute("manager").asDN()).isNull();
+        assertThat((Object) e.parseAttribute("manager").asDN()).isNull();
     }
 
     @Test
@@ -305,7 +305,7 @@ public final class AttributeParserTestCase extends SdkTestCase {
                 new LinkedHashMapEntry("dn: cn=group", "objectClass: group", "member: cn=member1",
                         "member: cn=member2", "member: cn=member3");
         assertThat(e.parseAttribute("member").asSetOfDN()).isEqualTo(
-                Collections.set(DN.valueOf("cn=member1"), DN.valueOf("cn=member2"), DN
+                Set.of(DN.valueOf("cn=member1"), DN.valueOf("cn=member2"), DN
                         .valueOf("cn=member3")));
     }
 
@@ -315,7 +315,7 @@ public final class AttributeParserTestCase extends SdkTestCase {
                 new LinkedHashMapEntry("dn: cn=group", "objectClass: group", "member: cn=member1",
                         "member: cn=member2", "member: cn=member3");
         assertThat(e.parseAttribute("member").asSetOfDN("cn=dummy1", "cn=dummy2")).isEqualTo(
-                Collections.set(DN.valueOf("cn=member1"), DN.valueOf("cn=member2"), DN
+                Set.of(DN.valueOf("cn=member1"), DN.valueOf("cn=member2"), DN
                         .valueOf("cn=member3")));
     }
 
@@ -330,7 +330,7 @@ public final class AttributeParserTestCase extends SdkTestCase {
     public void testAsSetOfDNMissingDefault() {
         Entry e = new LinkedHashMapEntry("dn: cn=group", "objectClass: group");
         assertThat(e.parseAttribute("member").asSetOfDN("cn=dummy1", "cn=dummy2")).isEqualTo(
-                Collections.set(DN.valueOf("cn=dummy1"), DN.valueOf("cn=dummy2")));
+                Set.of(DN.valueOf("cn=dummy1"), DN.valueOf("cn=dummy2")));
     }
 
     @Test(expectedExceptions = { LocalizedIllegalArgumentException.class })

@@ -16,7 +16,7 @@
 package com.forgerock.opendj.ldap.tools;
 
 import static com.forgerock.opendj.ldap.tools.Utils.runTool;
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.util.Utils.*;
 import static com.forgerock.opendj.ldap.CoreMessages.*;
 

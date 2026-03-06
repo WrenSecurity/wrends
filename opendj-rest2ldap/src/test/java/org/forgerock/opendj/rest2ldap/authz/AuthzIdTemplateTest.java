@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.rest2ldap.authz;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

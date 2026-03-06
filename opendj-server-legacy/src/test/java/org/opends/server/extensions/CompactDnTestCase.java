@@ -21,7 +21,7 @@ import org.opends.server.extensions.StaticGroup.CompactDn;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * This class defines a set of tests for the inner class StaticGroup.CompactDn.

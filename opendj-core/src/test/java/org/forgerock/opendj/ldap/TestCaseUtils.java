@@ -16,7 +16,7 @@
  */
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Fail.fail;
+import static org.assertj.core.api.Assertions.fail;
 import static org.forgerock.opendj.ldap.spi.LdapPromises.newSuccessfulLdapPromise;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;

@@ -17,8 +17,8 @@ package org.forgerock.opendj.ldap.schema;
 
 import static java.util.Collections.*;
 
-import static org.fest.assertions.Assertions.*;
-import static org.fest.assertions.MapAssert.*;
+import static org.assertj.core.api.Assertions.*;
+
 import static org.forgerock.opendj.ldap.schema.Schema.*;
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.*;
 
@@ -87,10 +87,10 @@ public class AttributeTypeBuilderTestCase extends AbstractSchemaTestCase {
         final AttributeType at = schema.getAttributeType(oid);
         assertThat(at).isNotNull();
         assertThat(at.getOID()).isEqualTo(oid);
-        assertThat(at.getNames()).containsOnly(names.toArray());
+        assertThat(at.getNames()).containsOnly(names.toArray(new String[0]));
         assertThat(at.getDescription()).isEqualTo(description);
         assertThat(at.isObsolete()).isEqualTo(obsolete);
-        assertThat(at.getExtraProperties()).includes(entry(extraPropertyName, singletonList(extraPropertyValue)));
+        assertThat(at.getExtraProperties()).contains(entry(extraPropertyName, singletonList(extraPropertyValue)));
     }
 
     @Test

@@ -16,7 +16,7 @@
  */
 package org.forgerock.opendj.ldap.schema;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.schema.IntegerOrderingMatchingRuleImpl.SIGN_MASK_NEGATIVE;
 import static org.forgerock.opendj.ldap.schema.IntegerOrderingMatchingRuleImpl.SIGN_MASK_POSITIVE;
 import static org.forgerock.opendj.ldap.schema.IntegerOrderingMatchingRuleImpl.encodeHeader;

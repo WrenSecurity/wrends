@@ -23,7 +23,7 @@ import static com.forgerock.opendj.ldap.tools.ToolsMessages.ERR_TOOL_INVALID_CON
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.addValueNeededShortArgs;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.args;
 import static com.forgerock.opendj.ldap.tools.ToolsTestUtils.toDataProviderArray;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;

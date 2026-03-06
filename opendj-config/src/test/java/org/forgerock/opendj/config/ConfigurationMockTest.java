@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.config;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.config.ConfigurationMock.mockCfg;
 import static org.mockito.Mockito.*;
 
@@ -77,11 +77,11 @@ public class ConfigurationMockTest extends ConfigTestCase {
     @Test
     public void testNonPropertyMethod() throws Exception {
         CoreSchemaCfg mock = mockCfg(CoreSchemaCfg.class);
-        assertThat(mock.dn()).isNull();
+        assertThat((Object) mock.dn()).isNull();
 
         // Ensure we can add behavior to the mock
         when(mock.dn()).thenReturn(DN.rootDN());
-        assertThat(mock.dn()).isNotNull();
+        assertThat((Object) mock.dn()).isNotNull();
         assertThat(mock.dn().toString()).isEqualTo(DN.rootDN().toString());
     }
 

@@ -17,7 +17,7 @@
 
 package org.forgerock.opendj.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.Attributes.emptyAttribute;
 import static org.forgerock.opendj.ldap.Attributes.singletonAttribute;
 
@@ -442,7 +442,7 @@ public final class EntryTestCase extends SdkTestCase {
     @Test(dataProvider = "EntryFactory")
     public void testGetAllAttributes(final EntryFactory factory) throws Exception {
         final Entry entry = createTestEntry(factory);
-        assertThat(entry.getAllAttributes().iterator()).hasSize(3);
+        assertThat(entry.getAllAttributes()).hasSize(3);
     }
 
     @Test(dataProvider = "EntryFactory")

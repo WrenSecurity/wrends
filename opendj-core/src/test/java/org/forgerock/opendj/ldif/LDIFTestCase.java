@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 
 import com.forgerock.opendj.ldap.CoreMessages;
 
-import static org.fest.assertions.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.forgerock.opendj.ldap.schema.CoreSchema.*;
 import static org.forgerock.opendj.ldap.schema.SchemaOptions.*;
 
@@ -2749,7 +2749,7 @@ public class LDIFTestCase extends AbstractLDIFTestCase {
             LDIF.makeEntry();
             TestCaseUtils.failWasExpected(LocalizedIllegalArgumentException.class);
         } catch (LocalizedIllegalArgumentException e) {
-            assertThat(e.getMessageObject()).isEqualTo(CoreMessages.WARN_READ_LDIF_ENTRY_NO_ENTRY_FOUND.get());
+            assertThat((Object) e.getMessageObject()).isEqualTo(CoreMessages.WARN_READ_LDIF_ENTRY_NO_ENTRY_FOUND.get());
         }
     }
 
@@ -2759,7 +2759,7 @@ public class LDIFTestCase extends AbstractLDIFTestCase {
             LDIF.makeEntry(LDIF_TWO_ENTRIES);
             TestCaseUtils.failWasExpected(LocalizedIllegalArgumentException.class);
         } catch (LocalizedIllegalArgumentException e) {
-            assertThat(e.getMessageObject()).isEqualTo(
+            assertThat((Object) e.getMessageObject()).isEqualTo(
                 CoreMessages.WARN_READ_LDIF_ENTRY_MULTIPLE_ENTRIES_FOUND.get(2));
         }
     }
@@ -2775,7 +2775,7 @@ public class LDIFTestCase extends AbstractLDIFTestCase {
             LDIF.makeEntries();
             TestCaseUtils.failWasExpected(LocalizedIllegalArgumentException.class);
         } catch (LocalizedIllegalArgumentException e) {
-            assertThat(e.getMessageObject()).isEqualTo(CoreMessages.WARN_READ_LDIF_ENTRY_NO_ENTRY_FOUND.get());
+            assertThat((Object) e.getMessageObject()).isEqualTo(CoreMessages.WARN_READ_LDIF_ENTRY_NO_ENTRY_FOUND.get());
         }
     }
 

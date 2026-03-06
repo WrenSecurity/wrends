@@ -15,7 +15,7 @@
  */
 package org.forgerock.opendj.rest2ldap.authz;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.forgerock.opendj.ldap.LdapException.newLdapException;
 import static org.forgerock.opendj.ldap.ResultCode.ADMIN_LIMIT_EXCEEDED;
 import static org.mockito.ArgumentMatchers.any;

@@ -17,8 +17,8 @@ package org.forgerock.opendj.ldap.schema;
 
 import static java.util.Collections.*;
 
-import static org.fest.assertions.Assertions.*;
-import static org.fest.assertions.MapAssert.*;
+import static org.assertj.core.api.Assertions.*;
+
 import static org.forgerock.opendj.ldap.schema.SchemaConstants.*;
 
 import org.testng.annotations.Test;
@@ -45,7 +45,7 @@ public class MatchingRuleUseBuilderTestCase extends AbstractSchemaTestCase {
         assertThat(mru.getAttributes()).containsOnly(schema.getAttributeType("2.5.4.40"),
                                                      schema.getAttributeType("2.5.4.52"),
                                                      schema.getAttributeType("2.5.4.53"));
-        assertThat(mru.getExtraProperties()).includes(entry("property name", singletonList("property value")));
+        assertThat(mru.getExtraProperties()).contains(entry("property name", singletonList("property value")));
         assertThat(mru.isObsolete()).isFalse();
     }
 
@@ -77,7 +77,7 @@ public class MatchingRuleUseBuilderTestCase extends AbstractSchemaTestCase {
         assertThat(mru.getDescription()).isEqualTo("Matching rule use description");
         assertThat(mru.getAttributes()).containsOnly(schema.getAttributeType("2.5.4.40"),
                                                      schema.getAttributeType("2.5.4.53"));
-        assertThat(mru.getExtraProperties()).includes(entry("property name", singletonList("property value")));
+        assertThat(mru.getExtraProperties()).contains(entry("property name", singletonList("property value")));
         assertThat(mru.isObsolete()).isFalse();
     }
 

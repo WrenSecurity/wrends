@@ -17,7 +17,7 @@
 
 package org.forgerock.opendj.server.core;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.forgerock.testng.ForgeRockTestCase;
 import org.testng.annotations.Test;
