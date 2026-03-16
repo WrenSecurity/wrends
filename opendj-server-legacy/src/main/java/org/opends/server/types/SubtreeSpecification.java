@@ -1200,7 +1200,7 @@ public final class SubtreeSpecification
   /**
    * Get the minimum depth of the subtree specification.
    *
-   * @return Returns the minimum depth (<=0 indicates unlimited
+   * @return Returns the minimum depth (&lt;=0 indicates unlimited
    *         depth).
    */
   public int getMinimumDepth()

@@ -31,7 +31,7 @@ import org.opends.server.types.LDAPException;
  * conjunction with the persistent search control, as defined in
  * draft-ietf-ldapext-psearch.
  * <p>
- * It is a different type from {@link ChangeOperationType} to enforce type
+ * It is a different type from {@code ChangeOperationType} to enforce type
  * safety, despite mirroring it completely.
  */
 public enum PersistentSearchChangeType

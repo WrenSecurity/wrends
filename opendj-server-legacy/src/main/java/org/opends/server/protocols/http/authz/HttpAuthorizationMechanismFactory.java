@@ -26,7 +26,7 @@ import org.opends.server.core.ServerContext;
 import org.opends.server.types.InitializationException;
 
 /**
- * Creates {@link HttpAuthorizationMechanism} performing the authentication/authorization of incoming {@link Request}.
+ * Creates {@code HttpAuthorizationMechanism} performing the authentication/authorization of incoming {@code Request}.
  */
 public final class HttpAuthorizationMechanismFactory
 {

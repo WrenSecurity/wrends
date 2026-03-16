@@ -274,7 +274,6 @@
                     <version>3.6.0</version>
                 </plugin>
 
-                <!-- This is needed to use annotations in maven plugins with maven 3.0.x -->
                 <plugin>
                     <?m2e execute onConfiguration?>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -388,7 +387,8 @@
                     <?m2e ignore?>
                     <groupId>org.wrensecurity.commons</groupId>
                     <artifactId>doc-maven-plugin</artifactId>
-                    <version>${wrensec-commons.version}</version>
+                    <version>22.6.2</version>
+
                     <configuration>
                         <projectName>Wren:DS</projectName>
                         <projectVersion>${project.version}</projectVersion>

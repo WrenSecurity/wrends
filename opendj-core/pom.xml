@@ -41,8 +41,8 @@
 
     <dependencies>
         <dependency>
-          <groupId>com.github.stephenc.jcip</groupId>
-          <artifactId>jcip-annotations</artifactId>
+            <groupId>com.github.stephenc.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
         </dependency>
 
         <dependency>
@@ -197,13 +197,14 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>clirr-maven-plugin</artifactId>
+                        <version>${clirrPluginVersion}</version>
 
                         <configuration>
                             <comparisonArtifacts>
                                 <comparisonArtifact>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>opendj-core</artifactId>
-                                    <version>3.0.0</version>
+                                    <version>5.0.0</version>
                                 </comparisonArtifact>
                             </comparisonArtifacts>
 
@@ -292,7 +293,7 @@
                                 </group>
 
                                 <group>
-                                    <title>ForgeRock Common Packages</title>
+                                    <title>Wren Security Common Packages</title>
                                     <packages>*</packages>
                                 </group>
                             </groups>
@@ -301,13 +302,6 @@
                             <doctitle>${javadocTitle}</doctitle>
                             <windowtitle>${javadocTitle}</windowtitle>
                             <header>${javadocTitle}</header>
-                            <footer>${javadocTitle}</footer>
-                            <bottom>Copyright 2011-${maven.build.timestamp} ForgeRock AS.</bottom>
-
-                            <links>
-                                <link>http://docs.oracle.com/javase/7/docs/api/</link>
-                                <link>http://www.slf4j.org/apidocs/</link>
-                            </links>
                         </configuration>
                     </plugin>
                 </plugins>

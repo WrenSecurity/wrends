@@ -20,8 +20,6 @@ import org.forgerock.opendj.ldap.DN;
 
 /**
  * Returns whether a domain is enabled for the external changelog.
- *
- * @FunctionalInterface
  */
 public class ECLEnabledDomainPredicate
 {

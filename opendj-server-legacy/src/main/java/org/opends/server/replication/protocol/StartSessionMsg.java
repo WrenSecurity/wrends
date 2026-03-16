@@ -33,10 +33,10 @@ import org.forgerock.util.Utils;
  * This message is used by DS to confirm a RS he wants to connect to him (open
  * a session):
  * Handshake sequence between DS and RS is like this:
- * DS --- ServerStartMsg ---> RS
- * DS <--- ReplServerStartMsg --- RS
- * DS --- StartSessionMsg ---> RS
- * DS <--- TopologyMsg --- RS
+ * DS --- ServerStartMsg ---&gt; RS
+ * DS &lt;--- ReplServerStartMsg --- RS
+ * DS --- StartSessionMsg ---&gt; RS
+ * DS &lt;--- TopologyMsg --- RS
  *
  * This message contains:
  * - status: the status we are entering the topology with

@@ -12,6 +12,7 @@
   information: "Portions Copyright [year] [name of copyright owner]".
 
   Copyright 2008 Sun Microsystems, Inc.
+  Portions Copyright 2026 Wren Security
   ! -->
 <xsl:stylesheet version="1.0"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -113,11 +114,16 @@
     <xsl:param name="indent-text" />
     <xsl:param name="indent-text2" select="$indent-text" />
     <xsl:param name="content" />
+    <xsl:variable name="escaped-content">
+      <xsl:call-template name="xml-escape">
+        <xsl:with-param name="text" select="$content" />
+      </xsl:call-template>
+    </xsl:variable>
     <xsl:call-template name="format-text">
       <xsl:with-param name="indent-text" select="$indent-text" />
       <xsl:with-param name="indent-text2" select="$indent-text2" />
       <xsl:with-param name="wrap-column" select="'70'" />
-      <xsl:with-param name="content" select="$content" />
+      <xsl:with-param name="content" select="$escaped-content" />
     </xsl:call-template>
   </xsl:template>
   <!--
