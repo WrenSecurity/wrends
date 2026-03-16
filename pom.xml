@@ -304,17 +304,6 @@
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-scm-publish-plugin</artifactId>
-                    <version>3.3.0</version>
-
-                    <configuration>
-                        <pubScmUrl>${project.scm.developerConnection}</pubScmUrl>
-                        <scmBranch>gh-pages</scmBranch>
-                    </configuration>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
 
                     <configuration>
