@@ -27,7 +27,7 @@
 
     <groupId>org.wrensecurity.wrends</groupId>
     <artifactId>opendj-project</artifactId>
-    <version>5.1.0-RC1</version>
+    <version>5.1.0-RC2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Wren:DS - Parent</name>
@@ -74,7 +74,7 @@
         <url>https://github.com/WrenSecurity/wrends</url>
         <connection>scm:git:git://github.com/WrenSecurity/wrends.git</connection>
         <developerConnection>scm:git:git@github.com:WrenSecurity/wrends.git</developerConnection>
-        <tag>5.1.0-RC1</tag>
+        <tag>HEAD</tag>
     </scm>
     <issueManagement>
         <system>GitHub Issues</system>
@@ -122,7 +122,7 @@
         <pgpVerifyKeysVersion>1.9.14</pgpVerifyKeysVersion>
         <maven.compiler.release>17</maven.compiler.release>
 
-        <project.build.outputTimestamp>2026-03-17T15:01:30Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2026-03-17T15:02:20Z</project.build.outputTimestamp>
         <buildDateTime>${project.build.outputTimestamp}</buildDateTime>
 
         <javadocPluginVersion>3.12.0</javadocPluginVersion>
