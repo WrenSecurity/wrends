@@ -12,8 +12,7 @@
     Header, with the fields enclosed by brackets [] replaced by your own identifying
     information: "Portions copyright [year] [name of copyright owner]".
 
-    Copyright 2016 ForgeRock AS.
-    Portions copyright 2025-2026 Wren Security
+    Copyright 2026 Wren Security.
 -->
 <site
     name="${project.name}"
@@ -21,5 +20,9 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/SITE/2.0.0 https://maven.apache.org/xsd/site-2.0.0.xsd"
 >
-    <body />
+    <body>
+        <menu name="API Documentation" inherit="top">
+            <item name="JavaDoc" href="apidocs/index.html" />
+        </menu>
+    </body>
 </site>
