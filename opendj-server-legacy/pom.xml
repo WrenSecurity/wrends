@@ -556,10 +556,10 @@
                         </goals>
 
                         <configuration>
-                            <testSourceDirectory>src/test/java</testSourceDirectory>
                             <showDeprecation>false</showDeprecation>
                             <showWarnings>false</showWarnings>
                             <testCompilerArgument>-nowarn</testCompilerArgument>
+
                             <testExcludes>
                                 <testExclude>**/org/opends/server/snmp/**</testExclude>
                             </testExcludes>

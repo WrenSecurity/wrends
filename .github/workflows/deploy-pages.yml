@@ -28,8 +28,7 @@ jobs:
           java-version: "21"
           cache: "maven"
       - run: |
-          mvn package -DskipTests
-          mvn site site:stage -pl '!opendj-bom'
+          mvn package site site:stage -pl '!opendj-bom' -DskipTests -DdetectOfflineLinks=false 
       - uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d # v4.0.0
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa #3.0.1
         with:
