@@ -39,7 +39,7 @@
       <subsection name="Download">
         <p>
           The easiest way to get the Wren:DS is to download the latest binary 
-          [release](https://github.com/WrenSecurity/wrends/releases).
+          <a href="https://github.com/WrenSecurity/wrends/releases">release</a>.
         </p>
       </subsection>
       <subsection name="Build">
