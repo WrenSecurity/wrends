@@ -125,6 +125,8 @@
         <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
         <buildDateTime>${project.build.outputTimestamp}</buildDateTime>
 
+        <javadocPluginVersion>3.12.0</javadocPluginVersion>
+
         <product.name>Wren:DS</product.name>
         <product.name.lowercase>wrends</product.name.lowercase>
         <product.locales>ca_ES,es,de,fr,ja,ko,pl,zh_CN,zh_TW</product.locales>

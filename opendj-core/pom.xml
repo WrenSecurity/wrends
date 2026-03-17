@@ -222,6 +222,7 @@
 
                             <execution>
                                 <id>mvn verify</id>
+
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
