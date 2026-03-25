@@ -21,11 +21,10 @@
     <parent>
         <groupId>org.wrensecurity.wrends</groupId>
         <artifactId>opendj-project</artifactId>
-        <version>5.0.2-SNAPSHOT</version>
+        <version>5.0.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>opendj-packages</artifactId>
-  <version>5.0.0</version>
     <packaging>pom</packaging>
 
     <name>Wren:DS Packages</name>
