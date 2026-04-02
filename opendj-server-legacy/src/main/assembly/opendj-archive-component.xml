@@ -25,8 +25,7 @@
       <scope>runtime</scope>
       <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
       <excludes>
-        <exclude>javax.activation:activation</exclude>
-        <exclude>org.forgerock.opendj:opendj-server-legacy</exclude>
+        <exclude>org.wrensecurity.wrends:opendj-server-legacy</exclude>
       </excludes>
     </dependencySet>
   </dependencySets>
