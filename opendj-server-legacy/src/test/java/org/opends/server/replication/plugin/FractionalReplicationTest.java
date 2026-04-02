@@ -966,7 +966,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
         break;
       }
       Thread.sleep(1000);
-      timeout--;
+      timeout -= 1000;
     }
     assertTrue(synchroAttrFound, "Modify operation not replayed");
     return entry;

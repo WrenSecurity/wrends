@@ -85,7 +85,7 @@ public class ExpressionTest extends DirectoryServerTestCase {
         return Collections.singletonMap(key, value);
     }
 
-    private final class Server {
+    public static final class Server {
         private String hostName;
         private int port;
 

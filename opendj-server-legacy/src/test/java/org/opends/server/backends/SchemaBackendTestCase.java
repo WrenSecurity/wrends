@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.backends;
 
@@ -3674,10 +3675,10 @@ public class SchemaBackendTestCase extends BackendTestCase
         "dn: cn=schema",
         "changetype: modify",
         "add: nameForms",
-        "nameForms: ( 1.3.6.1.1.10.15.100 NAME 'domainNameForm' OC domain MUST ( dc ) )",
+        "nameForms: ( 1.3.6.1.1.10.15.100 NAME 'countryNameForm' OC country MUST ( c ) )",
         "-",
         "add: dITStructureRules",
-        "dITStructureRules: ( 1 NAME 'dummyStructureRule' FORM domainNameForm )");
+        "dITStructureRules: ( 1 NAME 'countryStructureRule' FORM domainNameForm )");
     runModify(argsNotPermissive(), ldif, ATTRIBUTE_OR_VALUE_EXISTS);
   }
 
@@ -3695,10 +3696,10 @@ public class SchemaBackendTestCase extends BackendTestCase
         "dn: cn=schema",
         "changetype: modify",
         "add: nameForms",
-        "nameForms: ( 1.3.6.1.1.10.15.100 NAME 'domainNameForm' OC domain MUST ( dc ) )",
+        "nameForms: ( 1.3.6.1.1.10.15.100 NAME 'countryNameForm' OC country MUST ( c ) )",
         "-",
         "add: dITStructureRules",
-        "dITStructureRules: ( 1 NAME 'dummyStructureRule' FORM domainNameForm )");
+        "dITStructureRules: ( 1 NAME 'countryStructureRule' FORM countryNameForm )");
     runModify(argsPermissive(), ldif, SUCCESS);
   }
 
