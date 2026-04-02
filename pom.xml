@@ -119,7 +119,7 @@
     </repositories>
 
     <properties>
-        <pgpVerifyKeysVersion>1.9.14</pgpVerifyKeysVersion>
+        <pgpVerifyKeysVersion>1.9.16</pgpVerifyKeysVersion>
         <maven.compiler.release>17</maven.compiler.release>
 
         <project.build.outputTimestamp>2026-03-17T15:02:20Z</project.build.outputTimestamp>
