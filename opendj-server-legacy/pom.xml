@@ -48,6 +48,7 @@
 
         <!-- Other properties -->
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
+        <checkstyleHeaderLocation>${project.build.outputDirectory}/org/forgerock/checkstyle/updated-java-header</checkstyleHeaderLocation>
 
         <!-- Additional OSGI import package for this module -->
         <opendj.osgi.import.additional>
@@ -55,7 +56,6 @@
             org.forgerock.json.*;provide:=true
         </opendj.osgi.import.additional>
         <product.archive.name>${product.name.lowercase}-${project.version}</product.archive.name>
-        <juel.version>2.2.7</juel.version>
 
         <!-- maven-failsafe-plugin JVM arguments -->
         <argLine>
@@ -77,18 +77,6 @@
         </dependency>
 
         <dependency>
-            <groupId>de.odysseus.juel</groupId>
-            <artifactId>juel-api</artifactId>
-            <version>${juel.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>de.odysseus.juel</groupId>
-            <artifactId>juel-impl</artifactId>
-            <version>${juel.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
@@ -107,6 +95,12 @@
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+            <version>6.0.0</version>
         </dependency>
 
         <dependency>
@@ -1145,7 +1139,7 @@
             Tests are not run by default due to running time (average of 8-10 minutes).
         -->
         <profile>
-            <id>precommit</id>
+            <id>verify</id>
 
             <build>
                 <plugins>
@@ -1183,6 +1177,9 @@
                                     <!-- Only output errors if we're not expecting any -->
                                     <consoleOutput>${checkstyleFailOnError}</consoleOutput>
                                     <failsOnError>${checkstyleFailOnError}</failsOnError>
+                                    <propertyExpansion>
+                                        config_loc=${project.build.outputDirectory}/org/forgerock/checkstyle
+                                    </propertyExpansion>
                                 </configuration>
                             </execution>
                         </executions>

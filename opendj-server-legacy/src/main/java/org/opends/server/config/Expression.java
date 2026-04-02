@@ -12,26 +12,23 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.config;
 
+import jakarta.el.ELContext;
+import jakarta.el.ELException;
+import jakarta.el.ELManager;
+import jakarta.el.ExpressionFactory;
+import jakarta.el.StandardELContext;
+import jakarta.el.ValueExpression;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.el.ELContext;
-import javax.el.ELException;
-import javax.el.ExpressionFactory;
-import javax.el.ValueExpression;
-
 import org.forgerock.util.Reject;
-
-import de.odysseus.el.ExpressionFactoryImpl;
-import de.odysseus.el.util.RootPropertyResolver;
-import de.odysseus.el.util.SimpleContext;
-import de.odysseus.el.util.SimpleResolver;
+import org.glassfish.expressly.ExpressionFactoryImpl;
 
 /**
  * A Unified Expression Language read-only expression. Creating an expression is the equivalent to
@@ -42,10 +39,10 @@ import de.odysseus.el.util.SimpleResolver;
  *         expected result type
  */
 final class Expression<T> {
-    /** Context used when compiling expressions and evaluating expressions that don't have bindings. */
-    private static final ELContext EL_CONTEXT = getELContext0(null);
     /** Factory for compiling expressions. */
     private static final ExpressionFactory FACTORY = new ExpressionFactoryImpl();
+    /** Context used when compiling expressions and evaluating expressions that don't have bindings. */
+    private static final ELContext EL_CONTEXT = getELContext0(null);
 
     /**
      * Compiles the provided expression and evaluates it without any bindings.
@@ -160,20 +157,23 @@ final class Expression<T> {
     }
 
     private static ELContext getELContext0(final Map<String, Object> bindings) {
-        final SimpleResolver resolver = new SimpleResolver(false);
-        final RootPropertyResolver rootPropertyResolver = resolver.getRootPropertyResolver();
-        rootPropertyResolver.setProperty("env", Collections.unmodifiableMap(System.getenv()));
-        rootPropertyResolver.setProperty("system", Collections.unmodifiableMap(System.getProperties()));
+        ELManager manager = new ELManager();
+        manager.setELContext(new StandardELContext(FACTORY));
+
+        manager.defineBean("env", Collections.unmodifiableMap(System.getenv()));
+        manager.defineBean("system", Collections.unmodifiableMap(System.getProperties()));
+
         if (bindings != null) {
-            for (final Map.Entry<String, Object> binding : bindings.entrySet()) {
-                rootPropertyResolver.setProperty(binding.getKey(), binding.getValue());
+            for (Map.Entry<String, Object> entry : bindings.entrySet()) {
+                manager.defineBean(entry.getKey(), entry.getValue());
             }
         }
-        final SimpleContext context = new SimpleContext(resolver);
-        for (final Map.Entry<String, Method> function : getPublicStaticMethods(Functions.class).entrySet()) {
-            context.setFunction("", function.getKey(), function.getValue());
+
+        for (Map.Entry<String, Method> function : getPublicStaticMethods(Functions.class).entrySet()) {
+            manager.mapFunction("", function.getKey(), function.getValue());
         }
-        return context;
+
+        return manager.getELContext();
     }
 
     private static Map<String, Method> getPublicStaticMethods(final Class<?> target) {
