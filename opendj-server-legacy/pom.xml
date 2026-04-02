@@ -1133,10 +1133,7 @@
 
     <profiles>
         <!--
-            Profile to run precommit tasks: checkstyle, copyright (TODO), SVN eol check (TODO),
-            unit-tests
-
-            Tests are not run by default due to running time (average of 8-10 minutes).
+            Run tests only when requested as they are quite time consuming
         -->
         <profile>
             <id>verify</id>
@@ -1201,7 +1198,6 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
 
                         <configuration>
-                            <testSourceDirectory>src/test/java</testSourceDirectory>
                             <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
 
                             <additionalClasspathElements>
