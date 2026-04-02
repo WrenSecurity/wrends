@@ -13,12 +13,12 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.replication.plugin;
 
 import static java.util.concurrent.TimeUnit.*;
 
-import static org.mockito.Mockito.*;
 import static org.opends.server.util.CollectionUtils.*;
 import static org.testng.Assert.*;
 
@@ -30,13 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
-import org.forgerock.opendj.config.server.ConfigurationChangeListener;
 import org.forgerock.opendj.ldap.DN;
-import org.forgerock.opendj.server.config.server.ReplicationSynchronizationProviderCfg;
-import org.forgerock.opendj.server.config.server.SynchronizationProviderCfg;
 import org.opends.server.TestCaseUtils;
-import org.opends.server.api.SynchronizationProvider;
-import org.opends.server.core.DirectoryServer;
 import org.opends.server.replication.ReplicationTestCase;
 import org.opends.server.replication.common.CSNGenerator;
 import org.opends.server.replication.common.DSInfo;
@@ -183,7 +178,6 @@ public class StateMachineTest extends ReplicationTestCase
   }
 
   /** Creates and starts a new ReplicationDomain configured for the replication server. */
-  @SuppressWarnings("unchecked")
   private LDAPReplicationDomain createReplicationDomain(int dsId) throws Exception
   {
     SortedSet<String> replServers = new TreeSet<>();
@@ -192,15 +186,6 @@ public class StateMachineTest extends ReplicationTestCase
     DomainFakeCfg domainConf = new DomainFakeCfg(EXAMPLE_DN_, dsId, replServers);
     LDAPReplicationDomain replicationDomain = MultimasterReplication.createNewDomain(domainConf);
     replicationDomain.start();
-    SynchronizationProvider<SynchronizationProviderCfg> provider =
-        DirectoryServer.getSynchronizationProviders().get(0);
-    if (provider instanceof ConfigurationChangeListener)
-    {
-      ConfigurationChangeListener<ReplicationSynchronizationProviderCfg> mmr =
-          (ConfigurationChangeListener<ReplicationSynchronizationProviderCfg>) provider;
-      mmr.applyConfigurationChange(mock(ReplicationSynchronizationProviderCfg.class));
-    }
-
     return replicationDomain;
   }
 

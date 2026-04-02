@@ -143,7 +143,7 @@ public abstract class ClientConnection
     CoreConfigManager coreConfigManager = DirectoryServer.getCoreConfigManager();
     sizeLimit          = coreConfigManager.getSizeLimit();
     timeLimit          = coreConfigManager.getTimeLimit();
-    idleTimeLimit      = DirectoryServer.getIdleTimeLimit();
+    idleTimeLimit      = coreConfigManager.getIdleTimeLimit();
     lookthroughLimit   = coreConfigManager.getLookthroughLimit();
     finalized          = false;
   }

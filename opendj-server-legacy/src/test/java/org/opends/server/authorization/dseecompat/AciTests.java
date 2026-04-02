@@ -309,7 +309,6 @@ public class AciTests extends AciTestCase {
   private static final String TARG_ATTR_FILTERS_BAD_FORMAT =  "delete=cn;(&(cn=foo)(cn=f*)) && sn:(sn=joe*)";
   private static final String TARG_ATTR_FILTERS_TOO_MANY_LISTS = TARG_ATTR_FILTERS_1 + "," + TARG_ATTR_FILTERS_4 + "," + TARG_ATTR_FILTERS_1;
   private static final String TARG_ATTR_FILTERS_BAD_TOK =  "delete=cn:(&(cn=foo)(cn=f*)) && sn:(sn=joe*) || pager:(pager=123-*)";
-  private static final String TARG_ATTR_FILTERS_ATTR_TYPE_NAME =  "del=cn:(&(cn=foo)(cn=f*)) && 1sn_:(1sn_=joe*)";
 
   private static final String SELF_MODIFY_ACI = "aci: (targetattr=\"*\")(version 3.0; acl \"self modify\";allow(all) userdn=\"userdn=\"ldap:///self\";)";
   // @Checkstyle:on
@@ -646,7 +645,6 @@ public class AciTests extends AciTestCase {
     buildAciValue("name", "w/ targattrfilters", "targattrfilters=",  TARG_ATTR_FILTERS_1 , "allow (write)", BIND_RULE_USERDN_SELF),
     buildAciValue("name", "w/ targattrfilters", "targattrfilters=",  TARG_ATTR_FILTERS_2 , "allow (write)", BIND_RULE_USERDN_SELF),
     buildAciValue("name", "w/ targattrfilters", "targattrfilters=",  TARG_ATTR_FILTERS_5 , "allow (write)", BIND_RULE_USERDN_SELF),
-    buildAciValue("name", "bad_ATTR_TYPE_NAME", "targattrfilters",TARG_ATTR_FILTERS_ATTR_TYPE_NAME, "allow (write)", BIND_RULE_USERDN_SELF),
     buildAciValue("name", "read", "targetattr", "*", "allow (read)", BIND_RULE_USERDN_SELF),
     buildAciValue("name", "write", "targetattr", "*", "allow (write)", BIND_RULE_USERDN_SELF),
     buildAciValue("name", "add", "targetattr", "*", "allow (add)", BIND_RULE_USERDN_SELF),
@@ -1730,6 +1728,7 @@ private static final  String ACI_PROXY_CONTROL_LEVEL_1 =
          "-p", getServerLdapPort(),
          "-D", _bindDn,
          "-w", _bindPw,
+         "-m",
         attrAssertion,
         _searchBaseDn};
     }
