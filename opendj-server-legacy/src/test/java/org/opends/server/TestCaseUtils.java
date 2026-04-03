@@ -1129,12 +1129,12 @@ public final class TestCaseUtils {
     return paths.unitRoot;
   }
 
-  /** Get the complete path to the OpenDJ archive. */
-  public static File getOpenDJArchivePath()
+  /** Get the complete path to the Wren:DS archive. */
+  public static File getWrenDSArchivePath()
   {
     String qualifier = DynamicConstants.VERSION_QUALIFIER;
     String openDJArchiveName =
-        DynamicConstants.SHORT_NAME.toLowerCase()
+        DynamicConstants.PATH_NAME.toLowerCase()
         + "-"
         + DynamicConstants.VERSION_NUMBER_STRING
         + (qualifier != null && !qualifier.isEmpty() ? "-" + qualifier : "");

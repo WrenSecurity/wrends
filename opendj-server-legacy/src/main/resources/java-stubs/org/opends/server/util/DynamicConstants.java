@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2009 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.util;
 
@@ -32,6 +33,8 @@ public final class DynamicConstants
   public static String PRODUCT_NAME = "${project.name}";
   /** The short product name for the Directory Server. */
   public static String SHORT_NAME = "${product.name}";
+  /** The short product name that can be used in file system paths. */
+  public static String PATH_NAME = "${product.name.lowercase}";
 
   /** The major version number for the Directory Server. */
   public static int MAJOR_VERSION = ${parsedVersion.majorVersion};
