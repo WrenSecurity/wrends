@@ -14,7 +14,7 @@
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
  * Portions Copyright 2013 Manuel Gaupp
- * Portions Copyright 2023 Wren Security
+ * Portions Copyright 2023-2026 Wren Security
  */
 package org.opends.server;
 
@@ -113,7 +113,6 @@ import org.opends.server.types.Entry;
 import org.opends.server.types.FilePermission;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.LDIFImportConfig;
-import org.forgerock.opendj.ldap.schema.Schema;
 import org.forgerock.opendj.server.embedded.EmbeddedDirectoryServer;
 import org.opends.server.util.BuildVersion;
 import org.opends.server.util.DynamicConstants;
@@ -1127,12 +1126,12 @@ public final class TestCaseUtils {
     return paths.unitRoot;
   }
 
-  /** Get the complete path to the OpenDJ archive. */
-  public static File getOpenDJArchivePath()
+  /** Get the complete path to the Wren:DS archive. */
+  public static File getWrenDSArchivePath()
   {
     String qualifier = DynamicConstants.VERSION_QUALIFIER;
     String openDJArchiveName =
-        DynamicConstants.SHORT_NAME.toLowerCase()
+        DynamicConstants.PATH_NAME.toLowerCase()
         + "-"
         + DynamicConstants.VERSION_NUMBER_STRING
         + (qualifier != null && !qualifier.isEmpty() ? "-" + qualifier : "");
