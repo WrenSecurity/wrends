@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
- * Portions Copyright 2022 Wren Security
+ * Portions Copyright 2022-2026 Wren Security
  */
 package org.forgerock.server.embedded;
 
@@ -250,7 +250,7 @@ public class EmbeddedDirectoryServerTestCase extends UtilTestCase
     server.stop(getClass().getSimpleName(), LocalizableMessage.raw("stopping for setup from archive test"));
     try
     {
-      File rootDir = TestCaseUtils.getUnitTestRootPath().toPath().resolve("embedded-setup").resolve("opendj").toFile();
+      File rootDir = TestCaseUtils.getUnitTestRootPath().toPath().resolve("embedded-setup").resolve("wrends").toFile();
       // ensure the test starts from a clean directory
       StaticUtils.recursiveDelete(rootDir);
 
@@ -268,7 +268,7 @@ public class EmbeddedDirectoryServerTestCase extends UtilTestCase
          System.out,
          System.err);
 
-      tempServer.extractArchiveForSetup(TestCaseUtils.getOpenDJArchivePath());
+      tempServer.extractArchiveForSetup(TestCaseUtils.getWrenDSArchivePath());
       tempServer.setup(
           setupParams()
             .backendType("je")
