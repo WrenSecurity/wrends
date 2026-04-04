@@ -24,7 +24,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Run the Maven verify phase
-        run: mvn -B -P verify verify
+        run: mvn -B -P verify -DexcludedGroups= verify
       - name: Test setup
         run: |
           opendj-server-legacy/target/package/wrends/setup \

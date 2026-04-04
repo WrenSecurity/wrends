@@ -1245,6 +1245,8 @@
                                 </property>
                             </properties>
 
+                            <runOrder>alphabetical</runOrder>
+
                             <systemPropertyVariables>
                                 <org.opends.server.BuildRoot>${basedir}</org.opends.server.BuildRoot>
                                 <org.opends.server.BuildDir>${project.build.directory}</org.opends.server.BuildDir>
