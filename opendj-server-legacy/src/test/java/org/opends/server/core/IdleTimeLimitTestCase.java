@@ -18,8 +18,8 @@ package org.opends.server.core;
 
 import static org.testng.Assert.*;
 
+import java.io.EOFException;
 import java.io.IOException;
-
 import org.opends.server.TestCaseUtils;
 import org.opends.server.protocols.ldap.ExtendedResponseProtocolOp;
 import org.opends.server.protocols.ldap.LDAPConstants;
@@ -156,6 +156,14 @@ public class IdleTimeLimitTestCase
     ExtendedResponseProtocolOp extendedResponse = conn.readMessage().getExtendedResponseProtocolOp();
     assertEquals(extendedResponse.getOID(), LDAPConstants.OID_NOTICE_OF_DISCONNECTION);
 
-    assertNull(conn.readMessage());
+    try
+    {
+      conn.readMessage();
+      fail("Expected EOFException after server disconnect");
+    }
+    catch (EOFException e)
+    {
+      // Expected - connection was closed by the server.
+    }
   }
 }

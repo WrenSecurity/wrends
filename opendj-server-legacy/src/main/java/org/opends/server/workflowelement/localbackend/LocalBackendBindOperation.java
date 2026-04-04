@@ -144,7 +144,7 @@ public class LocalBackendBindOperation
     sizeLimit                = coreConfigManager.getSizeLimit();
     timeLimit                = coreConfigManager.getTimeLimit();
     lookthroughLimit         = coreConfigManager.getLookthroughLimit();
-    idleTimeLimit            = DirectoryServer.getIdleTimeLimit();
+    idleTimeLimit            = coreConfigManager.getIdleTimeLimit();
     bindDN                   = getBindDN();
     saslMechanism            = getSASLMechanism();
     authPolicyState          = null;
