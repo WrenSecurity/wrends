@@ -16,6 +16,7 @@
  */
 package org.opends.server.replication;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.SortedSet;
@@ -52,6 +53,7 @@ import org.opends.server.types.DirectoryException;
 import org.opends.server.types.Entry;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.opends.messages.ReplicationMessages.*;
@@ -178,6 +180,17 @@ public class InitOnLineTest extends ReplicationTestCase
         "ds-task-class-name: org.opends.server.tasks.InitializeTargetTask",
         "ds-task-initialize-domain-dn: " + EXAMPLE_DN,
         "ds-task-initialize-replica-server-id: all");
+  }
+
+  @BeforeMethod
+  public void allocateServerPorts() throws IOException
+  {
+    int[] replServerIds = { replServer1ID, replServer2ID, replServer3ID };
+    int[] replServerPorts = TestCaseUtils.findFreePorts(replServerIds.length);
+    for (int i = 0; i < replServerIds.length; i++)
+    {
+      replServerPort[replServerIds[i]] = replServerPorts[i];
+    }
   }
 
   /** Tests that entries have been written in the db. */
@@ -523,7 +536,7 @@ public class InitOnLineTest extends ReplicationTestCase
   {
     if (replServerPort[replServerId] == 0)
     {
-      replServerPort[replServerId] = TestCaseUtils.findFreePort();
+      throw new IllegalStateException("Trying to get unassigned server port");
     }
     return replServerPort[replServerId];
   }
