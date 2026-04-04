@@ -35,6 +35,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 import java.net.SocketTimeoutException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -539,7 +540,7 @@ public class UpdateOperationTest extends ReplicationTestCase
       attrs = entry.getAllAttributes(attrType);
 
       // there should not be a value (delete at time t2)
-      assertNull(attrs);
+      assertTrue(attrs.isEmpty());
       assertEquals(getMonitorDelta(), 1);
     }
     finally
@@ -757,7 +758,9 @@ public class UpdateOperationTest extends ReplicationTestCase
       // check that the delete operation has not been applied
       assertNotNull(getEntry(newPersonDN, 10000, true),
           "The DELETE replication message was replayed when it should not");
-      assertEquals(getMonitorDelta(), 1);
+      // Wait for the conflict resolution to be processed (the entry already
+      // exists so getEntry returns immediately, before replay completes).
+      waitForMonitorDelta(Duration.ofMillis(5000));
       assertConflictAutomaticallyResolved(alertCount);
 
 

@@ -38,6 +38,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,7 +46,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.forgerock.i18n.LocalizableMessage;
@@ -585,6 +585,22 @@ public abstract class ReplicationTestCase extends DirectoryServerTestCase
     long delta = currentCount - lastCount;
     lastCount = currentCount;
     return delta;
+  }
+
+  /** Wait for the expected monitor delta count. */
+  protected void waitForMonitorDelta(Duration timeout) throws Exception
+  {
+    long deadline = System.currentTimeMillis() + timeout.toMillis();
+    do
+    {
+      if (getMonitorDelta() > 0)
+      {
+        return;
+      }
+      Thread.sleep(100);
+    }
+    while (System.currentTimeMillis() < deadline);
+    fail("No monitor count increase observed");
   }
 
   /**
