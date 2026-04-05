@@ -52,6 +52,10 @@
   </module>
 
   <module name="TreeWalker">
+    <module name="SuppressionXpathFilter">
+        <property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
+    </module>
+
     <!--  Instruct Checkstyle to ignore a specific check for a whole file -->
     <module name="SuppressWithNearbyCommentFilter">
       <property name="commentFormat" value="@Checkstyle:ignore ([\w\|]+)"/>
@@ -89,7 +93,7 @@
 
     <!-- Ensure that all public and protected fields are documented -->
     <module name="JavadocVariable">
-      <property name="scope" value="protected" />
+      <property name="accessModifiers" value="public,protected" />
     </module>
 
     <!-- Ensure that all Javadoc comments are well-formed -->

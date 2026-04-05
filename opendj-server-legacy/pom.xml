@@ -48,6 +48,7 @@
 
         <!-- Other properties -->
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
+        <checkstyleHeaderLocation>${project.build.outputDirectory}/org/forgerock/checkstyle/updated-java-header</checkstyleHeaderLocation>
 
         <!-- Additional OSGI import package for this module -->
         <opendj.osgi.import.additional>
@@ -1151,6 +1152,21 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
 
+                        <configuration>
+                            <excludes>generated/org/opends/server/snmp/**,org/opends/messages/**</excludes>
+                            <configLocation>${project.build.outputDirectory}/org/forgerock/checkstyle/opends-checkstyle.xml</configLocation>
+                            <headerLocation>${checkstyleHeaderLocation}</headerLocation>
+                            <suppressionsLocation>${project.build.outputDirectory}/org/forgerock/checkstyle/unit-test-suppressions.xml</suppressionsLocation>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <includeResources>false</includeResources>
+                            <!-- Only output errors if we're not expecting any -->
+                            <consoleOutput>${checkstyleFailOnError}</consoleOutput>
+                            <failsOnError>${checkstyleFailOnError}</failsOnError>
+                            <propertyExpansion>
+                                config_loc=${project.build.outputDirectory}/org/forgerock/checkstyle
+                            </propertyExpansion>
+                        </configuration>
+
                         <executions>
                             <!-- Disable default from parent -->
                             <execution>
@@ -1169,18 +1185,6 @@
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
-
-                                <configuration>
-                                    <excludes>generated/org/opends/server/snmp/**,org/opends/messages/**</excludes>
-                                    <configLocation>${project.build.outputDirectory}/org/forgerock/checkstyle/opends-checkstyle.xml</configLocation>
-                                    <headerLocation>${checkstyleHeaderLocation}</headerLocation>
-                                    <suppressionsLocation>${project.build.outputDirectory}/org/forgerock/checkstyle/unit-test-suppressions.xml</suppressionsLocation>
-                                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                                    <includeResources>false</includeResources>
-                                    <!-- Only output errors if we're not expecting any -->
-                                    <consoleOutput>${checkstyleFailOnError}</consoleOutput>
-                                    <failsOnError>${checkstyleFailOnError}</failsOnError>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
