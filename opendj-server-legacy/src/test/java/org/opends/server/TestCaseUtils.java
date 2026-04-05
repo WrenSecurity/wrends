@@ -66,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
@@ -117,6 +118,8 @@ import org.forgerock.opendj.server.embedded.EmbeddedDirectoryServer;
 import org.opends.server.util.BuildVersion;
 import org.opends.server.util.DynamicConstants;
 import org.opends.server.util.LDIFReader;
+import org.opends.server.util.TestTimer;
+import org.opends.server.util.TestTimer.CallableVoid;
 import org.testng.Assert;
 
 import com.forgerock.opendj.util.OperatingSystem;
@@ -1935,6 +1938,24 @@ public final class TestCaseUtils {
     {
       System.setIn(stdin);
     }
+  }
+
+  /** Get test timer with sensible defaults. */
+  public static TestTimer defaultTestTimer()
+  {
+    return new TestTimer.Builder()
+        .sleepTimes(100, TimeUnit.MILLISECONDS)
+        .maxSleep(10, TimeUnit.SECONDS)
+        .toTimer();
+  }
+
+  /**
+   * Shorthand for {@link TestTimer#repeatUntilSuccess(java.util.concurrent.Callable)}
+   * using {@link #defaultTestTimer()}.
+   */
+  public static void repeatUntilSuccess(CallableVoid callable) throws Exception, InterruptedException
+  {
+    defaultTestTimer().repeatUntilSuccess(callable);
   }
 
 }
