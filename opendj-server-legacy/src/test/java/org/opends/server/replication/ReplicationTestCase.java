@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.forgerock.i18n.LocalizableMessage;
