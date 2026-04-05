@@ -52,6 +52,10 @@
   </module>
 
   <module name="TreeWalker">
+    <module name="SuppressionXpathFilter">
+        <property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
+    </module>
+
     <!--  Instruct Checkstyle to ignore a specific check for a whole file -->
     <module name="SuppressWithNearbyCommentFilter">
       <property name="commentFormat" value="@Checkstyle:ignore ([\w\|]+)"/>
@@ -131,4 +135,3 @@
     <module name="EmptyStatement" />
   </module>
 </module>
-
