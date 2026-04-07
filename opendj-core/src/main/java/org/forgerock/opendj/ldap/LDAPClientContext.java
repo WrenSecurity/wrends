@@ -79,7 +79,7 @@ public interface LDAPClientContext {
     /**
      * Returns the cipher strength, in bits, currently in use by the underlying
      * connection. This value is analogous to the
-     * {@code javax.servlet.request.key_size} property defined in the Servlet
+     * {@code jakarta.servlet.request.key_size} property defined in the Servlet
      * specification (section 3.8 "SSL Attributes"). It provides no indication
      * of the relative strength of different cipher algorithms, their known
      * weaknesses, nor the strength of other cryptographic information used

@@ -55,7 +55,6 @@
             org.forgerock.json.*;provide:=true
         </opendj.osgi.import.additional>
         <product.archive.name>${product.name.lowercase}-${project.version}</product.archive.name>
-        <juel.version>2.2.7</juel.version>
 
         <!-- maven-failsafe-plugin JVM arguments -->
         <argLine>
@@ -77,18 +76,6 @@
         </dependency>
 
         <dependency>
-            <groupId>de.odysseus.juel</groupId>
-            <artifactId>juel-api</artifactId>
-            <version>${juel.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>de.odysseus.juel</groupId>
-            <artifactId>juel-impl</artifactId>
-            <version>${juel.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
@@ -107,6 +94,12 @@
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.expressly</groupId>
+            <artifactId>expressly</artifactId>
+            <version>6.0.0</version>
         </dependency>
 
         <dependency>

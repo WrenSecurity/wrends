@@ -131,7 +131,7 @@ final class HTTPClientConnection extends ClientConnection
    * Official servlet property giving access to the SSF (Security Strength
    * Factor) used to encrypt the current connection.
    */
-  private static final String SERVLET_SSF_CONSTANT = "javax.servlet.request.key_size";
+  private static final String SERVLET_SSF_CONSTANT = "jakarta.servlet.request.key_size";
 
   /**
    * Indicates whether the Directory Server believes this connection to be valid
