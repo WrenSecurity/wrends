@@ -1861,26 +1861,18 @@ public class AssuredReplicationServerTest
       Map<Integer, Integer> prevServerErrors,
       Set<Integer> expectedServersInError)
   {
+    Map<Integer, Integer> expectedErrors = new HashMap<>(prevServerErrors);
     if (expectedServersInError != null)
     {
       // Adding an error to each server in expectedServersInError, with prevServerErrors as basis, should give the
       // same map as measuredServerErrors
       for (Integer serverId : expectedServersInError)
       {
-        Integer prevInt = prevServerErrors.get(serverId);
-        if (prevInt == null)
-        {
-          // Add this server to the list of servers in error
-          prevServerErrors.put(serverId, 1);
-        } else
-        {
-          // Already errors for this server, increment the value
-          prevServerErrors.put(serverId, prevInt + 1);
-        }
+        expectedErrors.merge(serverId, 1, Integer::sum);
       }
     }
 
-    assertThat(measuredServerErrors).isEqualTo(prevServerErrors);
+    assertThat(measuredServerErrors).isEqualTo(expectedErrors);
   }
 
   /**
