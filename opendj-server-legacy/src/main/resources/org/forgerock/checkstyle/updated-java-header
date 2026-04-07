@@ -1,0 +1,15 @@
+^#!
+^<\?xml.*>$
+^\W*$
+^\W*The contents of this file are subject to the terms of the Common Development and$
+^\W*Distribution License \(the License\)\. You may not use this file except in compliance with the$
+^\W*License\.$
+^\W*$
+^\W*You can obtain a copy of the License at legal/CDDLv1\.[01]\.txt\. See the License for the$
+^\W*specific language governing permission and limitations under the License\.$
+^\W*$
+^\W*When distributing Covered Software, include this CDDL Header Notice in each file and include$
+^\W*the License file at legal/CDDLv1\.[01]\.txt\. If applicable, add the following below the CDDL$
+^\W*Header, with the fields enclosed by brackets \[\] replaced by your own identifying$
+^\W*information: "Portions [Cc]opyright(ed)? \[year\] \[name of copyright owner\]"\.$
+^\W*$
