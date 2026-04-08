@@ -40,7 +40,6 @@ import org.opends.server.replication.server.ReplServerFakeConfiguration;
 import org.opends.server.replication.server.ReplicationServer;
 import org.opends.server.replication.service.ReplicationDomain.ImportExportContext;
 import org.forgerock.opendj.ldap.DN;
-import org.opends.server.types.DirectoryException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -355,7 +354,7 @@ public class ReplicationDomainTest extends ReplicationTestCase
        * Trigger a total update from domain1 to domain2.
        * Check that the exported data is correctly received on domain2.
        */
-      assertTrue(initializeFromRemote(domain2));
+      initializeFromRemote(domain2);
       waitEndExport(exportedData, importedData);
       assertExportSucessful(domain1, domain2, exportedData, importedData);
     }
@@ -366,17 +365,19 @@ public class ReplicationDomainTest extends ReplicationTestCase
     }
   }
 
-  private boolean initializeFromRemote(ReplicationDomain domain) throws DirectoryException
+  private void initializeFromRemote(ReplicationDomain domain) throws Exception
   {
-    for (DSInfo remoteDS : domain.getReplicaInfos().values())
-    {
-      if (remoteDS.getDsId() != domain.getServerId())
+    TestCaseUtils.repeatUntilSuccess(() -> {
+      for (DSInfo remoteDS : domain.getReplicaInfos().values())
       {
-        domain.initializeFromRemote(remoteDS.getDsId(), NO_INIT_TASK);
-        return true;
+        if (remoteDS.getDsId() != domain.getServerId())
+        {
+          domain.initializeFromRemote(remoteDS.getDsId(), NO_INIT_TASK);
+          return;
+        }
       }
-    }
-    return false;
+      throw new AssertionError("No remote DS found in topology");
+    });
   }
 
   /**
@@ -417,7 +418,7 @@ public class ReplicationDomainTest extends ReplicationTestCase
       domain2 = new FakeReplicationDomain(
           testService, 2, servers2, 0, null, importedData, 0);
 
-      domain2.initializeFromRemote(1, NO_INIT_TASK);
+      initializeFromRemote(domain2);
 
       waitEndExport(exportedData, importedData);
       assertExportSucessful(domain1, domain2, exportedData, importedData);
@@ -547,11 +548,7 @@ public class ReplicationDomainTest extends ReplicationTestCase
        * Trigger a total update from domain1 to domain2.
        * Check that the exported data is correctly received on domain2.
        */
-      while (!initializeFromRemote(domain1))
-      {
-        System.out.println("trying...");
-        Thread.sleep(1000);
-      }
+      initializeFromRemote(domain1);
       System.out.println("waiting");
       Thread.sleep(10000000);
     }
