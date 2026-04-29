@@ -60,8 +60,8 @@ abstract class LdapCodec extends LDAPBaseFilter {
                 final int mark = buffer.position();
                 if (!reader.elementAvailable()) {
                     buffer.position(mark);
-                    // We need to create a duplicate because buffer will be closed by the reader (try-with-resources)
-                    return ctx.getStopAction(buffer.duplicate());
+                    // We need to split because buffer will be closed by the reader (try-with-resources)
+                    return ctx.getStopAction(buffer.split(0));
                 }
                 final int length = reader.peekLength();
                 if (length > maxASN1ElementSize) {
