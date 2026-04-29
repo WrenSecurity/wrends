@@ -425,8 +425,8 @@ final class LDAPClientFilter extends LDAPBaseFilter {
             buffer.mark();
             if (!reader.elementAvailable()) {
                 buffer.reset();
-                // We need to create a duplicate because buffer will be closed by the reader (try-with-resources)
-                return ctx.getStopAction(buffer.duplicate());
+                // We need to split because buffer will be closed by the reader (try-with-resources)
+                return ctx.getStopAction(buffer.split(0));
             }
             final int length = reader.peekLength();
             final Buffer remainder = buffer.remaining() > length ? buffer.split(buffer.position() + length) : null;
