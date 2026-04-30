@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.assertj.core.api.Assertions;
 import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.ResultCode;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.api.ConnectionHandler;
@@ -110,5 +111,9 @@ public abstract class JmxTestCase extends DirectoryServerTestCase
         DN.valueOf("cn=JMX Connection Handler,cn=Connection Handlers,cn=config"),
         newArrayList(new Modification(REPLACE, Attributes.create("ds-cfg-enabled", "true"))));
     op.run();
+    Assertions.assertThat(op.getResultCode())
+      .withFailMessage("Failed to enable JMX connection handler: %s - %s",
+                       op.getResultCode(), op.getErrorMessage())
+      .isEqualTo(ResultCode.SUCCESS);
   }
 }
