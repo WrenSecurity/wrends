@@ -321,8 +321,10 @@ public class AssuredReplicationServerTest
       fakeReplicationDomain.startListenService();
     }
 
-    assertTrue(fakeReplicationDomain.isConnected());
-    assertEquals(fakeReplicationDomain.getReplicationServer().getPort(), getRsPort(rsId));
+    TestCaseUtils.repeatUntilSuccess(() -> {
+      assertTrue(fakeReplicationDomain.isConnected());
+      assertEquals(fakeReplicationDomain.getReplicationServer().getPort(), getRsPort(rsId));
+    });
 
     return fakeReplicationDomain;
   }
