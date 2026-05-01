@@ -26,7 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
+import java.util.concurrent.atomic.AtomicReference;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.backends.task.Task;
@@ -77,8 +77,8 @@ public class ReplicationDomainTest extends ReplicationTestCase
     DN testService = DN.valueOf("o=test");
     ReplicationServer replServer1 = null;
     ReplicationServer replServer2 = null;
-    FakeReplicationDomain domain1 = null;
-    FakeReplicationDomain domain2 = null;
+    AtomicReference<FakeReplicationDomain> domain1 = new AtomicReference<>();
+    AtomicReference<FakeReplicationDomain> domain2 = new AtomicReference<>();
 
     try
     {
@@ -93,85 +93,66 @@ public class ReplicationDomainTest extends ReplicationTestCase
 
       SortedSet<String> servers = newTreeSet("localhost:" + replServerPort1);
       BlockingQueue<UpdateMsg> rcvQueue1 = new LinkedBlockingQueue<>();
-      domain1 = new FakeReplicationDomain(
-          testService, domain1ServerId, servers, 100, 1000, rcvQueue1);
+      domain1.set(new FakeReplicationDomain(
+          testService, domain1ServerId, servers, 100, 1000, rcvQueue1));
 
       SortedSet<String> servers2 = newTreeSet("localhost:" + replServerPort2);
       BlockingQueue<UpdateMsg> rcvQueue2 = new LinkedBlockingQueue<>();
-      domain2 = new FakeReplicationDomain(
-          testService, domain2ServerId, servers2, 100, 1000, rcvQueue2);
-
-      Thread.sleep(500);
+      domain2.set(new FakeReplicationDomain(
+          testService, domain2ServerId, servers2, 100, 1000, rcvQueue2));
 
       /*
        * Publish a message from domain1,
        * Check that domain2 receives it shortly after.
        */
       byte[] test = {1, 2, 3 ,4, 0, 1, 2, 3, 4, 5};
-      publish(domain1, test);
+      publish(domain1.get(), test);
 
       UpdateMsg rcvdMsg = rcvQueue2.poll(20, TimeUnit.SECONDS);
       assertNotNull(rcvdMsg);
       assertEquals(test, rcvdMsg.getPayload());
 
-      for (RSInfo replServerInfo : domain1.getRsInfos())
-      {
-        // The generation Id of the remote should be 1
-        assertEquals(replServerInfo.getGenerationId(), 1,
-            "Unexpected value of generationId in RSInfo for RS=" + replServerInfo);
-      }
-
-      for (DSInfo serverInfo : domain1.getReplicaInfos().values())
-      {
-        assertEquals(serverInfo.getStatus(), ServerStatus.NORMAL_STATUS);
-      }
-
-      domain1.setGenerationID(2);
-      domain1.resetReplicationLog();
-      Thread.sleep(500);
-
-      for (RSInfo replServerInfo : domain1.getRsInfos())
-      {
-        // The generation Id of the remote should now be 2
-        assertEquals(replServerInfo.getGenerationId(), 2,
-            "Unexpected value of generationId in RSInfo for RS=" + replServerInfo);
-      }
-
-      int sleepTime = 50;
-      while (true)
-      {
-        try
+      TestCaseUtils.repeatUntilSuccess(() -> {
+        for (RSInfo replServerInfo : domain1.get().getRsInfos())
         {
-          assertExpectedServerStatuses(domain1.getReplicaInfos(),
-              domain1ServerId, domain2ServerId);
-          assertExpectedServerStatuses(domain2.getReplicaInfos(),
-              domain1ServerId, domain2ServerId);
-
-          Map<Integer, ServerState> states1 = domain1.getReplicaStates();
-          ServerState state2 = states1.get(domain2ServerId);
-          assertNotNull(state2, "getReplicaStates is not showing DS2");
-
-          Map<Integer, ServerState> states2 = domain2.getReplicaStates();
-          ServerState state1 = states2.get(domain1ServerId);
-          assertNotNull(state1, "getReplicaStates is not showing DS1");
-
-          // if we reach this point all tests are OK
-          break;
+          // The generation Id of the remote should be 1
+          assertEquals(replServerInfo.getGenerationId(), 1,
+              "Unexpected value of generationId in RSInfo for RS=" + replServerInfo);
         }
-        catch (AssertionError e)
+        for (DSInfo serverInfo : domain1.get().getReplicaInfos().values())
         {
-          if (sleepTime >= 30000)
-          {
-            throw e;
-          }
-          Thread.sleep(sleepTime);
-          sleepTime *= 2;
+          assertEquals(serverInfo.getStatus(), ServerStatus.NORMAL_STATUS);
         }
-      }
+      });
+
+      domain1.get().setGenerationID(2);
+      domain1.get().resetReplicationLog();
+
+      TestCaseUtils.repeatUntilSuccess(() -> {
+        for (RSInfo replServerInfo : domain1.get().getRsInfos())
+        {
+          // The generation Id of the remote should now be 2
+          assertEquals(replServerInfo.getGenerationId(), 2,
+              "Unexpected value of generationId in RSInfo for RS=" + replServerInfo);
+        }
+
+        assertExpectedServerStatuses(domain1.get().getReplicaInfos(),
+            domain1ServerId, domain2ServerId);
+        assertExpectedServerStatuses(domain2.get().getReplicaInfos(),
+            domain1ServerId, domain2ServerId);
+
+        Map<Integer, ServerState> states1 = domain1.get().getReplicaStates();
+        ServerState state2 = states1.get(domain2ServerId);
+        assertNotNull(state2, "getReplicaStates is not showing DS2");
+
+        Map<Integer, ServerState> states2 = domain2.get().getReplicaStates();
+        ServerState state1 = states2.get(domain1ServerId);
+        assertNotNull(state1, "getReplicaStates is not showing DS1");
+      });
     }
     finally
     {
-      disable(domain1, domain2);
+      disable(domain1.get(), domain2.get());
       remove(replServer1, replServer2);
     }
   }
