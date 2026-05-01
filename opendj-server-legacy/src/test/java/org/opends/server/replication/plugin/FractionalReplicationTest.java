@@ -54,7 +54,6 @@ import org.opends.server.types.Attribute;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.Entry;
 import org.opends.server.types.Modification;
-import org.opends.server.util.TestTimer;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
