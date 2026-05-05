@@ -1188,8 +1188,27 @@ public class AssuredReplicationServerTest
           false, AssuredMode.SAFE_DATA_MODE, 1, TIMEOUT_RS_SCENARIO);
       }
 
-      // Send update from DS 1
+      // Wait for topology to fully propagate so the RS knows every peer's group ID
+      // before fakeRd1 publishes — otherwise the RS may forward the first update
+      // with a stale assured flag, which the receiver counts as a "wrong" update.
       final FakeReplicationDomain fakeRd1 = fakeRDs[1];
+      TestCaseUtils.repeatUntilSuccess(() -> {
+        if (otherFakeDS)
+        {
+          DSInfo info = fakeRd1.getReplicaInfos().get(FDS2_ID);
+          assertNotNull(info, "fakeRd1 does not yet see FDS2 in its topology");
+          assertEquals(info.getGroupId(), (byte) otherFakeDsGid);
+        }
+        if (fakeRS)
+        {
+          RSInfo rsInfo = fakeRd1.getRsInfos().stream()
+              .filter(r -> r.getId() == FRS1_ID).findFirst().orElse(null);
+          assertNotNull(rsInfo, "fakeRd1 does not yet see fakeRs1 in its topology");
+          assertEquals(rsInfo.getGroupId(), (byte) fakeRsGid);
+        }
+      });
+
+      // Send update from DS 1
       long startTime = System.currentTimeMillis();
       fakeRd1.sendNewFakeUpdate();
 
