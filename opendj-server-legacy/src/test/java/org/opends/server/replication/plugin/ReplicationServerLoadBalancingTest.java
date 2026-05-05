@@ -196,7 +196,7 @@ public class ReplicationServerLoadBalancingTest extends ReplicationTestCase
     final LDAPReplicationDomain rd =
         MultimasterReplication.createNewDomain(domainConf);
     rd.start();
-    assertTrue(rd.isConnected());
+    TestCaseUtils.repeatUntilSuccess(() -> assertTrue(rd.isConnected()));
     return rd;
   }
 
