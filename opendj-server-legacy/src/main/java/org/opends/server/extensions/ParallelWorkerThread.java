@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2009 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.extensions;
 
@@ -53,10 +54,10 @@ public class ParallelWorkerThread
   private boolean stoppedByReducedThreadNumber;
 
   /** Indicates whether this thread is currently waiting for work. */
-  private boolean waitingForWork;
+  private volatile boolean waitingForWork;
 
   /** The operation that this worker thread is currently processing. */
-  private Operation operation;
+  private volatile Operation operation;
 
   /** The handle to the actual thread for this worker thread. */
   private Thread workerThread;
@@ -116,7 +117,19 @@ public class ParallelWorkerThread
     return isAlive() && operation != null;
   }
 
-
+  /**
+   * Assign operation to this thread. This should be called only as a result of this
+   * thread requesting new work from the work queue.
+   * @param operation The operation that should be assigned.
+   */
+  void assignOperation(Operation operation)
+  {
+    if (this.operation != null)
+    {
+      throw new IllegalStateException("Can not assign operation to an active worker thread");
+    }
+    this.operation = operation;
+  }
 
   /**
    * Operates in a loop, retrieving the next request from the work queue,
@@ -132,16 +145,21 @@ public class ParallelWorkerThread
       try
       {
         waitingForWork = true;
-        operation = null;
-        operation = workQueue.nextOperation(this);
-        waitingForWork = false;
-
+        try
+        {
+          if (!workQueue.nextOperation(this)) {
+              break; // shutdown requested
+          }
+        }
+        finally
+        {
+          waitingForWork = false;
+        }
 
         if (operation == null)
         {
-          // The operation may be null if the server is shutting down.  If that
-          // is the case, then break out of the while loop.
-          break;
+          // Operation has not been assigned by work queue for some reason, keep trying.
+          continue;
         }
         else
         {
@@ -196,6 +214,8 @@ public class ParallelWorkerThread
           logger.traceException(t2);
         }
       }
+
+      operation = null; // cleanup operation reference
     }
 
     // If we have gotten here, then we presume that the server thread is
