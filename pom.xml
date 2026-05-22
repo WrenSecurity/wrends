@@ -298,7 +298,7 @@
                     <?m2e execute onConfiguration?>
                     <groupId>org.wrensecurity.commons</groupId>
                     <artifactId>i18n-maven-plugin</artifactId>
-                    <version>22.6.2</version>
+                    <version>22.6.3</version>
                 </plugin>
 
                 <!-- This is needed to use annotations in maven plugins with maven 3.0.x -->
