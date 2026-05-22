@@ -106,14 +106,19 @@ public abstract class JmxTestCase extends DirectoryServerTestCase
 
   private void enableJmx() throws Exception
   {
-    ModifyOperationBasis op = new ModifyOperationBasis(
-        getRootConnection(), nextOperationID(), nextMessageID(), null,
-        DN.valueOf("cn=JMX Connection Handler,cn=Connection Handlers,cn=config"),
-        newArrayList(new Modification(REPLACE, Attributes.create("ds-cfg-enabled", "true"))));
-    op.run();
-    Assertions.assertThat(op.getResultCode())
-      .withFailMessage("Failed to enable JMX connection handler: %s - %s",
-                       op.getResultCode(), op.getErrorMessage())
-      .isEqualTo(ResultCode.SUCCESS);
+    TestCaseUtils.repeatUntilSuccess(() -> {
+      int port = TestCaseUtils.findFreePort();
+      ModifyOperationBasis op = new ModifyOperationBasis(
+          getRootConnection(), nextOperationID(), nextMessageID(), null,
+          DN.valueOf("cn=JMX Connection Handler,cn=Connection Handlers,cn=config"),
+          newArrayList(
+              new Modification(REPLACE, Attributes.create("ds-cfg-listen-port", String.valueOf(port))),
+              new Modification(REPLACE, Attributes.create("ds-cfg-enabled", "true"))));
+      op.run();
+      Assertions.assertThat(op.getResultCode())
+          .withFailMessage("Failed to enable JMX connection handler: %s - %s",
+              op.getResultCode(), op.getErrorMessage())
+          .isEqualTo(ResultCode.SUCCESS);
+    });
   }
 }
