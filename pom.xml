@@ -134,7 +134,7 @@
 
         <bouncycastle.version>1.83</bouncycastle.version>
         <freemarker.version>2.3.34</freemarker.version>
-        <wrensec-commons.version>23.0.0</wrensec-commons.version>
+        <wrensec-commons.version>23.0.2</wrensec-commons.version>
 
         <opendj.osgi.import.additional />
         <opendj.osgi.import>
