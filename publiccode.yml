@@ -1,0 +1,114 @@
+publiccodeYmlVersion: "0.5.0"
+
+name: Wren:DS
+applicationSuite: Wren Security
+url: "https://github.com/WrenSecurity/wrends"
+landingURL: "https://wrensecurity.org/projects/wrends/"
+releaseDate: "2023-05-09"
+logo: "https://wrensecurity.org/publiccode/wrends-logo.svg"
+roadmap: "https://github.com/WrenSecurity/wrends/issues"
+
+platforms:
+  - web
+
+categories:
+  - identity-management
+  - it-security
+
+organisation:
+  name: Orchitech s.r.o.
+  uri: "https://orchi.tech/"
+
+developmentStatus: stable
+
+softwareType: "standalone/backend"
+
+description:
+  en:
+    localisedName: Wren:DS
+    shortDescription: >
+      LDAPv3-compliant directory service providing a high-performance, highly
+      available, and secure identity data store for enterprise environments.
+
+    longDescription: |
+      Wren:DS is an open-source directory services from the Wren Security
+      suite. Built on the Java platform, Wren:DS provides a robust,
+      standards-compliant LDAP directory server designed to store, manage,
+      and serve identity data at scale.
+
+      Wren:DS is commonly deployed as the identity data backbone when
+      requiring a standards-compliant directory. Its replication engine and
+      fine-grained access control make it suitable for both greenfield
+      deployments and migrations from commercial directory products.
+
+      **Core capabilities include:**
+
+      - **LDAPv3 compliance** — full support for the LDAP protocol including
+        search, compare, modify, add, delete, and extended operations; LDIF
+        import and export
+      - **High availability replication** — multi-master replication across
+        geographically distributed data centers with automatic conflict resolution
+        and fractional replication for bandwidth-constrained links
+      - **High performance** — tunable caching, indexing, and entry compression;
+        handles millions of entries and thousands of operations per second
+      - **Security** — TLS/SSL for all connections; SASL authentication
+        mechanisms including PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI; password
+        storage using industry-standard hashing algorithms with salting
+      - **Fine-grained access control** — LDAP-based ACI model with support for
+        bind-rule conditions on IP, DNS, authentication method, time, and user
+        attributes; global ACIs and per-entry overrides
+      - **Password policies** — configurable per-subtree policies controlling
+        complexity, history, lockout, expiry, and grace login behaviour
+      - **DSML/REST gateway** — HTTP-based REST and DSML interfaces for
+        consuming directory data from applications that cannot use native LDAP
+      - **Schema management** — standard and custom schema extensions; online
+        schema updates without server restart
+      - **Monitoring and alerting** — JMX, SNMP, and built-in cn=monitor
+        backend; alerting via SMTP and SNMP traps; detailed operational statistics
+        per connection handler and backend
+      - **Administration tools** — command-line tools (dsconfig, ldapmodify,
+        ldapsearch, manage-tasks) and a web-based control panel for day-to-day
+        operations
+
+      Wren:DS scales from a single-node deployment storing tens of thousands of
+      user entries to a globally distributed, multi-master topology serving
+      hundreds of millions of directory objects with low read latency.
+
+    documentation: "https://docs.wrensecurity.org/wrends/latest"
+
+    features:
+      - LDAPv3-compliant directory server with full protocol support
+      - Multi-master replication across geographically distributed sites
+      - High-performance Berkeley DB JE backend with tunable indexing
+      - TLS/SSL encryption and SASL authentication for all connections
+      - Fine-grained ACI-based access control per subtree and entry
+      - Per-subtree password policies with lockout and expiry controls
+      - REST and DSML gateway for HTTP-based directory access
+      - Online schema extensions without server restart
+      - JMX, SNMP, and cn=monitor operational statistics
+      - Full suite of command-line and web administration tools
+
+legal:
+  license: CDDL-1.0
+
+maintenance:
+  type: "community"
+
+  contacts:
+    - name: Ondřej Urbánek
+      email: "ondrej.urbanek@orchitech.cz"
+      affiliation: Orchitech s.r.o.
+      phone: "+420 728 365 526"
+
+localisation:
+  localisationReady: true
+  availableLanguages:
+    - en
+    - ca
+    - de
+    - es
+    - fr
+    - ja
+    - ko
+    - pl
+    - zh
