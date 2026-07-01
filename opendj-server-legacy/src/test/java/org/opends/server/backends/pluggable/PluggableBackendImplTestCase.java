@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.backends.pluggable;
 
@@ -93,6 +94,7 @@ import org.opends.server.types.LDIFImportConfig;
 import org.opends.server.types.Modification;
 import org.opends.server.types.RestoreConfig;
 import org.opends.server.types.SearchFilter;
+import org.opends.server.types.AdditionalLogItem;
 import org.opends.server.types.SearchResultEntry;
 import org.opends.server.workflowelement.localbackend.LocalBackendSearchOperation;
 import org.testng.Reporter;
@@ -126,7 +128,15 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
     backendIndexes.put("uid", new IndexType[] { IndexType.EQUALITY });
     backendIndexes.put("telephoneNumber", new IndexType[] { IndexType.EQUALITY, IndexType.SUBSTRING });
     backendIndexes.put("mail", new IndexType[] { IndexType.SUBSTRING });
+    backendIndexes.put(TEST_ORDERED_ATTR, new IndexType[] { IndexType.ORDERING, IndexType.EQUALITY });
   }
+
+  /** A single-valued, integer-ordering test attribute used to exercise bounded range searches. */
+  private static final String TEST_ORDERED_ATTR = "testOrderedInt";
+  private static final String TEST_ORDERED_ATTR_DEFINITION =
+      "( 1.3.6.1.4.1.26027.1.999.1 NAME 'testOrderedInt' EQUALITY integerMatch "
+      + "ORDERING integerOrderingMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE "
+      + "X-ORIGIN 'OpenDJ Directory Server test' )";
 
   private String[] backendVlvIndexes = { "people" };
   private AttributeType modifyAttribute;
@@ -155,6 +165,14 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
   {
     // Need the schema to be available, so make sure the server is started.
     TestCaseUtils.startServer();
+
+    // Register a single-valued, integer-ordering attribute so the ordering index below can drive
+    // the single-value bounded range search optimization (no suitable stock attribute exists).
+    assertEquals(TestCaseUtils.applyModifications(true,
+        "dn: cn=schema",
+        "changetype: modify",
+        "add: attributeTypes",
+        "attributeTypes: " + TEST_ORDERED_ATTR_DEFINITION), 0);
 
     testBaseDN = DN.valueOf("dc=test,dc=com");
 
@@ -597,6 +615,13 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
       backend.finalizeBackend();
       backend = null;
     }
+
+    // Remove the test-only attribute type registered in setUp().
+    TestCaseUtils.applyModifications(true,
+        "dn: cn=schema",
+        "changetype: modify",
+        "delete: attributeTypes",
+        "attributeTypes: " + TEST_ORDERED_ATTR_DEFINITION);
   }
 
   /**
@@ -631,8 +656,13 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
       {
         final AttributeType attributeType =
             TestCaseUtils.getServerContext().getSchema().getAttributeType(index.getKey());
-        assertTrue(backend.isIndexed(attributeType,
-            org.opends.server.types.IndexType.valueOf(type.toString().toUpperCase())));
+        // The public org.opends.server.types.IndexType enum models ordering as GREATER_OR_EQUAL /
+        // LESS_OR_EQUAL rather than a single ORDERING value, so map it rather than valueOf(name).
+        final org.opends.server.types.IndexType legacyType =
+            type == IndexType.ORDERING
+                ? org.opends.server.types.IndexType.GREATER_OR_EQUAL
+                : org.opends.server.types.IndexType.valueOf(type.toString().toUpperCase());
+        assertTrue(backend.isIndexed(attributeType, legacyType));
       }
     }
   }
@@ -699,6 +729,65 @@ public abstract class PluggableBackendImplTestCase<C extends PluggableBackendCfg
         newEntry.getName().parent(), SearchScope.WHOLE_SUBTREE, "(&(sn=Smith)(jpegphoto=foo))", returnedEntries));
     assertThat(returnedEntries).hasSize(1);
     assertThat((Object) returnedEntries.get(0).getName()).isEqualTo(newEntry.getName());
+  }
+
+  /**
+   * A bounded range search {@code (&(attr>=X)(attr<=Y))} on a single-valued, ordering-indexed
+   * attribute must return exactly the entries within the inclusive range and must be resolved by
+   * the index rather than degraded to an unindexed scan.
+   */
+  @Test
+  public void testBoundedRangeSearchUsesOrderingIndex() throws Exception
+  {
+    final int[] values = { 10, 20, 30, 40, 50 };
+    final List<DN> added = new ArrayList<>();
+    final AddOperation addOp = mock(AddOperation.class);
+    try
+    {
+      for (int value : values)
+      {
+        final DN dn = DN.valueOf("cn=ord" + value + "," + testBaseDN);
+        backend.addEntry(TestCaseUtils.makeEntry(
+            "dn: " + dn,
+            "objectClass: top",
+            "objectClass: person",
+            "objectClass: extensibleObject",
+            "cn: ord" + value,
+            "sn: ord" + value,
+            TEST_ORDERED_ATTR + ": " + value), addOp);
+        added.add(dn);
+      }
+
+      final SearchRequest request = newSearchRequest(testBaseDN, SearchScope.WHOLE_SUBTREE,
+          "(&(" + TEST_ORDERED_ATTR + ">=20)(" + TEST_ORDERED_ATTR + "<=40))");
+      final InternalSearchOperation search =
+          new InternalSearchOperation(getRootConnection(), -1, -1, request);
+      backend.search(new LocalBackendSearchOperation(search));
+
+      final List<DN> foundDNs = new ArrayList<>();
+      for (SearchResultEntry entry : search.getSearchEntries())
+      {
+        foundDNs.add(entry.getName());
+      }
+      assertThat(foundDNs).containsExactlyInAnyOrder(
+          DN.valueOf("cn=ord20," + testBaseDN),
+          DN.valueOf("cn=ord30," + testBaseDN),
+          DN.valueOf("cn=ord40," + testBaseDN));
+
+      // The bounded range must be resolved by the ordering index, not degraded to an unindexed scan.
+      for (AdditionalLogItem item : search.getAdditionalLogItems())
+      {
+        assertThat(item.toString()).doesNotContain("unindexed");
+      }
+    }
+    finally
+    {
+      final DeleteOperation deleteOp = mock(DeleteOperation.class);
+      for (DN dn : added)
+      {
+        backend.deleteEntry(dn, deleteOp);
+      }
+    }
   }
 
   private SearchOperation createSearchOperation(DN baseDN, SearchScope scope, String searchFilter,
