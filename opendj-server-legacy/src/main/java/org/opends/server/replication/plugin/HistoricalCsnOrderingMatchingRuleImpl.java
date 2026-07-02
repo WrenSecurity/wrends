@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2012-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.replication.plugin;
 
@@ -99,6 +100,39 @@ public final class HistoricalCsnOrderingMatchingRuleImpl implements MatchingRule
   @Override
   public Assertion getAssertion(final Schema schema, final ByteSequence value) throws DecodeException
   {
+    // The extensible filter syntax '[lower,upper]' requests an inclusive bounded range assertion,
+    // resolved as a single [lower, upper] range read rather than an open-ended comparison.
+    final String assertionValue = value.toString();
+    if (assertionValue.length() >= 2
+        && assertionValue.charAt(0) == '['
+        && assertionValue.charAt(assertionValue.length() - 1) == ']')
+    {
+      final String bounds = assertionValue.substring(1, assertionValue.length() - 1);
+      final int separator = bounds.indexOf(',');
+      if (separator >= 0)
+      {
+        final ByteString lower =
+            normalizeAttributeValue(schema, ByteString.valueOfUtf8(bounds.substring(0, separator).trim()));
+        final ByteString upper =
+            normalizeAttributeValue(schema, ByteString.valueOfUtf8(bounds.substring(separator + 1).trim()));
+        return new Assertion()
+        {
+          @Override
+          public ConditionResult matches(final ByteSequence attributeValue)
+          {
+            return ConditionResult.valueOf(
+                attributeValue.compareTo(lower) >= 0 && attributeValue.compareTo(upper) <= 0);
+          }
+
+          @Override
+          public <T> T createIndexQuery(IndexQueryFactory<T> factory) throws DecodeException
+          {
+            return factory.createRangeMatchQuery(ORDERING_ID, lower, upper, true, true);
+          }
+        };
+      }
+    }
+
     final ByteString normAssertion = normalizeAttributeValue(schema, value);
     return new Assertion()
     {
