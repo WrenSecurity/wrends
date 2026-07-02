@@ -46,8 +46,17 @@ import org.opends.server.types.*;
 import org.opends.server.util.TimeThread;
 import org.testng.annotations.Test;
 
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.opends.server.TestCaseUtils.*;
 import static org.testng.Assert.*;
+
+import org.forgerock.opendj.ldap.ByteSequence;
+import org.forgerock.opendj.ldap.spi.IndexQueryFactory;
+import org.mockito.ArgumentCaptor;
 
 /**
  * Test the usage of the historical data of the replication.
@@ -119,6 +128,58 @@ public class HistoricalCsnOrderingTest extends ReplicationTestCase
     assertEquals(assert3.matches(rule.normalizeAttributeValue(v1)), ConditionResult.FALSE);
     assertEquals(assert3.matches(rule.normalizeAttributeValue(v2)), ConditionResult.TRUE);
 
+  }
+
+  /**
+   * The extensible filter syntax 'lower,upper' must match values within the inclusive range.
+   */
+  @Test
+  public void boundedRangeAssertionMatchesInclusiveRange() throws Exception
+  {
+    MatchingRule rule = getRule();
+
+    CSN below = new CSN(0, 0, 1);
+    CSN lower = new CSN(1, 1, 1);
+    CSN inside = new CSN(2, 0, 1);
+    CSN upper = new CSN(3, 1, 1);
+    CSN above = new CSN(4, 0, 1);
+
+    Assertion assertion = rule.getAssertion(ByteString.valueOfUtf8("[" + lower + "," + upper + "]"));
+
+    assertEquals(assertion.matches(normalize(rule, below)), ConditionResult.FALSE);
+    assertEquals(assertion.matches(normalize(rule, lower)), ConditionResult.TRUE);   // lower is inclusive
+    assertEquals(assertion.matches(normalize(rule, inside)), ConditionResult.TRUE);
+    assertEquals(assertion.matches(normalize(rule, upper)), ConditionResult.TRUE);   // upper is inclusive
+    assertEquals(assertion.matches(normalize(rule, above)), ConditionResult.FALSE);
+  }
+
+  /**
+   * The bounded range assertion must resolve to a single inclusive range index query rather than an
+   * open-ended comparison.
+   */
+  @Test
+  public void boundedRangeAssertionUsesSingleInclusiveRangeQuery() throws Exception
+  {
+    MatchingRule rule = getRule();
+    CSN lower = new CSN(1, 0, 1);
+    CSN upper = new CSN(2, 0, 1);
+    Assertion assertion = rule.getAssertion(ByteString.valueOfUtf8("[" + lower + "," + upper + "]"));
+
+    @SuppressWarnings("unchecked")
+    IndexQueryFactory<Object> factory = mock(IndexQueryFactory.class);
+    assertion.createIndexQuery(factory);
+
+    ArgumentCaptor<ByteSequence> lo = ArgumentCaptor.forClass(ByteSequence.class);
+    ArgumentCaptor<ByteSequence> hi = ArgumentCaptor.forClass(ByteSequence.class);
+    verify(factory).createRangeMatchQuery(anyString(), lo.capture(), hi.capture(), eq(true), eq(true));
+    verifyNoMoreInteractions(factory);
+    assertEquals(lo.getValue().toByteString(), normalize(rule, lower));
+    assertEquals(hi.getValue().toByteString(), normalize(rule, upper));
+  }
+
+  private static ByteString normalize(MatchingRule rule, CSN csn) throws Exception
+  {
+    return rule.normalizeAttributeValue(ByteString.valueOfUtf8("dummy:" + csn));
   }
 
   /**

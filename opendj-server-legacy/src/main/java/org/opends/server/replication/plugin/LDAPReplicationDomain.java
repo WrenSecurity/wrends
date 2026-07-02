@@ -4183,9 +4183,15 @@ private boolean solveNamingConflict(ModifyDNOperation op, LDAPUpdateMsg msg)
       maxValueForId = lastCSN.toString();
     }
 
+    // Use the ordering matching rule's bounded range assertion ('lower,upper') via an extensible
+    // filter. Both bounds carry the same serverId, so this resolves to a single inclusive range read
+    // on the ds-sync-hist ordering index instead of the intersection of two open-ended half-ranges
+    // (which, because the ordering key is serverId-major, each span the whole retained history and
+    // blow past the candidate limit, degrading the search to a full unindexed scan). When the
+    // ordering index is absent the search still yields correct results via an unindexed scan.
     String filter =
-        "(&(" + HISTORICAL_ATTRIBUTE_NAME + ">=dummy:" + fromCSN + ")" +
-          "(" + HISTORICAL_ATTRIBUTE_NAME + "<=dummy:" + maxValueForId + "))";
+        "(" + HISTORICAL_ATTRIBUTE_NAME + ":historicalCsnOrderingMatch:=[" + fromCSN
+            + "," + maxValueForId + "])";
     SearchRequest request = Requests.newSearchRequest(baseDN, SearchScope.WHOLE_SUBTREE, filter)
         .addAttribute(USER_AND_REPL_OPERATIONAL_ATTRS);
     return getRootConnection().processSearch(request, resultListener);
