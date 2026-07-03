@@ -14,7 +14,6 @@
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
  * Portions Copyright 2014 Manuel Gaupp
- * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.backends.pluggable;
 
@@ -23,7 +22,6 @@ import static org.opends.server.backends.pluggable.EntryIDSet.*;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -691,10 +689,13 @@ class AttributeIndex implements ConfigurationChangeListener<BackendIndexCfg>, Cl
    *
    * @param indexQueryFactory
    *          The index query factory to use for the evaluation
-   * @param geFilter
-   *          The lower boundary filter, that is a greater-or-equal filter.
-   * @param leFilter
-   *          The upper boundary filter, that is a less-or-equal filter.
+   * @param filter1
+   *          The first filter, that is either a less-or-equal filter or a
+   *          greater-or-equal filter.
+   * @param filter2
+   *          The second filter, that is either a less-or-equal filter or a
+   *          greater-or-equal filter. It must not be of the same type than the
+   *          first filter.
    * @param debugBuffer
    *          If not null, a diagnostic string will be written which will help
    *          determine how the indexes contributed to this search.
@@ -704,43 +705,23 @@ class AttributeIndex implements ConfigurationChangeListener<BackendIndexCfg>, Cl
    * @return The candidate entry IDs that might contain match both filters.
    */
   static EntryIDSet evaluateBoundedRange(IndexQueryFactory<IndexQuery> indexQueryFactory,
-      SearchFilter geFilter, SearchFilter leFilter, StringBuilder debugBuffer, BackendMonitor monitor)
+      SearchFilter filter1, SearchFilter filter2, StringBuilder debugBuffer, BackendMonitor monitor)
   {
-    // Optimized range search for single-valued attributes
-    if (geFilter.getAttributeType().isSingleValue())
-    {
-      final MatchingRule rule = geFilter.getAttributeType().getOrderingMatchingRule();
-      if (rule != null)
-      {
-        try
-        {
-          final Assertion assertion =
-              rule.getBoundedRangeAssertion(geFilter.getAssertionValue(), leFilter.getAssertionValue());
-          if (assertion != Assertion.UNDEFINED_ASSERTION)
-          {
-            final IndexQuery query = assertion.createIndexQuery(indexQueryFactory);
-            final SearchFilter filter = SearchFilter.createANDFilter(Arrays.asList(geFilter, leFilter));
-            return evaluateIndexQuery(query, "bounded-range", filter, debugBuffer, monitor);
-          }
-        }
-        catch (DecodeException e)
-        {
-          logger.traceException(e);
-          // fall through to the generic two half-range intersection
-        }
-      }
-    }
-
-    // Fallback behavior using two separate half-range reads, then intersect
+    // TODO : this implementation is not optimal
+    // as it implies two separate evaluations instead of a single one, thus defeating the purpose of
+    // the optimization done in IndexFilter#evaluateLogicalAndFilter method.
+    // One solution could be to implement a boundedRangeAssertion that combine the two operations in one.
+    // Such an optimization can only work for attributes declared as SINGLE-VALUE, though, since multiple
+    // values may match both filters with values outside the range. See OPENDJ-2194.
     StringBuilder tmpBuff1 = debugBuffer != null ? new StringBuilder() : null;
     StringBuilder tmpBuff2 = debugBuffer != null ? new StringBuilder() : null;
-    EntryIDSet results1 = evaluate(indexQueryFactory, geFilter, tmpBuff1, monitor);
-    EntryIDSet results2 = evaluate(indexQueryFactory, leFilter, tmpBuff2, monitor);
+    EntryIDSet results1 = evaluate(indexQueryFactory, filter1, tmpBuff1, monitor);
+    EntryIDSet results2 = evaluate(indexQueryFactory, filter2, tmpBuff2, monitor);
     if (debugBuffer != null)
     {
       debugBuffer
-          .append(geFilter).append(tmpBuff1).append(results1)
-          .append(leFilter).append(tmpBuff2).append(results2);
+          .append(filter1).append(tmpBuff1).append(results1)
+          .append(filter2).append(tmpBuff2).append(results2);
     }
     results1.retainAll(results2);
     return results1;

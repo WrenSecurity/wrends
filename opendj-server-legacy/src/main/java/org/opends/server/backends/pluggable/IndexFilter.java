@@ -13,22 +13,20 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions copyright 2011-2016 ForgeRock AS.
- * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.backends.pluggable;
 
-import static org.opends.messages.BackendMessages.INFO_INDEX_FILTER_INDEX_TYPE_DISABLED;
-import static org.opends.server.backends.pluggable.EntryIDSet.newSetFromUnion;
-import static org.opends.server.backends.pluggable.EntryIDSet.newUndefinedSet;
+import static org.opends.messages.BackendMessages.*;
+import static org.opends.server.backends.pluggable.EntryIDSet.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.forgerock.opendj.ldap.schema.AttributeType;
+
 import org.opends.server.backends.pluggable.AttributeIndex.IndexFilterType;
 import org.opends.server.backends.pluggable.spi.ReadableTransaction;
 import org.opends.server.core.SearchOperation;
+import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.opends.server.types.FilterType;
 import org.opends.server.types.SearchFilter;
 
@@ -221,27 +219,28 @@ class IndexFilter
     ArrayList<SearchFilter> remainComps = new ArrayList<>();
     for (Map.Entry<AttributeType, ArrayList<SearchFilter>> rangeEntry : rangeComps.entrySet())
     {
-
-      SearchFilter[] boundaryFilters = extractRangeBoundaryFilters(rangeEntry.getValue());
-      if (boundaryFilters != null)
+      ArrayList<SearchFilter> rangeList = rangeEntry.getValue();
+      if (rangeList.size() == 2)
       {
+        SearchFilter filter1 = rangeList.get(0);
+        SearchFilter filter2 = rangeList.get(1);
+
         AttributeIndex attributeIndex = entryContainer.getAttributeIndex(rangeEntry.getKey());
         if (attributeIndex == null)
         {
           if(monitor.isFilterUseEnabled())
           {
-            monitor.updateStats(SearchFilter.createANDFilter(Arrays.asList(boundaryFilters)),
+            monitor.updateStats(SearchFilter.createANDFilter(rangeList),
                 INFO_INDEX_FILTER_INDEX_TYPE_DISABLED.get("ordering", rangeEntry.getKey().getNameOrOID()));
           }
           continue;
         }
 
         final IndexQueryFactoryImpl indexQueryFactory = new IndexQueryFactoryImpl(txn, attributeIndex);
-        EntryIDSet set = AttributeIndex.evaluateBoundedRange(indexQueryFactory, boundaryFilters[0],
-                boundaryFilters[1], buffer, monitor);
+        EntryIDSet set = attributeIndex.evaluateBoundedRange(indexQueryFactory, filter1, filter2, buffer, monitor);
         if(monitor.isFilterUseEnabled() && set.isDefined())
         {
-          monitor.updateStats(SearchFilter.createANDFilter(Arrays.asList(boundaryFilters)), set.size());
+          monitor.updateStats(SearchFilter.createANDFilter(rangeList), set.size());
         }
         results.retainAll(set);
         if (isBelowFilterThreshold(results))
@@ -252,32 +251,12 @@ class IndexFilter
       else
       {
         // Add to the remaining range components to be processed.
-        remainComps.addAll(rangeEntry.getValue());
+        remainComps.addAll(rangeList);
       }
     }
 
     // Finally, process the remaining slow range components.
     return applyFiltersUntilThreshold(results, remainComps);
-  }
-
-  private SearchFilter[] extractRangeBoundaryFilters(ArrayList<SearchFilter> rangeFilters)
-  {
-    if (rangeFilters == null || rangeFilters.size() != 2)
-    {
-      return null;
-    }
-
-    final SearchFilter filter1 = rangeFilters.get(0);
-    final SearchFilter filter2 = rangeFilters.get(1);
-
-    if (filter1.getFilterType() == filter2.getFilterType())
-    {
-      return null;
-    }
-
-    final SearchFilter geFilter = filter1.getFilterType() == FilterType.GREATER_OR_EQUAL
-        ? filter1 : filter2;
-    return new SearchFilter[] { geFilter, geFilter == filter1 ? filter2 : filter1 };
   }
 
   private EntryIDSet applyFiltersUntilThreshold(EntryIDSet results, ArrayList<SearchFilter> filters)
@@ -334,7 +313,7 @@ class IndexFilter
     if (attributeIndex != null)
     {
       final IndexQueryFactoryImpl indexQueryFactory = new IndexQueryFactoryImpl(txn, attributeIndex);
-      return AttributeIndex.evaluateFilter(indexQueryFactory, indexFilterType, filter, buffer, monitor);
+      return attributeIndex.evaluateFilter(indexQueryFactory, indexFilterType, filter, buffer, monitor);
     }
 
     if (monitor.isFilterUseEnabled())

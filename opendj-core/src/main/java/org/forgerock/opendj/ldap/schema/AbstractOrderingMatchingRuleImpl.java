@@ -13,7 +13,6 @@
  *
  * Copyright 2009 Sun Microsystems, Inc.
  * Portions copyright 2014-2016 ForgeRock AS.
- * Portions Copyright 2026 Wren Security
  */
 package org.forgerock.opendj.ldap.schema;
 
@@ -94,26 +93,6 @@ abstract class AbstractOrderingMatchingRuleImpl extends AbstractMatchingRuleImpl
             @Override
             public <T> T createIndexQuery(IndexQueryFactory<T> factory) throws DecodeException {
                 return factory.createRangeMatchQuery(indexer.getIndexID(), ByteString.empty(), normAssertion, false,
-                        true);
-            }
-        };
-    }
-
-    @Override
-    public final Assertion getBoundedRangeAssertion(Schema schema, ByteSequence lower, ByteSequence upper)
-            throws DecodeException {
-        final ByteString normLower = normalizeAttributeValue(schema, lower);
-        final ByteString normUpper = normalizeAttributeValue(schema, upper);
-        return new Assertion() {
-            @Override
-            public ConditionResult matches(final ByteSequence normalizedAttributeValue) {
-                return ConditionResult.valueOf(normalizedAttributeValue.compareTo(normLower) >= 0
-                        && normalizedAttributeValue.compareTo(normUpper) <= 0);
-            }
-
-            @Override
-            public <T> T createIndexQuery(IndexQueryFactory<T> factory) throws DecodeException {
-                return factory.createRangeMatchQuery(indexer.getIndexID(), normLower, normUpper, true,
                         true);
             }
         };
