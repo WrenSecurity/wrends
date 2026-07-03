@@ -13,7 +13,6 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions copyright 2013-2016 ForgeRock AS.
- * Portions Copyright 2026 Wren Security
  */
 package org.forgerock.opendj.ldap.schema;
 
@@ -349,24 +348,6 @@ public final class MatchingRule extends AbstractSchemaElement {
      */
     public Assertion getLessOrEqualAssertion(final ByteSequence value) throws DecodeException {
         return impl.getLessOrEqualAssertion(schema, value);
-    }
-
-    /**
-     * Returns normalized form of inclusive bounded range assertion. The assertion boundary
-     * values are guaranteed to be valid against this matching rule's assertion syntax.
-     *
-     * @param lower
-     *            The syntax checked lower boundary value.
-     * @param upper
-     *            The syntax checked upper boundary value.
-     * @return The normalized bounded range assertion or {@link Assertion#UNDEFINED_ASSERTION}
-     *         if not supported.
-     * @throws DecodeException
-     *            if the syntax of one of boundary values is not valid.
-     */
-    public Assertion getBoundedRangeAssertion(final ByteSequence lower, final ByteSequence upper)
-            throws DecodeException {
-        return impl.getBoundedRangeAssertion(schema, lower, upper);
     }
 
     /**
