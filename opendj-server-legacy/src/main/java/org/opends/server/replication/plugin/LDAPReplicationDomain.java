@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.replication.plugin;
 
@@ -235,6 +236,12 @@ public final class LDAPReplicationDomain extends ReplicationDomain
       for (FakeOperation op : updates)
       {
         CSN csn = op.getCSN();
+        // We are only interested in local server changes
+        if (csn.getServerId() != startCSN.getServerId())
+        {
+          continue;
+        }
+        // We don't want local changes that fall out of the current time frame
         if (csn.isNewerThan(startCSN) && csn.isOlderThan(endCSN))
         {
           synchronized (replayOperations)
