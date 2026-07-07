@@ -3,13 +3,14 @@ on:
   pull_request_target:
     types: ["closed", "labeled"]
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: read-all
 
 jobs:
   backport:
     if: ${{ github.event.pull_request.merged }}
+    permissions:
+      contents: write
+      pull-requests: write
     uses: WrenSecurity/.github/.github/workflows/backport-prepare.yml@main
     with:
       event: ${{ github.event.action }}
