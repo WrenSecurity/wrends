@@ -26,7 +26,11 @@
 # Wren:DS
 
 [![License](https://img.shields.io/badge/license-CDDL-blue.svg)](https://github.com/WrenSecurity/wrends/blob/master/LICENSE)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/WrenSecurity)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/WrenSecurity/wrends/badge)](https://scorecard.dev/viewer/?uri=github.com/WrenSecurity/wrends)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13856/badge)](https://www.bestpractices.dev/projects/13856)
+[![OpenSSF Baseline](https://www.bestpractices.dev/projects/13856/baseline)](https://www.bestpractices.dev/projects/13856)
+[![CodeQL](https://github.com/WrenSecurity/wrends/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/WrenSecurity/wrends/actions/workflows/github-code-scanning/codeql)
+
 
 Wren:DS is an [LDAPv3](http://tools.ietf.org/html/rfc4510) compliant directory service, which has been developed
 for the Java platform, providing a high performance, highly available, and secure store for the identities managed
