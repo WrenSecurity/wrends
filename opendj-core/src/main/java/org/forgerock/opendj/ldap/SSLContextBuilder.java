@@ -13,7 +13,7 @@
  *
  * Copyright 2010 Sun Microsystems, Inc.
  * Portions Copyright 2016 ForgeRock AS.
- * Portions Copyright 2021 Wren Security.
+ * Portions Copyright 2021-2026 Wren Security.
  */
 package org.forgerock.opendj.ldap;
 
@@ -66,10 +66,12 @@ public final class SSLContextBuilder {
     public static final String PROTOCOL_TLS1_1 = "TLSv1.1";
     /** SSL protocol: supports RFC 5246: TLS version 1.2 ; may support other versions. */
     public static final String PROTOCOL_TLS1_2 = "TLSv1.2";
+    /** SSL protocol: supports RFC 8446: TLS version 1.3 ; may support other versions. */
+    public static final String PROTOCOL_TLS1_3 = "TLSv1.3";
 
     private TrustManager trustManager;
     private KeyManager keyManager;
-    private String protocol = PROTOCOL_TLS1_2;
+    private String protocol = PROTOCOL_TLS;
     private SecureRandom random;
 
     /** These are mutually exclusive. */
@@ -133,16 +135,16 @@ public final class SSLContextBuilder {
     }
 
     /**
-     * Sets the protocol which the SSL context should use. By default, TLSv1.2
-     * will be used.
+     * Sets the protocol which the SSL context should use. By default, the most
+     * recent supported TLS will be used.
      *
      * @param protocol
      *            The protocol which the SSL context should use, which may be
-     *            {@code null} indicating that TLSv1.2 will be used.
+     *            {@code null} indicating that the newest supported TLS should be used.
      * @return This SSL context builder.
      */
     public SSLContextBuilder setProtocol(final String protocol) {
-        this.protocol = protocol != null ? protocol : PROTOCOL_TLS1_2;
+        this.protocol = protocol != null ? protocol : PROTOCOL_TLS;
         return this;
     }
 
