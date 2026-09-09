@@ -14,6 +14,7 @@
 # Portions Copyright 2012-2014 Manuel Gaupp
 # Portions Copyright 2010-2016 ForgeRock AS.
 # Portions copyright 2015 Edan Idzerda
+# Portions Copyright 2026 Wren Security
 
 # This file contains the primary Directory Server configuration.  It must not
 # be directly edited while the server is online.  The server configuration
@@ -1125,6 +1126,22 @@ objectClass: ds-cfg-password-storage-scheme
 objectClass: ds-cfg-pkcs5s2-password-storage-scheme
 cn: PKCS5S2
 ds-cfg-java-class: org.opends.server.extensions.PKCS5S2PasswordStorageScheme
+ds-cfg-enabled: true
+
+dn: cn=PBKDF2-HMAC-SHA256,cn=Password Storage Schemes,cn=config
+objectClass: top
+objectClass: ds-cfg-password-storage-scheme
+objectClass: ds-cfg-pbkdf2-hmac-sha256-password-storage-scheme
+cn: PBKDF2-HMAC-SHA256
+ds-cfg-java-class: org.opends.server.extensions.PBKDF2HmacSHA256PasswordStorageScheme
+ds-cfg-enabled: true
+
+dn: cn=PBKDF2-HMAC-SHA512,cn=Password Storage Schemes,cn=config
+objectClass: top
+objectClass: ds-cfg-password-storage-scheme
+objectClass: ds-cfg-pbkdf2-hmac-sha512-password-storage-scheme
+cn: PBKDF2-HMAC-SHA512
+ds-cfg-java-class: org.opends.server.extensions.PBKDF2HmacSHA512PasswordStorageScheme
 ds-cfg-enabled: true
 
 dn: cn=SHA-1,cn=Password Storage Schemes,cn=config

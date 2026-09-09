@@ -11,82 +11,80 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
- * Copyright 2013-2016 ForgeRock AS.
- * Portions Copyright 2026 Wren Security
+ * Copyright 2026 Wren Security
  */
 package org.opends.server.extensions;
 
-import static org.opends.server.extensions.ExtensionsConstants.*;
+import static org.opends.server.extensions.ExtensionsConstants.AUTH_PASSWORD_SCHEME_NAME_PBKDF2_HMAC_SHA512;
+import static org.opends.server.extensions.ExtensionsConstants.SECRET_KEY_FACTORY_ALGORITHM_PBKDF2_SHA512;
+import static org.opends.server.extensions.ExtensionsConstants.STORAGE_SCHEME_NAME_PBKDF2_HMAC_SHA512;
 
 import java.util.List;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.opendj.config.server.ConfigChangeResult;
 import org.forgerock.opendj.config.server.ConfigException;
 import org.forgerock.opendj.config.server.ConfigurationChangeListener;
-import org.forgerock.opendj.server.config.server.PBKDF2PasswordStorageSchemeCfg;
+import org.forgerock.opendj.server.config.server.PBKDF2HmacSHA512PasswordStorageSchemeCfg;
 import org.opends.server.types.DirectoryException;
 import org.opends.server.types.InitializationException;
 
 /**
  * This class defines a Directory Server password storage scheme based on the
- * PBKDF2 algorithm defined in RFC 2898, using HMAC-SHA-1 as its pseudo-random
+ * PBKDF2 algorithm defined in RFC 2898, using HMAC-SHA-512 as its pseudo-random
  * function. This is a one-way digest algorithm so there is no way to retrieve
  * the original clear-text version of the password from the hashed value
  * (although this means that it is not suitable for things that need the
  * clear-text password like DIGEST-MD5). This implementation uses a configurable
  * number of iterations.
  */
-public class PBKDF2PasswordStorageScheme
-        extends AbstractPBKDF2PasswordStorageScheme<PBKDF2PasswordStorageSchemeCfg>
-        implements ConfigurationChangeListener<PBKDF2PasswordStorageSchemeCfg> {
+public class PBKDF2HmacSHA512PasswordStorageScheme
+        extends AbstractPBKDF2PasswordStorageScheme<PBKDF2HmacSHA512PasswordStorageSchemeCfg>
+        implements ConfigurationChangeListener<PBKDF2HmacSHA512PasswordStorageSchemeCfg> {
 
-    /** The number of bytes the SHA-1 algorithm produces. */
-    private static final int SHA1_LENGTH = 20;
+    private static final int SHA512_LENGTH = 64;
 
     /** The number of iterations used when this scheme has not been configured. */
-    private static final int DEFAULT_ITERATIONS = 10000;
+    private static final int DEFAULT_ITERATIONS = 220000;
 
-    /** The current configuration for this storage scheme. */
-    private volatile PBKDF2PasswordStorageSchemeCfg config;
+    private volatile PBKDF2HmacSHA512PasswordStorageSchemeCfg config;
 
     /**
      * Creates a new instance of this password storage scheme. Note that no
      * initialization should be performed here, as all initialization should be done
-     * in the <CODE>initializePasswordStorageScheme</CODE> method.
+     * in the <code>initializePasswordStorageScheme</code> method.
      */
-    public PBKDF2PasswordStorageScheme() {
+    public PBKDF2HmacSHA512PasswordStorageScheme() {
     }
 
     @Override
-    public void initializePasswordStorageScheme(PBKDF2PasswordStorageSchemeCfg configuration)
+    public void initializePasswordStorageScheme(PBKDF2HmacSHA512PasswordStorageSchemeCfg configuration)
             throws ConfigException, InitializationException {
         initializeScheme();
 
         this.config = configuration;
-        config.addPBKDF2ChangeListener(this);
+        config.addPBKDF2HmacSHA512ChangeListener(this);
     }
 
     @Override
-    public boolean isConfigurationChangeAcceptable(PBKDF2PasswordStorageSchemeCfg configuration,
+    public boolean isConfigurationChangeAcceptable(PBKDF2HmacSHA512PasswordStorageSchemeCfg configuration,
             List<LocalizableMessage> unacceptableReasons) {
         return true;
     }
 
     @Override
-    public ConfigChangeResult applyConfigurationChange(PBKDF2PasswordStorageSchemeCfg configuration) {
+    public ConfigChangeResult applyConfigurationChange(PBKDF2HmacSHA512PasswordStorageSchemeCfg configuration) {
         this.config = configuration;
         return new ConfigChangeResult();
     }
 
     @Override
     String getSecretKeyFactoryAlgorithm() {
-        return SECRET_KEY_FACTORY_ALGORITHM_PBKDF2;
+        return SECRET_KEY_FACTORY_ALGORITHM_PBKDF2_SHA512;
     }
 
     @Override
     int getDigestLengthBytes() {
-        return SHA1_LENGTH;
+        return SHA512_LENGTH;
     }
 
     @Override
@@ -96,12 +94,12 @@ public class PBKDF2PasswordStorageScheme
 
     @Override
     public String getStorageSchemeName() {
-        return STORAGE_SCHEME_NAME_PBKDF2;
+        return STORAGE_SCHEME_NAME_PBKDF2_HMAC_SHA512;
     }
 
     @Override
     public String getAuthPasswordSchemeName() {
-        return AUTH_PASSWORD_SCHEME_NAME_PBKDF2;
+        return AUTH_PASSWORD_SCHEME_NAME_PBKDF2_HMAC_SHA512;
     }
 
     /**
@@ -111,6 +109,6 @@ public class PBKDF2PasswordStorageScheme
      * @return The encoded password string, including the scheme name in curly braces.
      */
     public static String encodeOffline(byte[] passwordBytes) throws DirectoryException {
-        return new PBKDF2PasswordStorageScheme().encodePasswordOffline(passwordBytes);
+        return new PBKDF2HmacSHA512PasswordStorageScheme().encodePasswordOffline(passwordBytes);
     }
 }

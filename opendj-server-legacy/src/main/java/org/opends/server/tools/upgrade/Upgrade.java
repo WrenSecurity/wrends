@@ -549,6 +549,28 @@ public final class Upgrade
 
     register("5.0.4", removeMatchingJarFiles("forgerock-guava-*.jar"));
 
+    register("5.1.2",
+        addConfigEntry(INFO_UPGRADE_TASK_PBKDF2_HMAC_SHA256_SCHEME_SUMMARY.get(),
+            "dn: cn=PBKDF2-HMAC-SHA256,cn=Password Storage Schemes,cn=config",
+            "changetype: add",
+            "objectClass: top",
+            "objectClass: ds-cfg-password-storage-scheme",
+            "objectClass: ds-cfg-pbkdf2-hmac-sha256-password-storage-scheme",
+            "cn: PBKDF2-HMAC-SHA256",
+            "ds-cfg-java-class: org.opends.server.extensions.PBKDF2HmacSHA256PasswordStorageScheme",
+            "ds-cfg-enabled: true"));
+
+    register("5.1.2",
+        addConfigEntry(INFO_UPGRADE_TASK_PBKDF2_HMAC_SHA512_SCHEME_SUMMARY.get(),
+            "dn: cn=PBKDF2-HMAC-SHA512,cn=Password Storage Schemes,cn=config",
+            "changetype: add",
+            "objectClass: top",
+            "objectClass: ds-cfg-password-storage-scheme",
+            "objectClass: ds-cfg-pbkdf2-hmac-sha512-password-storage-scheme",
+            "cn: PBKDF2-HMAC-SHA512",
+            "ds-cfg-java-class: org.opends.server.extensions.PBKDF2HmacSHA512PasswordStorageScheme",
+            "ds-cfg-enabled: true"));
+
     /* All upgrades will refresh the server configuration schema and generate a new upgrade folder. */
     registerLast(
         copySchemaFile("02-config.ldif"),

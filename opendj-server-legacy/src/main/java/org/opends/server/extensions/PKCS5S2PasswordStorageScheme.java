@@ -87,7 +87,7 @@ public class PKCS5S2PasswordStorageScheme
     {
       random = SecureRandom.getInstance(SECURE_PRNG_SHA1);
       // Just try to verify if the algorithm is supported
-      SecretKeyFactory.getInstance(MESSAGE_DIGEST_ALGORITHM_PBKDF2);
+      SecretKeyFactory.getInstance(SECRET_KEY_FACTORY_ALGORITHM_PBKDF2);
     }
     catch (NoSuchAlgorithmException e)
     {
@@ -265,7 +265,7 @@ public class PKCS5S2PasswordStorageScheme
     final char[] plaintextChars = plaintext.toString().toCharArray();
     try
     {
-      final SecretKeyFactory factory = SecretKeyFactory.getInstance(MESSAGE_DIGEST_ALGORITHM_PBKDF2);
+      final SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRET_KEY_FACTORY_ALGORITHM_PBKDF2);
       KeySpec spec = new PBEKeySpec(plaintextChars, saltBytes, iterations, SHA1_LENGTH * 8);
       return factory.generateSecret(spec).getEncoded();
     }

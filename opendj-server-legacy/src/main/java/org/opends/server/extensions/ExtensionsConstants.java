@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2008 Sun Microsystems, Inc.
  * Portions copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.extensions;
 
@@ -81,6 +82,22 @@ public class ExtensionsConstants
   public static final String AUTH_PASSWORD_SCHEME_NAME_PKCS5S2 = "PKCS5S2";
 
 
+
+  /**
+   * The authentication password scheme name for use with passwords encoded in a
+   * PBKDF2-HMAC-SHA256 representation.
+   */
+  public static final String AUTH_PASSWORD_SCHEME_NAME_PBKDF2_HMAC_SHA256 = "PBKDF2-HMAC-SHA256";
+
+
+
+  /**
+   * The authentication password scheme name for use with passwords encoded in a
+   * PBKDF2-HMAC-SHA512 representation.
+   */
+  public static final String AUTH_PASSWORD_SCHEME_NAME_PBKDF2_HMAC_SHA512 = "PBKDF2-HMAC-SHA512";
+
+
   /**
    * The name of the message digest algorithm that should be used to generate
    * MD5 hashes.
@@ -122,11 +139,29 @@ public class ExtensionsConstants
 
 
   /**
-   * The name of the message digest algorithm that should be used to generate
-   * PBKDF2 hashes.
+   * The name of the secret key factory algorithm that should be used to
+   * generate PBKDF2-HMAC-SHA1 hashes.
    */
-  public static final String MESSAGE_DIGEST_ALGORITHM_PBKDF2 =
+  public static final String SECRET_KEY_FACTORY_ALGORITHM_PBKDF2 =
        "PBKDF2WithHmacSHA1";
+
+
+
+  /**
+   * The name of the secret key factory algorithm that should be used to
+   * generate PBKDF2-HMAC-SHA256 hashes.
+   */
+  public static final String SECRET_KEY_FACTORY_ALGORITHM_PBKDF2_SHA256 =
+       "PBKDF2WithHmacSHA256";
+
+
+
+  /**
+   * The name of the secret key factory algorithm that should be used to
+   * generate PBKDF2-HMAC-SHA512 hashes.
+   */
+  public static final String SECRET_KEY_FACTORY_ALGORITHM_PBKDF2_SHA512 =
+       "PBKDF2WithHmacSHA512";
 
 
 
@@ -334,6 +369,22 @@ public class ExtensionsConstants
    * a PKCS5S2 representation.
    */
   public static final String STORAGE_SCHEME_NAME_PKCS5S2 = "PKCS5S2";
+
+
+
+  /**
+   * The password storage scheme name that will be used for passwords stored in
+   * a PBKDF2-HMAC-SHA256 representation.
+   */
+  public static final String STORAGE_SCHEME_NAME_PBKDF2_HMAC_SHA256 = "PBKDF2-HMAC-SHA256";
+
+
+
+  /**
+   * The password storage scheme name that will be used for passwords stored in
+   * a PBKDF2-HMAC-SHA512 representation.
+   */
+  public static final String STORAGE_SCHEME_NAME_PBKDF2_HMAC_SHA512 = "PBKDF2-HMAC-SHA512";
 
 
 
