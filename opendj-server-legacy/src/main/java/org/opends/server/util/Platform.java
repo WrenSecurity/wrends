@@ -13,7 +13,7 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
- * Portions Copyright 2025 Wren Security.
+ * Portions Copyright 2025-2026 Wren Security.
  */
 
 package org.opends.server.util;
@@ -36,6 +36,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -43,6 +46,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.IPAddress;
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.util.Reject;
 
@@ -193,7 +197,7 @@ public final class Platform
 
     private static final KeyStore generateSelfSignedCertificate(KeyStore ks,
         String ksType, String ksPath, KeyType keyType, String alias, char[] pwd, String dn,
-        int validity) throws KeyStoreException
+        String hostName, int validity) throws KeyStoreException
     {
       try
       {
@@ -212,7 +216,7 @@ public final class Platform
         PrivateKey privateKey = keyPair.getPrivate();
         X500Name subject = new X500Name(dn);
         Certificate[] certificateChain = new Certificate[] {
-          generateSelfCertificate(keyPair, keyType, subject, validity)
+          generateSelfCertificate(keyPair, keyType, subject, hostName, validity)
         };
         ks.setKeyEntry(alias, privateKey, pwd, certificateChain);
         try (FileOutputStream fileOutStream = new FileOutputStream(ksPath)) {
@@ -233,7 +237,8 @@ public final class Platform
         return generator.generateKeyPair();
     }
 
-    private static Certificate generateSelfCertificate(KeyPair keyPair, KeyType keyType, X500Name subject, int days) throws Exception
+    private static Certificate generateSelfCertificate(KeyPair keyPair, KeyType keyType, X500Name subject,
+        String hostName, int days) throws Exception
     {
       BigInteger serial = BigIntegers.createRandomBigInteger(64, new SecureRandom());
       Instant now = Instant.now();
@@ -243,6 +248,10 @@ public final class Platform
       JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
               subject, serial, notBeforeDate, notAfterDate, subject, keyPair.getPublic()
       );
+      if (hostName != null && !hostName.isEmpty()) {
+        builder.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(
+            new GeneralName(IPAddress.isValid(hostName) ? GeneralName.iPAddress : GeneralName.dNSName, hostName)));
+      }
       ContentSigner signer = new JcaContentSignerBuilder(keyType.signatureAlgorithm)
               .setProvider(BouncyCastleProvider.PROVIDER_NAME)
               .build(keyPair.getPrivate());
@@ -348,11 +357,11 @@ public final class Platform
    * @param ks
    *          The keystore to save the certificate in. May be null if it does
    *          not exist.
-   * @param keyType
+   * @param ksType
    *          The keystore type to use if the keystore is created.
    * @param ksPath
    *          The path to the keystore if the keystore is created.
-   * @param ksType
+   * @param keyType
    *          Specify the key size, key algorithm and signature algorithms used.
    * @param alias
    *          The alias to store the certificate under.
@@ -360,16 +369,19 @@ public final class Platform
    *          The password to us in saving the certificate.
    * @param dn
    *          The dn string used as the certificate subject.
+   * @param hostName
+   *          The host name to add to the subjectAltName extension, either a DNS name or an IP address
+   *          literal. May be null to generate a certificate without that extension.
    * @param validity
    *          The validity of the certificate in days.
    * @throws KeyStoreException
    *           If the self-signed certificate cannot be generated.
    */
   public static void generateSelfSignedCertificate(KeyStore ks, String ksType,
-      String ksPath, KeyType keyType, String alias, char[] pwd, String dn, int validity)
+      String ksPath, KeyType keyType, String alias, char[] pwd, String dn, String hostName, int validity)
       throws KeyStoreException
   {
-    PlatformIMPL.generateSelfSignedCertificate(ks, ksType, ksPath, keyType, alias, pwd, dn, validity);
+    PlatformIMPL.generateSelfSignedCertificate(ks, ksType, ksPath, keyType, alias, pwd, dn, hostName, validity);
   }
 
   /**

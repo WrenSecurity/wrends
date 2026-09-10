@@ -13,6 +13,7 @@
  *
  * Copyright 2007-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.backends;
 
@@ -30,7 +31,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -43,7 +43,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 
-import javax.naming.ldap.Rdn;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
@@ -930,10 +929,13 @@ public class TrustStoreBackend extends LocalBackend<TrustStoreBackendCfg>
         try
         {
           final KeyType keyType = KeyType.getTypeOrDefault(certAlias);
+          final String hostName = SetupUtils.getHostNameForCertificate(DirectoryServer.getServerRoot());
+          final String subjectDn = CertificateManager.getSubjectDn(hostName, "Wren:DS " + keyType + " Certificate");
           certificateManager.generateSelfSignedCertificate(
              keyType,
              certAlias,
-             getADSCertificateSubjectDN(keyType),
+             subjectDn,
+             hostName,
              getADSCertificateValidity());
         }
         catch (Exception e)
@@ -1058,18 +1060,6 @@ public class TrustStoreBackend extends LocalBackend<TrustStoreBackendCfg>
   }
 
   /**
-   * Returns the Subject DN to be used to generate the ADS certificate.
-   * @return The Subject DN to be used to generate the ADS certificate.
-   * @throws java.net.UnknownHostException If the server host name could not be
-   *                                       determined.
-   */
-  private static String getADSCertificateSubjectDN(KeyType keyType) throws UnknownHostException
-  {
-    final String hostName = SetupUtils.getHostNameForCertificate(DirectoryServer.getServerRoot());
-    return "cn=" + Rdn.escapeValue(hostName) + ",O=OpenDJ " + keyType + " Certificate";
-  }
-
-  /**
    * Create a randomly generated password for a certificate keystore.
    * @return A randomly generated password for a certificate keystore.
    */
@@ -1176,8 +1166,9 @@ public class TrustStoreBackend extends LocalBackend<TrustStoreBackendCfg>
     try
     {
       final KeyType keyType = KeyType.getTypeOrDefault(certAlias);
-      certificateManager.generateSelfSignedCertificate(keyType, certAlias, getADSCertificateSubjectDN(keyType),
-          getADSCertificateValidity());
+      final String hostName = SetupUtils.getHostNameForCertificate(DirectoryServer.getServerRoot());
+      final String subjectDn = CertificateManager.getSubjectDn(hostName, "Wren:DS " + keyType + " Certificate");
+      certificateManager.generateSelfSignedCertificate(keyType, certAlias, subjectDn, hostName, getADSCertificateValidity());
     }
     catch (Exception e)
     {

@@ -13,6 +13,7 @@
  *
  * Copyright 2008-2010 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.util;
 
@@ -23,6 +24,7 @@ import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import javax.naming.ldap.Rdn;
 import org.forgerock.i18n.LocalizableMessage;
 import static org.opends.messages.UtilityMessages.*;
 import org.opends.server.util.Platform.KeyType;
@@ -263,6 +265,20 @@ public final class CertificateManager {
 
 
   /**
+   * Returns the subject DN to use for a self-signed certificate.
+   *
+   * @param name The name the certificate is generated for.
+   * @param organization The value of the organization attribute of the subject DN.
+   * @return The subject DN to use for the certificate.
+   */
+  public static String getSubjectDn(String name, String organization) {
+    int CN_MAX_LENGTH = 64;
+    String cn = name.length() <= CN_MAX_LENGTH ? name : name.substring(0, CN_MAX_LENGTH);
+    return "cn=" + Rdn.escapeValue(cn) + ",O=" + Rdn.escapeValue(organization);
+  }
+
+
+  /**
    * Generates a self-signed certificate using the provided information.
    *
    * @param  keyType    Specifies the key size, key and signature algorithms.
@@ -271,6 +287,9 @@ public final class CertificateManager {
    *                    be "server-cert".  It must not be {@code null} or empty.
    * @param  subjectDN  The subject DN to use for the certificate.  It must not
    *                    be {@code null} or empty.
+   * @param  hostName   The host name to add to the subjectAltName extension, either a DNS name or an
+   *                    IP address literal. May be {@code null} to generate a certificate without
+   *                    that extension.
    * @param  validity   The length of time in days that the certificate should
    *                    be valid, starting from the time the certificate is
    *                    generated.  It must be a positive integer value.
@@ -281,8 +300,7 @@ public final class CertificateManager {
    *                                 in the keystore.
    */
   public void generateSelfSignedCertificate(KeyType keyType, String alias, String subjectDN,
-                                            int validity)
-  throws KeyStoreException, IllegalArgumentException {
+        String hostName, int validity) throws KeyStoreException, IllegalArgumentException {
     ensureValid(alias, CERT_ALIAS_MSG);
     ensureValid(subjectDN, SUBJECT_DN_MSG);
     if (validity <= 0) {
@@ -295,7 +313,7 @@ public final class CertificateManager {
     }
     keyStore = null;
     Platform.generateSelfSignedCertificate(getKeyStore(), keyStoreType,
-        keyStorePath, keyType, alias, password, subjectDN, validity);
+        keyStorePath, keyType, alias, password, subjectDN, hostName, validity);
   }
 
 

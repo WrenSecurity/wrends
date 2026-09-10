@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.quicksetup.installer;
 
@@ -52,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.naming.ldap.Rdn;
 import javax.swing.JPanel;
 
 import org.forgerock.i18n.LocalizableMessage;
@@ -1338,7 +1338,9 @@ public class Installer extends GuiApplication
         for (String alias : sec.getAliasesToUse())
         {
           final KeyType keyType = KeyType.getTypeOrDefault(alias);
-          certManager.generateSelfSignedCertificate(keyType, alias, getSelfSignedCertificateSubjectDN(keyType),
+          final String subjectDn = CertificateManager.getSubjectDn(getUserData().getHostName(),
+              "Wren:DS " + keyType + " Self-Signed Certificate");
+          certManager.generateSelfSignedCertificate(keyType, alias, subjectDn, getUserData().getHostName(),
               getSelfSignedCertificateValidity());
           SetupUtils.exportCertificate(certManager, alias, getTemporaryCertificatePath());
           configureTrustStore(CertificateManager.KEY_STORE_TYPE_JKS, alias, pwd);
@@ -4019,16 +4021,6 @@ public class Installer extends GuiApplication
   private int getSelfSignedCertificateValidity()
   {
     return 20 * 365;
-  }
-
-  /**
-   * Returns the Subject DN to be used to generate the self-signed certificate.
-   *
-   * @return the Subject DN to be used to generate the self-signed certificate.
-   */
-  private String getSelfSignedCertificateSubjectDN(KeyType keyType)
-  {
-    return "cn=" + Rdn.escapeValue(getUserData().getHostName()) + ",O=OpenDJ " + keyType + " Self-Signed Certificate";
   }
 
   /**
