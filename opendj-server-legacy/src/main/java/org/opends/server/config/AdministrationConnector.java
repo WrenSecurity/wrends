@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.config;
 
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.naming.ldap.Rdn;
 
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
@@ -515,9 +515,9 @@ public final class AdministrationConnector implements
       for (String certAlias : certAliases)
       {
         final KeyType keyType = KeyType.getTypeOrDefault(certAlias);
-        final String subjectDN =
-            "cn=" + Rdn.escapeValue(hostName) + ",O=" + FRIENDLY_NAME + " " + keyType + " Self-Signed Certificate";
-        certManager.generateSelfSignedCertificate(keyType, certAlias, subjectDN, ADMIN_CERT_VALIDITY);
+        final String subjectDn = CertificateManager.getSubjectDn(hostName,
+            FRIENDLY_NAME + " " + keyType + " Self-Signed Certificate");
+        certManager.generateSelfSignedCertificate(keyType, certAlias, subjectDn, hostName, ADMIN_CERT_VALIDITY);
 
         SetupUtils.exportCertificate(certManager, certAlias, tempCertPath);
 
