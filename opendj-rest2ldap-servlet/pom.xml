@@ -66,10 +66,10 @@
                     <webResources>
                         <resource>
                             <targetPath>WEB-INF/legal-notices</targetPath>
-                            <directory>../legal-notices</directory>
+                            <directory>../legal</directory>
 
                             <includes>
-                                <include>CDDLv1_0.txt</include>
+                                <include>CDDLv1.0.txt</include>
                             </includes>
                         </resource>
 

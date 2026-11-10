@@ -35,7 +35,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>${project.parent.parent.basedir}/legal-notices</directory>
+      <directory>${project.parent.parent.basedir}/legal</directory>
       <outputDirectory>legal-notices</outputDirectory>
       <directoryMode>0755</directoryMode>
       <fileMode>0644</fileMode>

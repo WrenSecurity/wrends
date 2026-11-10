@@ -208,10 +208,10 @@
                             <directory>${project.build.directory}/opendj-jars</directory>
                         </resource>
 
-                        <!-- Include CDDLv1_0.txt -->
+                        <!-- Include CDDLv1.0.txt -->
                         <resource>
                             <targetPath>WEB-INF/legal-notices</targetPath>
-                            <directory>${basedir}/../legal-notices</directory>
+                            <directory>${basedir}/../legal</directory>
                             <excludes>
                                 <exclude>README.txt</exclude>
                             </excludes>
