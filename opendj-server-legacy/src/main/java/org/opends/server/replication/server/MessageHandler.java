@@ -13,7 +13,7 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
- * Portions copyright 2025 Wren Security
+ * Portions copyright 2025-2026 Wren Security
  */
 package org.opends.server.replication.server;
 
@@ -194,6 +194,20 @@ class MessageHandler extends MonitorProvider<MonitorProviderCfg>
   int getInCount()
   {
     return inCount;
+  }
+
+  /**
+   * Returns whether the consumer is following the producer, i.e. it is served from the regular
+   * message queue and not from the changelog DB.
+   *
+   * @return {@code true} if the consumer is following the producer
+   */
+  boolean isFollowing()
+  {
+    synchronized (msgQueue)
+    {
+      return following;
+    }
   }
 
   @Override
