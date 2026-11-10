@@ -43,14 +43,14 @@
             </includes>
         </fileSet>
 
-        <!-- Include CDDLv1_0.txt -->
+        <!-- Include CDDLv1.0.txt -->
         <fileSet>
-            <directory>${basedir}/../legal-notices</directory>
+            <directory>${basedir}/../legal</directory>
             <outputDirectory>legal-notices</outputDirectory>
             <directoryMode>0755</directoryMode>
             <fileMode>0644</fileMode>
             <includes>
-                <include>CDDLv1_0.txt</include>
+                <include>CDDLv1.0.txt</include>
             </includes>
         </fileSet>
 

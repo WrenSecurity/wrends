@@ -41,12 +41,12 @@
       <fileMode>0644</fileMode>
     </fileSet>
     <fileSet>
-      <directory>${project.basedir}/../legal-notices</directory>
+      <directory>${project.basedir}/../legal</directory>
       <outputDirectory>legal-notices/${artifactId}</outputDirectory>
       <directoryMode>0755</directoryMode>
       <fileMode>0644</fileMode>
       <includes>
-        <include>CDDLv1_0.txt</include>
+        <include>CDDLv1.0.txt</include>
       </includes>
     </fileSet>
     <fileSet>
