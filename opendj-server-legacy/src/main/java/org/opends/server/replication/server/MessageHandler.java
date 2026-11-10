@@ -384,9 +384,22 @@ class MessageHandler extends MonitorProvider<MonitorProviderCfg>
     {
       while (cursor.next() && (isLateQueueBelowThreshold() || !lateQueue.last().contributesToDomainState()))
       {
-          lateQueue.add(cursor.getRecord());
+          lateQueue.add(toDestinationMsg(cursor.getRecord()));
       }
     }
+  }
+
+  /**
+   * Returns the version of an update message read from the changelog DB that must be sent to the
+   * consumer. The changelog DB holds the original messages, which may differ from the ones that
+   * {@link ReplicationServerDomain} posts to the regular message queue of this handler.
+   *
+   * @param updateMsg the update message read from the changelog DB
+   * @return the update message to send to the consumer
+   */
+  protected UpdateMsg toDestinationMsg(UpdateMsg updateMsg)
+  {
+    return updateMsg;
   }
 
   private boolean isLateQueueBelowThreshold()
