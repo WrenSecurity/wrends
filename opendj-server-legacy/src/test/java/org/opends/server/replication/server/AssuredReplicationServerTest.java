@@ -325,8 +325,48 @@ public class AssuredReplicationServerTest
       assertTrue(fakeReplicationDomain.isConnected());
       assertEquals(fakeReplicationDomain.getReplicationServer().getPort(), getRsPort(rsId));
     });
+    waitForHandlerFollowing(rsId, config.getServerId(), false);
 
     return fakeReplicationDomain;
+  }
+
+  private ReplicationServer getRs(int rsId)
+  {
+    switch (rsId)
+    {
+    case RS1_ID:
+      return rs1;
+    case RS2_ID:
+      return rs2;
+    case RS3_ID:
+      return rs3;
+    case RS4_ID:
+      return rs4;
+    default:
+      throw new IllegalArgumentException("Unknown RS id: " + rsId);
+    }
+  }
+
+  /**
+   * Waits until the handler of the given peer server on the given real RS is following
+   * (consuming the regular message queue). Until then the handler is served updates from the
+   * changelog DB, which holds the original messages instead of the ones prepared for the peer
+   * (e.g. not assured copies of assured updates), so sending an update too early makes the peer
+   * receive unexpected assured parameters.
+   */
+  private void waitForHandlerFollowing(int rsId, int peerServerId, boolean peerIsRs) throws Exception
+  {
+    final ReplicationServer rs = getRs(rsId);
+    TestCaseUtils.repeatUntilSuccess(() -> {
+      final ReplicationServerDomain domain = rs.getReplicationServerDomain(DN.valueOf(TEST_ROOT_DN_STRING));
+      assertNotNull(domain, "RS " + rsId + " has no domain yet");
+      final MessageHandler handler = peerIsRs
+          ? domain.getConnectedRSs().get(peerServerId)
+          : domain.getConnectedDSs().get(peerServerId);
+      assertNotNull(handler, "RS " + rsId + " has no handler for server " + peerServerId + " yet");
+      assertTrue(handler.isFollowing(),
+          "handler for server " + peerServerId + " on RS " + rsId + " is not following");
+    });
   }
 
   private DomainFakeCfg newDomainConfig(int serverId, int groupId, int rsId,
@@ -389,6 +429,7 @@ public class AssuredReplicationServerTest
 
       // Start wished scenario
       fakeReplicationServer.start(scenario);
+      waitForHandlerFollowing(rsId, serverId, true);
 
       return fakeReplicationServer;
   }

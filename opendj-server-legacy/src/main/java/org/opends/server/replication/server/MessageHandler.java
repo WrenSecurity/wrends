@@ -13,7 +13,7 @@
  *
  * Copyright 2009-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
- * Portions copyright 2025 Wren Security
+ * Portions copyright 2025-2026 Wren Security
  */
 package org.opends.server.replication.server;
 
@@ -196,6 +196,20 @@ class MessageHandler extends MonitorProvider<MonitorProviderCfg>
     return inCount;
   }
 
+  /**
+   * Returns whether the consumer is following the producer, i.e. it is served from the regular
+   * message queue and not from the changelog DB.
+   *
+   * @return {@code true} if the consumer is following the producer
+   */
+  boolean isFollowing()
+  {
+    synchronized (msgQueue)
+    {
+      return following;
+    }
+  }
+
   @Override
   public MonitorData getMonitorData()
   {
@@ -370,9 +384,22 @@ class MessageHandler extends MonitorProvider<MonitorProviderCfg>
     {
       while (cursor.next() && (isLateQueueBelowThreshold() || !lateQueue.last().contributesToDomainState()))
       {
-          lateQueue.add(cursor.getRecord());
+          lateQueue.add(toDestinationMsg(cursor.getRecord()));
       }
     }
+  }
+
+  /**
+   * Returns the version of an update message read from the changelog DB that must be sent to the
+   * consumer. The changelog DB holds the original messages, which may differ from the ones that
+   * {@link ReplicationServerDomain} posts to the regular message queue of this handler.
+   *
+   * @param updateMsg the update message read from the changelog DB
+   * @return the update message to send to the consumer
+   */
+  protected UpdateMsg toDestinationMsg(UpdateMsg updateMsg)
+  {
+    return updateMsg;
   }
 
   private boolean isLateQueueBelowThreshold()
