@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [11, 17]
+        java: [17, 21]
     name: "Java ${{ matrix.java }} build"
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +24,12 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
       - name: Run the Maven verify phase
         run: mvn -B -P verify -DexcludedGroups= verify -Dclirr.skip
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ runner.os }}-${{ matrix.java }}
+          path: opendj-server-legacy/target/unit-tests/package-instance/logs/
       - name: Test setup
         run: |
           opendj-server-legacy/target/package/wrends/setup \
