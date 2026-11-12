@@ -315,17 +315,27 @@ public class AssuredReplicationServerTest
     FakeReplicationDomain fakeReplicationDomain =
         new FakeReplicationDomain(config, generationId, scenario, serverState);
 
-    fakeReplicationDomain.startPublishService();
-    if (startListen)
+    try
     {
-      fakeReplicationDomain.startListenService();
-    }
+      fakeReplicationDomain.startPublishService();
+      if (startListen)
+      {
+        fakeReplicationDomain.startListenService();
+      }
 
-    TestCaseUtils.repeatUntilSuccess(() -> {
-      assertTrue(fakeReplicationDomain.isConnected());
-      assertEquals(fakeReplicationDomain.getReplicationServer().getPort(), getRsPort(rsId));
-    });
-    waitForHandlerFollowing(rsId, config.getServerId(), false);
+      TestCaseUtils.repeatUntilSuccess(() -> {
+        assertTrue(fakeReplicationDomain.isConnected());
+        assertEquals(fakeReplicationDomain.getReplicationServer().getPort(), getRsPort(rsId));
+      });
+      waitForHandlerFollowing(rsId, config.getServerId(), false);
+    }
+    catch (Exception | AssertionError e)
+    {
+      // The domain is not returned to the caller, so it would never be disabled by endTest()
+      // and would keep reconnecting to replication servers started by subsequent tests.
+      fakeReplicationDomain.disableService();
+      throw e;
+    }
 
     return fakeReplicationDomain;
   }
