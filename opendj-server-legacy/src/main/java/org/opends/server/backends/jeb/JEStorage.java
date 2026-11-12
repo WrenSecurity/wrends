@@ -12,7 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2015-2016 ForgeRock AS.
- * Portions Copyright 2022 Wren Security
+ * Portions Copyright 2022-2026 Wren Security
  */
 package org.opends.server.backends.jeb;
 
@@ -701,7 +701,6 @@ public final class JEStorage implements Storage, Backupable, ConfigurationChange
     this.serverContext = serverContext;
     backendDirectory = getBackendDirectory(cfg);
     config = cfg;
-    cfg.addJEChangeListener(this);
   }
 
   private Database getOrOpenTree0(Map<TreeName, Database> trees, TreeName treeName)
@@ -821,6 +820,7 @@ public final class JEStorage implements Storage, Backupable, ConfigurationChange
       return;
     }
     buildConfiguration(accessMode, false);
+    config.addJEChangeListener(this);
     open0();
   }
 

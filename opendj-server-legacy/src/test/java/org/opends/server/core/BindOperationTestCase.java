@@ -1526,7 +1526,9 @@ public class BindOperationTestCase
         };
       assertEquals(LDAPDelete.run(nullPrintStream(), System.err, args), 0);
 
-      assertNull(DirectoryServer.getAuthenticatedUsers().get(userDN));
+      // Post-response plugin updates the authenticated users map asynchronously
+      TestCaseUtils.repeatUntilSuccess(() ->
+          assertNull(DirectoryServer.getAuthenticatedUsers().get(userDN)));
     }
     finally
     {
@@ -1591,8 +1593,11 @@ public class BindOperationTestCase
       assertEquals(LDAPModify.run(nullPrintStream(), System.err, args), 0);
 
       DN newUserDN = DN.valueOf("uid=test,ou=users,dc=example,dc=com");
-      assertNotNull(DirectoryServer.getAuthenticatedUsers().get(newUserDN));
-      assertEquals(DirectoryServer.getAuthenticatedUsers().get(newUserDN).size(), 1);
+      // Post-response plugin updates the authenticated users map asynchronously
+      TestCaseUtils.repeatUntilSuccess(() -> {
+        assertNotNull(DirectoryServer.getAuthenticatedUsers().get(newUserDN));
+        assertEquals(DirectoryServer.getAuthenticatedUsers().get(newUserDN).size(), 1);
+      });
     }
     finally
     {

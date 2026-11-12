@@ -14,7 +14,7 @@
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
  * Portions Copyright 2013 Manuel Gaupp
- * Portions Copyright 2023 Wren Security
+ * Portions Copyright 2023-2026 Wren Security
  */
 package org.opends.server;
 
@@ -66,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
@@ -93,6 +94,7 @@ import org.opends.server.core.BackendConfigManager;
 import org.opends.server.core.DeleteOperation;
 import org.opends.server.core.DirectoryServer;
 import org.opends.server.core.ServerContext;
+import org.opends.server.core.SubentryManager;
 import org.opends.server.loggers.AccessLogPublisher;
 import org.opends.server.loggers.AccessLogger;
 import org.opends.server.loggers.DebugLogger;
@@ -112,11 +114,12 @@ import org.opends.server.types.Entry;
 import org.opends.server.types.FilePermission;
 import org.opends.server.types.InitializationException;
 import org.opends.server.types.LDIFImportConfig;
-import org.forgerock.opendj.ldap.schema.Schema;
 import org.forgerock.opendj.server.embedded.EmbeddedDirectoryServer;
 import org.opends.server.util.BuildVersion;
 import org.opends.server.util.DynamicConstants;
 import org.opends.server.util.LDIFReader;
+import org.opends.server.util.TestTimer;
+import org.opends.server.util.TestTimer.CallableVoid;
 import org.testng.Assert;
 
 import com.forgerock.opendj.util.OperatingSystem;
@@ -218,12 +221,6 @@ public final class TestCaseUtils {
    */
   public static boolean SERVER_STARTED;
 
-  /**
-   * This is used to store the schema as it was before starting the fake server
-   * (for example, it could have been the real schema) so test tearDown can set it back.
-   */
-  private static Schema schemaBeforeStartingFakeServer;
-
   /** Incremented by one each time the server has restarted. */
   private static int serverRestarts;
 
@@ -238,22 +235,6 @@ public final class TestCaseUtils {
 
   /** The host name of the server used in the tests. */
   private static String hostname;
-
-  /**
-   * Setup in-memory versions of everything needed to run unit tests with the
-   * {@link DirectoryServer} class.
-   * <p>
-   * This method is trying hard to provide sensible defaults and core data you
-   * would expect from a normal install, including AttributeTypes, etc.
-   *
-   * @see #shutdownFakeServer() Matching method that must be called in the test
-   *      tear down.
-   */
-  public static void startFakeServer() throws Exception
-  {
-    schemaBeforeStartingFakeServer = DirectoryServer.getInstance().getServerContext().getSchema();
-    DirectoryServer.getInstance().getServerContext().getSchemaHandler().updateSchema(Schema.getDefaultSchema());
-  }
 
   static class TestPaths
   {
@@ -804,18 +785,6 @@ public final class TestCaseUtils {
     }
   }
 
-  /**
-   * Undo all the setup done by #startFakeServer().
-   *
-   * @throws DirectoryException
-   *            If the initial schema contains warning
-   * @see #startFakeServer() Matching method that starts the fake server
-   */
-  public static void shutdownFakeServer() throws DirectoryException
-  {
-    DirectoryServer.getInstance().getServerContext().getSchemaHandler().updateSchema(schemaBeforeStartingFakeServer);
-  }
-
   /** Returns the server context. */
   public static ServerContext getServerContext()
   {
@@ -907,6 +876,12 @@ public final class TestCaseUtils {
 
     memoryBackend.clearMemoryBackend();
 
+    // Notify SubentryManager to remove stale subentries from this backend
+    SubentryManager subentryManager = DirectoryServer.getSubentryManager();
+    if (subentryManager != null) {
+        subentryManager.performBackendPostFinalizationProcessing(memoryBackend);
+    }
+
     if (createBaseEntry)
     {
       Entry e = createEntry(baseDN);
@@ -917,13 +892,12 @@ public final class TestCaseUtils {
   /** Clears a memory-based backend. */
   public static void clearMemoryBackend(String backendID) throws Exception
   {
-    MemoryBackend memoryBackend =
-        (MemoryBackend) getServerContext().getBackendConfigManager().getLocalBackendById(backendID);
-    // FIXME JNR I suspect we could call finalizeBackend() here (but also in other
-    // places in this class), because finalizeBackend() calls clearMemoryBackend().
+    BackendConfigManager backendConfigManager = getServerContext().getBackendConfigManager();
+    MemoryBackend memoryBackend = (MemoryBackend) backendConfigManager.getLocalBackendById(backendID);
     if (memoryBackend != null)
     {
-      memoryBackend.clearMemoryBackend();
+      memoryBackend.finalizeBackend();
+      backendConfigManager.deregisterLocalBackend(memoryBackend);
     }
   }
 
@@ -1155,12 +1129,12 @@ public final class TestCaseUtils {
     return paths.unitRoot;
   }
 
-  /** Get the complete path to the OpenDJ archive. */
-  public static File getOpenDJArchivePath()
+  /** Get the complete path to the Wren:DS archive. */
+  public static File getWrenDSArchivePath()
   {
     String qualifier = DynamicConstants.VERSION_QUALIFIER;
     String openDJArchiveName =
-        DynamicConstants.SHORT_NAME.toLowerCase()
+        DynamicConstants.PATH_NAME.toLowerCase()
         + "-"
         + DynamicConstants.VERSION_NUMBER_STRING
         + (qualifier != null && !qualifier.isEmpty() ? "-" + qualifier : "");
@@ -1964,6 +1938,24 @@ public final class TestCaseUtils {
     {
       System.setIn(stdin);
     }
+  }
+
+  /** Get test timer with sensible defaults. */
+  public static TestTimer defaultTestTimer()
+  {
+    return new TestTimer.Builder()
+        .sleepTimes(100, TimeUnit.MILLISECONDS)
+        .maxSleep(10, TimeUnit.SECONDS)
+        .toTimer();
+  }
+
+  /**
+   * Shorthand for {@link TestTimer#repeatUntilSuccess(java.util.concurrent.Callable)}
+   * using {@link #defaultTestTimer()}.
+   */
+  public static void repeatUntilSuccess(CallableVoid callable) throws Exception, InterruptedException
+  {
+    defaultTestTimer().repeatUntilSuccess(callable);
   }
 
 }

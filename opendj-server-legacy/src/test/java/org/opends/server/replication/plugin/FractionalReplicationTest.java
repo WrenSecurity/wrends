@@ -366,8 +366,10 @@ public class FractionalReplicationTest extends ReplicationTestCase {
     DN baseDN = DN.valueOf(firstBackend ? TEST_ROOT_DN_STRING : TEST2_ROOT_DN_STRING);
     replicationDomain = new FakeReplicationDomain(baseDN, DS2_ID, replicationServers, 1000, generationId);
 
-    assertTrue(replicationDomain.isConnected());
-    assertEquals(replicationDomain.getReplicationServer().getPort(), replServerPort);
+    TestCaseUtils.repeatUntilSuccess(() -> {
+      assertTrue(replicationDomain.isConnected());
+      assertEquals(replicationDomain.getReplicationServer().getPort(), replServerPort);
+    });
   }
 
   private void initTest() throws Exception
@@ -966,7 +968,7 @@ public class FractionalReplicationTest extends ReplicationTestCase {
         break;
       }
       Thread.sleep(1000);
-      timeout--;
+      timeout -= 1000;
     }
     assertTrue(synchroAttrFound, "Modify operation not replayed");
     return entry;

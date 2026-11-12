@@ -18,6 +18,7 @@ package org.opends.server.replication.server.changelog.file;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -555,7 +556,7 @@ public class ChangeNumberIndexerTest extends DirectoryServerTestCase
         when(domainDB.getCursorFrom(eq(baseDN), any(ServerState.class), eq(options))).thenReturn(domainDBCursor);
       }
       domainDBCursor.addReplicaDB(serverId, null);
-      when(domainDB.getCursorFrom(eq(baseDN), eq(serverId), any(CSN.class), eq(options))).thenReturn(replicaDBCursor);
+      when(domainDB.getCursorFrom(eq(baseDN), eq(serverId), nullable(CSN.class), eq(options))).thenReturn(replicaDBCursor);
     }
 
     when(domainDB.getDomainNewestCSNs(baseDN)).thenReturn(getDomainNewestCSNs(baseDN));

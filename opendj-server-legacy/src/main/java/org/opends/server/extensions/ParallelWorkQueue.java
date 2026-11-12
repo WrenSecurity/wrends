@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.extensions;
 
@@ -237,11 +238,10 @@ public class ParallelWorkQueue
    *
    * @param  workerThread  The worker thread that is requesting the operation.
    *
-   * @return  The next operation that should be processed, or <CODE>null</CODE>
-   *          if the server is shutting down and no more operations will be
-   *          processed.
+   * @return  Flag indicating the worker should continue polling for work or if
+   *          the server is shutting down and no more operations will be processed.
    */
-  public Operation nextOperation(ParallelWorkerThread workerThread)
+  public boolean nextOperation(ParallelWorkerThread workerThread)
   {
     return retryNextOperation(workerThread, 0);
   }
@@ -249,20 +249,18 @@ public class ParallelWorkQueue
   /**
    * Retrieves the next operation that should be processed by one of the worker
    * threads following a previous failure attempt.  A maximum of five
-   * consecutive failures will be allowed before returning <CODE>null</CODE>,
-   * which will cause the associated thread to exit.
+   * consecutive failures will be allowed before abandoning the operation.
    *
    * @param  workerThread  The worker thread that is requesting the operation.
    * @param  numFailures   The number of consecutive failures that the worker
    *                       thread has experienced so far.  If this gets too
-   *                       high, then this method will return <CODE>null</CODE>
+   *                       high, then this method will return <CODE>false</CODE>
    *                       rather than retrying.
    *
-   * @return  The next operation that should be processed, or <CODE>null</CODE>
-   *          if the server is shutting down and no more operations will be
-   *          processed, or if there have been too many consecutive failures.
+   * @return  Flag indicating the worker should continue polling for work, or if
+   *          the server is shutting down and no more operations will be processed.
    */
-  private Operation retryNextOperation(
+  private boolean retryNextOperation(
                                        ParallelWorkerThread workerThread,
                                        int numFailures)
   {
@@ -289,7 +287,7 @@ public class ParallelWorkQueue
             }
 
             workerThread.setStoppedByReducedThreadNumber();
-            return null;
+            return false;
           }
         }
         catch (Exception e)
@@ -299,15 +297,16 @@ public class ParallelWorkQueue
       }
     }
 
-    if (shutdownRequested || numFailures > MAX_RETRY_COUNT)
+    if (shutdownRequested)
     {
-      if (numFailures > MAX_RETRY_COUNT)
-      {
-        logger.error(ERR_CONFIG_WORK_QUEUE_TOO_MANY_FAILURES, Thread
-            .currentThread().getName(), numFailures, MAX_RETRY_COUNT);
-      }
+      return false;
+    }
 
-      return null;
+    if (numFailures > MAX_RETRY_COUNT)
+    {
+      logger.error(ERR_CONFIG_WORK_QUEUE_TOO_MANY_FAILURES, Thread
+          .currentThread().getName(), numFailures, MAX_RETRY_COUNT);
+      return true;
     }
 
     try
@@ -324,7 +323,7 @@ public class ParallelWorkQueue
           // we should shutdown, and if not then just check again.
           if (shutdownRequested)
           {
-            return null;
+            return false;
           }
           else if (killThreads)
           {
@@ -346,7 +345,7 @@ public class ParallelWorkQueue
                   }
 
                   workerThread.setStoppedByReducedThreadNumber();
-                  return null;
+                  return false;
                 }
               }
               catch (Exception e)
@@ -358,7 +357,8 @@ public class ParallelWorkQueue
         }
         else
         {
-          return nextOperation;
+          workerThread.assignOperation(nextOperation);
+          return true;
         }
       }
     }
