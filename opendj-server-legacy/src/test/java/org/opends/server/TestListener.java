@@ -13,7 +13,7 @@
  *
  * Copyright 2008 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
- * Portions Copyright 2021 Wren Security.
+ * Portions Copyright 2021-2026 Wren Security.
  */
 package org.opends.server;
 
@@ -39,6 +39,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.testng.IClass;
@@ -183,7 +184,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
     }
   }
 
-  private void writeReportToFile(File reportFile) {
+  private synchronized void writeReportToFile(File reportFile) {
     PrintStream reportStream = null;
     try {
       reportStream = new PrintStream(new FileOutputStream(reportFile));
@@ -719,7 +720,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
   private long maxMemInUse;
   private boolean isFirstTest = true;
 
-  private void outputTestProgress(Object finishedTestObject)
+  private synchronized void outputTestProgress(Object finishedTestObject)
   {
     if (doProgressNone)
     {
@@ -863,9 +864,9 @@ public class TestListener extends TestListenerAdapter implements IReporter {
     return runtime.totalMemory() - runtime.freeMemory();
   }
 
-  private final LinkedHashMap<IClass, TestClassResults> _classResults = new LinkedHashMap<>();
+  private final Map<IClass, TestClassResults> _classResults = new LinkedHashMap<>();
 
-  private TestClassResults getResultsForClass(IClass cls) {
+  private synchronized TestClassResults getResultsForClass(IClass cls) {
     TestClassResults results = _classResults.get(cls);
     if (results == null) {
       results = new TestClassResults(cls);
@@ -889,7 +890,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
     return timingOutput;
   }
 
-  private int countTestMethods() {
+  private synchronized int countTestMethods() {
     int count = 0;
     for (TestClassResults results: _classResults.values()) {
       count += results._methods.size();
@@ -905,7 +906,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
     return count;
   }
 
-  private int countTotalInvocations() {
+  private synchronized int countTotalInvocations() {
     int count = 0;
     for (TestClassResults results: _classResults.values()) {
       count += results._totalInvocations;
@@ -964,7 +965,7 @@ public class TestListener extends TestListenerAdapter implements IReporter {
     return allMethods;
   }
 
-  private List<TestClassResults> getClassesDescendingSortedByDuration() {
+  private synchronized List<TestClassResults> getClassesDescendingSortedByDuration() {
     List<TestClassResults> allClasses = new ArrayList<>(_classResults.values());
     Collections.sort(allClasses, new Comparator<TestClassResults>() {
       @Override

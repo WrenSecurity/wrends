@@ -493,7 +493,11 @@ final class OnDiskMergeImporter {
         final Set<String> expandIndexNames(final EntryContainer entryContainer, final Collection<String> rebuildList)
                 throws InitializationException {
             final Set<String> indexNames = new HashSet<>();
-            for (final String name : rebuildList) {
+            for (String name : rebuildList) {
+                // Map legacy system index name to actual tree name.
+                if ("dn2uri".equalsIgnoreCase(name)) {
+                    name = SuffixContainer.REFERRAL_INDEX_NAME;
+                }
                 // Name could be a (attributeType)((.indexType)|(.matchingRule))
                 // Add a trailing "." to ensure that resulting parts has always at least two parts.
                 final String parts[] = (name + ".*").split("\\.");

@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.assertj.core.api.Assertions;
 import org.forgerock.opendj.ldap.DN;
+import org.forgerock.opendj.ldap.ResultCode;
 import org.opends.server.DirectoryServerTestCase;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.api.ConnectionHandler;
@@ -37,7 +38,6 @@ import org.opends.server.core.ModifyOperationBasis;
 import org.opends.server.types.Attributes;
 import org.opends.server.types.Modification;
 import org.opends.server.util.TestTimer;
-import org.opends.server.util.TestTimer.CallableVoid;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -76,25 +76,20 @@ public abstract class JmxTestCase extends DirectoryServerTestCase
     if (jmxConnectionHandler == null)
     {
       enableJmx();
-      jmxConnectionHandler = getJmxConnectionHandler(handlers);
     }
-    assertNotNull(jmxConnectionHandler);
-    final RmiConnector rmiConnector = jmxConnectionHandler.getRMIConnector();
 
     TestTimer timer = new TestTimer.Builder()
       .maxSleep(20, SECONDS)
       .sleepTimes(200, MILLISECONDS)
       .toTimer();
-    timer.repeatUntilSuccess(new CallableVoid()
-    {
-      @Override
-      public void call() throws Exception
-      {
-        Assertions.assertThat(rmiConnector.jmxRmiConnectorNoClientCertificate).isNotNull();
-        Assertions.assertThat(rmiConnector.jmxRmiConnectorNoClientCertificate.isActive()).isTrue();
-      }
+    return timer.repeatUntilSuccess(() -> {
+      JmxConnectionHandler handler = getJmxConnectionHandler(handlers);
+      Assertions.assertThat(handler).isNotNull();
+      RmiConnector rmiConnector = handler.getRMIConnector();
+      Assertions.assertThat(rmiConnector.jmxRmiConnectorNoClientCertificate).isNotNull();
+      Assertions.assertThat(rmiConnector.jmxRmiConnectorNoClientCertificate.isActive()).isTrue();
+      return handler;
     });
-    return jmxConnectionHandler;
   }
 
   private JmxConnectionHandler getJmxConnectionHandler(List<ConnectionHandler<?>> handlers)
@@ -111,10 +106,19 @@ public abstract class JmxTestCase extends DirectoryServerTestCase
 
   private void enableJmx() throws Exception
   {
-    ModifyOperationBasis op = new ModifyOperationBasis(
-        getRootConnection(), nextOperationID(), nextMessageID(), null,
-        DN.valueOf("cn=JMX Connection Handler,cn=Connection Handlers,cn=config"),
-        newArrayList(new Modification(REPLACE, Attributes.create("ds-cfg-enabled", "true"))));
-    op.run();
+    TestCaseUtils.repeatUntilSuccess(() -> {
+      int port = TestCaseUtils.findFreePort();
+      ModifyOperationBasis op = new ModifyOperationBasis(
+          getRootConnection(), nextOperationID(), nextMessageID(), null,
+          DN.valueOf("cn=JMX Connection Handler,cn=Connection Handlers,cn=config"),
+          newArrayList(
+              new Modification(REPLACE, Attributes.create("ds-cfg-listen-port", String.valueOf(port))),
+              new Modification(REPLACE, Attributes.create("ds-cfg-enabled", "true"))));
+      op.run();
+      Assertions.assertThat(op.getResultCode())
+          .withFailMessage("Failed to enable JMX connection handler: %s - %s",
+              op.getResultCode(), op.getErrorMessage())
+          .isEqualTo(ResultCode.SUCCESS);
+    });
   }
 }

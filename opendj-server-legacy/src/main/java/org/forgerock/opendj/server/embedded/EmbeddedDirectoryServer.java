@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.forgerock.opendj.server.embedded;
 
@@ -58,17 +59,21 @@ import org.opends.server.util.StaticUtils;
  */
 public class EmbeddedDirectoryServer
 {
-  private static final String EMBEDDED_OPEN_DJ_PREFIX = "embeddedOpenDJ";
-  private static final String ARCHIVE_ROOT_DIRECTORY = DynamicConstants.SHORT_NAME.toLowerCase();
+  private static final String EMBEDDED_DS_PREFIX = "embeddedWrenDS";
+  private static final String ARCHIVE_ROOT_DIRECTORY = DynamicConstants.PATH_NAME;
   private static final String QUICKSETUP_ROOT_PROPERTY = "org.opends.quicksetup.Root";
   private static final String QUICKSETUP_INSTANCE_PROPERTY = "org.opends.quicksetup.instance";
 
-  /** List of directories resulting from the OpenDJ archive where all files should be set as executable. */
-  private static final List<String> EXECUTABLE_DJ_DIRECTORIES = Arrays.asList("opendj/bin");
-  /** List of individual files resulting from the OpenDJ archive which should be set as executable. */
-  private static final List<String> EXECUTABLE_DJ_FILES =
-      Arrays.asList("opendj/setup", "opendj/upgrade", "opendj/uninstall", "opendj/setup.bat", "opendj/upgrade.bat",
-          "opendj/uninstall.bat");
+  /** List of directories resulting from the Wren:DS archive where all files should be set as executable. */
+  private static final List<String> EXECUTABLE_DS_DIRECTORIES = Arrays.asList(ARCHIVE_ROOT_DIRECTORY + "/bin");
+  /** List of individual files resulting from the Wren:DS archive which should be set as executable. */
+  private static final List<String> EXECUTABLE_DS_FILES = Arrays.asList(
+          ARCHIVE_ROOT_DIRECTORY + "/setup",
+          ARCHIVE_ROOT_DIRECTORY + "/upgrade",
+          ARCHIVE_ROOT_DIRECTORY + "/uninstall",
+          ARCHIVE_ROOT_DIRECTORY + "/setup.bat",
+          ARCHIVE_ROOT_DIRECTORY + "/upgrade.bat",
+          ARCHIVE_ROOT_DIRECTORY + "/uninstall.bat");
 
   /** The parameters for install and instance directories, and configuration file of the server. */
   private final ConfigParameters configParams;
@@ -408,7 +413,7 @@ public class EmbeddedDirectoryServer
   /**
    * Set this server up from the root directory.
    * <p>
-   * As a pre-requisite, the OpenDJ archive must have been previously extracted to some
+   * As a pre-requisite, the Wren:DS archive must have been previously extracted to some
    * directory. To extract an archive for setup, see {@code extractArchiveForSetup()}.
    *
    * @param parameters
@@ -420,7 +425,7 @@ public class EmbeddedDirectoryServer
   {
     Reject.checkNotNull(connectionParams);
     int returnCode = InstallDS.mainCLI(parameters.toCommandLineArguments(connectionParams), outStream, errStream,
-        TempLogFile.newTempLogFile(EMBEDDED_OPEN_DJ_PREFIX));
+        TempLogFile.newTempLogFile(EMBEDDED_DS_PREFIX));
 
     if (returnCode != 0)
     {
@@ -432,15 +437,15 @@ public class EmbeddedDirectoryServer
   /**
    * Extracts the provided archive to the appropriate root directory of the server.
    * <p>
-   * As the DJ archive includes the "opendj" directory, it is mandatory to have
+   * As the DJ archive includes the "wrends" directory, it is mandatory to have
    * the root directory named after it when using this method.
    *
-   * @param openDJZipFile
-   *            The OpenDJ server archive.
+   * @param wrendsZipFile
+   *            The Wren:DS server archive.
    * @throws EmbeddedDirectoryServerException
    *            If the extraction of the archive fails.
    */
-  public void extractArchiveForSetup(File openDJZipFile) throws EmbeddedDirectoryServerException
+  public void extractArchiveForSetup(File wrendsZipFile) throws EmbeddedDirectoryServerException
   {
     try
     {
@@ -452,12 +457,12 @@ public class EmbeddedDirectoryServer
       }
       // the directory where the zip file is extracted should be one level up from the server root.
       File deployDirectory = serverRoot.getParentFile();
-      StaticUtils.extractZipArchive(openDJZipFile, deployDirectory, EXECUTABLE_DJ_DIRECTORIES, EXECUTABLE_DJ_FILES);
+      StaticUtils.extractZipArchive(wrendsZipFile, deployDirectory, EXECUTABLE_DS_DIRECTORIES, EXECUTABLE_DS_FILES);
     }
     catch (IOException e)
     {
       throw new EmbeddedDirectoryServerException(ERR_EMBEDDED_SERVER_SETUP_EXTRACT_ARCHIVE.get(
-          openDJZipFile, configParams.getServerRootDirectory(), StaticUtils.stackTraceToSingleLineString(e)));
+          wrendsZipFile, configParams.getServerRootDirectory(), StaticUtils.stackTraceToSingleLineString(e)));
     }
   }
 

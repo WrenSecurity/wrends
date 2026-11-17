@@ -302,7 +302,7 @@ public class GroupIdHandshakeTest extends ReplicationTestCase
        */
       // Start DS1
       rd1 = createReplicationDomain(DS1_ID, 1, testCase);
-      assertTrue(rd1.isConnected());
+      TestCaseUtils.repeatUntilSuccess(() -> assertTrue(rd1.isConnected()));
 
       /**
        * Start DS2 with GID=2 (should connect with a RS with wrong GID as only
@@ -310,8 +310,7 @@ public class GroupIdHandshakeTest extends ReplicationTestCase
        */
       // Start DS2
       rd2 = createReplicationDomain(DS2_ID, 2, testCase);
-      assertTrue(rd2.isConnected());
-
+      TestCaseUtils.repeatUntilSuccess(() -> assertTrue(rd2.isConnected()));
     } finally
     {
       endTest();
@@ -378,7 +377,7 @@ public class GroupIdHandshakeTest extends ReplicationTestCase
        */
       // Start DS2
       rd2 = createReplicationDomain(DS2_ID, 3, testCase);
-      assertTrue(rd2.isConnected());
+      TestCaseUtils.repeatUntilSuccess(() -> assertTrue(rd2.isConnected()));
 
       /**
        * Start RS3 with GID=3, DS2 with GID=3 should detect server with his GID

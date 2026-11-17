@@ -140,6 +140,13 @@
                 <version>${metrics-core.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>3.27.7</version>
+                <scope>test</scope>
+            </dependency>
+
             <!-- Commons Build Tools -->
             <dependency>
                 <groupId>org.wrensecurity</groupId>

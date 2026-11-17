@@ -12,6 +12,7 @@
  * information: "Portions Copyright [year] [name of copyright owner]".
  *
  * Copyright 2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.api;
 
@@ -33,8 +34,6 @@ import org.forgerock.opendj.ldap.schema.AttributeType;
 import org.forgerock.opendj.ldap.schema.Syntax;
 import org.opends.server.TestCaseUtils;
 import org.opends.server.types.Attribute;
-import org.opends.server.types.DirectoryException;
-import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -45,13 +44,7 @@ public class MonitorDataTestCase extends APITestCase
   @BeforeClass
   public void setUp() throws Exception
   {
-    TestCaseUtils.startFakeServer();
-  }
-
-  @AfterClass
-  public void tearDown() throws DirectoryException
-  {
-    TestCaseUtils.shutdownFakeServer();
+    TestCaseUtils.startServer();
   }
 
   @Test

@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2013-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.extensions;
 
@@ -27,7 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
-
 import org.forgerock.i18n.LocalizableMessage;
 import org.forgerock.i18n.slf4j.LocalizedLogger;
 import org.forgerock.opendj.config.server.ConfigException;
@@ -373,11 +373,10 @@ public class TraditionalWorkQueue extends WorkQueue<TraditionalWorkQueueCfg>
    *
    * @param workerThread
    *          The worker thread that is requesting the operation.
-   * @return The next operation that should be processed, or <CODE>null</CODE>
-   *         if the server is shutting down and no more operations will be
-   *         processed.
+   * @return Flag indicating the worker should continue polling for work or if
+   *          the server is shutting down and no more operations will be processed.
    */
-  public Operation nextOperation(TraditionalWorkerThread workerThread)
+  public boolean nextOperation(TraditionalWorkerThread workerThread)
   {
     return retryNextOperation(workerThread, 0);
   }
@@ -385,20 +384,18 @@ public class TraditionalWorkQueue extends WorkQueue<TraditionalWorkQueueCfg>
   /**
    * Retrieves the next operation that should be processed by one of the worker
    * threads following a previous failure attempt. A maximum of five consecutive
-   * failures will be allowed before returning <CODE>null</CODE>, which will
-   * cause the associated thread to exit.
+   * failures will be allowed before abandoning the operation.
    *
    * @param workerThread
    *          The worker thread that is requesting the operation.
    * @param numFailures
    *          The number of consecutive failures that the worker thread has
    *          experienced so far. If this gets too high, then this method will
-   *          return <CODE>null</CODE> rather than retrying.
-   * @return The next operation that should be processed, or <CODE>null</CODE>
-   *         if the server is shutting down and no more operations will be
-   *         processed, or if there have been too many consecutive failures.
+   *          return <CODE>false</CODE> rather than retrying.
+   * @return Flag indicating the worker should continue polling for work, or if
+   *          the server is shutting down and no more operations will be processed.
    */
-  private Operation retryNextOperation(TraditionalWorkerThread workerThread,
+  private boolean retryNextOperation(TraditionalWorkerThread workerThread,
       int numFailures)
   {
     // See if we should kill off this thread. This could be necessary if the
@@ -409,12 +406,12 @@ public class TraditionalWorkQueue extends WorkQueue<TraditionalWorkQueueCfg>
     {
       if (shutdownRequested)
       {
-        return null;
+        return false;
       }
 
       if (killThreads && tryKillThisWorkerThread(workerThread))
       {
-        return null;
+        return false;
       }
 
       if (numFailures > MAX_RETRY_COUNT)
@@ -422,7 +419,7 @@ public class TraditionalWorkQueue extends WorkQueue<TraditionalWorkQueueCfg>
         logger.error(ERR_CONFIG_WORK_QUEUE_TOO_MANY_FAILURES, Thread
             .currentThread().getName(), numFailures, MAX_RETRY_COUNT);
 
-        return null;
+        return true;
       }
 
       while (true)
@@ -430,7 +427,8 @@ public class TraditionalWorkQueue extends WorkQueue<TraditionalWorkQueueCfg>
         Operation nextOperation = opQueue.poll(5, TimeUnit.SECONDS);
         if (nextOperation != null)
         {
-          return nextOperation;
+          workerThread.assignOperation(nextOperation);
+          return true;
         }
 
         // There was no work to do in the specified length of time. Release the
@@ -442,12 +440,12 @@ public class TraditionalWorkQueue extends WorkQueue<TraditionalWorkQueueCfg>
 
         if (shutdownRequested)
         {
-          return null;
+          return false;
         }
 
         if (killThreads && tryKillThisWorkerThread(workerThread))
         {
-          return null;
+          return false;
         }
       }
     }
@@ -461,7 +459,7 @@ public class TraditionalWorkQueue extends WorkQueue<TraditionalWorkQueueCfg>
       // down, in which case we should return null.
       if (shutdownRequested)
       {
-        return null;
+        return false;
       }
 
       // If we've gotten here, then the worker thread was interrupted for some

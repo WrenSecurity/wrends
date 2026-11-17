@@ -13,10 +13,12 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.replication.server;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -322,12 +324,18 @@ public class ReplicationServerDomain extends MonitorProvider<MonitorProviderCfg>
      */
     final PreparedAssuredInfo preparedAssuredInfo = getPreparedAssuredInfo(updateMsg, sourceHandler);
 
+    // Register the expected acks before publishing the update to the changelog DB: once published, the
+    // update can be read back by late handlers (see toDestinationMsg()) and acked by their servers
+    final List<Integer> assuredServers = registerExpectedAcks(updateMsg, preparedAssuredInfo);
+
     if (!publishUpdateMsg(updateMsg))
     {
+      // No timer is armed, so the registered expected acks stay inert until the domain is dropped
+      // by the shutdown triggered by the failed publish
       return;
     }
 
-    final List<Integer> assuredServers = getAssuredServers(updateMsg, preparedAssuredInfo);
+    armAssuredTimeout(updateMsg, preparedAssuredInfo);
 
     /**
      * The update message equivalent to the originally received update message,
@@ -458,35 +466,45 @@ public class ReplicationServerDomain extends MonitorProvider<MonitorProviderCfg>
     }
   }
 
-  private List<Integer> getAssuredServers(UpdateMsg updateMsg, PreparedAssuredInfo preparedAssuredInfo)
+  private static boolean hasExpectedServers(PreparedAssuredInfo preparedAssuredInfo)
   {
-    List<Integer> expectedServers = null;
-    if (preparedAssuredInfo != null && preparedAssuredInfo.expectedServers != null)
+    return preparedAssuredInfo != null && preparedAssuredInfo.expectedServers != null;
+  }
+
+  private List<Integer> registerExpectedAcks(UpdateMsg updateMsg, PreparedAssuredInfo preparedAssuredInfo)
+  {
+    if (!hasExpectedServers(preparedAssuredInfo))
     {
-      expectedServers = preparedAssuredInfo.expectedServers;
-      // Store the expected acks info into the global map.
-      // The code for processing reception of acks for this update will update
-      // info kept in this object and if enough acks received, it will send
-      // back the final ack to the requester and remove the object from this map
-      // OR
-      // The following timer will time out and send an timeout ack to the
-      // requester if the acks are not received in time. The timer will also
-      // remove the object from this map.
-      final CSN csn = updateMsg.getCSN();
-      waitingAcks.put(csn, preparedAssuredInfo.expectedAcksInfo);
-
-      // Arm timer for this assured update message (wait for acks until it times out)
-      final AssuredTimeoutTask assuredTimeoutTask = new AssuredTimeoutTask(csn);
-      assuredTimeoutTimer.schedule(assuredTimeoutTask, localReplicationServer.getAssuredTimeout());
-      // Purge timer every 100 treated messages
-      assuredTimeoutTimerPurgeCounter++;
-      if ((assuredTimeoutTimerPurgeCounter % 100) == 0)
-      {
-        assuredTimeoutTimer.purge();
-      }
+      return Collections.<Integer> emptyList();
     }
+    // Store the expected acks info into the global map.
+    // The code for processing reception of acks for this update will update
+    // info kept in this object and if enough acks received, it will send
+    // back the final ack to the requester and remove the object from this map
+    // OR
+    // The timer armed by armAssuredTimeout() will time out and send an timeout ack to the
+    // requester if the acks are not received in time. The timer will also
+    // remove the object from this map.
+    waitingAcks.put(updateMsg.getCSN(), preparedAssuredInfo.expectedAcksInfo);
+    return preparedAssuredInfo.expectedServers;
+  }
 
-    return expectedServers != null ? expectedServers : Collections.<Integer> emptyList();
+  private void armAssuredTimeout(UpdateMsg updateMsg, PreparedAssuredInfo preparedAssuredInfo)
+  {
+    if (!hasExpectedServers(preparedAssuredInfo))
+    {
+      return;
+    }
+    // Arm timer for this assured update message (wait for acks until it times out).
+    // If all the acks have already been received, the timeout task will find nothing to do.
+    final AssuredTimeoutTask assuredTimeoutTask = new AssuredTimeoutTask(updateMsg.getCSN());
+    assuredTimeoutTimer.schedule(assuredTimeoutTask, localReplicationServer.getAssuredTimeout());
+    // Purge timer every 100 treated messages
+    assuredTimeoutTimerPurgeCounter++;
+    if ((assuredTimeoutTimerPurgeCounter % 100) == 0)
+    {
+      assuredTimeoutTimer.purge();
+    }
   }
 
   private boolean publishUpdateMsg(UpdateMsg updateMsg)
@@ -547,6 +565,51 @@ public class ReplicationServerDomain extends MonitorProvider<MonitorProviderCfg>
     else
     {
       sHandler.add(updateMsg);
+    }
+  }
+
+  /**
+   * Returns the version of an update message read from the changelog DB that must be sent to the
+   * provided server.
+   * <p>
+   * The changelog DB holds the original update messages. When an assured update is received,
+   * only the servers we expect an ack from get the assured message, the other servers get a
+   * {@link NotAssuredUpdateMsg} (see {@link #put(UpdateMsg, ServerHandler)}). This method makes the
+   * same decision for messages read back from the changelog DB, i.e. for servers that are late.
+   *
+   * @param updateMsg
+   *          the update message read from the changelog DB
+   * @param serverId
+   *          the id of the server the update message is going to be sent to
+   * @return the update message that must be sent to the provided server
+   */
+  UpdateMsg toDestinationMsg(UpdateMsg updateMsg, int serverId)
+  {
+    if (!updateMsg.isAssured())
+    {
+      return updateMsg;
+    }
+
+    final ExpectedAcksInfo expectedAcksInfo = waitingAcks.get(updateMsg.getCSN());
+    if (expectedAcksInfo != null)
+    {
+      synchronized (expectedAcksInfo)
+      {
+        if (!expectedAcksInfo.isCompleted() && expectedAcksInfo.isExpectedServer(serverId))
+        {
+          return updateMsg;
+        }
+      }
+    }
+
+    try
+    {
+      return new NotAssuredUpdateMsg(updateMsg);
+    }
+    catch (UnsupportedEncodingException e)
+    {
+      logger.traceException(e);
+      return updateMsg;
     }
   }
 

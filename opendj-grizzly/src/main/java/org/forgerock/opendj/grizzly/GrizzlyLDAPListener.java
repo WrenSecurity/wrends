@@ -43,7 +43,6 @@ import org.forgerock.opendj.ldap.spi.LDAPListenerImpl;
 import org.forgerock.opendj.ldap.spi.LdapMessages.LdapRequestEnvelope;
 import org.forgerock.util.Function;
 import org.forgerock.util.Options;
-import org.glassfish.grizzly.CloseReason;
 import org.glassfish.grizzly.Closeable;
 import org.glassfish.grizzly.CompletionHandler;
 import org.glassfish.grizzly.filterchain.FilterChain;

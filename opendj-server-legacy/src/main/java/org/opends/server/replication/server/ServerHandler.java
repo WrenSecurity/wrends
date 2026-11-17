@@ -13,6 +13,7 @@
  *
  * Copyright 2006-2010 Sun Microsystems, Inc.
  * Portions Copyright 2011-2016 ForgeRock AS.
+ * Portions Copyright 2026 Wren Security
  */
 package org.opends.server.replication.server;
 
@@ -911,6 +912,12 @@ public abstract class ServerHandler extends MessageHandler
     {
       logger.trace("SH.shutdowned(" + this + ")");
     }
+  }
+
+  @Override
+  protected UpdateMsg toDestinationMsg(UpdateMsg updateMsg)
+  {
+    return replicationServerDomain.toDestinationMsg(updateMsg, getServerId());
   }
 
   /**

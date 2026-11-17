@@ -242,10 +242,15 @@ public final class DirectoryEnvironmentConfig
    *          root or {@code null} if it can't be determined.
    */
   public File getInstanceRoot() {
+    String instanceRootPath = getProperty(PROPERTY_INSTANCE_ROOT);
+    if (instanceRootPath != null)
+    {
+      return forceNonRelativeFile(new File(instanceRootPath));
+    }
     File serverRoot = getServerRoot();
     if (serverRoot != null)
     {
-      File instanceRoot = new File(Utils.getInstancePathFromInstallPath(getServerRoot().getAbsolutePath()));
+      File instanceRoot = new File(Utils.getInstancePathFromInstallPath(serverRoot.getAbsolutePath()));
       return forceNonRelativeFile(instanceRoot);
     }
     return null;

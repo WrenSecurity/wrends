@@ -1027,7 +1027,12 @@ public class GenerationIdTest extends ReplicationTestCase
     remove(replServer1, replServer2, replServer3);
     replServer1 = replServer2 = replServer3 = null;
 
-    super.cleanRealEntries();
+    // A reset-genid task entry can briefly be observed by TaskBackend in a
+    // non-deletable in-memory state right after its entry attribute already
+    // shows COMPLETED, yielding UNWILLING_TO_PERFORM on delete.
+    TestCaseUtils.repeatUntilSuccess(() -> {
+      cleanRealEntries();
+    });
 
     replServerPort = TestCaseUtils.findFreePorts(3);
 

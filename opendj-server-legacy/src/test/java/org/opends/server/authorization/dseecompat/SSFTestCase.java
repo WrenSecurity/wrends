@@ -33,7 +33,7 @@ public class SSFTestCase extends AciTestCase {
     private static final String newUser="uid=new.user,ou=People,o=test";
     private static final String descriptionStr = "description of user.1";
     private static final String factory = "com.sun.jndi.ldap.LdapCtxFactory";
-    private static final String pwdPolicy = "Aci Temp Policy";
+    private static final String pwdPolicy = "SSF Aci Temp Policy";
     private static final String pwdPolicyDN =
                        "cn=" + pwdPolicy + ",cn=Password Policies,cn=config";
 
